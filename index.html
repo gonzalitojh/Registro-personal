@@ -1,14 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>HTML</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="estilo.css">
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Registro — pelis, series y libros</title>
+  <meta name="description" content="Registro personal de películas, series y libros." />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
 <body>
-  <p>Esta página web es una página HTML válida.</p>
+
+  <!-- Pantalla de acceso -->
+  <section id="auth-screen" class="auth-screen">
+    <div class="library-card">
+      <p class="library-card__eyebrow">Ficha de socio</p>
+      <h1 class="library-card__title">Mi Registro</h1>
+      <p class="library-card__subtitle">
+        Un cuaderno privado para lo que ves y lo que lees.
+      </p>
+      <button id="btn-login" class="btn btn--primary">
+        Entrar con Google
+      </button>
+      <p id="auth-error" class="auth-error hidden"></p>
+    </div>
+  </section>
+
+  <!-- Aplicación -->
+  <div id="app" class="app hidden">
+
+    <header class="app-header">
+      <div class="app-header__top">
+        <h1 class="app-title">Mi Registro</h1>
+        <div class="user-badge">
+          <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
+          <span id="user-name" class="user-badge__name"></span>
+          <button id="btn-logout" class="btn btn--ghost">Salir</button>
+        </div>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab tab--media is-active" id="tab-media" role="tab" aria-selected="true" data-panel="panel-media">
+          Pelis &amp; series
+        </button>
+        <button class="tab tab--books" id="tab-books" role="tab" aria-selected="false" data-panel="panel-books">
+          Libros
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Panel Pelis y Series -->
+      <section id="panel-media" class="panel" data-type-group="media">
+        <form id="form-search-media" class="search-slip" autocomplete="off">
+          <label class="visually-hidden" for="search-media-input">Buscar películas o series</label>
+          <input id="search-media-input" type="text" placeholder="Busca un título… (ej. Dune, Severance)" />
+          <button type="submit" class="btn btn--accent-media">Buscar</button>
+        </form>
+        <div id="search-media-results" class="results-strip"></div>
+
+        <div class="library-head">
+          <h2>Mi estantería</h2>
+          <div class="filter-chips" data-scope="media">
+            <button class="chip is-active" data-status="todos">Todos</button>
+            <button class="chip" data-status="pendiente">Pendiente</button>
+            <button class="chip" data-status="en_curso">Viendo</button>
+            <button class="chip" data-status="completado">Vista</button>
+          </div>
+        </div>
+        <div id="library-media" class="library-grid"></div>
+        <p id="empty-media" class="empty-state hidden">
+          Aún no hay nada aquí. Busca un título arriba y pulsa «Añadir».
+        </p>
+      </section>
+
+      <!-- Panel Libros -->
+      <section id="panel-books" class="panel hidden" data-type-group="books">
+        <form id="form-search-books" class="search-slip" autocomplete="off">
+          <label class="visually-hidden" for="search-books-input">Buscar libros</label>
+          <input id="search-books-input" type="text" placeholder="Busca un libro o autor…" />
+          <button type="submit" class="btn btn--accent-books">Buscar</button>
+        </form>
+        <div id="search-books-results" class="results-strip"></div>
+
+        <div class="library-head">
+          <h2>Mi biblioteca</h2>
+          <div class="filter-chips" data-scope="books">
+            <button class="chip is-active" data-status="todos">Todos</button>
+            <button class="chip" data-status="pendiente">Pendiente</button>
+            <button class="chip" data-status="en_curso">Leyendo</button>
+            <button class="chip" data-status="completado">Leído</button>
+          </div>
+        </div>
+        <div id="library-books" class="library-grid"></div>
+        <p id="empty-books" class="empty-state hidden">
+          Tu biblioteca está vacía. Busca un libro arriba y pulsa «Añadir».
+        </p>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Portadas de libros vía Google Books / Open Library
+    </footer>
+  </div>
+
+  <!-- Modal de detalle -->
+  <div id="item-modal" class="modal hidden">
+    <div class="modal__backdrop" id="modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true">
+      <button id="modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
-

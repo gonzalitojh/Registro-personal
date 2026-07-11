@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Solo tu cuenta (identificada por email) puede leer o escribir
+// cualquier documento bajo /users/{userId}/... Aunque el código
+// fuente de la web sea público, nadie más puede ver ni modificar
+// tus datos sin haber iniciado sesión con ese email exacto.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                          && request.auth.token.email == "tu-email@gmail.com";
+    }
+  }
+}
