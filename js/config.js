@@ -10,24 +10,25 @@
 // Configuración de tu proyecto de Firebase
 // (Firebase console → Configuración del proyecto → Tus apps → SDK)
 export const firebaseConfig = {
-  apiKey: "TU_FIREBASE_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID",
-};
+    apiKey: "AIzaSyCVA1d9FH26eOJcJ30y--9H_2gAzlZ8RGc",
+    authDomain: "registro-personal-gjh.firebaseapp.com",
+    projectId: "registro-personal-gjh",
+    storageBucket: "registro-personal-gjh.firebasestorage.app",
+    messagingSenderId: "797249707218",
+    appId: "1:797249707218:web:4053d75f5a0c17029e610b",
+    measurementId: "G-HH7JJYF8SR"
+  };
 
 // El email con el que vas a iniciar sesión (debe coincidir EXACTAMENTE
 // con el que pongas en firestore.rules)
-export const AUTHORIZED_EMAIL = "tu-email@gmail.com";
+export const AUTHORIZED_EMAIL = "gonzalojh596@gmail.com";
 
 // Clave de la API de TMDB (gratuita, no comercial)
 // Consíguela en https://www.themoviedb.org/settings/api
-export const TMDB_API_KEY = "TU_TMDB_API_KEY";
+export const TMDB_API_KEY = "f23a198de513705e5970b196de181edb";
 
 // Clave de la API de Google Books (opcional).
 // Sin clave funciona igual, con un límite de peticiones más bajo.
 // Si la usas, restríngela por referrer HTTP a tu dominio de GitHub Pages
 // desde Google Cloud Console → Credenciales.
-export const GOOGLE_BOOKS_API_KEY = "";
+export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
