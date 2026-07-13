@@ -676,3 +676,137 @@ button {
   font-size: 0.85rem;
   z-index: 60;
 }
+
+/* =========================================================
+   Progreso de series: banner, temporadas y episodios
+   ========================================================= */
+
+.progress-banner {
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.progress-banner .next-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.progress-bar-track {
+  height: 6px;
+  background: rgba(23, 21, 18, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--teal-reel);
+  transition: width 0.25s ease;
+}
+
+.progress-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.seasons-list {
+  margin-bottom: 1.1rem;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.season-block + .season-block {
+  border-top: 1px solid var(--paper-line);
+}
+
+.season-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: #fff;
+}
+
+.season-toggle {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+  flex: 1;
+  padding: 0;
+}
+
+.season-chevron {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.season-count {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.season-episodes {
+  padding: 0.3rem 0.6rem 0.6rem;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.episode-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.2rem;
+  font-size: 0.82rem;
+  border-bottom: 1px dashed rgba(23, 21, 18, 0.08);
+}
+.episode-row:last-child {
+  border-bottom: none;
+}
+
+.episode-row__num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.episode-row__name {
+  flex: 1;
+}
+
+.episode-row.is-watched .episode-row__name {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.episode-loading {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 0.4rem 0.2rem;
+  margin: 0;
+}
+
+.item-card__progress {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--teal-reel-dark);
+}

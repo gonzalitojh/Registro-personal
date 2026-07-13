@@ -45,8 +45,11 @@
       </div>
 
       <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab tab--media is-active" id="tab-media" role="tab" aria-selected="true" data-panel="panel-media">
-          Pelis &amp; series
+        <button class="tab tab--media is-active" id="tab-movies" role="tab" aria-selected="true" data-panel="panel-movies">
+          Películas
+        </button>
+        <button class="tab tab--media" id="tab-tv" role="tab" aria-selected="false" data-panel="panel-tv">
+          Series
         </button>
         <button class="tab tab--books" id="tab-books" role="tab" aria-selected="false" data-panel="panel-books">
           Libros
@@ -55,27 +58,51 @@
     </header>
 
     <main>
-      <!-- Panel Pelis y Series -->
-      <section id="panel-media" class="panel" data-type-group="media">
-        <form id="form-search-media" class="search-slip" autocomplete="off">
-          <label class="visually-hidden" for="search-media-input">Buscar películas o series</label>
-          <input id="search-media-input" type="text" placeholder="Busca un título… (ej. Dune, Severance)" />
+      <!-- Panel Películas -->
+      <section id="panel-movies" class="panel" data-type-group="movies">
+        <form id="form-search-movies" class="search-slip" autocomplete="off">
+          <label class="visually-hidden" for="search-movies-input">Buscar películas</label>
+          <input id="search-movies-input" type="text" placeholder="Busca una película… (ej. Dune)" />
           <button type="submit" class="btn btn--accent-media">Buscar</button>
         </form>
-        <div id="search-media-results" class="results-strip"></div>
+        <div id="search-movies-results" class="results-strip"></div>
 
         <div class="library-head">
-          <h2>Mi estantería</h2>
-          <div class="filter-chips" data-scope="media">
+          <h2>Mis películas</h2>
+          <div class="filter-chips" data-scope="movies">
             <button class="chip is-active" data-status="todos">Todos</button>
             <button class="chip" data-status="pendiente">Pendiente</button>
             <button class="chip" data-status="en_curso">Viendo</button>
             <button class="chip" data-status="completado">Vista</button>
           </div>
         </div>
-        <div id="library-media" class="library-grid"></div>
-        <p id="empty-media" class="empty-state hidden">
+        <div id="library-movies" class="library-grid"></div>
+        <p id="empty-movies" class="empty-state hidden">
           Aún no hay nada aquí. Busca un título arriba y pulsa «Añadir».
+        </p>
+      </section>
+
+      <!-- Panel Series -->
+      <section id="panel-tv" class="panel hidden" data-type-group="tv">
+        <form id="form-search-tv" class="search-slip" autocomplete="off">
+          <label class="visually-hidden" for="search-tv-input">Buscar series</label>
+          <input id="search-tv-input" type="text" placeholder="Busca una serie… (ej. Severance)" />
+          <button type="submit" class="btn btn--accent-media">Buscar</button>
+        </form>
+        <div id="search-tv-results" class="results-strip"></div>
+
+        <div class="library-head">
+          <h2>Mis series</h2>
+          <div class="filter-chips" data-scope="tv">
+            <button class="chip is-active" data-status="todos">Todos</button>
+            <button class="chip" data-status="pendiente">Pendiente</button>
+            <button class="chip" data-status="en_curso">Viendo</button>
+            <button class="chip" data-status="completado">Vista</button>
+          </div>
+        </div>
+        <div id="library-tv" class="library-grid"></div>
+        <p id="empty-tv" class="empty-state hidden">
+          Aún no hay nada aquí. Busca una serie arriba y pulsa «Añadir».
         </p>
       </section>
 

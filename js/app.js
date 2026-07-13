@@ -6,23 +6,26 @@
 
 import { watchAuthState, login, logout } from "./firebase.js";
 import { subscribeToItems, addItem, updateItem, deleteItem } from "./db.js";
-import { searchMoviesAndShows } from "./api-movies.js";
+import { searchMovies, searchTv, getTvSeasonsMeta, getSeasonEpisodes } from "./api-movies.js";
 import { searchBooks } from "./api-books.js";
+import { computeProgress, toggleEpisode, setSeasonWatched } from "./tv-progress.js";
 import * as ui from "./ui.js";
 import { AUTHORIZED_EMAIL } from "./config.js";
 
 let currentUser = null;
 let unsubscribeItems = null;
 let allItems = [];
-let lastMediaResults = [];
+let lastMoviesResults = [];
+let lastTvResults = [];
 let lastBookResults = [];
-const activeFilters = { media: "todos", books: "todos" };
+const activeFilters = { movies: "todos", tv: "todos", books: "todos" };
 
 /* ---------- Pestañas ---------- */
 
 const tabs = document.querySelectorAll(".tab");
 const panels = {
-  "panel-media": document.getElementById("panel-media"),
+  "panel-movies": document.getElementById("panel-movies"),
+  "panel-tv": document.getElementById("panel-tv"),
   "panel-books": document.getElementById("panel-books"),
 };
 
@@ -95,8 +98,7 @@ document.querySelectorAll(".filter-chips").forEach((group) => {
       group.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
       chip.classList.add("is-active");
       activeFilters[scope] = chip.dataset.status;
-      if (scope === "media") renderMediaLibrary();
-      else renderBooksLibrary();
+      renderLibraryFor(scope);
     });
   });
 });
@@ -104,9 +106,9 @@ document.querySelectorAll(".filter-chips").forEach((group) => {
 /* ---------- Render de las estanterías ---------- */
 
 function itemsByGroup(group) {
-  return allItems.filter((i) =>
-    group === "media" ? i.type === "movie" || i.type === "tv" : i.type === "book"
-  );
+  if (group === "movies") return allItems.filter((i) => i.type === "movie");
+  if (group === "tv") return allItems.filter((i) => i.type === "tv");
+  return allItems.filter((i) => i.type === "book");
 }
 
 function applyFilter(items, status) {
@@ -114,42 +116,50 @@ function applyFilter(items, status) {
   return items.filter((i) => i.status === status);
 }
 
-function renderMediaLibrary() {
-  const items = applyFilter(itemsByGroup("media"), activeFilters.media);
-  ui.renderLibrary(
-    document.getElementById("library-media"),
-    document.getElementById("empty-media"),
-    items,
-    openItem
-  );
-}
+const GRID_IDS = {
+  movies: ["library-movies", "empty-movies"],
+  tv: ["library-tv", "empty-tv"],
+  books: ["library-books", "empty-books"],
+};
 
-function renderBooksLibrary() {
-  const items = applyFilter(itemsByGroup("books"), activeFilters.books);
-  ui.renderLibrary(
-    document.getElementById("library-books"),
-    document.getElementById("empty-books"),
-    items,
-    openItem
-  );
+function renderLibraryFor(group) {
+  const [gridId, emptyId] = GRID_IDS[group];
+  const items = applyFilter(itemsByGroup(group), activeFilters[group]);
+  ui.renderLibrary(document.getElementById(gridId), document.getElementById(emptyId), items, openItem);
 }
 
 function renderAllPanels() {
-  renderMediaLibrary();
-  renderBooksLibrary();
+  renderLibraryFor("movies");
+  renderLibraryFor("tv");
+  renderLibraryFor("books");
   refreshSearchAddButtons();
 }
 
-/* ---------- Búsqueda: pelis y series ---------- */
+/* ---------- Búsqueda: películas ---------- */
 
-const resultsMedia = document.getElementById("search-media-results");
-document.getElementById("form-search-media").addEventListener("submit", async (e) => {
+const resultsMovies = document.getElementById("search-movies-results");
+document.getElementById("form-search-movies").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const query = document.getElementById("search-media-input").value.trim();
+  const query = document.getElementById("search-movies-input").value.trim();
   if (!query) return;
   try {
-    lastMediaResults = await searchMoviesAndShows(query);
-    ui.renderSearchResults(resultsMedia, lastMediaResults, existingIdsFor("media"), handleAdd);
+    lastMoviesResults = await searchMovies(query);
+    ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies"), handleAdd);
+  } catch (err) {
+    ui.showToast(err.message);
+  }
+});
+
+/* ---------- Búsqueda: series ---------- */
+
+const resultsTv = document.getElementById("search-tv-results");
+document.getElementById("form-search-tv").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const query = document.getElementById("search-tv-input").value.trim();
+  if (!query) return;
+  try {
+    lastTvResults = await searchTv(query);
+    ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv"), handleAdd);
   } catch (err) {
     ui.showToast(err.message);
   }
@@ -177,8 +187,11 @@ function existingIdsFor(group) {
 // Tras añadir o al recibir cambios en tiempo real, refrescamos los
 // botones "Añadir"/"Añadido" de los resultados ya mostrados.
 function refreshSearchAddButtons() {
-  if (lastMediaResults.length) {
-    ui.renderSearchResults(resultsMedia, lastMediaResults, existingIdsFor("media"), handleAdd);
+  if (lastMoviesResults.length) {
+    ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies"), handleAdd);
+  }
+  if (lastTvResults.length) {
+    ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv"), handleAdd);
   }
   if (lastBookResults.length) {
     ui.renderSearchResults(resultsBooks, lastBookResults, existingIdsFor("books"), handleAdd);
@@ -190,7 +203,7 @@ async function handleAdd(item, btn) {
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
   try {
-    await addItem(currentUser.uid, {
+    const draft = {
       externalId: item.externalId,
       type: item.type,
       title: item.title,
@@ -201,8 +214,14 @@ async function handleAdd(item, btn) {
       status: "pendiente",
       rating: null,
       notes: "",
-      progress: null,
-    });
+    };
+    if (item.type === "tv") {
+      draft.watched = {};
+      draft.nextEpisode = { season: 1, episode: 1 };
+    } else if (item.type === "book") {
+      draft.progress = null;
+    }
+    await addItem(currentUser.uid, draft);
     ui.showToast(`«${item.title}» añadido a tu registro.`);
   } catch (err) {
     btn.disabled = false;
@@ -214,6 +233,14 @@ async function handleAdd(item, btn) {
 /* ---------- Modal de detalle ---------- */
 
 function openItem(item) {
+  if (item.type === "tv") {
+    openTvItem(item);
+  } else {
+    openStandardItem(item);
+  }
+}
+
+function openStandardItem(item) {
   ui.openModal(item, {
     onSave: async (changes) => {
       try {
@@ -224,6 +251,80 @@ function openItem(item) {
         ui.showToast("No se pudo guardar: " + err.message);
       }
     },
+    onDelete: async () => {
+      if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
+      try {
+        await deleteItem(currentUser.uid, item.id);
+        ui.showToast("Eliminado.");
+        ui.closeModal();
+      } catch (err) {
+        ui.showToast("No se pudo eliminar: " + err.message);
+      }
+    },
+  });
+}
+
+async function openTvItem(item) {
+  let seasonsMeta;
+  try {
+    seasonsMeta = await getTvSeasonsMeta(item.externalId);
+  } catch (err) {
+    ui.showToast(err.message);
+    return;
+  }
+  if (!seasonsMeta.length) {
+    ui.showToast("TMDB no devuelve temporadas para esta serie todavía.");
+  }
+
+  const progress = computeProgress(seasonsMeta, item.watched);
+
+  ui.openTvModal(item, seasonsMeta, progress, {
+    onExpandSeason: (seasonNumber) => getSeasonEpisodes(item.externalId, seasonNumber),
+
+    onToggleEpisode: async (seasonNumber, episodeNumber) => {
+      const newWatched = toggleEpisode(item.watched, seasonNumber, episodeNumber);
+      const newProgress = computeProgress(seasonsMeta, newWatched);
+      await updateItem(currentUser.uid, item.id, {
+        watched: newWatched,
+        status: newProgress.status,
+        nextEpisode: newProgress.nextEpisode,
+      });
+      item.watched = newWatched;
+      item.status = newProgress.status;
+      item.nextEpisode = newProgress.nextEpisode;
+      return newProgress;
+    },
+
+    onToggleSeason: async (seasonNumber, allWatched) => {
+      const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
+      const newWatched = setSeasonWatched(
+        item.watched,
+        seasonNumber,
+        seasonMeta.episodeCount,
+        allWatched
+      );
+      const newProgress = computeProgress(seasonsMeta, newWatched);
+      await updateItem(currentUser.uid, item.id, {
+        watched: newWatched,
+        status: newProgress.status,
+        nextEpisode: newProgress.nextEpisode,
+      });
+      item.watched = newWatched;
+      item.status = newProgress.status;
+      item.nextEpisode = newProgress.nextEpisode;
+      return newProgress;
+    },
+
+    onSaveMeta: async (changes) => {
+      try {
+        await updateItem(currentUser.uid, item.id, changes);
+        ui.showToast("Guardado.");
+        ui.closeModal();
+      } catch (err) {
+        ui.showToast("No se pudo guardar: " + err.message);
+      }
+    },
+
     onDelete: async () => {
       if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
       try {

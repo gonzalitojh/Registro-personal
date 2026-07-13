@@ -12,8 +12,9 @@ mi-registro/
 ├── js/
 │   ├── config.js       ← claves y configuración (rellenar)
 │   ├── firebase.js      inicialización de Firebase
-│   ├── api-movies.js    búsqueda en TMDB
+│   ├── api-movies.js    búsqueda de pelis/series y temporadas/episodios en TMDB
 │   ├── api-books.js     búsqueda en Google Books / Open Library
+│   ├── tv-progress.js   cálculo de episodios vistos y "siguiente episodio"
 │   ├── db.js             lectura/escritura en Firestore
 │   ├── ui.js             renderizado del DOM
 │   └── app.js            punto de entrada
@@ -102,8 +103,15 @@ error de dominio no autorizado.
 
 Abre tu URL de GitHub Pages, entra con Google (con el email que pusiste en
 `AUTHORIZED_EMAIL` y en las reglas) y ya puedes buscar títulos y libros,
-añadirlos, marcarlos como pendiente / en curso / completado, puntuarlos y
-dejar notas.
+añadirlos, puntuarlos y dejar notas.
+
+Películas y libros se marcan como pendiente / en curso / completado a mano.
+Las **series funcionan por episodio**: al abrir una serie puedes desplegar
+cada temporada, marcar episodios sueltos o una temporada entera de golpe, y
+arriba del todo verás un aviso con el siguiente episodio pendiente (por
+ejemplo, «Siguiente: T2E5») para saber justo por dónde te quedaste. El
+estado (Pendiente / Viendo / Vista) se actualiza solo según los episodios
+marcados.
 
 ## Límites a tener en cuenta
 
