@@ -14,7 +14,10 @@ mi-registro/
 │   ├── firebase.js      inicialización de Firebase
 │   ├── api-movies.js    búsqueda de pelis/series y temporadas/episodios en TMDB
 │   ├── api-books.js     búsqueda en Google Books / Open Library
-│   ├── tv-progress.js   cálculo de episodios vistos y "siguiente episodio"
+│   ├── dates.js          utilidades de fecha
+│   ├── tv-progress.js   episodios vistos, "siguiente episodio" y revisionados
+│   ├── watch-log.js      historial de visionados (películas)
+│   ├── reading-log.js    historial de lecturas (libros)
 │   ├── db.js             lectura/escritura en Firestore
 │   ├── ui.js             renderizado del DOM
 │   └── app.js            punto de entrada
@@ -105,13 +108,33 @@ Abre tu URL de GitHub Pages, entra con Google (con el email que pusiste en
 `AUTHORIZED_EMAIL` y en las reglas) y ya puedes buscar títulos y libros,
 añadirlos, puntuarlos y dejar notas.
 
-Películas y libros se marcan como pendiente / en curso / completado a mano.
-Las **series funcionan por episodio**: al abrir una serie puedes desplegar
-cada temporada, marcar episodios sueltos o una temporada entera de golpe, y
-arriba del todo verás un aviso con el siguiente episodio pendiente (por
-ejemplo, «Siguiente: T2E5») para saber justo por dónde te quedaste. El
-estado (Pendiente / Viendo / Vista) se actualiza solo según los episodios
-marcados.
+- **Películas**: solo tienen dos estados, Pendiente y Vista. Al marcarla como
+  vista eliges la fecha (por defecto hoy). Si la vuelves a ver, pulsa «Añadir
+  otro visionado»: se guarda un nuevo visionado sin borrar los anteriores, y
+  la ficha muestra cuántas veces la has visto.
+- **Series**: se llevan episodio a episodio. Al abrir una serie despliega
+  cada temporada y marca episodios sueltos (con su fecha, editable) o una
+  temporada entera de golpe. Arriba verás el siguiente episodio pendiente
+  (p. ej. «Siguiente: T2E5»). Al terminarla, aparece un botón «Volver a verla
+  desde el principio»: archiva el visionado actual (con sus fechas) en el
+  historial y empieza uno nuevo sin perder el anterior.
+- **Libros**: «Empezar a leer» abre una lectura con fecha de inicio;
+  «Terminar de leer» la cierra con fecha de fin. Volver a leerlo abre una
+  lectura nueva, conservando las anteriores. Se puede editar la fecha de
+  cualquier lectura o quitar una entrada equivocada.
+- **Orden**: cada estantería tiene un selector para ordenar por fecha
+  (de visionado/lectura), alfabéticamente o por año de estreno/publicación,
+  además de los filtros por estado.
+
+### Si la búsqueda de libros da un error 403 "referrer blocked"
+
+Significa que la clave de Google Books tiene restricción por dominio y la
+petición llega sin ese dominio (típicamente porque abriste `index.html`
+directamente desde el disco, con `file://`, que no envía referrer). Prueba
+la web desde tu URL real de GitHub Pages, o levanta un servidor local
+(`python3 -m http.server` en la carpeta del proyecto) y añade
+`http://localhost:PUERTO/*` a los referrers permitidos de esa clave en
+Google Cloud Console.
 
 ## Límites a tener en cuenta
 

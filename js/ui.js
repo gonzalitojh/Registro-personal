@@ -4,6 +4,8 @@
 // o dispara callbacks que app.js conecta con db.js / TMDB.
 // =============================================================
 
+import { todayISO, formatDateEs } from "./dates.js";
+
 const STATUS_LABELS = {
   media: { pendiente: "Pendiente", en_curso: "Viendo", completado: "Vista" },
   book: { pendiente: "Pendiente", en_curso: "Leyendo", completado: "Leído" },
@@ -105,10 +107,29 @@ export function renderSearchResults(container, results, existingIds, onAdd) {
 /* ---------- Biblioteca personal ---------- */
 
 function progressLine(item) {
-  if (item.type !== "tv") return "";
-  if (item.status === "completado") return "Serie completada";
-  if (item.nextEpisode) {
-    return `Siguiente: T${item.nextEpisode.season}E${item.nextEpisode.episode}`;
+  if (item.type === "movie") {
+    const log = item.watchLog || [];
+    if (!log.length) return "";
+    const last = log[log.length - 1];
+    return `Vista el ${formatDateEs(last)}${log.length > 1 ? ` · ×${log.length}` : ""}`;
+  }
+  if (item.type === "tv") {
+    if (item.status === "completado") {
+      const times = (item.timesCompleted || 0) + 1;
+      return `Completa${times > 1 ? ` · ×${times}` : ""} · ${formatDateEs(item.lastWatchedAt)}`;
+    }
+    if (item.nextEpisode) {
+      return `Siguiente: T${item.nextEpisode.season}E${item.nextEpisode.episode}`;
+    }
+    return "";
+  }
+  if (item.type === "book") {
+    const log = item.readLog || [];
+    if (!log.length) return "";
+    const last = log[log.length - 1];
+    if (!last.finishedAt) return `Leyendo desde ${formatDateEs(last.startedAt)}`;
+    const times = log.filter((e) => e.finishedAt).length;
+    return `Leído el ${formatDateEs(last.finishedAt)}${times > 1 ? ` · ×${times}` : ""}`;
   }
   return "";
 }
@@ -158,19 +179,71 @@ export function renderLibrary(gridEl, emptyEl, items, onOpen) {
   });
 }
 
-/* ---------- Modal de detalle: películas y libros ---------- */
+/* ---------- Campos comunes: valoración y notas ---------- */
 
-export function openModal(item, { onSave, onDelete }) {
+function ratingPickerHtml(rating) {
+  return `
+    <div class="field-group">
+      <label>Valoración</label>
+      <div class="rating-picker" id="field-rating">
+        ${[1, 2, 3, 4, 5]
+          .map(
+            (n) =>
+              `<button type="button" data-value="${n}" class="${
+                rating >= n ? "is-active" : ""
+              }">${n}</button>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function notesFieldHtml(notes) {
+  return `
+    <div class="field-group">
+      <label for="field-notes">Notas</label>
+      <textarea id="field-notes" placeholder="Impresiones...">${escapeHtml(notes || "")}</textarea>
+    </div>`;
+}
+
+function wireRatingAndGetValue(content, initialRating) {
+  let selectedRating = initialRating || 0;
+  const buttons = content.querySelectorAll("#field-rating button");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const value = Number(btn.dataset.value);
+      selectedRating = value === selectedRating ? 0 : value;
+      buttons.forEach((b) =>
+        b.classList.toggle("is-active", Number(b.dataset.value) <= selectedRating)
+      );
+    });
+  });
+  return () => selectedRating;
+}
+
+/* ---------- Modal de detalle: películas ---------- */
+
+function renderWatchLogRows(watchLog) {
+  if (!watchLog || !watchLog.length) {
+    return `<p class="log-empty">Aún no la has visto.</p>`;
+  }
+  return `<div class="log-list">
+    ${watchLog
+      .map(
+        (date, index) => `
+        <div class="log-row">
+          <input type="date" class="watch-date" data-index="${index}" value="${date}" />
+          <button type="button" class="btn btn--small btn--danger watch-remove" data-index="${index}">Quitar</button>
+        </div>`
+      )
+      .join("")}
+  </div>`;
+}
+
+export function openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete }) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
-  const scope = scopeFor(item.type);
-  const labels = STATUS_LABELS[scope];
-  const showProgress = item.type === "book";
-
-  const metaLine =
-    item.type === "book"
-      ? [item.author, item.year].filter(Boolean).join(" · ")
-      : [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
+  const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
 
   content.innerHTML = `
     <div class="modal-detail__header">
@@ -182,48 +255,18 @@ export function openModal(item, { onSave, onDelete }) {
     </div>
 
     <div class="field-group">
-      <label for="field-status">Estado</label>
-      <select id="field-status">
-        ${Object.entries(labels)
-          .map(
-            ([value, label]) =>
-              `<option value="${value}" ${
-                item.status === value ? "selected" : ""
-              }>${label}</option>`
-          )
-          .join("")}
-      </select>
-    </div>
-
-    <div class="field-group">
-      <label>Valoración</label>
-      <div class="rating-picker" id="field-rating">
-        ${[1, 2, 3, 4, 5]
-          .map(
-            (n) =>
-              `<button type="button" data-value="${n}" class="${
-                item.rating >= n ? "is-active" : ""
-              }">${n}</button>`
-          )
-          .join("")}
+      <label>Visionados</label>
+      ${renderWatchLogRows(item.watchLog)}
+      <div class="log-add-row">
+        <input type="date" id="field-new-watch-date" value="${todayISO()}" />
+        <button type="button" class="btn btn--small btn--accent-media" id="btn-add-watch">
+          ${item.watchLog && item.watchLog.length ? "Añadir otro visionado" : "Marcar como vista"}
+        </button>
       </div>
     </div>
 
-    ${
-      showProgress
-        ? `<div class="field-group">
-            <label for="field-progress">Página actual</label>
-            <input type="number" min="0" id="field-progress" value="${item.progress ?? ""}" />
-          </div>`
-        : ""
-    }
-
-    <div class="field-group">
-      <label for="field-notes">Notas</label>
-      <textarea id="field-notes" placeholder="Impresiones, dónde lo dejaste...">${escapeHtml(
-        item.notes || ""
-      )}</textarea>
-    </div>
+    ${ratingPickerHtml(item.rating)}
+    ${notesFieldHtml(item.notes)}
 
     <div class="modal-actions">
       <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
@@ -231,29 +274,164 @@ export function openModal(item, { onSave, onDelete }) {
     </div>
   `;
 
-  let selectedRating = item.rating || 0;
-  const ratingButtons = content.querySelectorAll("#field-rating button");
-  ratingButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const value = Number(btn.dataset.value);
-      selectedRating = value === selectedRating ? 0 : value;
-      ratingButtons.forEach((b) =>
-        b.classList.toggle("is-active", Number(b.dataset.value) <= selectedRating)
-      );
+  const getRating = wireRatingAndGetValue(content, item.rating);
+
+  content.querySelector("#btn-add-watch").addEventListener("click", async () => {
+    const dateVal = content.querySelector("#field-new-watch-date").value;
+    if (!dateVal) return;
+    await onAddWatch(dateVal);
+    openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
+  });
+
+  content.querySelectorAll(".watch-date").forEach((input) => {
+    input.addEventListener("change", async () => {
+      if (!input.value) return;
+      await onUpdateWatch(Number(input.dataset.index), input.value);
+      openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
+    });
+  });
+
+  content.querySelectorAll(".watch-remove").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm("¿Quitar este visionado del historial?")) return;
+      await onRemoveWatch(Number(btn.dataset.index));
+      openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
     });
   });
 
   content.querySelector("#btn-save-item").addEventListener("click", () => {
-    const changes = {
-      status: content.querySelector("#field-status").value,
-      rating: selectedRating || null,
+    onSaveMeta({
+      rating: getRating() || null,
       notes: content.querySelector("#field-notes").value.trim(),
-    };
-    if (showProgress) {
-      const raw = content.querySelector("#field-progress").value;
-      changes.progress = raw === "" ? null : Number(raw);
-    }
-    onSave(changes);
+    });
+  });
+
+  content.querySelector("#btn-delete-item").addEventListener("click", () => {
+    onDelete();
+  });
+
+  modal.classList.remove("hidden");
+}
+
+/* ---------- Modal de detalle: libros ---------- */
+
+function renderReadLogRows(readLog) {
+  if (!readLog || !readLog.length) {
+    return `<p class="log-empty">Aún no has empezado a leerlo.</p>`;
+  }
+  return `<div class="log-list">
+    ${readLog
+      .map(
+        (entry, index) => `
+        <div class="log-row">
+          <input type="date" class="read-start" data-index="${index}" value="${entry.startedAt}" />
+          <span class="log-row__arrow">→</span>
+          ${
+            entry.finishedAt
+              ? `<input type="date" class="read-finish" data-index="${index}" value="${entry.finishedAt}" />`
+              : `<span class="log-row__reading">leyendo</span>`
+          }
+          <button type="button" class="btn btn--small btn--danger read-remove" data-index="${index}">Quitar</button>
+        </div>`
+      )
+      .join("")}
+  </div>`;
+}
+
+export function openBookModal(
+  item,
+  { onStartReading, onFinishReading, onUpdateEntry, onRemoveEntry, onSaveMeta, onDelete }
+) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+  const metaLine = [item.author, item.year].filter(Boolean).join(" · ");
+  const isReading =
+    item.readLog && item.readLog.length && !item.readLog[item.readLog.length - 1].finishedAt;
+
+  content.innerHTML = `
+    <div class="modal-detail__header">
+      <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div>
+        <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
+        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Lecturas</label>
+      ${renderReadLogRows(item.readLog)}
+      <div class="log-add-row">
+        <input type="date" id="field-log-date" value="${todayISO()}" />
+        <button type="button" class="btn btn--small btn--accent-books" id="btn-log-action">
+          ${isReading ? "Terminar de leer" : "Empezar a leer"}
+        </button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label for="field-progress">Página actual</label>
+      <input type="number" min="0" id="field-progress" value="${item.progress ?? ""}" />
+    </div>
+
+    ${ratingPickerHtml(item.rating)}
+    ${notesFieldHtml(item.notes)}
+
+    <div class="modal-actions">
+      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
+      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
+    </div>
+  `;
+
+  const getRating = wireRatingAndGetValue(content, item.rating);
+  const rerender = () =>
+    openBookModal(item, {
+      onStartReading,
+      onFinishReading,
+      onUpdateEntry,
+      onRemoveEntry,
+      onSaveMeta,
+      onDelete,
+    });
+
+  content.querySelector("#btn-log-action").addEventListener("click", async () => {
+    const dateVal = content.querySelector("#field-log-date").value;
+    if (!dateVal) return;
+    if (isReading) await onFinishReading(dateVal);
+    else await onStartReading(dateVal);
+    rerender();
+  });
+
+  content.querySelectorAll(".read-start").forEach((input) => {
+    input.addEventListener("change", async () => {
+      if (!input.value) return;
+      await onUpdateEntry(Number(input.dataset.index), { startedAt: input.value });
+      rerender();
+    });
+  });
+
+  content.querySelectorAll(".read-finish").forEach((input) => {
+    input.addEventListener("change", async () => {
+      if (!input.value) return;
+      await onUpdateEntry(Number(input.dataset.index), { finishedAt: input.value });
+      rerender();
+    });
+  });
+
+  content.querySelectorAll(".read-remove").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm("¿Quitar esta lectura del historial?")) return;
+      await onRemoveEntry(Number(btn.dataset.index));
+      rerender();
+    });
+  });
+
+  content.querySelector("#btn-save-item").addEventListener("click", () => {
+    const raw = content.querySelector("#field-progress").value;
+    onSaveMeta({
+      rating: getRating() || null,
+      notes: content.querySelector("#field-notes").value.trim(),
+      progress: raw === "" ? null : Number(raw),
+    });
   });
 
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
@@ -266,7 +444,8 @@ export function openModal(item, { onSave, onDelete }) {
 /* ---------- Modal de detalle: series (temporadas y episodios) ---------- */
 
 function renderSeasonBlock(s, watched) {
-  const watchedCount = ((watched && watched[String(s.seasonNumber)]) || []).length;
+  const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
+  const watchedCount = Object.keys(seasonWatched).length;
   const allWatched = watchedCount >= s.episodeCount && s.episodeCount > 0;
   return `
     <div class="season-block" data-season="${s.seasonNumber}" data-episode-count="${s.episodeCount}">
@@ -285,18 +464,19 @@ function renderSeasonBlock(s, watched) {
     </div>`;
 }
 
-function renderEpisodeRows(episodes, watchedSet) {
+function renderEpisodeRows(episodes, seasonWatched) {
   return episodes
-    .map(
-      (e) => `
-      <label class="episode-row ${watchedSet.has(e.episodeNumber) ? "is-watched" : ""}">
-        <input type="checkbox" data-episode="${e.episodeNumber}" ${
-        watchedSet.has(e.episodeNumber) ? "checked" : ""
-      } />
+    .map((e) => {
+      const date = seasonWatched[String(e.episodeNumber)] || "";
+      const checked = Boolean(date);
+      return `
+      <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}">
+        <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
         <span class="episode-row__num">E${e.episodeNumber}</span>
         <span class="episode-row__name">${escapeHtml(e.name)}</span>
-      </label>`
-    )
+        <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+      </div>`;
+    })
     .join("");
 }
 
@@ -304,7 +484,7 @@ export function openTvModal(
   item,
   seasonsMeta,
   progress,
-  { onExpandSeason, onToggleEpisode, onToggleSeason, onSaveMeta, onDelete }
+  { onExpandSeason, onSetEpisodeDate, onToggleSeason, onRewatch, onSaveMeta, onDelete }
 ) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
@@ -315,6 +495,7 @@ export function openTvModal(
   const pct = progress.totalEpisodes
     ? Math.round((progress.totalWatched / progress.totalEpisodes) * 100)
     : 0;
+  const times = (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 
   content.innerHTML = `
     <div class="modal-detail__header">
@@ -333,30 +514,42 @@ export function openTvModal(
       <span class="progress-count">${progress.totalWatched}/${progress.totalEpisodes} episodios</span>
     </div>
 
+    ${
+      item.status === "completado"
+        ? `<div class="completion-banner">
+            <p>Has terminado esta serie${times > 1 ? ` (visionado nº ${times})` : ""}.</p>
+            <p class="completion-dates">
+              Empezada: ${formatDateEs(item.firstWatchedAt)} · Terminada: ${formatDateEs(item.lastWatchedAt)}
+            </p>
+            <button type="button" class="btn btn--accent-media btn--small" id="btn-rewatch">
+              Volver a verla desde el principio
+            </button>
+          </div>`
+        : ""
+    }
+
+    ${
+      item.history && item.history.length
+        ? `<details class="rewatch-history">
+            <summary>Visionados anteriores (${item.history.length})</summary>
+            <ul>
+              ${item.history
+                .map(
+                  (h) =>
+                    `<li>${formatDateEs(h.startedAt)} → ${formatDateEs(h.finishedAt)}</li>`
+                )
+                .join("")}
+            </ul>
+          </details>`
+        : ""
+    }
+
     <div class="seasons-list">
       ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
     </div>
 
-    <div class="field-group">
-      <label>Valoración</label>
-      <div class="rating-picker" id="field-rating">
-        ${[1, 2, 3, 4, 5]
-          .map(
-            (n) =>
-              `<button type="button" data-value="${n}" class="${
-                item.rating >= n ? "is-active" : ""
-              }">${n}</button>`
-          )
-          .join("")}
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label for="field-notes">Notas</label>
-      <textarea id="field-notes" placeholder="Impresiones...">${escapeHtml(
-        item.notes || ""
-      )}</textarea>
-    </div>
+    ${ratingPickerHtml(item.rating)}
+    ${notesFieldHtml(item.notes)}
 
     <div class="modal-actions">
       <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
@@ -386,23 +579,38 @@ export function openTvModal(
     markBtn.dataset.allWatched = allWatched ? "0" : "1";
   }
 
-  function wireEpisodeCheckboxes(block, seasonNumber, episodeCount) {
-    block.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-      cb.addEventListener("change", async () => {
-        const episodeNumber = Number(cb.dataset.episode);
-        cb.disabled = true;
+  function wireEpisodeRows(block, seasonNumber, episodeCount) {
+    block.querySelectorAll(".episode-row").forEach((row) => {
+      const episodeNumber = Number(row.dataset.episode);
+      const checkbox = row.querySelector(".episode-checkbox");
+      const dateInput = row.querySelector(".episode-date");
+
+      checkbox.addEventListener("change", async () => {
+        checkbox.disabled = true;
+        const newDate = checkbox.checked ? todayISO() : null;
         try {
-          const newProgress = await onToggleEpisode(seasonNumber, episodeNumber);
-          cb.closest(".episode-row").classList.toggle("is-watched", cb.checked);
-          const watchedCountInSeason = block.querySelectorAll(
-            'input[type="checkbox"]:checked'
-          ).length;
+          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
+          row.classList.toggle("is-watched", checkbox.checked);
+          dateInput.disabled = !checkbox.checked;
+          dateInput.value = newDate || "";
+          const watchedCountInSeason = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedCountInSeason, episodeCount);
           updateBanner(newProgress);
         } catch (err) {
-          cb.checked = !cb.checked;
+          checkbox.checked = !checkbox.checked;
         } finally {
-          cb.disabled = false;
+          checkbox.disabled = false;
+        }
+      });
+
+      dateInput.addEventListener("change", async () => {
+        if (!dateInput.value) return;
+        dateInput.disabled = true;
+        try {
+          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, dateInput.value);
+          updateBanner(newProgress);
+        } finally {
+          dateInput.disabled = false;
         }
       });
     });
@@ -429,13 +637,11 @@ export function openTvModal(
       block.innerHTML = `<p class="episode-loading">Cargando episodios…</p>`;
       try {
         const episodes = await onExpandSeason(seasonNumber);
-        const watchedSet = new Set(
-          (item.watched && item.watched[String(seasonNumber)]) || []
-        );
-        block.innerHTML = renderEpisodeRows(episodes, watchedSet);
+        const seasonWatched = (item.watched && item.watched[String(seasonNumber)]) || {};
+        block.innerHTML = renderEpisodeRows(episodes, seasonWatched);
         block.dataset.loaded = "1";
         const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
-        wireEpisodeCheckboxes(block, seasonNumber, episodeCount);
+        wireEpisodeRows(block, seasonNumber, episodeCount);
       } catch (err) {
         block.innerHTML = `<p class="episode-loading">No se pudieron cargar los episodios.</p>`;
       }
@@ -457,9 +663,14 @@ export function openTvModal(
           `.season-episodes[data-season-episodes="${seasonNumber}"]`
         );
         if (episodesBlock.dataset.loaded) {
-          episodesBlock.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-            cb.checked = shouldMarkAll;
-            cb.closest(".episode-row").classList.toggle("is-watched", shouldMarkAll);
+          const today = todayISO();
+          episodesBlock.querySelectorAll(".episode-row").forEach((row) => {
+            const checkbox = row.querySelector(".episode-checkbox");
+            const dateInput = row.querySelector(".episode-date");
+            checkbox.checked = shouldMarkAll;
+            row.classList.toggle("is-watched", shouldMarkAll);
+            dateInput.disabled = !shouldMarkAll;
+            dateInput.value = shouldMarkAll ? today : "";
           });
         }
       } finally {
@@ -468,21 +679,25 @@ export function openTvModal(
     });
   });
 
-  let selectedRating = item.rating || 0;
-  const ratingButtons = content.querySelectorAll("#field-rating button");
-  ratingButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const value = Number(btn.dataset.value);
-      selectedRating = value === selectedRating ? 0 : value;
-      ratingButtons.forEach((b) =>
-        b.classList.toggle("is-active", Number(b.dataset.value) <= selectedRating)
-      );
+  const rewatchBtn = content.querySelector("#btn-rewatch");
+  if (rewatchBtn) {
+    rewatchBtn.addEventListener("click", async () => {
+      if (
+        !window.confirm(
+          `¿Volver a ver «${item.title}» desde el principio? Se guardará el visionado anterior en el historial.`
+        )
+      ) {
+        return;
+      }
+      await onRewatch();
     });
-  });
+  }
+
+  const getRating = wireRatingAndGetValue(content, item.rating);
 
   content.querySelector("#btn-save-item").addEventListener("click", () => {
     onSaveMeta({
-      rating: selectedRating || null,
+      rating: getRating() || null,
       notes: content.querySelector("#field-notes").value.trim(),
     });
   });

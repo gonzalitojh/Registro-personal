@@ -8,7 +8,21 @@ import { watchAuthState, login, logout } from "./firebase.js";
 import { subscribeToItems, addItem, updateItem, deleteItem } from "./db.js";
 import { searchMovies, searchTv, getTvSeasonsMeta, getSeasonEpisodes } from "./api-movies.js";
 import { searchBooks } from "./api-books.js";
-import { computeProgress, toggleEpisode, setSeasonWatched } from "./tv-progress.js";
+import { todayISO } from "./dates.js";
+import {
+  computeProgress,
+  setEpisodeDate,
+  setSeasonWatched,
+  startRewatch,
+} from "./tv-progress.js";
+import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
+import {
+  startReading,
+  finishReading,
+  removeReadEntry,
+  updateReadEntry,
+  statusFromReadLog,
+} from "./reading-log.js";
 import * as ui from "./ui.js";
 import { AUTHORIZED_EMAIL } from "./config.js";
 
@@ -19,6 +33,7 @@ let lastMoviesResults = [];
 let lastTvResults = [];
 let lastBookResults = [];
 const activeFilters = { movies: "todos", tv: "todos", books: "todos" };
+const activeSort = { movies: "añadido", tv: "añadido", books: "añadido" };
 
 /* ---------- Pestañas ---------- */
 
@@ -103,6 +118,59 @@ document.querySelectorAll(".filter-chips").forEach((group) => {
   });
 });
 
+/* ---------- Orden ---------- */
+
+document.querySelectorAll(".sort-select").forEach((select) => {
+  select.addEventListener("change", () => {
+    activeSort[select.dataset.scope] = select.value;
+    renderLibraryFor(select.dataset.scope);
+  });
+});
+
+function compareAlphabetical(a, b) {
+  return a.title.localeCompare(b.title, "es", { sensitivity: "base" });
+}
+
+function compareByYearDesc(a, b) {
+  const ya = Number(a.year) || 0;
+  const yb = Number(b.year) || 0;
+  return yb - ya;
+}
+
+function getSortDate(item) {
+  if (item.type === "movie") {
+    return item.watchLog && item.watchLog.length
+      ? item.watchLog[item.watchLog.length - 1]
+      : null;
+  }
+  if (item.type === "tv") {
+    return item.lastWatchedAt || null;
+  }
+  if (item.type === "book") {
+    const log = item.readLog || [];
+    if (!log.length) return null;
+    const last = log[log.length - 1];
+    return last.finishedAt || last.startedAt || null;
+  }
+  return null;
+}
+
+function compareByDateDesc(a, b) {
+  const da = getSortDate(a);
+  const db = getSortDate(b);
+  if (!da && !db) return 0;
+  if (!da) return 1;
+  if (!db) return -1;
+  return db.localeCompare(da);
+}
+
+function applySort(items, sortKey) {
+  if (sortKey === "alfabetico") return [...items].sort(compareAlphabetical);
+  if (sortKey === "anio") return [...items].sort(compareByYearDesc);
+  if (sortKey === "fecha") return [...items].sort(compareByDateDesc);
+  return items; // "añadido": ya viene ordenado por updatedAt desc desde Firestore
+}
+
 /* ---------- Render de las estanterías ---------- */
 
 function itemsByGroup(group) {
@@ -124,7 +192,8 @@ const GRID_IDS = {
 
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
-  const items = applyFilter(itemsByGroup(group), activeFilters[group]);
+  const filtered = applyFilter(itemsByGroup(group), activeFilters[group]);
+  const items = applySort(filtered, activeSort[group]);
   ui.renderLibrary(document.getElementById(gridId), document.getElementById(emptyId), items, openItem);
 }
 
@@ -215,11 +284,18 @@ async function handleAdd(item, btn) {
       rating: null,
       notes: "",
     };
-    if (item.type === "tv") {
+    if (item.type === "movie") {
+      draft.watchLog = [];
+    } else if (item.type === "tv") {
       draft.watched = {};
       draft.nextEpisode = { season: 1, episode: 1 };
+      draft.firstWatchedAt = null;
+      draft.lastWatchedAt = null;
+      draft.timesCompleted = 0;
+      draft.history = [];
     } else if (item.type === "book") {
       draft.progress = null;
+      draft.readLog = [];
     }
     await addItem(currentUser.uid, draft);
     ui.showToast(`«${item.title}» añadido a tu registro.`);
@@ -233,36 +309,76 @@ async function handleAdd(item, btn) {
 /* ---------- Modal de detalle ---------- */
 
 function openItem(item) {
-  if (item.type === "tv") {
-    openTvItem(item);
-  } else {
-    openStandardItem(item);
-  }
+  if (item.type === "tv") openTvItem(item);
+  else if (item.type === "movie") openMovieItem(item);
+  else openBookItem(item);
 }
 
-function openStandardItem(item) {
-  ui.openModal(item, {
-    onSave: async (changes) => {
-      try {
-        await updateItem(currentUser.uid, item.id, changes);
-        ui.showToast("Guardado.");
-        ui.closeModal();
-      } catch (err) {
-        ui.showToast("No se pudo guardar: " + err.message);
-      }
-    },
-    onDelete: async () => {
-      if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
-      try {
-        await deleteItem(currentUser.uid, item.id);
-        ui.showToast("Eliminado.");
-        ui.closeModal();
-      } catch (err) {
-        ui.showToast("No se pudo eliminar: " + err.message);
-      }
-    },
+function confirmDelete(item) {
+  return async () => {
+    if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
+    try {
+      await deleteItem(currentUser.uid, item.id);
+      ui.showToast("Eliminado.");
+      ui.closeModal();
+    } catch (err) {
+      ui.showToast("No se pudo eliminar: " + err.message);
+    }
+  };
+}
+
+function saveMeta(item) {
+  return async (changes) => {
+    try {
+      await updateItem(currentUser.uid, item.id, changes);
+      ui.showToast("Guardado.");
+      ui.closeModal();
+    } catch (err) {
+      ui.showToast("No se pudo guardar: " + err.message);
+    }
+  };
+}
+
+/* ---------- Películas ---------- */
+
+function openMovieItem(item) {
+  async function persist(newLog) {
+    const status = statusFromWatchLog(newLog);
+    await updateItem(currentUser.uid, item.id, { watchLog: newLog, status });
+    item.watchLog = newLog;
+    item.status = status;
+  }
+
+  ui.openMovieModal(item, {
+    onAddWatch: (date) => persist(addWatch(item.watchLog, date)),
+    onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
+    onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
+    onSaveMeta: saveMeta(item),
+    onDelete: confirmDelete(item),
   });
 }
+
+/* ---------- Libros ---------- */
+
+function openBookItem(item) {
+  async function persist(newLog) {
+    const status = statusFromReadLog(newLog);
+    await updateItem(currentUser.uid, item.id, { readLog: newLog, status });
+    item.readLog = newLog;
+    item.status = status;
+  }
+
+  ui.openBookModal(item, {
+    onStartReading: (date) => persist(startReading(item.readLog, date)),
+    onFinishReading: (date) => persist(finishReading(item.readLog, date)),
+    onUpdateEntry: (index, changes) => persist(updateReadEntry(item.readLog, index, changes)),
+    onRemoveEntry: (index) => persist(removeReadEntry(item.readLog, index)),
+    onSaveMeta: saveMeta(item),
+    onDelete: confirmDelete(item),
+  });
+}
+
+/* ---------- Series ---------- */
 
 async function openTvItem(item) {
   let seasonsMeta;
@@ -278,63 +394,46 @@ async function openTvItem(item) {
 
   const progress = computeProgress(seasonsMeta, item.watched);
 
+  async function persistWatched(newWatched) {
+    const newProgress = computeProgress(seasonsMeta, newWatched);
+    await updateItem(currentUser.uid, item.id, {
+      watched: newWatched,
+      status: newProgress.status,
+      nextEpisode: newProgress.nextEpisode,
+      firstWatchedAt: newProgress.firstWatchedAt,
+      lastWatchedAt: newProgress.lastWatchedAt,
+    });
+    item.watched = newWatched;
+    item.status = newProgress.status;
+    item.nextEpisode = newProgress.nextEpisode;
+    item.firstWatchedAt = newProgress.firstWatchedAt;
+    item.lastWatchedAt = newProgress.lastWatchedAt;
+    return newProgress;
+  }
+
   ui.openTvModal(item, seasonsMeta, progress, {
     onExpandSeason: (seasonNumber) => getSeasonEpisodes(item.externalId, seasonNumber),
 
-    onToggleEpisode: async (seasonNumber, episodeNumber) => {
-      const newWatched = toggleEpisode(item.watched, seasonNumber, episodeNumber);
-      const newProgress = computeProgress(seasonsMeta, newWatched);
-      await updateItem(currentUser.uid, item.id, {
-        watched: newWatched,
-        status: newProgress.status,
-        nextEpisode: newProgress.nextEpisode,
-      });
-      item.watched = newWatched;
-      item.status = newProgress.status;
-      item.nextEpisode = newProgress.nextEpisode;
-      return newProgress;
-    },
+    onSetEpisodeDate: (seasonNumber, episodeNumber, dateOrNull) =>
+      persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)),
 
-    onToggleSeason: async (seasonNumber, allWatched) => {
+    onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
-      const newWatched = setSeasonWatched(
-        item.watched,
-        seasonNumber,
-        seasonMeta.episodeCount,
-        allWatched
+      return persistWatched(
+        setSeasonWatched(item.watched, seasonNumber, seasonMeta.episodeCount, allWatched, todayISO())
       );
-      const newProgress = computeProgress(seasonsMeta, newWatched);
-      await updateItem(currentUser.uid, item.id, {
-        watched: newWatched,
-        status: newProgress.status,
-        nextEpisode: newProgress.nextEpisode,
-      });
-      item.watched = newWatched;
-      item.status = newProgress.status;
-      item.nextEpisode = newProgress.nextEpisode;
-      return newProgress;
     },
 
-    onSaveMeta: async (changes) => {
-      try {
-        await updateItem(currentUser.uid, item.id, changes);
-        ui.showToast("Guardado.");
-        ui.closeModal();
-      } catch (err) {
-        ui.showToast("No se pudo guardar: " + err.message);
-      }
+    onRewatch: async () => {
+      const changes = startRewatch(item);
+      await updateItem(currentUser.uid, item.id, changes);
+      Object.assign(item, changes);
+      ui.closeModal();
+      ui.showToast("Nuevo visionado empezado. ¡A por ello!");
     },
 
-    onDelete: async () => {
-      if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
-      try {
-        await deleteItem(currentUser.uid, item.id);
-        ui.showToast("Eliminado.");
-        ui.closeModal();
-      } catch (err) {
-        ui.showToast("No se pudo eliminar: " + err.message);
-      }
-    },
+    onSaveMeta: saveMeta(item),
+    onDelete: confirmDelete(item),
   });
 }
 

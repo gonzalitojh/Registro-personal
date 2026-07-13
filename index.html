@@ -71,11 +71,18 @@
 
         <div class="library-head">
           <h2>Mis películas</h2>
-          <div class="filter-chips" data-scope="movies">
-            <button class="chip is-active" data-status="todos">Todos</button>
-            <button class="chip" data-status="pendiente">Pendiente</button>
-            <button class="chip" data-status="en_curso">Viendo</button>
-            <button class="chip" data-status="completado">Vista</button>
+          <div class="library-controls">
+            <div class="filter-chips" data-scope="movies">
+              <button class="chip is-active" data-status="todos">Todos</button>
+              <button class="chip" data-status="pendiente">Pendiente</button>
+              <button class="chip" data-status="completado">Vista</button>
+            </div>
+            <select class="sort-select" data-scope="movies">
+              <option value="añadido">Añadidas recientemente</option>
+              <option value="fecha">Fecha de visionado</option>
+              <option value="alfabetico">Alfabético</option>
+              <option value="anio">Año de estreno</option>
+            </select>
           </div>
         </div>
         <div id="library-movies" class="library-grid"></div>
@@ -95,11 +102,19 @@
 
         <div class="library-head">
           <h2>Mis series</h2>
-          <div class="filter-chips" data-scope="tv">
-            <button class="chip is-active" data-status="todos">Todos</button>
-            <button class="chip" data-status="pendiente">Pendiente</button>
-            <button class="chip" data-status="en_curso">Viendo</button>
-            <button class="chip" data-status="completado">Vista</button>
+          <div class="library-controls">
+            <div class="filter-chips" data-scope="tv">
+              <button class="chip is-active" data-status="todos">Todos</button>
+              <button class="chip" data-status="pendiente">Pendiente</button>
+              <button class="chip" data-status="en_curso">Viendo</button>
+              <button class="chip" data-status="completado">Vista</button>
+            </div>
+            <select class="sort-select" data-scope="tv">
+              <option value="añadido">Añadidas recientemente</option>
+              <option value="fecha">Fecha de visionado</option>
+              <option value="alfabetico">Alfabético</option>
+              <option value="anio">Año de estreno</option>
+            </select>
           </div>
         </div>
         <div id="library-tv" class="library-grid"></div>
@@ -119,11 +134,19 @@
 
         <div class="library-head">
           <h2>Mi biblioteca</h2>
-          <div class="filter-chips" data-scope="books">
-            <button class="chip is-active" data-status="todos">Todos</button>
-            <button class="chip" data-status="pendiente">Pendiente</button>
-            <button class="chip" data-status="en_curso">Leyendo</button>
-            <button class="chip" data-status="completado">Leído</button>
+          <div class="library-controls">
+            <div class="filter-chips" data-scope="books">
+              <button class="chip is-active" data-status="todos">Todos</button>
+              <button class="chip" data-status="pendiente">Pendiente</button>
+              <button class="chip" data-status="en_curso">Leyendo</button>
+              <button class="chip" data-status="completado">Leído</button>
+            </div>
+            <select class="sort-select" data-scope="books">
+              <option value="añadido">Añadidos recientemente</option>
+              <option value="fecha">Fecha de lectura</option>
+              <option value="alfabetico">Alfabético</option>
+              <option value="anio">Año de publicación</option>
+            </select>
           </div>
         </div>
         <div id="library-books" class="library-grid"></div>
