@@ -12,13 +12,14 @@ mi-registro/
 ├── js/
 │   ├── config.js       ← claves y configuración (rellenar)
 │   ├── firebase.js      inicialización de Firebase
+│   ├── http.js           fetch con reintento (usado por api-movies.js)
 │   ├── api-movies.js    búsqueda de pelis/series y temporadas/episodios en TMDB
-│   ├── api-books.js     búsqueda en Google Books / Open Library
+│   ├── api-books.js     búsqueda en Google Books / Open Library (con reintentos y deduplicado)
 │   ├── dates.js          utilidades de fecha
 │   ├── tv-progress.js   episodios vistos, "siguiente episodio" y revisionados
 │   ├── watch-log.js      historial de visionados (películas)
 │   ├── reading-log.js    historial de lecturas (libros)
-│   ├── db.js             lectura/escritura en Firestore
+│   ├── db.js             lectura/escritura en Firestore (colecciones separadas + perfil)
 │   ├── ui.js             renderizado del DOM
 │   └── app.js            punto de entrada
 ├── firestore.rules      ← reglas de seguridad (rellenar tu email)
@@ -35,6 +36,18 @@ mi-registro/
   datos no**: solo tu cuenta de Google, según las reglas de seguridad, puede
   leerlos o escribirlos. Ocultar las claves no serviría de nada; lo que
   realmente protege tus datos son esas reglas.
+- Cada tipo vive en su propia colección de Firestore:
+  `users/{tu-uid}/movies`, `users/{tu-uid}/series` y `users/{tu-uid}/books`.
+  Además, el propio documento `users/{tu-uid}` guarda un pequeño perfil
+  (email y nombre) para poder identificar la cuenta desde la consola de
+  Firebase si alguna vez hiciera falta. `firestore.rules` ya cubre todo
+  esto sin cambios, gracias al comodín recursivo de las reglas versión 2.
+
+> **Si ya habías probado la app antes de esta versión:** los datos vivían en
+> una única colección `items`. A partir de ahora se leen de `movies` /
+> `series` / `books`, así que cualquier prueba anterior dejará de verse en
+> la web (sigue existiendo en Firestore, en la colección antigua, por si
+> quieres rescatarla a mano, pero no se migra automáticamente).
 
 ## 1. Crear el proyecto en Firebase
 
@@ -125,6 +138,26 @@ añadirlos, puntuarlos y dejar notas.
 - **Orden**: cada estantería tiene un selector para ordenar por fecha
   (de visionado/lectura), alfabéticamente o por año de estreno/publicación,
   además de los filtros por estado.
+- **Standby / Abandonado** (series y libros): además de Pendiente/Viendo o
+  Leyendo/Vista o Leído, puedes marcar una serie o libro como en pausa o
+  abandonado sin perder el progreso guardado. Un botón «Retomar» te
+  devuelve al estado normal (activo según lo que ya tengas marcado).
+- **Alta manual**: si un título no aparece en TMDB o Google Books (por
+  ejemplo, un libro autopublicado), cada pestaña tiene un enlace «¿No lo
+  encuentras? Añadir manualmente» para crearlo a mano con título, año y,
+  en libros, autor/páginas. Para series manuales se asume una sola
+  temporada con el número de episodios que indiques.
+- **Búsqueda de libros**: Google Books suele devolver muchas ediciones del
+  mismo libro (tapas, idiomas, reimpresiones); la app las agrupa por
+  título + autor y muestra solo una por libro. Si Google Books falla de
+  forma puntual (error 503), la app reintenta un par de veces y, si sigue
+  fallando, recurre automáticamente a Open Library.
+
+### Si la búsqueda de libros da un error 503 "Service temporarily unavailable"
+
+Es un fallo puntual de los servidores de Google Books, no de tu configuración.
+La app ya reintenta sola un par de veces y cae a Open Library si hace falta;
+si aun así ves el error, espera unos segundos y repite la búsqueda.
 
 ### Si la búsqueda de libros da un error 403 "referrer blocked"
 

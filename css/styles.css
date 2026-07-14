@@ -956,3 +956,77 @@ button {
   background: transparent;
   border-color: transparent;
 }
+
+/* =========================================================
+   Enlace "Añadir manualmente"
+   ========================================================= */
+
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--paper);
+  opacity: 0.6;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  padding: 0.3rem 0.1rem;
+  margin-top: -0.4rem;
+  margin-bottom: 0.4rem;
+  display: inline-block;
+}
+.btn-link:hover {
+  opacity: 1;
+}
+
+/* =========================================================
+   Sellos de estado: standby / abandonado
+   ========================================================= */
+
+.item-card__stamp--standby {
+  color: var(--ink-soft);
+}
+.item-card__stamp--abandonado {
+  color: var(--stamp-dark);
+  text-decoration: line-through;
+}
+
+/* =========================================================
+   Acciones de estado (pausar / abandonar / retomar)
+   ========================================================= */
+
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.standby-banner {
+  background: var(--paper-dim);
+  border: 1px dashed var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
+   Formulario de alta manual
+   ========================================================= */
+
+.manual-form .field-group input[type="text"],
+.manual-form .field-group input[type="number"],
+.manual-form .field-group input[type="url"] {
+  width: 100%;
+  border: 1px solid var(--paper-line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}

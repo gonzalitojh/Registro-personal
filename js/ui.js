@@ -7,8 +7,20 @@
 import { todayISO, formatDateEs } from "./dates.js";
 
 const STATUS_LABELS = {
-  media: { pendiente: "Pendiente", en_curso: "Viendo", completado: "Vista" },
-  book: { pendiente: "Pendiente", en_curso: "Leyendo", completado: "Leído" },
+  media: {
+    pendiente: "Pendiente",
+    en_curso: "Viendo",
+    completado: "Vista",
+    standby: "Standby",
+    abandonado: "Abandonada",
+  },
+  book: {
+    pendiente: "Pendiente",
+    en_curso: "Leyendo",
+    completado: "Leído",
+    standby: "Standby",
+    abandonado: "Abandonado",
+  },
 };
 
 function scopeFor(type) {
@@ -114,6 +126,8 @@ function progressLine(item) {
     return `Vista el ${formatDateEs(last)}${log.length > 1 ? ` · ×${log.length}` : ""}`;
   }
   if (item.type === "tv") {
+    if (item.status === "standby") return "En pausa";
+    if (item.status === "abandonado") return "Abandonada";
     if (item.status === "completado") {
       const times = (item.timesCompleted || 0) + 1;
       return `Completa${times > 1 ? ` · ×${times}` : ""} · ${formatDateEs(item.lastWatchedAt)}`;
@@ -124,6 +138,8 @@ function progressLine(item) {
     return "";
   }
   if (item.type === "book") {
+    if (item.status === "standby") return "En pausa";
+    if (item.status === "abandonado") return "Abandonado";
     const log = item.readLog || [];
     if (!log.length) return "";
     const last = log[log.length - 1];
@@ -179,7 +195,7 @@ export function renderLibrary(gridEl, emptyEl, items, onOpen) {
   });
 }
 
-/* ---------- Campos comunes: valoración y notas ---------- */
+/* ---------- Campos comunes ---------- */
 
 function ratingPickerHtml(rating) {
   return `
@@ -221,6 +237,54 @@ function wireRatingAndGetValue(content, initialRating) {
   return () => selectedRating;
 }
 
+// Botones de pausar / abandonar / retomar, comunes a series y libros.
+function renderStatusActions(status) {
+  if (status === "completado") return "";
+  const buttons = [];
+  if (status !== "standby") {
+    buttons.push(
+      `<button type="button" class="btn btn--small" id="btn-status-standby">En pausa</button>`
+    );
+  }
+  if (status !== "abandonado") {
+    buttons.push(
+      `<button type="button" class="btn btn--small btn--danger" id="btn-status-abandon">Abandonar</button>`
+    );
+  }
+  if (status === "standby" || status === "abandonado") {
+    buttons.push(
+      `<button type="button" class="btn btn--small btn--primary" id="btn-status-resume">Retomar</button>`
+    );
+  }
+  return `<div class="status-actions">${buttons.join("")}</div>`;
+}
+
+function renderStandbyBanner(status, extraText) {
+  if (status !== "standby" && status !== "abandonado") return "";
+  const label = status === "standby" ? "En pausa" : "Abandonado/a";
+  return `<div class="standby-banner"><span>${label}${
+    extraText ? " · " + escapeHtml(extraText) : ""
+  } — tu progreso se conserva.</span></div>`;
+}
+
+function wireStatusActions(content, handleStatusChange) {
+  const standbyBtn = content.querySelector("#btn-status-standby");
+  if (standbyBtn) {
+    standbyBtn.addEventListener("click", () => handleStatusChange("standby"));
+  }
+  const abandonBtn = content.querySelector("#btn-status-abandon");
+  if (abandonBtn) {
+    abandonBtn.addEventListener("click", () => {
+      if (!window.confirm("¿Marcar como abandonado? No se perderá tu progreso.")) return;
+      handleStatusChange("abandonado");
+    });
+  }
+  const resumeBtn = content.querySelector("#btn-status-resume");
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", () => handleStatusChange(null));
+  }
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -240,7 +304,8 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete }) {
+export function openMovieModal(item, callbacks) {
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -275,19 +340,20 @@ export function openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch,
   `;
 
   const getRating = wireRatingAndGetValue(content, item.rating);
+  const rerender = () => openMovieModal(item, callbacks);
 
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
     if (!dateVal) return;
     await onAddWatch(dateVal);
-    openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
+    rerender();
   });
 
   content.querySelectorAll(".watch-date").forEach((input) => {
     input.addEventListener("change", async () => {
       if (!input.value) return;
       await onUpdateWatch(Number(input.dataset.index), input.value);
-      openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
+      rerender();
     });
   });
 
@@ -295,7 +361,7 @@ export function openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch,
     btn.addEventListener("click", async () => {
       if (!window.confirm("¿Quitar este visionado del historial?")) return;
       await onRemoveWatch(Number(btn.dataset.index));
-      openMovieModal(item, { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete });
+      rerender();
     });
   });
 
@@ -338,10 +404,16 @@ function renderReadLogRows(readLog) {
   </div>`;
 }
 
-export function openBookModal(
-  item,
-  { onStartReading, onFinishReading, onUpdateEntry, onRemoveEntry, onSaveMeta, onDelete }
-) {
+export function openBookModal(item, callbacks) {
+  const {
+    onStartReading,
+    onFinishReading,
+    onUpdateEntry,
+    onRemoveEntry,
+    onSetStatus,
+    onSaveMeta,
+    onDelete,
+  } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [item.author, item.year].filter(Boolean).join(" · ");
@@ -356,6 +428,9 @@ export function openBookModal(
         <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
       </div>
     </div>
+
+    ${renderStandbyBanner(item.status, item.progress ? `página ${item.progress}` : "")}
+    ${renderStatusActions(item.status)}
 
     <div class="field-group">
       <label>Lecturas</label>
@@ -383,15 +458,7 @@ export function openBookModal(
   `;
 
   const getRating = wireRatingAndGetValue(content, item.rating);
-  const rerender = () =>
-    openBookModal(item, {
-      onStartReading,
-      onFinishReading,
-      onUpdateEntry,
-      onRemoveEntry,
-      onSaveMeta,
-      onDelete,
-    });
+  const rerender = () => openBookModal(item, callbacks);
 
   content.querySelector("#btn-log-action").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-log-date").value;
@@ -423,6 +490,11 @@ export function openBookModal(
       await onRemoveEntry(Number(btn.dataset.index));
       rerender();
     });
+  });
+
+  wireStatusActions(content, async (newStatusOrNull) => {
+    await onSetStatus(newStatusOrNull);
+    rerender();
   });
 
   content.querySelector("#btn-save-item").addEventListener("click", () => {
@@ -480,12 +552,17 @@ function renderEpisodeRows(episodes, seasonWatched) {
     .join("");
 }
 
-export function openTvModal(
-  item,
-  seasonsMeta,
-  progress,
-  { onExpandSeason, onSetEpisodeDate, onToggleSeason, onRewatch, onSaveMeta, onDelete }
-) {
+export function openTvModal(item, seasonsMeta, progress, callbacks) {
+  const {
+    onExpandSeason,
+    onSetEpisodeDate,
+    onToggleSeason,
+    onRewatch,
+    onSetStatus,
+    onSaveMeta,
+    onDelete,
+  } = callbacks;
+
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
 
@@ -513,6 +590,9 @@ export function openTvModal(
       </div>
       <span class="progress-count">${progress.totalWatched}/${progress.totalEpisodes} episodios</span>
     </div>
+
+    ${renderStandbyBanner(item.status, `${progress.totalWatched}/${progress.totalEpisodes} episodios vistos`)}
+    ${renderStatusActions(item.status)}
 
     ${
       item.status === "completado"
@@ -693,6 +773,11 @@ export function openTvModal(
     });
   }
 
+  wireStatusActions(content, async (newStatusOrNull) => {
+    const newProgress = await onSetStatus(newStatusOrNull);
+    openTvModal(item, seasonsMeta, newProgress, callbacks);
+  });
+
   const getRating = wireRatingAndGetValue(content, item.rating);
 
   content.querySelector("#btn-save-item").addEventListener("click", () => {
@@ -705,6 +790,94 @@ export function openTvModal(
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
     onDelete();
   });
+
+  modal.classList.remove("hidden");
+}
+
+/* ---------- Alta manual (cuando no aparece en la API) ---------- */
+
+export function openManualAddModal(type, onSubmit) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+
+  const titleText =
+    type === "book"
+      ? "Añadir libro manualmente"
+      : type === "tv"
+      ? "Añadir serie manualmente"
+      : "Añadir película manualmente";
+
+  content.innerHTML = `
+    <h3 class="modal-detail__title" style="margin-bottom:1rem">${titleText}</h3>
+    <form id="manual-form" class="manual-form">
+      <div class="field-group">
+        <label for="manual-title">Título *</label>
+        <input type="text" id="manual-title" required />
+      </div>
+      ${
+        type === "book"
+          ? `<div class="field-group">
+              <label for="manual-author">Autor</label>
+              <input type="text" id="manual-author" />
+            </div>`
+          : ""
+      }
+      <div class="field-group">
+        <label for="manual-year">Año</label>
+        <input type="number" id="manual-year" min="0" max="2100" />
+      </div>
+      ${
+        type === "book"
+          ? `<div class="field-group">
+              <label for="manual-pages">Páginas</label>
+              <input type="number" id="manual-pages" min="0" />
+            </div>`
+          : ""
+      }
+      ${
+        type === "tv"
+          ? `<div class="field-group">
+              <label for="manual-episodes">Número de episodios</label>
+              <input type="number" id="manual-episodes" min="1" value="10" />
+            </div>
+            <p class="log-empty">
+              Se asume una sola temporada con ese número de episodios.
+            </p>`
+          : ""
+      }
+      <div class="field-group">
+        <label for="manual-cover">URL de portada (opcional)</label>
+        <input type="url" id="manual-cover" placeholder="https://..." />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--ghost" id="btn-manual-cancel">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Añadir</button>
+      </div>
+    </form>
+  `;
+
+  content.querySelector("#manual-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = content.querySelector("#manual-title").value.trim();
+    if (!title) return;
+
+    const draft = {
+      title,
+      year: content.querySelector("#manual-year").value || "",
+      coverUrl: content.querySelector("#manual-cover").value.trim() || null,
+    };
+    if (type === "book") {
+      draft.author = content.querySelector("#manual-author").value.trim();
+      const pagesRaw = content.querySelector("#manual-pages").value;
+      draft.pages = pagesRaw ? Number(pagesRaw) : null;
+    }
+    if (type === "tv") {
+      draft.episodeCount = Number(content.querySelector("#manual-episodes").value) || 1;
+    }
+    onSubmit(draft);
+  });
+
+  content.querySelector("#btn-manual-cancel").addEventListener("click", closeModal);
 
   modal.classList.remove("hidden");
 }

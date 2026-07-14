@@ -6,6 +6,7 @@
 // =============================================================
 
 import { TMDB_API_KEY } from "./config.js";
+import { fetchJson } from "./http.js";
 
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMG_BASE = "https://image.tmdb.org/t/p/w342";
@@ -14,11 +15,9 @@ export async function searchMovies(searchTerm) {
   const url = `${BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&language=es-ES&include_adult=false&query=${encodeURIComponent(
     searchTerm
   )}`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo buscar en TMDB. Revisa tu clave de API.");
-  }
-  const data = await res.json();
+  });
   return (data.results || []).map(mapMovieResult);
 }
 
@@ -26,11 +25,9 @@ export async function searchTv(searchTerm) {
   const url = `${BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&language=es-ES&include_adult=false&query=${encodeURIComponent(
     searchTerm
   )}`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo buscar en TMDB. Revisa tu clave de API.");
-  }
-  const data = await res.json();
+  });
   return (data.results || []).map(mapTvResult);
 }
 
@@ -62,11 +59,9 @@ function mapTvResult(r) {
 // Se ignoran los "specials" (season_number 0).
 export async function getTvSeasonsMeta(tvId) {
   const url = `${BASE_URL}/tv/${tvId}?api_key=${TMDB_API_KEY}&language=es-ES`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo obtener la serie desde TMDB.");
-  }
-  const data = await res.json();
+  });
   return (data.seasons || [])
     .filter((s) => s.season_number > 0)
     .map((s) => ({
@@ -80,11 +75,9 @@ export async function getTvSeasonsMeta(tvId) {
 // cuando el usuario despliega esa temporada, no todas de golpe.
 export async function getSeasonEpisodes(tvId, seasonNumber) {
   const url = `${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=es-ES`;
-  const res = await fetch(url);
-  if (!res.ok) {
+  const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo obtener la temporada desde TMDB.");
-  }
-  const data = await res.json();
+  });
   return (data.episodes || []).map((e) => ({
     episodeNumber: e.episode_number,
     name: e.name || `Episodio ${e.episode_number}`,
