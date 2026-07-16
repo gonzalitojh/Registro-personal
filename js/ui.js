@@ -628,6 +628,17 @@ export function openMovieModal(item, callbacks) {
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
     if (!dateVal) return;
+    if (item.releaseDate && item.releaseDate > todayISO()) {
+      if (
+        !window.confirm(
+          `Según TMDB esta película se estrena el ${formatDateEs(
+            item.releaseDate
+          )}, todavía no ha pasado. ¿Marcarla igualmente como vista?`
+        )
+      ) {
+        return;
+      }
+    }
     await onAddWatch(dateVal);
     rerender();
   });

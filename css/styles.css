@@ -230,6 +230,7 @@ button {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  position: relative;
 }
 
 .user-badge__avatar {
@@ -314,11 +315,21 @@ button {
   display: flex;
   gap: 0.9rem;
   overflow-x: auto;
-  padding: 1rem 0.1rem 0.4rem;
+  padding: 1rem 0.1rem 1rem;
   scrollbar-width: thin;
 }
 .results-strip:empty {
   padding: 0;
+}
+.results-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.results-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.results-strip::-webkit-scrollbar-thumb {
+  background: rgba(241, 234, 217, 0.3);
+  border-radius: 999px;
 }
 
 .result-card {
@@ -1090,8 +1101,8 @@ button {
 .results-toolbar {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin: -0.4rem 0 0.6rem;
+  gap: 1.1rem;
+  margin: 0.3rem 0 0.9rem;
   flex-wrap: wrap;
 }
 
@@ -1153,10 +1164,10 @@ button {
    Colores de fondo por estado (tarjetas y filas)
    ========================================================= */
 
-.item-card--en_curso { background: #e3eeec; }
-.item-card--completado { background: #f4ecdb; }
-.item-card--standby { background: #eae6da; }
-.item-card--abandonado { background: #f3e3e0; }
+.item-card--en_curso { background: #c3ddd6; }
+.item-card--completado { background: #f0d9a3; }
+.item-card--standby { background: #d9d2c0; }
+.item-card--abandonado { background: #f0c2b8; }
 
 .item-card--en_curso .item-card__body,
 .item-card--completado .item-card__body,
@@ -1222,10 +1233,10 @@ button {
 }
 
 .list-row--pendiente .list-row__content { background: var(--paper); }
-.list-row--en_curso .list-row__content { background: #e3eeec; }
-.list-row--completado .list-row__content { background: #f4ecdb; }
-.list-row--standby .list-row__content { background: #eae6da; }
-.list-row--abandonado .list-row__content { background: #f3e3e0; }
+.list-row--en_curso .list-row__content { background: #c3ddd6; }
+.list-row--completado .list-row__content { background: #f0d9a3; }
+.list-row--standby .list-row__content { background: #d9d2c0; }
+.list-row--abandonado .list-row__content { background: #f0c2b8; }
 
 .list-row__open {
   flex: 1;
@@ -1432,7 +1443,7 @@ button {
    ========================================================= */
 
 .notif-wrap {
-  position: relative;
+  display: inline-flex;
 }
 
 .icon-btn {
@@ -1467,7 +1478,8 @@ button {
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
-  width: min(320px, 85vw);
+  width: min(320px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius);
@@ -1623,4 +1635,25 @@ button {
   font-family: var(--font-display);
   font-size: 1rem;
   margin: 0 0 0.8rem;
+}
+
+/* =========================================================
+   Móvil: evitar que iOS haga zoom automático al enfocar campos
+   (Safari hace zoom si el font-size es menor de 16px)
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .search-slip input,
+  .library-search-input,
+  .field-group input,
+  .field-group select,
+  .field-group textarea,
+  .manual-form input,
+  .log-row input[type="date"],
+  .log-add-row input[type="date"],
+  .episode-row input.episode-date,
+  .sort-select,
+  #stats-period-select {
+    font-size: 16px;
+  }
 }

@@ -573,6 +573,17 @@ async function getSeasonsMetaFor(item) {
 }
 
 async function quickMarkMovie(item) {
+  if (item.releaseDate && item.releaseDate > todayISO()) {
+    if (
+      !window.confirm(
+        `Según TMDB esta película se estrena el ${formatDateEs(
+          item.releaseDate
+        )}, todavía no ha pasado. ¿Marcarla igualmente como vista?`
+      )
+    ) {
+      return;
+    }
+  }
   const newLog = addWatch(item.watchLog, todayISO());
   const status = statusFromWatchLog(newLog);
   await updateItem(currentUser.uid, "movie", item.id, { watchLog: newLog, status });
