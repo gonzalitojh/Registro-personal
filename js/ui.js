@@ -116,7 +116,7 @@ export function renderSearchResults(container, results, existingIds, onAdd) {
   });
 }
 
-/* ---------- Biblioteca personal ---------- */
+/* ---------- Biblioteca personal: grid y lista ---------- */
 
 function progressLine(item) {
   if (item.type === "movie") {
@@ -150,24 +150,41 @@ function progressLine(item) {
   return "";
 }
 
-export function renderLibrary(gridEl, emptyEl, items, onOpen) {
-  if (!items.length) {
-    gridEl.innerHTML = "";
-    emptyEl.classList.remove("hidden");
-    return;
-  }
-  emptyEl.classList.add("hidden");
+function metaLineFor(item) {
+  return item.type === "book"
+    ? [item.author, item.year].filter(Boolean).join(" · ")
+    : [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
+}
 
+// Etiqueta corta del botón/acción rápida (modo lista y swipe).
+function quickActionLabel(item) {
+  if (item.type === "movie") return "Vista ✓";
+  if (item.type === "tv") {
+    if (!item.nextEpisode) return "Completa ✓";
+    return `Ver T${item.nextEpisode.season}E${item.nextEpisode.episode}`;
+  }
+  const log = item.readLog || [];
+  const isReading = log.length && !log[log.length - 1].finishedAt;
+  if (isReading) return "Terminar ✓";
+  if (log.length) return "Releer ↺";
+  return "Empezar ✓";
+}
+
+function upcomingBadge(item) {
+  if (item.awaitingRelease) {
+    return `<div class="item-card__upcoming">Aún no estrenada</div>`;
+  }
+  return "";
+}
+
+function renderGrid(gridEl, items, onOpen) {
+  gridEl.className = "library-grid";
   gridEl.innerHTML = items
     .map((item, index) => {
-      const metaLine =
-        item.type === "book"
-          ? [item.author, item.year].filter(Boolean).join(" · ")
-          : [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
       const stars = item.rating ? "★".repeat(item.rating) : "";
       const progress = progressLine(item);
       return `
-      <article class="item-card">
+      <article class="item-card item-card--${item.status}">
         <div class="item-card__cover-wrap">
           <img class="item-card__cover" loading="lazy"
                src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
@@ -177,8 +194,9 @@ export function renderLibrary(gridEl, emptyEl, items, onOpen) {
         </div>
         <div class="item-card__perforation"></div>
         <div class="item-card__body">
+          ${upcomingBadge(item)}
           <div class="item-card__title">${escapeHtml(item.title)}</div>
-          <div class="item-card__meta">${escapeHtml(metaLine)}</div>
+          <div class="item-card__meta">${escapeHtml(metaLineFor(item))}</div>
           ${progress ? `<div class="item-card__progress">${escapeHtml(progress)}</div>` : ""}
           ${stars ? `<div class="item-card__rating">${stars}</div>` : ""}
         </div>
@@ -189,10 +207,104 @@ export function renderLibrary(gridEl, emptyEl, items, onOpen) {
     .join("");
 
   gridEl.querySelectorAll("button[data-index]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      onOpen(items[Number(btn.dataset.index)]);
-    });
+    btn.addEventListener("click", () => onOpen(items[Number(btn.dataset.index)]));
   });
+}
+
+function attachSwipe(row, content, onTrigger) {
+  let startX = 0;
+  let deltaX = 0;
+  let dragging = false;
+  const threshold = 70;
+
+  row.addEventListener(
+    "touchstart",
+    (e) => {
+      startX = e.touches[0].clientX;
+      dragging = true;
+      row.classList.add("is-dragging");
+    },
+    { passive: true }
+  );
+
+  row.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!dragging) return;
+      deltaX = e.touches[0].clientX - startX;
+      const clamped = Math.max(-120, Math.min(120, deltaX));
+      content.style.transform = `translateX(${clamped}px)`;
+      row.classList.toggle("swipe-reveal", Math.abs(clamped) > 24);
+    },
+    { passive: true }
+  );
+
+  row.addEventListener("touchend", () => {
+    dragging = false;
+    row.classList.remove("is-dragging", "swipe-reveal");
+    content.style.transform = "";
+    if (Math.abs(deltaX) > threshold) onTrigger();
+    deltaX = 0;
+  });
+}
+
+function renderList(gridEl, items, { onOpen, onQuickAction }) {
+  gridEl.className = "library-list";
+  gridEl.innerHTML = items
+    .map((item, index) => {
+      const progress = progressLine(item);
+      return `
+      <div class="list-row list-row--${item.status}" data-index="${index}">
+        <div class="list-row__swipe-bg">✓ ${escapeHtml(quickActionLabel(item))}</div>
+        <div class="list-row__content">
+          <button class="list-row__open" data-index="${index}"
+                  aria-label="Ver detalles de ${escapeHtml(item.title)}">
+            <img class="list-row__cover" loading="lazy"
+                 src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+            <div class="list-row__info">
+              <div class="list-row__title">${escapeHtml(item.title)}</div>
+              <div class="list-row__meta">${escapeHtml(metaLineFor(item))}</div>
+              ${progress ? `<div class="list-row__progress">${escapeHtml(progress)}</div>` : ""}
+              ${upcomingBadge(item)}
+            </div>
+            <span class="item-card__stamp item-card__stamp--${item.status} list-row__stamp">
+              ${statusLabel(item.status, item.type)}
+            </span>
+          </button>
+          <button class="list-row__action" data-index="${index}">
+            ${escapeHtml(quickActionLabel(item))}
+          </button>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  gridEl.querySelectorAll(".list-row__open").forEach((btn) => {
+    btn.addEventListener("click", () => onOpen(items[Number(btn.dataset.index)]));
+  });
+  gridEl.querySelectorAll(".list-row__action").forEach((btn) => {
+    btn.addEventListener("click", () => onQuickAction(items[Number(btn.dataset.index)], btn));
+  });
+  gridEl.querySelectorAll(".list-row").forEach((row) => {
+    const content = row.querySelector(".list-row__content");
+    const item = items[Number(row.dataset.index)];
+    attachSwipe(row, content, () => onQuickAction(item, null));
+  });
+}
+
+export function renderLibrary(gridEl, emptyEl, items, viewMode, { onOpen, onQuickAction }) {
+  if (!items.length) {
+    gridEl.innerHTML = "";
+    emptyEl.classList.remove("hidden");
+    return;
+  }
+  emptyEl.classList.add("hidden");
+
+  if (viewMode === "list") {
+    renderList(gridEl, items, { onOpen, onQuickAction });
+  } else {
+    renderGrid(gridEl, items, onOpen);
+  }
 }
 
 /* ---------- Campos comunes ---------- */
@@ -243,7 +355,7 @@ function renderStatusActions(status) {
   const buttons = [];
   if (status !== "standby") {
     buttons.push(
-      `<button type="button" class="btn btn--small" id="btn-status-standby">En pausa</button>`
+      `<button type="button" class="btn btn--small btn--outline" id="btn-status-standby">En pausa</button>`
     );
   }
   if (status !== "abandonado") {
@@ -285,6 +397,171 @@ function wireStatusActions(content, handleStatusChange) {
   }
 }
 
+// Información ampliada de TMDB (duración, género, director/creadores,
+// reparto, sinopsis) o de la fuente de libros (sinopsis). No todos
+// los campos están siempre disponibles, así que cada línea es opcional.
+function extraInfoHtml(item) {
+  const lines = [];
+  const metaBits = [];
+  if (item.runtime) metaBits.push(`${item.runtime} min`);
+  if (item.episodeRuntime) metaBits.push(`~${item.episodeRuntime} min/episodio`);
+  if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
+  if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
+  if (item.director) {
+    lines.push(`<p class="extra-info__line"><strong>Director:</strong> ${escapeHtml(item.director)}</p>`);
+  }
+  if (item.creators && item.creators.length) {
+    lines.push(
+      `<p class="extra-info__line"><strong>Creador${item.creators.length > 1 ? "es" : ""}:</strong> ${escapeHtml(
+        item.creators.join(", ")
+      )}</p>`
+    );
+  }
+  if (item.cast && item.cast.length) {
+    lines.push(`<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`);
+  }
+  const overview = item.overview || item.description;
+  if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
+  if (!lines.length) return "";
+  return `<div class="extra-info">${lines.join("")}</div>`;
+}
+
+function editButtonHtml() {
+  return `<button type="button" class="btn btn--small btn--outline edit-info-btn" id="btn-edit-item">✎ Editar información</button>`;
+}
+
+/* ---------- Alta / edición de información básica ---------- */
+
+function itemFormFields(type, values) {
+  const isBook = type === "book";
+  return `
+    <div class="field-group">
+      <label for="form-title">Título *</label>
+      <input type="text" id="form-title" required value="${escapeHtml(values.title || "")}" />
+    </div>
+    ${
+      isBook
+        ? `<div class="field-group">
+            <label for="form-author">Autor</label>
+            <input type="text" id="form-author" value="${escapeHtml(values.author || "")}" />
+          </div>`
+        : ""
+    }
+    <div class="field-group">
+      <label for="form-year">Año</label>
+      <input type="number" id="form-year" min="0" max="2100" value="${escapeHtml(values.year || "")}" />
+    </div>
+    ${
+      isBook
+        ? `<div class="field-group">
+            <label for="form-pages">Páginas</label>
+            <input type="number" id="form-pages" min="0" value="${values.pages || ""}" />
+          </div>`
+        : ""
+    }
+    <div class="field-group">
+      <label for="form-cover">URL de portada (opcional)</label>
+      <input type="url" id="form-cover" placeholder="https://..." value="${escapeHtml(values.coverUrl || "")}" />
+    </div>
+  `;
+}
+
+export function openEditModal(item, { onSave, onCancel }) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+
+  content.innerHTML = `
+    <h3 class="modal-detail__title" style="margin-bottom:1rem">Editar información</h3>
+    <form id="edit-form" class="manual-form">
+      ${itemFormFields(item.type, item)}
+      <div class="modal-actions">
+        <button type="button" class="btn btn--outline" id="btn-edit-cancel">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Guardar cambios</button>
+      </div>
+    </form>
+  `;
+
+  content.querySelector("#edit-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = content.querySelector("#form-title").value.trim();
+    if (!title) return;
+    const changes = {
+      title,
+      year: content.querySelector("#form-year").value || "",
+      coverUrl: content.querySelector("#form-cover").value.trim() || null,
+    };
+    if (item.type === "book") {
+      changes.author = content.querySelector("#form-author").value.trim();
+      const pagesRaw = content.querySelector("#form-pages").value;
+      changes.pages = pagesRaw ? Number(pagesRaw) : null;
+    }
+    onSave(changes);
+  });
+
+  content.querySelector("#btn-edit-cancel").addEventListener("click", onCancel);
+
+  modal.classList.remove("hidden");
+}
+
+export function openManualAddModal(type, onSubmit) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+
+  const titleText =
+    type === "book"
+      ? "Añadir libro manualmente"
+      : type === "tv"
+      ? "Añadir serie manualmente"
+      : "Añadir película manualmente";
+
+  content.innerHTML = `
+    <h3 class="modal-detail__title" style="margin-bottom:1rem">${titleText}</h3>
+    <form id="manual-form" class="manual-form">
+      ${itemFormFields(type, {})}
+      ${
+        type === "tv"
+          ? `<div class="field-group">
+              <label for="manual-episodes">Número de episodios</label>
+              <input type="number" id="manual-episodes" min="1" value="10" />
+            </div>
+            <p class="log-empty">
+              Se asume una sola temporada con ese número de episodios.
+            </p>`
+          : ""
+      }
+      <div class="modal-actions">
+        <button type="button" class="btn btn--outline" id="btn-manual-cancel">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Añadir</button>
+      </div>
+    </form>
+  `;
+
+  content.querySelector("#manual-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = content.querySelector("#form-title").value.trim();
+    if (!title) return;
+
+    const draft = {
+      title,
+      year: content.querySelector("#form-year").value || "",
+      coverUrl: content.querySelector("#form-cover").value.trim() || null,
+    };
+    if (type === "book") {
+      draft.author = content.querySelector("#form-author").value.trim();
+      const pagesRaw = content.querySelector("#form-pages").value;
+      draft.pages = pagesRaw ? Number(pagesRaw) : null;
+    }
+    if (type === "tv") {
+      draft.episodeCount = Number(content.querySelector("#manual-episodes").value) || 1;
+    }
+    onSubmit(draft);
+  });
+
+  content.querySelector("#btn-manual-cancel").addEventListener("click", closeModal);
+
+  modal.classList.remove("hidden");
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -305,7 +582,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete } = callbacks;
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -318,6 +595,10 @@ export function openMovieModal(item, callbacks) {
         <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
       </div>
     </div>
+    ${editButtonHtml()}
+
+    ${upcomingBadge(item)}
+    ${extraInfoHtml(item)}
 
     <div class="field-group">
       <label>Visionados</label>
@@ -341,6 +622,8 @@ export function openMovieModal(item, callbacks) {
 
   const getRating = wireRatingAndGetValue(content, item.rating);
   const rerender = () => openMovieModal(item, callbacks);
+
+  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
@@ -413,6 +696,7 @@ export function openBookModal(item, callbacks) {
     onSetStatus,
     onSaveMeta,
     onDelete,
+    onEdit,
   } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
@@ -428,6 +712,9 @@ export function openBookModal(item, callbacks) {
         <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
       </div>
     </div>
+    ${editButtonHtml()}
+
+    ${extraInfoHtml(item)}
 
     ${renderStandbyBanner(item.status, item.progress ? `página ${item.progress}` : "")}
     ${renderStatusActions(item.status)}
@@ -459,6 +746,8 @@ export function openBookModal(item, callbacks) {
 
   const getRating = wireRatingAndGetValue(content, item.rating);
   const rerender = () => openBookModal(item, callbacks);
+
+  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
   content.querySelector("#btn-log-action").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-log-date").value;
@@ -541,11 +830,18 @@ function renderEpisodeRows(episodes, seasonWatched) {
     .map((e) => {
       const date = seasonWatched[String(e.episodeNumber)] || "";
       const checked = Boolean(date);
+      const future = e.airDate && e.airDate > todayISO();
       return `
-      <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}">
-        <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
+      <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}"
+           data-air-date="${e.airDate || ""}">
+        <label class="episode-checkbox-wrap">
+          <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
+          <span class="episode-checkbox-visual" aria-hidden="true"></span>
+        </label>
         <span class="episode-row__num">E${e.episodeNumber}</span>
-        <span class="episode-row__name">${escapeHtml(e.name)}</span>
+        <span class="episode-row__name">${escapeHtml(e.name)}${
+        future ? ` <em class="episode-row__future">(sin estrenar)</em>` : ""
+      }</span>
         <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
       </div>`;
     })
@@ -561,6 +857,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     onSetStatus,
     onSaveMeta,
     onDelete,
+    onEdit,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
@@ -582,6 +879,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
         <div class="modal-detail__meta">${escapeHtml(item.year || "")}</div>
       </div>
     </div>
+    ${editButtonHtml()}
+
+    ${upcomingBadge(item)}
+    ${extraInfoHtml(item)}
 
     <div class="progress-banner">
       <span class="next-line">${nextLine}</span>
@@ -664,8 +965,21 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
       const episodeNumber = Number(row.dataset.episode);
       const checkbox = row.querySelector(".episode-checkbox");
       const dateInput = row.querySelector(".episode-date");
+      const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
+        if (checkbox.checked && airDate && airDate > todayISO()) {
+          if (
+            !window.confirm(
+              `Según TMDB este episodio se estrena el ${formatDateEs(
+                airDate
+              )}, todavía no ha pasado. ¿Marcarlo igualmente como visto?`
+            )
+          ) {
+            checkbox.checked = false;
+            return;
+          }
+        }
         checkbox.disabled = true;
         const newDate = checkbox.checked ? todayISO() : null;
         try {
@@ -773,6 +1087,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     });
   }
 
+  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
+
   wireStatusActions(content, async (newStatusOrNull) => {
     const newProgress = await onSetStatus(newStatusOrNull);
     openTvModal(item, seasonsMeta, newProgress, callbacks);
@@ -794,97 +1110,42 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
   modal.classList.remove("hidden");
 }
 
-/* ---------- Alta manual (cuando no aparece en la API) ---------- */
-
-export function openManualAddModal(type, onSubmit) {
-  const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
-
-  const titleText =
-    type === "book"
-      ? "Añadir libro manualmente"
-      : type === "tv"
-      ? "Añadir serie manualmente"
-      : "Añadir película manualmente";
-
-  content.innerHTML = `
-    <h3 class="modal-detail__title" style="margin-bottom:1rem">${titleText}</h3>
-    <form id="manual-form" class="manual-form">
-      <div class="field-group">
-        <label for="manual-title">Título *</label>
-        <input type="text" id="manual-title" required />
-      </div>
-      ${
-        type === "book"
-          ? `<div class="field-group">
-              <label for="manual-author">Autor</label>
-              <input type="text" id="manual-author" />
-            </div>`
-          : ""
-      }
-      <div class="field-group">
-        <label for="manual-year">Año</label>
-        <input type="number" id="manual-year" min="0" max="2100" />
-      </div>
-      ${
-        type === "book"
-          ? `<div class="field-group">
-              <label for="manual-pages">Páginas</label>
-              <input type="number" id="manual-pages" min="0" />
-            </div>`
-          : ""
-      }
-      ${
-        type === "tv"
-          ? `<div class="field-group">
-              <label for="manual-episodes">Número de episodios</label>
-              <input type="number" id="manual-episodes" min="1" value="10" />
-            </div>
-            <p class="log-empty">
-              Se asume una sola temporada con ese número de episodios.
-            </p>`
-          : ""
-      }
-      <div class="field-group">
-        <label for="manual-cover">URL de portada (opcional)</label>
-        <input type="url" id="manual-cover" placeholder="https://..." />
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn--ghost" id="btn-manual-cancel">Cancelar</button>
-        <button type="submit" class="btn btn--primary">Añadir</button>
-      </div>
-    </form>
-  `;
-
-  content.querySelector("#manual-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const title = content.querySelector("#manual-title").value.trim();
-    if (!title) return;
-
-    const draft = {
-      title,
-      year: content.querySelector("#manual-year").value || "",
-      coverUrl: content.querySelector("#manual-cover").value.trim() || null,
-    };
-    if (type === "book") {
-      draft.author = content.querySelector("#manual-author").value.trim();
-      const pagesRaw = content.querySelector("#manual-pages").value;
-      draft.pages = pagesRaw ? Number(pagesRaw) : null;
-    }
-    if (type === "tv") {
-      draft.episodeCount = Number(content.querySelector("#manual-episodes").value) || 1;
-    }
-    onSubmit(draft);
-  });
-
-  content.querySelector("#btn-manual-cancel").addEventListener("click", closeModal);
-
-  modal.classList.remove("hidden");
-}
-
 export function closeModal() {
   document.getElementById("item-modal").classList.add("hidden");
   document.getElementById("modal-content").innerHTML = "";
+}
+
+/* ---------- Notificaciones ---------- */
+
+export function renderNotifications(listEl, badgeEl, emptyEl, notifications, { onDelete }) {
+  const unread = notifications.filter((n) => !n.read).length;
+  if (unread > 0) {
+    badgeEl.textContent = unread > 9 ? "9+" : String(unread);
+    badgeEl.classList.remove("hidden");
+  } else {
+    badgeEl.classList.add("hidden");
+  }
+
+  if (!notifications.length) {
+    listEl.innerHTML = "";
+    emptyEl.classList.remove("hidden");
+    return;
+  }
+  emptyEl.classList.add("hidden");
+
+  listEl.innerHTML = notifications
+    .map(
+      (n, index) => `
+      <div class="notif-row ${n.read ? "" : "is-unread"}">
+        <span class="notif-row__text">${escapeHtml(n.message)}</span>
+        <button type="button" class="notif-row__delete" data-index="${index}" aria-label="Borrar">✕</button>
+      </div>`
+    )
+    .join("");
+
+  listEl.querySelectorAll(".notif-row__delete").forEach((btn) => {
+    btn.addEventListener("click", () => onDelete(notifications[Number(btn.dataset.index)]));
+  });
 }
 
 /* ---------- Aviso flotante ---------- */

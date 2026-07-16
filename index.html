@@ -6,6 +6,9 @@
   <title>Mi Registro — pelis, series y libros</title>
   <meta name="description" content="Registro personal de películas, series y libros." />
 
+  <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
+  <link rel="apple-touch-icon" href="resources/icon.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -13,8 +16,7 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
-  <link rel="apple-touch-icon" href="resources/icon.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -40,18 +42,34 @@
       <div class="app-header__top">
         <h1 class="app-title">Mi Registro</h1>
         <div class="user-badge">
-          <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
+          <div class="notif-wrap">
+            <button type="button" class="icon-btn" id="btn-notifications" aria-label="Notificaciones">
+              <span aria-hidden="true">🔔</span>
+              <span class="notif-badge hidden" id="notif-badge"></span>
+            </button>
+            <div class="notif-dropdown hidden" id="notif-dropdown">
+              <div class="notif-dropdown__header">
+                <span>Notificaciones</span>
+                <button type="button" class="btn-link" id="btn-clear-notifs">Borrar todas</button>
+              </div>
+              <div class="notif-list" id="notif-list"></div>
+              <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
+            </div>
+          </div>
+          <button type="button" class="user-badge__avatar-btn" id="btn-open-profile" aria-label="Ver perfil">
+            <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
+          </button>
           <span id="user-name" class="user-badge__name"></span>
           <button id="btn-logout" class="btn btn--ghost">Salir</button>
         </div>
       </div>
 
       <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab tab--media is-active" id="tab-movies" role="tab" aria-selected="true" data-panel="panel-movies">
-          Películas
-        </button>
-        <button class="tab tab--media" id="tab-tv" role="tab" aria-selected="false" data-panel="panel-tv">
+        <button class="tab tab--media" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv">
           Series
+        </button>
+        <button class="tab tab--media" id="tab-movies" role="tab" aria-selected="false" data-panel="panel-movies">
+          Películas
         </button>
         <button class="tab tab--books" id="tab-books" role="tab" aria-selected="false" data-panel="panel-books">
           Libros
@@ -60,19 +78,78 @@
     </header>
 
     <main>
+      <!-- Panel Series -->
+      <section id="panel-tv" class="panel" data-type-group="tv">
+        <form id="form-search-tv" class="search-slip" autocomplete="off">
+          <div class="search-input-wrap">
+            <input id="search-tv-input" type="text" placeholder="Busca una serie… (ej. Severance)" />
+            <button type="button" class="search-clear-btn hidden" data-scope="tv" aria-label="Borrar búsqueda">✕</button>
+          </div>
+          <button type="submit" class="btn btn--accent-media">Buscar</button>
+        </form>
+        <div id="search-tv-results" class="results-strip"></div>
+        <div class="results-toolbar hidden" id="results-toolbar-tv">
+          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-tv">Cargar más</button>
+          <button type="button" class="btn-link" id="btn-hide-results-tv">Ocultar resultados</button>
+        </div>
+        <button type="button" class="btn-link" id="btn-manual-tv">¿No la encuentras? Añadir manualmente</button>
+
+        <div class="library-head">
+          <h2>Mis series</h2>
+          <div class="library-controls">
+            <div class="library-search">
+              <span aria-hidden="true">🔍</span>
+              <input type="search" class="library-search-input" data-scope="tv" placeholder="Buscar en mi lista…" />
+            </div>
+            <div class="filter-chips" data-scope="tv">
+              <button class="chip" data-status="todos">Todos</button>
+              <button class="chip" data-status="pendiente">Pendiente</button>
+              <button class="chip is-active" data-status="en_curso">Viendo</button>
+              <button class="chip" data-status="completado">Vista</button>
+              <button class="chip" data-status="standby">Standby</button>
+              <button class="chip" data-status="abandonado">Abandonada</button>
+            </div>
+            <select class="sort-select" data-scope="tv">
+              <option value="añadido">Añadidas recientemente</option>
+              <option value="fecha">Fecha de visionado</option>
+              <option value="alfabetico">Alfabético</option>
+              <option value="anio">Año de estreno</option>
+            </select>
+            <div class="view-toggle" data-scope="tv">
+              <button type="button" class="view-toggle__btn" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+              <button type="button" class="view-toggle__btn is-active" data-view="list" aria-label="Vista en lista">☰</button>
+            </div>
+          </div>
+        </div>
+        <div id="library-tv" class="library-grid"></div>
+        <p id="empty-tv" class="empty-state hidden">
+          Aún no hay nada aquí. Busca una serie arriba y pulsa «Añadir».
+        </p>
+      </section>
+
       <!-- Panel Películas -->
-      <section id="panel-movies" class="panel" data-type-group="movies">
+      <section id="panel-movies" class="panel hidden" data-type-group="movies">
         <form id="form-search-movies" class="search-slip" autocomplete="off">
-          <label class="visually-hidden" for="search-movies-input">Buscar películas</label>
-          <input id="search-movies-input" type="text" placeholder="Busca una película… (ej. Dune)" />
+          <div class="search-input-wrap">
+            <input id="search-movies-input" type="text" placeholder="Busca una película… (ej. Dune)" />
+            <button type="button" class="search-clear-btn hidden" data-scope="movies" aria-label="Borrar búsqueda">✕</button>
+          </div>
           <button type="submit" class="btn btn--accent-media">Buscar</button>
         </form>
         <div id="search-movies-results" class="results-strip"></div>
-        <button type="button" class="btn-link" id="btn-manual-movie">¿No lo encuentras? Añadir manualmente</button>
+        <div class="results-toolbar hidden" id="results-toolbar-movies">
+          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-movies">Cargar más</button>
+          <button type="button" class="btn-link" id="btn-hide-results-movies">Ocultar resultados</button>
+        </div>
+        <button type="button" class="btn-link" id="btn-manual-movie">¿No la encuentras? Añadir manualmente</button>
 
         <div class="library-head">
           <h2>Mis películas</h2>
           <div class="library-controls">
+            <div class="library-search">
+              <span aria-hidden="true">🔍</span>
+              <input type="search" class="library-search-input" data-scope="movies" placeholder="Buscar en mi lista…" />
+            </div>
             <div class="filter-chips" data-scope="movies">
               <button class="chip is-active" data-status="todos">Todos</button>
               <button class="chip" data-status="pendiente">Pendiente</button>
@@ -84,6 +161,10 @@
               <option value="alfabetico">Alfabético</option>
               <option value="anio">Año de estreno</option>
             </select>
+            <div class="view-toggle" data-scope="movies">
+              <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+              <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
+            </div>
           </div>
         </div>
         <div id="library-movies" class="library-grid"></div>
@@ -92,54 +173,29 @@
         </p>
       </section>
 
-      <!-- Panel Series -->
-      <section id="panel-tv" class="panel hidden" data-type-group="tv">
-        <form id="form-search-tv" class="search-slip" autocomplete="off">
-          <label class="visually-hidden" for="search-tv-input">Buscar series</label>
-          <input id="search-tv-input" type="text" placeholder="Busca una serie… (ej. Severance)" />
-          <button type="submit" class="btn btn--accent-media">Buscar</button>
-        </form>
-        <div id="search-tv-results" class="results-strip"></div>
-        <button type="button" class="btn-link" id="btn-manual-tv">¿No la encuentras? Añadir manualmente</button>
-
-        <div class="library-head">
-          <h2>Mis series</h2>
-          <div class="library-controls">
-            <div class="filter-chips" data-scope="tv">
-              <button class="chip is-active" data-status="todos">Todos</button>
-              <button class="chip" data-status="pendiente">Pendiente</button>
-              <button class="chip" data-status="en_curso">Viendo</button>
-              <button class="chip" data-status="completado">Vista</button>
-              <button class="chip" data-status="standby">Standby</button>
-              <button class="chip" data-status="abandonado">Abandonada</button>
-            </div>
-            <select class="sort-select" data-scope="tv">
-              <option value="añadido">Añadidas recientemente</option>
-              <option value="fecha">Fecha de visionado</option>
-              <option value="alfabetico">Alfabético</option>
-              <option value="anio">Año de estreno</option>
-            </select>
-          </div>
-        </div>
-        <div id="library-tv" class="library-grid"></div>
-        <p id="empty-tv" class="empty-state hidden">
-          Aún no hay nada aquí. Busca una serie arriba y pulsa «Añadir».
-        </p>
-      </section>
-
       <!-- Panel Libros -->
       <section id="panel-books" class="panel hidden" data-type-group="books">
         <form id="form-search-books" class="search-slip" autocomplete="off">
-          <label class="visually-hidden" for="search-books-input">Buscar libros</label>
-          <input id="search-books-input" type="text" placeholder="Busca un libro o autor…" />
+          <div class="search-input-wrap">
+            <input id="search-books-input" type="text" placeholder="Busca un libro o autor…" />
+            <button type="button" class="search-clear-btn hidden" data-scope="books" aria-label="Borrar búsqueda">✕</button>
+          </div>
           <button type="submit" class="btn btn--accent-books">Buscar</button>
         </form>
         <div id="search-books-results" class="results-strip"></div>
+        <div class="results-toolbar hidden" id="results-toolbar-books">
+          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-books">Cargar más</button>
+          <button type="button" class="btn-link" id="btn-hide-results-books">Ocultar resultados</button>
+        </div>
         <button type="button" class="btn-link" id="btn-manual-book">¿No lo encuentras? Añadir manualmente</button>
 
         <div class="library-head">
           <h2>Mi biblioteca</h2>
           <div class="library-controls">
+            <div class="library-search">
+              <span aria-hidden="true">🔍</span>
+              <input type="search" class="library-search-input" data-scope="books" placeholder="Buscar en mi lista…" />
+            </div>
             <div class="filter-chips" data-scope="books">
               <button class="chip is-active" data-status="todos">Todos</button>
               <button class="chip" data-status="pendiente">Pendiente</button>
@@ -154,6 +210,10 @@
               <option value="alfabetico">Alfabético</option>
               <option value="anio">Año de publicación</option>
             </select>
+            <div class="view-toggle" data-scope="books">
+              <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+              <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
+            </div>
           </div>
         </div>
         <div id="library-books" class="library-grid"></div>
@@ -164,11 +224,37 @@
     </main>
 
     <footer class="app-footer">
-      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Portadas de libros vía Google Books / Open Library
+      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books
     </footer>
   </div>
 
-  <!-- Modal de detalle -->
+  <!-- Vista de perfil / estadísticas -->
+  <div id="profile-view" class="profile-view hidden">
+    <div class="profile-view__header">
+      <button type="button" class="btn btn--ghost" id="btn-close-profile">← Volver</button>
+      <h1 class="app-title">Tu perfil</h1>
+      <select id="stats-period-select">
+        <option value="all">Siempre</option>
+        <option value="year">Este año</option>
+        <option value="month">Este mes</option>
+      </select>
+    </div>
+    <div class="profile-view__body">
+      <div class="stats-grid" id="stats-summary"></div>
+      <div class="stats-charts">
+        <div class="chart-card">
+          <h3>Actividad por mes</h3>
+          <canvas id="chart-activity"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Estados actuales</h3>
+          <canvas id="chart-status"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de detalle / edición / alta manual -->
   <div id="item-modal" class="modal hidden">
     <div class="modal__backdrop" id="modal-backdrop"></div>
     <div class="modal__card" role="dialog" aria-modal="true">

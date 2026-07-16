@@ -7,22 +7,24 @@ pensada para alojarse gratis en GitHub Pages, con Firebase como base de datos.
 ```
 mi-registro/
 ├── index.html
+├── resources/
+│   └── icon.png          ← tu icono (ya lo tienes puesto)
 ├── css/
 │   └── styles.css
 ├── js/
-│   ├── config.js       ← claves y configuración (rellenar)
-│   ├── firebase.js      inicialización de Firebase
-│   ├── http.js           fetch con reintento (usado por api-movies.js)
-│   ├── api-movies.js    búsqueda de pelis/series y temporadas/episodios en TMDB
-│   ├── api-books.js     búsqueda en Google Books / Open Library (con reintentos y deduplicado)
-│   ├── dates.js          utilidades de fecha
-│   ├── tv-progress.js   episodios vistos, "siguiente episodio" y revisionados
-│   ├── watch-log.js      historial de visionados (películas)
-│   ├── reading-log.js    historial de lecturas (libros)
-│   ├── db.js             lectura/escritura en Firestore (colecciones separadas + perfil)
-│   ├── ui.js             renderizado del DOM
-│   └── app.js            punto de entrada
-├── firestore.rules      ← reglas de seguridad (rellenar tu email)
+│   ├── config.js         ← claves y configuración (rellenar)
+│   ├── firebase.js        inicialización de Firebase
+│   ├── http.js             fetch con reintento (TMDB, Open Library)
+│   ├── api-movies.js      búsqueda, temporadas/episodios y datos ampliados en TMDB
+│   ├── api-books.js       búsqueda en Open Library / Google Books, con reintentos y deduplicado
+│   ├── dates.js            utilidades de fecha
+│   ├── tv-progress.js     episodios vistos, "siguiente episodio" y revisionados
+│   ├── watch-log.js        historial de visionados (películas)
+│   ├── reading-log.js      historial de lecturas (libros)
+│   ├── db.js               lectura/escritura en Firestore (colecciones separadas, perfil, notificaciones)
+│   ├── ui.js                renderizado del DOM
+│   └── app.js               punto de entrada
+├── firestore.rules        ← reglas de seguridad (rellenar tu email)
 └── README.md
 ```
 
@@ -34,20 +36,19 @@ mi-registro/
   directamente con Firestore mediante su SDK, sin servidor intermedio.
 - El código es público (lo verá cualquiera que abra la página), pero **tus
   datos no**: solo tu cuenta de Google, según las reglas de seguridad, puede
-  leerlos o escribirlos. Ocultar las claves no serviría de nada; lo que
-  realmente protege tus datos son esas reglas.
+  leerlos o escribirlos.
 - Cada tipo vive en su propia colección de Firestore:
-  `users/{tu-uid}/movies`, `users/{tu-uid}/series` y `users/{tu-uid}/books`.
-  Además, el propio documento `users/{tu-uid}` guarda un pequeño perfil
-  (email y nombre) para poder identificar la cuenta desde la consola de
-  Firebase si alguna vez hiciera falta. `firestore.rules` ya cubre todo
-  esto sin cambios, gracias al comodín recursivo de las reglas versión 2.
+  `users/{tu-uid}/movies`, `users/{tu-uid}/series`, `users/{tu-uid}/books` y
+  `users/{tu-uid}/notifications`. El propio documento `users/{tu-uid}` guarda
+  un pequeño perfil (email, nombre, última comprobación de estrenos).
+  `firestore.rules` ya cubre todo esto sin cambios, gracias al comodín
+  recursivo de las reglas versión 2.
+- Los gráficos de estadísticas usan [Chart.js](https://www.chartjs.org/) vía
+  CDN (`cdnjs.cloudflare.com`), cargado en el `<head>` de `index.html`.
 
-> **Si ya habías probado la app antes de esta versión:** los datos vivían en
-> una única colección `items`. A partir de ahora se leen de `movies` /
-> `series` / `books`, así que cualquier prueba anterior dejará de verse en
-> la web (sigue existiendo en Firestore, en la colección antigua, por si
-> quieres rescatarla a mano, pero no se migra automáticamente).
+> **Si ya habías probado la app antes de la versión con colecciones
+> separadas:** los datos antiguos vivían en una única colección `items` y no
+> se migran solos.
 
 ## 1. Crear el proyecto en Firebase
 
@@ -81,12 +82,15 @@ email con el que vas a iniciar sesión) y publica.
 
 > Nota: IMDb no ofrece una API pública asequible (su servicio oficial es
 > para empresas, vía AWS). TMDB es la alternativa estándar y gratuita, con
-> catálogo muy similar. Por eso la usa esta app.
+> catálogo muy similar. Por eso la usa esta app. Tampoco incluye datos de
+> premios (no forman parte de su base de datos gratuita).
 
 ## 5. Clave de Google Books (opcional)
 
-La búsqueda de libros funciona sin clave, con un límite de peticiones más
-bajo. Si quieres una propia:
+Desde esta versión, la búsqueda de libros usa **Open Library como fuente
+principal** (no necesita clave) y Google Books solo como respaldo si Open
+Library no encuentra nada. Si quieres tu propia clave de Google Books para
+ese respaldo:
 
 1. Ve a [console.cloud.google.com](https://console.cloud.google.com) →
    crea un proyecto → "Credenciales" → "Crear credenciales" → Clave de API.
@@ -102,7 +106,7 @@ bajo. Si quieres una propia:
 
 1. Crea un repositorio nuevo en GitHub (será público, es obligatorio en el
    plan gratuito para poder usar Pages) y sube todo el contenido de esta
-   carpeta.
+   carpeta, incluido tu `resources/icon.png`.
 2. Settings → Pages → Source: "Deploy from a branch" → rama `main`,
    carpeta `/ (root)` → Guardar.
 3. En un par de minutos tu web estará en
@@ -115,59 +119,78 @@ que tú apruebes. Ve a Authentication → Settings → "Authorized domains" →
 añade `tu-usuario.github.io`. Sin este paso, el botón de Google dará un
 error de dominio no autorizado.
 
-## 8. Usarla
+## 8. Cómo funciona
 
-Abre tu URL de GitHub Pages, entra con Google (con el email que pusiste en
-`AUTHORIZED_EMAIL` y en las reglas) y ya puedes buscar títulos y libros,
-añadirlos, puntuarlos y dejar notas.
+Al abrir la app entras directamente en **Series, filtrado por "Viendo", en
+vista de lista** — pensado para el uso más habitual: marcar el episodio que
+tocaba. Desde ahí puedes cambiar de pestaña, filtro, orden o vista cuando
+quieras.
 
-- **Películas**: solo tienen dos estados, Pendiente y Vista. Al marcarla como
-  vista eliges la fecha (por defecto hoy). Si la vuelves a ver, pulsa «Añadir
-  otro visionado»: se guarda un nuevo visionado sin borrar los anteriores, y
-  la ficha muestra cuántas veces la has visto.
-- **Series**: se llevan episodio a episodio. Al abrir una serie despliega
-  cada temporada y marca episodios sueltos (con su fecha, editable) o una
-  temporada entera de golpe. Arriba verás el siguiente episodio pendiente
-  (p. ej. «Siguiente: T2E5»). Al terminarla, aparece un botón «Volver a verla
-  desde el principio»: archiva el visionado actual (con sus fechas) en el
-  historial y empieza uno nuevo sin perder el anterior.
-- **Libros**: «Empezar a leer» abre una lectura con fecha de inicio;
-  «Terminar de leer» la cierra con fecha de fin. Volver a leerlo abre una
-  lectura nueva, conservando las anteriores. Se puede editar la fecha de
-  cualquier lectura o quitar una entrada equivocada.
-- **Orden**: cada estantería tiene un selector para ordenar por fecha
-  (de visionado/lectura), alfabéticamente o por año de estreno/publicación,
-  además de los filtros por estado.
-- **Standby / Abandonado** (series y libros): además de Pendiente/Viendo o
-  Leyendo/Vista o Leído, puedes marcar una serie o libro como en pausa o
-  abandonado sin perder el progreso guardado. Un botón «Retomar» te
-  devuelve al estado normal (activo según lo que ya tengas marcado).
-- **Alta manual**: si un título no aparece en TMDB o Google Books (por
-  ejemplo, un libro autopublicado), cada pestaña tiene un enlace «¿No lo
-  encuentras? Añadir manualmente» para crearlo a mano con título, año y,
-  en libros, autor/páginas. Para series manuales se asume una sola
+- **Vista cuadrícula / lista**: alternable con los botones ▦ / ☰ de cada
+  estantería. En lista, cada fila tiene un botón grande para la acción
+  rápida (marcar vista / siguiente episodio / empezar-terminar lectura) y,
+  en móvil, puedes deslizar la fila hacia cualquier lado para lo mismo.
+- **Películas**: solo Pendiente/Vista. «Añadir otro visionado» registra un
+  revisionado sin borrar el historial, y la ficha muestra cuántas veces la
+  has visto.
+- **Series**: episodio a episodio, con fecha editable por episodio. El
+  siguiente pendiente se muestra arriba («Siguiente: T2E5»). Al terminarla,
+  «Volver a verla desde el principio» archiva el visionado en un historial
+  y empieza uno nuevo sin perder el anterior.
+- **Libros**: «Empezar a leer» / «Terminar de leer» con fecha en cada
+  acción; volver a leerlo abre una lectura nueva conservando las anteriores.
+- **Standby / Abandonado** (series y libros): pausa o abandona sin perder el
+  progreso guardado; «Retomar» vuelve al estado normal.
+- **Editar información**: cada ficha tiene un botón «✎ Editar información»
+  para corregir título, año, portada o (en libros) autor/páginas.
+- **Alta manual**: enlace «¿No lo encuentras? Añadir manualmente» en cada
+  pestaña, para lo que no aparezca en TMDB/Open Library (por ejemplo, un
+  libro autopublicado de un amigo). Para series manuales se asume una sola
   temporada con el número de episodios que indiques.
-- **Búsqueda de libros**: Google Books suele devolver muchas ediciones del
-  mismo libro (tapas, idiomas, reimpresiones); la app las agrupa por
-  título + autor y muestra solo una por libro. Si Google Books falla de
-  forma puntual (error 503), la app reintenta un par de veces y, si sigue
-  fallando, recurre automáticamente a Open Library.
+- **Buscar en tu propia lista**: el icono 🔍 junto a los filtros busca por
+  título dentro de lo que ya tienes añadido.
+- **Más resultados de búsqueda**: ya no hay límite fijo; el botón «Cargar
+  más» va trayendo más páginas, y «Ocultar resultados» los recoge cuando
+  quieras. Al cambiar de pestaña, la búsqueda se limpia sola.
+- **Información ampliada**: cuando TMDB/Open Library la tienen, se muestra
+  duración, género, director o creadores, reparto principal y sinopsis
+  (se piden una sola vez, al añadir el título, no en cada búsqueda).
+- **Notificaciones**: la campana 🔔 avisa cuando una película pendiente de
+  estreno ya se ha estrenado, o cuando hay un episodio nuevo disponible de
+  una serie que sigues. Se comprueba una vez al día. Las tarjetas de algo
+  aún no estrenado llevan una etiqueta «Aún no estrenada», y si intentas
+  marcar como visto un episodio con fecha de emisión futura, te avisa antes
+  de dejarte seguir (no lo bloquea del todo, por si TMDB va mal informado).
+- **Perfil y estadísticas**: pulsando tu foto se abre un resumen con
+  películas vistas, episodios vistos, series completadas y libros leídos,
+  con selector Siempre/Este año/Este mes y dos gráficas (actividad por mes
+  y reparto de estados).
+- **Colores por estado**: cada tarjeta/fila se tiñe muy suavemente según su
+  estado (viendo, vista, en pausa, abandonada...) para distinguirlas de un
+  vistazo sin que el color destaque en exceso.
+
+### Sobre "Amigos"
+
+No lo he incluido todavía: la app ahora mismo solo deja entrar a **una**
+cuenta (la tuya, fijada en `AUTHORIZED_EMAIL` y en las reglas), así que
+"amigos" reales con su propia cuenta implicaría rediseñar la autenticación y
+las reglas de seguridad para permitir accesos cruzados controlados. Es
+totalmente viable, pero prefiero comentarte las opciones antes de
+construirlo a ciegas — lo hablamos en el chat.
 
 ### Si la búsqueda de libros da un error 503 "Service temporarily unavailable"
 
-Es un fallo puntual de los servidores de Google Books, no de tu configuración.
-La app ya reintenta sola un par de veces y cae a Open Library si hace falta;
-si aun así ves el error, espera unos segundos y repite la búsqueda.
+Es un fallo puntual del servidor, no de tu configuración. La app reintenta
+sola un par de veces; si sigue fallando, espera unos segundos y repite.
 
 ### Si la búsqueda de libros da un error 403 "referrer blocked"
 
-Significa que la clave de Google Books tiene restricción por dominio y la
-petición llega sin ese dominio (típicamente porque abriste `index.html`
-directamente desde el disco, con `file://`, que no envía referrer). Prueba
-la web desde tu URL real de GitHub Pages, o levanta un servidor local
-(`python3 -m http.server` en la carpeta del proyecto) y añade
-`http://localhost:PUERTO/*` a los referrers permitidos de esa clave en
-Google Cloud Console.
+Pasa si restringiste la clave de Google Books por dominio y pruebas desde
+`file://` en tu disco. Prueba desde tu URL real de GitHub Pages o desde un
+servidor local (`python3 -m http.server`), añadiendo
+`http://localhost:PUERTO/*` a los referrers permitidos en Google Cloud
+Console. Como Open Library es ahora la fuente principal y no necesita
+clave, esto ya solo afecta al respaldo.
 
 ## Límites a tener en cuenta
 
@@ -175,5 +198,8 @@ Google Cloud Console.
   Firestore — de sobra para un uso personal.
 - TMDB: uso gratuito solo no comercial, con atribución (ya incluida en el
   pie de la página).
+- La comprobación de estrenos hace una petición a TMDB por cada serie activa
+  (no abandonada) una vez al día como máximo, así que no debería notarse en
+  la cuota.
 - Si algún día quieres exportar tus datos, puedes hacerlo desde la propia
   consola de Firestore (exportar colección a JSON).
