@@ -1,13 +1,21 @@
 // =============================================================
 // Progreso de una serie a partir de:
 // - seasonsMeta: temporadas y nº de episodios, obtenidos en vivo de TMDB
-// - watched: fechas por episodio del visionado actual, con forma
-//   { "1": { "1": "2026-01-05", "2": "2026-01-06" }, "2": {...} }
-//   (temporada -> episodio -> fecha en la que se vio)
+// - watched: datos por episodio del visionado actual, con forma
+//   { "1": { "1": { date: "2026-01-05", rating: 4 }, "2": {...} }, "2": {...} }
+//   (temporada -> episodio -> { fecha en la que se vio, valoración 1-5 o null })
 // No depende del DOM ni de Firebase: es pura lógica, reutilizable
 // tanto desde ui.js (para refrescar la vista al vuelo) como desde
 // app.js (para decidir qué guardar).
 // =============================================================
+
+// Compatibilidad con datos antiguos: antes cada episodio guardaba solo
+// la fecha como texto plano ("2026-01-05"), sin objeto ni valoración.
+export function normalizeEntry(entry) {
+  if (!entry) return null;
+  if (typeof entry === "string") return { date: entry, rating: null };
+  return entry;
+}
 
 export function computeProgress(seasonsMeta, watched) {
   const totalEpisodes = seasonsMeta.reduce((sum, s) => sum + s.episodeCount, 0);
@@ -17,11 +25,12 @@ export function computeProgress(seasonsMeta, watched) {
 
   for (const s of seasonsMeta) {
     const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
-    for (const dateStr of Object.values(seasonWatched)) {
-      if (!dateStr) continue;
+    for (const raw of Object.values(seasonWatched)) {
+      const entry = normalizeEntry(raw);
+      if (!entry || !entry.date) continue;
       totalWatched++;
-      if (!firstWatchedAt || dateStr < firstWatchedAt) firstWatchedAt = dateStr;
-      if (!lastWatchedAt || dateStr > lastWatchedAt) lastWatchedAt = dateStr;
+      if (!firstWatchedAt || entry.date < firstWatchedAt) firstWatchedAt = entry.date;
+      if (!lastWatchedAt || entry.date > lastWatchedAt) lastWatchedAt = entry.date;
     }
   }
 
@@ -29,7 +38,8 @@ export function computeProgress(seasonsMeta, watched) {
   seasonsLoop: for (const s of seasonsMeta) {
     const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
     for (let ep = 1; ep <= s.episodeCount; ep++) {
-      if (!seasonWatched[String(ep)]) {
+      const entry = normalizeEntry(seasonWatched[String(ep)]);
+      if (!entry || !entry.date) {
         nextEpisode = { season: s.seasonNumber, episode: ep };
         break seasonsLoop;
       }
@@ -47,23 +57,39 @@ export function computeProgress(seasonsMeta, watched) {
 }
 
 // dateOrNull: fecha "YYYY-MM-DD" para marcar visto, o null para desmarcar.
+// Si ya tenía una valoración puesta, se conserva.
 export function setEpisodeDate(watched, seasonNumber, episodeNumber, dateOrNull) {
   const key = String(seasonNumber);
   const seasonMap = { ...((watched && watched[key]) || {}) };
+  const epKey = String(episodeNumber);
   if (dateOrNull) {
-    seasonMap[String(episodeNumber)] = dateOrNull;
+    const existing = normalizeEntry(seasonMap[epKey]) || {};
+    seasonMap[epKey] = { date: dateOrNull, rating: existing.rating ?? null };
   } else {
-    delete seasonMap[String(episodeNumber)];
+    delete seasonMap[epKey];
   }
+  return { ...(watched || {}), [key]: seasonMap };
+}
+
+// Solo se puede valorar un episodio que ya esté marcado como visto.
+export function setEpisodeRating(watched, seasonNumber, episodeNumber, rating) {
+  const key = String(seasonNumber);
+  const seasonMap = { ...((watched && watched[key]) || {}) };
+  const epKey = String(episodeNumber);
+  const existing = normalizeEntry(seasonMap[epKey]);
+  if (!existing || !existing.date) return { ...(watched || {}), [key]: seasonMap };
+  seasonMap[epKey] = { date: existing.date, rating };
   return { ...(watched || {}), [key]: seasonMap };
 }
 
 export function setSeasonWatched(watched, seasonNumber, episodeCount, allWatched, date) {
   const key = String(seasonNumber);
+  const previous = (watched && watched[key]) || {};
   const seasonMap = {};
   if (allWatched) {
     for (let ep = 1; ep <= episodeCount; ep++) {
-      seasonMap[String(ep)] = date;
+      const existing = normalizeEntry(previous[String(ep)]);
+      seasonMap[String(ep)] = { date, rating: existing ? existing.rating : null };
     }
   }
   return { ...(watched || {}), [key]: seasonMap };
@@ -86,10 +112,4 @@ export function startRewatch(item) {
     timesCompleted: (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0),
     history,
   };
-}
-
-// Nº de veces que se ha terminado la serie, contando el visionado
-// actual si ya está completo.
-export function timesWatched(item) {
-  return (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 }

@@ -782,14 +782,21 @@ button {
 
 .episode-row {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.2rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.45rem 0.3rem;
   font-size: 0.82rem;
   border-bottom: 1px dashed rgba(23, 21, 18, 0.08);
 }
 .episode-row:last-child {
   border-bottom: none;
+}
+
+.episode-row__main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .episode-row__num {
@@ -1656,4 +1663,132 @@ button {
   #stats-period-select {
     font-size: 16px;
   }
+}
+
+/* =========================================================
+   Valoración por episodio
+   ========================================================= */
+
+.episode-rating {
+  display: flex;
+  gap: 0.15rem;
+  padding-left: 30px;
+}
+
+.episode-rating__star {
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--paper-line);
+  padding: 0.1rem;
+}
+.episode-rating__star.is-active {
+  color: var(--ochre-spine);
+}
+.episode-rating__star:disabled {
+  opacity: 0.5;
+}
+
+/* =========================================================
+   Ficha de solo lectura (amigos)
+   ========================================================= */
+
+.read-only-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  background: var(--paper-dim);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+/* =========================================================
+   Perfil: subpestañas Estadísticas / Amigos
+   ========================================================= */
+
+.profile-subtabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.profile-subtab {
+  background: var(--ink-raised);
+  color: var(--ink-soft);
+  border: 1px solid rgba(241, 234, 217, 0.2);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.profile-subtab.is-active {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* =========================================================
+   Amigos: lista y detalle
+   ========================================================= */
+
+.friends-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.9rem;
+}
+
+.friend-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+.friend-card:hover {
+  transform: translateY(-2px);
+}
+
+.friend-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper-dim);
+}
+
+.friend-card__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.friend-detail__name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0.6rem 0 1.4rem;
+}
+
+.friend-detail__section {
+  margin-bottom: 2rem;
+}
+
+.friend-detail__section h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--paper);
+  margin: 0 0 0.8rem;
+}
+
+.friend-detail__section .empty-state {
+  color: rgba(241, 234, 217, 0.5);
 }

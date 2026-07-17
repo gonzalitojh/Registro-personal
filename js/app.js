@@ -12,6 +12,8 @@ import {
   deleteItem,
   upsertUserProfile,
   getUserProfile,
+  getAllUserProfiles,
+  getItemsOnce,
   subscribeToNotifications,
   addNotification,
   markNotificationRead,
@@ -27,7 +29,13 @@ import {
 } from "./api-movies.js";
 import { searchBooks, getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
-import { computeProgress, setEpisodeDate, setSeasonWatched, startRewatch } from "./tv-progress.js";
+import {
+  computeProgress,
+  setEpisodeDate,
+  setEpisodeRating,
+  setSeasonWatched,
+  startRewatch,
+} from "./tv-progress.js";
 import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import {
   startReading,
@@ -37,7 +45,7 @@ import {
   statusFromReadLog,
 } from "./reading-log.js";
 import * as ui from "./ui.js";
-import { AUTHORIZED_EMAIL } from "./config.js";
+import { ALLOWED_EMAILS } from "./allowed-emails.js";
 
 let currentUser = null;
 let unsubscribeItems = { movies: null, tv: null, books: null };
@@ -107,12 +115,13 @@ document.getElementById("btn-logout").addEventListener("click", () => logout());
 
 let moviesReady = false;
 let tvReady = false;
+let booksReady = false;
 let checksTriggered = false;
 
-function maybeTriggerReleaseCheck() {
-  if (moviesReady && tvReady && !checksTriggered) {
+function maybeTriggerDailyCheck() {
+  if (moviesReady && tvReady && booksReady && !checksTriggered) {
     checksTriggered = true;
-    checkForReleases();
+    checkForUpdates();
   }
 }
 
@@ -127,6 +136,7 @@ watchAuthState(async (user) => {
   stopAllSubscriptions();
   moviesReady = false;
   tvReady = false;
+  booksReady = false;
   checksTriggered = false;
 
   if (!user) {
@@ -139,8 +149,8 @@ watchAuthState(async (user) => {
     return;
   }
 
-  if (user.email !== AUTHORIZED_EMAIL) {
-    ui.setAuthError("Esta aplicación es de uso personal. Entra con la cuenta autorizada.");
+  if (!ALLOWED_EMAILS.includes(user.email)) {
+    ui.setAuthError("Tu correo no está en la lista de invitados. Pide que te añadan.");
     logout();
     return;
   }
@@ -149,7 +159,11 @@ watchAuthState(async (user) => {
   ui.showApp(user);
 
   try {
-    await upsertUserProfile(user.uid, { email: user.email, displayName: user.displayName || null });
+    await upsertUserProfile(user.uid, {
+      email: user.email,
+      displayName: user.displayName || null,
+      photoURL: user.photoURL || null,
+    });
   } catch (err) {
     console.error("No se pudo guardar el perfil de usuario:", err);
   }
@@ -162,7 +176,7 @@ watchAuthState(async (user) => {
       moviesReady = true;
       renderLibraryFor("movies");
       refreshSearchAddButtons();
-      maybeTriggerReleaseCheck();
+      maybeTriggerDailyCheck();
     },
     () => ui.showToast("No se pudieron cargar tus películas.")
   );
@@ -175,7 +189,7 @@ watchAuthState(async (user) => {
       tvReady = true;
       renderLibraryFor("tv");
       refreshSearchAddButtons();
-      maybeTriggerReleaseCheck();
+      maybeTriggerDailyCheck();
     },
     () => ui.showToast("No se pudieron cargar tus series.")
   );
@@ -185,8 +199,10 @@ watchAuthState(async (user) => {
     "book",
     (items) => {
       allItems.books = items;
+      booksReady = true;
       renderLibraryFor("books");
       refreshSearchAddButtons();
+      maybeTriggerDailyCheck();
     },
     () => ui.showToast("No se pudieron cargar tus libros.")
   );
@@ -801,6 +817,9 @@ async function openTvItem(item) {
     onSetEpisodeDate: (seasonNumber, episodeNumber, dateOrNull) =>
       persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)),
 
+    onSetEpisodeRating: (seasonNumber, episodeNumber, rating) =>
+      persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating)),
+
     onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
       return persistWatched(
@@ -835,9 +854,9 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") ui.closeModal();
 });
 
-/* ---------- Notificaciones de estreno ---------- */
+/* ---------- Comprobación diaria: estrenos y metadatos que faltan ---------- */
 
-async function checkForReleases() {
+async function checkForUpdates() {
   if (!currentUser) return;
   let profile;
   try {
@@ -848,42 +867,108 @@ async function checkForReleases() {
   const today = todayISO();
   if (profile && profile.lastReleaseCheckAt === today) return;
 
+  // Películas: aviso de estreno + rellenar ficha si le faltaba algo
+  // (sinopsis, género, reparto, director, duración o fecha de estreno).
   for (const movie of allItems.movies) {
-    if (movie.awaitingRelease && movie.releaseDate && movie.releaseDate <= today) {
-      try {
-        await addNotification(currentUser.uid, {
-          message: `«${movie.title}» ya se ha estrenado (${formatDateEs(movie.releaseDate)}).`,
-        });
-        await updateItem(currentUser.uid, "movie", movie.id, { awaitingRelease: false });
-      } catch (err) {
-        console.error(err);
+    if (movie.manual) continue;
+    const needsCheck = !movie.overview || movie.awaitingRelease;
+    if (!needsCheck) continue;
+    try {
+      const fresh = await getMovieDetails(movie.externalId);
+      const updates = {};
+      if (!movie.overview && fresh.overview) updates.overview = fresh.overview;
+      if ((!movie.genres || !movie.genres.length) && fresh.genres && fresh.genres.length) {
+        updates.genres = fresh.genres;
       }
+      if ((!movie.cast || !movie.cast.length) && fresh.cast && fresh.cast.length) {
+        updates.cast = fresh.cast;
+      }
+      if (!movie.director && fresh.director) updates.director = fresh.director;
+      if (!movie.runtime && fresh.runtime) updates.runtime = fresh.runtime;
+      if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
+        updates.releaseDate = fresh.releaseDate;
+      }
+
+      if (movie.awaitingRelease && fresh.releaseDate && fresh.releaseDate <= today) {
+        await addNotification(currentUser.uid, {
+          message: `«${movie.title}» ya se ha estrenado (${formatDateEs(fresh.releaseDate)}).`,
+        });
+        updates.awaitingRelease = false;
+      }
+
+      if (Object.keys(updates).length) {
+        await updateItem(currentUser.uid, "movie", movie.id, updates);
+      }
+    } catch (err) {
+      console.error("No se pudo comprobar/actualizar", movie.title, err);
     }
   }
 
+  // Series: aviso de estreno / episodio nuevo + rellenar ficha si faltaba algo.
   const activeShows = allItems.tv.filter((s) => !s.manual && s.status !== "abandonado");
   for (const show of activeShows) {
     try {
-      if (show.awaitingRelease && show.firstAirDate && show.firstAirDate <= today) {
-        await addNotification(currentUser.uid, { message: `«${show.title}» ya se ha estrenado.` });
-        await updateItem(currentUser.uid, "tv", show.id, { awaitingRelease: false });
-        continue;
-      }
+      const needsBackfill = !show.overview || show.awaitingRelease;
       const fresh = await getTvExtraDetails(show.externalId);
-      if (fresh.nextEpisodeToAir && fresh.nextEpisodeToAir.airDate && fresh.nextEpisodeToAir.airDate <= today) {
+      const updates = {};
+      let justPremiered = false;
+
+      if (show.awaitingRelease && fresh.firstAirDate && fresh.firstAirDate <= today) {
+        await addNotification(currentUser.uid, { message: `«${show.title}» ya se ha estrenado.` });
+        updates.awaitingRelease = false;
+        justPremiered = true;
+      }
+
+      if (
+        !justPremiered &&
+        fresh.nextEpisodeToAir &&
+        fresh.nextEpisodeToAir.airDate &&
+        fresh.nextEpisodeToAir.airDate <= today
+      ) {
         const key = `${fresh.nextEpisodeToAir.season}x${fresh.nextEpisodeToAir.episode}`;
         if (show.lastNotifiedEpisode !== key) {
           await addNotification(currentUser.uid, {
             message: `Nuevo episodio disponible de «${show.title}»: T${fresh.nextEpisodeToAir.season}E${fresh.nextEpisodeToAir.episode}.`,
           });
-          await updateItem(currentUser.uid, "tv", show.id, {
-            lastNotifiedEpisode: key,
-            nextEpisodeToAir: fresh.nextEpisodeToAir,
-          });
+          updates.lastNotifiedEpisode = key;
         }
       }
+      if (fresh.nextEpisodeToAir) updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
+
+      if (needsBackfill) {
+        if (fresh.overview) updates.overview = fresh.overview;
+        if ((!show.genres || !show.genres.length) && fresh.genres && fresh.genres.length) {
+          updates.genres = fresh.genres;
+        }
+        if ((!show.cast || !show.cast.length) && fresh.cast && fresh.cast.length) {
+          updates.cast = fresh.cast;
+        }
+        if ((!show.creators || !show.creators.length) && fresh.creators && fresh.creators.length) {
+          updates.creators = fresh.creators;
+        }
+        if (!show.episodeRuntime && fresh.episodeRuntime) updates.episodeRuntime = fresh.episodeRuntime;
+      }
+
+      if (Object.keys(updates).length) {
+        await updateItem(currentUser.uid, "tv", show.id, updates);
+      }
     } catch (err) {
-      console.error("No se pudo comprobar estrenos de", show.title, err);
+      console.error("No se pudo comprobar/actualizar", show.title, err);
+    }
+  }
+
+  // Libros: si a alguno le faltaba la sinopsis (por ejemplo, porque se
+  // añadió antes de que la app la recogiera), se intenta rellenar.
+  for (const book of allItems.books) {
+    if (book.manual || book.description) continue;
+    if (!book.externalId || !book.externalId.startsWith("/works/")) continue;
+    try {
+      const description = await getOpenLibraryDescription(book.externalId);
+      if (description) {
+        await updateItem(currentUser.uid, "book", book.id, { description });
+      }
+    } catch (err) {
+      console.error("No se pudo completar la sinopsis de", book.title, err);
     }
   }
 
@@ -916,12 +1001,25 @@ document.getElementById("btn-clear-notifs").addEventListener("click", async () =
   }
 });
 
-/* ---------- Perfil y estadísticas ---------- */
+/* ---------- Perfil, estadísticas y amigos ---------- */
+
+const profileSubtabs = document.querySelectorAll(".profile-subtab");
+const statsSection = document.getElementById("profile-section-stats");
+const friendsSection = document.getElementById("profile-section-friends");
+const friendsListEl = document.getElementById("friends-list");
+const friendDetailEl = document.getElementById("friend-detail");
+const friendDetailNameEl = document.getElementById("friend-detail-name");
+const statsPeriodSelect = document.getElementById("stats-period-select");
 
 document.getElementById("btn-open-profile").addEventListener("click", () => {
   document.getElementById("app").classList.add("hidden");
   document.getElementById("profile-view").classList.remove("hidden");
-  renderStats(document.getElementById("stats-period-select").value);
+  profileSubtabs.forEach((b) => b.classList.remove("is-active"));
+  document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
+  statsSection.classList.remove("hidden");
+  friendsSection.classList.add("hidden");
+  statsPeriodSelect.classList.remove("hidden");
+  renderStats(statsPeriodSelect.value);
 });
 
 document.getElementById("btn-close-profile").addEventListener("click", () => {
@@ -929,8 +1027,59 @@ document.getElementById("btn-close-profile").addEventListener("click", () => {
   document.getElementById("app").classList.remove("hidden");
 });
 
-document.getElementById("stats-period-select").addEventListener("change", (e) => {
+statsPeriodSelect.addEventListener("change", (e) => {
   renderStats(e.target.value);
+});
+
+profileSubtabs.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    profileSubtabs.forEach((b) => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    const section = btn.dataset.section;
+    statsSection.classList.toggle("hidden", section !== "stats");
+    friendsSection.classList.toggle("hidden", section !== "friends");
+    statsPeriodSelect.classList.toggle("hidden", section !== "stats");
+    if (section === "friends") {
+      friendDetailEl.classList.add("hidden");
+      friendsListEl.classList.remove("hidden");
+      loadFriendsList();
+    }
+  });
+});
+
+async function loadFriendsList() {
+  friendsListEl.innerHTML = `<p class="empty-state">Cargando…</p>`;
+  try {
+    const profiles = await getAllUserProfiles();
+    ui.renderFriendsList(friendsListEl, profiles, currentUser.uid, openFriend);
+  } catch (err) {
+    friendsListEl.innerHTML = `<p class="empty-state">No se pudo cargar la lista de amigos.</p>`;
+  }
+}
+
+async function openFriend(profile) {
+  friendsListEl.classList.add("hidden");
+  friendDetailEl.classList.remove("hidden");
+  friendDetailNameEl.textContent = profile.displayName || profile.email || "Amigo";
+  const friendName = profile.displayName || profile.email || "tu amigo";
+  document.getElementById("friend-movies").innerHTML = `<p class="empty-state">Cargando…</p>`;
+  document.getElementById("friend-series").innerHTML = "";
+  document.getElementById("friend-books").innerHTML = "";
+  try {
+    const [movies, series, books] = await Promise.all([
+      getItemsOnce(profile.uid, "movie"),
+      getItemsOnce(profile.uid, "tv"),
+      getItemsOnce(profile.uid, "book"),
+    ]);
+    ui.renderFriendDetail(movies, series, books, (item) => ui.openReadOnlyModal(item, friendName));
+  } catch (err) {
+    document.getElementById("friend-movies").innerHTML = `<p class="empty-state">No se pudo cargar.</p>`;
+  }
+}
+
+document.getElementById("btn-back-to-friends").addEventListener("click", () => {
+  friendDetailEl.classList.add("hidden");
+  friendsListEl.classList.remove("hidden");
 });
 
 function withinPeriod(dateStr, period) {

@@ -836,24 +836,44 @@ function renderSeasonBlock(s, watched) {
     </div>`;
 }
 
+function localNormalizeEntry(entry) {
+  if (!entry) return null;
+  if (typeof entry === "string") return { date: entry, rating: null };
+  return entry;
+}
+
 function renderEpisodeRows(episodes, seasonWatched) {
   return episodes
     .map((e) => {
-      const date = seasonWatched[String(e.episodeNumber)] || "";
+      const entry = localNormalizeEntry(seasonWatched[String(e.episodeNumber)]);
+      const date = entry ? entry.date : "";
+      const rating = entry ? entry.rating : null;
       const checked = Boolean(date);
       const future = e.airDate && e.airDate > todayISO();
       return `
       <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}"
            data-air-date="${e.airDate || ""}">
-        <label class="episode-checkbox-wrap">
-          <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
-          <span class="episode-checkbox-visual" aria-hidden="true"></span>
-        </label>
-        <span class="episode-row__num">E${e.episodeNumber}</span>
-        <span class="episode-row__name">${escapeHtml(e.name)}${
+        <div class="episode-row__main">
+          <label class="episode-checkbox-wrap">
+            <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
+            <span class="episode-checkbox-visual" aria-hidden="true"></span>
+          </label>
+          <span class="episode-row__num">E${e.episodeNumber}</span>
+          <span class="episode-row__name">${escapeHtml(e.name)}${
         future ? ` <em class="episode-row__future">(sin estrenar)</em>` : ""
       }</span>
-        <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+        </div>
+        <div class="episode-rating ${checked ? "" : "hidden"}">
+          ${[1, 2, 3, 4, 5]
+            .map(
+              (n) =>
+                `<button type="button" class="episode-rating__star ${
+                  rating >= n ? "is-active" : ""
+                }" data-value="${n}">★</button>`
+            )
+            .join("")}
+        </div>
       </div>`;
     })
     .join("");
@@ -863,6 +883,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
   const {
     onExpandSeason,
     onSetEpisodeDate,
+    onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
     onSetStatus,
@@ -976,6 +997,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
       const episodeNumber = Number(row.dataset.episode);
       const checkbox = row.querySelector(".episode-checkbox");
       const dateInput = row.querySelector(".episode-date");
+      const ratingWrap = row.querySelector(".episode-rating");
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
@@ -998,6 +1020,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
           row.classList.toggle("is-watched", checkbox.checked);
           dateInput.disabled = !checkbox.checked;
           dateInput.value = newDate || "";
+          ratingWrap.classList.toggle("hidden", !checkbox.checked);
+          if (!checkbox.checked) {
+            ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
+          }
           const watchedCountInSeason = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedCountInSeason, episodeCount);
           updateBanner(newProgress);
@@ -1017,6 +1043,24 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
         } finally {
           dateInput.disabled = false;
         }
+      });
+
+      const starButtons = ratingWrap.querySelectorAll(".episode-rating__star");
+      starButtons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const value = Number(btn.dataset.value);
+          const currentlyActive = ratingWrap.querySelectorAll(".is-active").length;
+          const newValue = value === currentlyActive ? null : value;
+          starButtons.forEach((b) => b.disabled = true);
+          try {
+            await onSetEpisodeRating(seasonNumber, episodeNumber, newValue);
+            starButtons.forEach((b) =>
+              b.classList.toggle("is-active", Number(b.dataset.value) <= (newValue || 0))
+            );
+          } finally {
+            starButtons.forEach((b) => (b.disabled = false));
+          }
+        });
       });
     });
   }
@@ -1072,10 +1116,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
           episodesBlock.querySelectorAll(".episode-row").forEach((row) => {
             const checkbox = row.querySelector(".episode-checkbox");
             const dateInput = row.querySelector(".episode-date");
+            const ratingWrap = row.querySelector(".episode-rating");
             checkbox.checked = shouldMarkAll;
             row.classList.toggle("is-watched", shouldMarkAll);
             dateInput.disabled = !shouldMarkAll;
             dateInput.value = shouldMarkAll ? today : "";
+            ratingWrap.classList.toggle("hidden", !shouldMarkAll);
+            if (!shouldMarkAll) {
+              ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
+            }
           });
         }
       } finally {
@@ -1124,6 +1173,82 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
 export function closeModal() {
   document.getElementById("item-modal").classList.add("hidden");
   document.getElementById("modal-content").innerHTML = "";
+}
+
+/* ---------- Ficha de solo lectura (para ver lo de un amigo) ---------- */
+
+export function openReadOnlyModal(item, ownerName) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+  const metaLine = metaLineFor(item);
+  const stars = item.rating ? "★".repeat(item.rating) : "";
+  const progress = progressLine(item);
+
+  content.innerHTML = `
+    <div class="modal-detail__header">
+      <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div>
+        <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
+        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
+      </div>
+    </div>
+    <p class="read-only-badge">👀 Viendo la ficha de ${escapeHtml(ownerName)} · solo lectura</p>
+
+    ${upcomingBadge(item)}
+    ${extraInfoHtml(item)}
+
+    <div class="field-group">
+      <span class="item-card__stamp item-card__stamp--${item.status}" style="position:static;transform:none;display:inline-block;">
+        ${statusLabel(item.status, item.type)}
+      </span>
+    </div>
+
+    ${progress ? `<p class="extra-info__line">${escapeHtml(progress)}</p>` : ""}
+    ${stars ? `<p class="item-card__rating" style="font-size:1rem;">${stars}</p>` : ""}
+  `;
+
+  modal.classList.remove("hidden");
+}
+
+/* ---------- Amigos ---------- */
+
+export function renderFriendsList(container, profiles, myUid, onSelect) {
+  const others = profiles.filter((p) => p.uid !== myUid);
+  if (!others.length) {
+    container.innerHTML = `<p class="empty-state">Todavía no hay más gente registrada.</p>`;
+    return;
+  }
+  container.innerHTML = others
+    .map(
+      (p, index) => `
+      <button class="friend-card" data-index="${index}">
+        <img class="friend-card__avatar" src="${p.photoURL || PLACEHOLDER_COVER}" alt="" />
+        <span class="friend-card__name">${escapeHtml(p.displayName || p.email || "Sin nombre")}</span>
+      </button>`
+    )
+    .join("");
+
+  container.querySelectorAll(".friend-card").forEach((btn) => {
+    btn.addEventListener("click", () => onSelect(others[Number(btn.dataset.index)]));
+  });
+}
+
+export function renderFriendDetail(movies, series, books, onOpen) {
+  const movieGrid = document.getElementById("friend-movies");
+  const seriesGrid = document.getElementById("friend-series");
+  const bookGrid = document.getElementById("friend-books");
+
+  renderReadOnlyGrid(movieGrid, movies, onOpen);
+  renderReadOnlyGrid(seriesGrid, series, onOpen);
+  renderReadOnlyGrid(bookGrid, books, onOpen);
+}
+
+function renderReadOnlyGrid(gridEl, items, onOpen) {
+  if (!items.length) {
+    gridEl.innerHTML = `<p class="empty-state">Nada por aquí todavía.</p>`;
+    return;
+  }
+  renderGrid(gridEl, items, onOpen);
 }
 
 /* ---------- Notificaciones ---------- */

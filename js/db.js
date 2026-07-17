@@ -20,6 +20,7 @@ import {
   addDoc,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -45,6 +46,25 @@ export async function upsertUserProfile(uid, data) {
 export async function getUserProfile(uid) {
   const snap = await getDoc(doc(db, "users", uid));
   return snap.exists() ? snap.data() : null;
+}
+
+// Perfiles de todos los usuarios registrados (para la lista de amigos).
+// Como todos los que pueden registrarse ya están "autorizados", cualquier
+// usuario puede leer los perfiles de los demás (ver firestore.rules).
+export async function getAllUserProfiles() {
+  const snap = await getDocs(collection(db, "users"));
+  const profiles = [];
+  snap.forEach((docSnap) => profiles.push({ uid: docSnap.id, ...docSnap.data() }));
+  return profiles;
+}
+
+// Lectura puntual (sin suscripción en vivo) de los items de OTRO usuario,
+// para verlos de solo lectura desde la sección de amigos.
+export async function getItemsOnce(uid, type) {
+  const snap = await getDocs(itemsRef(uid, type));
+  const items = [];
+  snap.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+  return items;
 }
 
 // Se suscribe en tiempo real a los items de un tipo concreto.

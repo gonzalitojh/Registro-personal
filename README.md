@@ -1,54 +1,73 @@
 # Mi Registro
 
-Registro personal de películas, series y libros, para sustituir a TV Time.
-Web estática (HTML + CSS + JS con módulos nativos, sin build ni frameworks),
-pensada para alojarse gratis en GitHub Pages, con Firebase como base de datos.
+Registro personal (y ahora también entre amigos) de películas, series y
+libros, para sustituir a TV Time. Web estática (HTML + CSS + JS con módulos
+nativos, sin build ni frameworks), alojada gratis en GitHub Pages, con
+Firebase como base de datos multiusuario.
 
 ```
 mi-registro/
 ├── index.html
 ├── resources/
-│   └── icon.png          ← tu icono (ya lo tienes puesto)
+│   └── icon.png            ← tu icono (ya lo tienes puesto)
 ├── css/
 │   └── styles.css
 ├── js/
-│   ├── config.js         ← claves y configuración (rellenar)
-│   ├── firebase.js        inicialización de Firebase
-│   ├── http.js             fetch con reintento (TMDB, Open Library)
-│   ├── api-movies.js      búsqueda, temporadas/episodios y datos ampliados en TMDB
-│   ├── api-books.js       búsqueda en Open Library / Google Books, con reintentos y deduplicado
-│   ├── dates.js            utilidades de fecha
-│   ├── tv-progress.js     episodios vistos, "siguiente episodio" y revisionados
-│   ├── watch-log.js        historial de visionados (películas)
-│   ├── reading-log.js      historial de lecturas (libros)
-│   ├── db.js               lectura/escritura en Firestore (colecciones separadas, perfil, notificaciones)
-│   ├── ui.js                renderizado del DOM
-│   └── app.js               punto de entrada
-├── firestore.rules        ← reglas de seguridad (rellenar tu email)
+│   ├── config.js           ← claves de Firebase/TMDB/Books (rellenar)
+│   ├── allowed-emails.js   ← lista de quién puede registrarse (rellenar)
+│   ├── firebase.js          inicialización de Firebase
+│   ├── http.js               fetch con reintento (TMDB, Open Library)
+│   ├── api-movies.js        búsqueda, temporadas/episodios y datos ampliados en TMDB
+│   ├── api-books.js         búsqueda en Open Library / Google Books
+│   ├── dates.js              utilidades de fecha
+│   ├── tv-progress.js       episodios vistos (con valoración por episodio), revisionados
+│   ├── watch-log.js          historial de visionados (películas)
+│   ├── reading-log.js        historial de lecturas (libros)
+│   ├── db.js                 lectura/escritura en Firestore, perfiles, amigos
+│   ├── ui.js                  renderizado del DOM
+│   └── app.js                 punto de entrada
+├── firestore.rules         ← reglas de seguridad (¡mantener igual que allowed-emails.js!)
 └── README.md
 ```
 
-## Por qué esta arquitectura
+## Cómo funciona el acceso (léelo con calma, es lo más delicado)
 
-- **GitHub Pages** solo sirve archivos estáticos y, con cuenta gratuita, solo
-  desde repositorios públicos. No puede alojar una base de datos.
-- Por eso los datos viven en **Firebase** (gratis): el navegador habla
-  directamente con Firestore mediante su SDK, sin servidor intermedio.
-- El código es público (lo verá cualquiera que abra la página), pero **tus
-  datos no**: solo tu cuenta de Google, según las reglas de seguridad, puede
-  leerlos o escribirlos.
-- Cada tipo vive en su propia colección de Firestore:
-  `users/{tu-uid}/movies`, `users/{tu-uid}/series`, `users/{tu-uid}/books` y
-  `users/{tu-uid}/notifications`. El propio documento `users/{tu-uid}` guarda
-  un pequeño perfil (email, nombre, última comprobación de estrenos).
-  `firestore.rules` ya cubre todo esto sin cambios, gracias al comodín
-  recursivo de las reglas versión 2.
-- Los gráficos de estadísticas usan [Chart.js](https://www.chartjs.org/) vía
-  CDN (`cdnjs.cloudflare.com`), cargado en el `<head>` de `index.html`.
+Esto ya no es una app de un único usuario: **cualquier correo de tu lista
+de invitados puede registrarse** (entrar por primera vez crea su cuenta
+automáticamente) y, una vez dentro, **todos los usuarios registrados se
+consideran ya "amigos" entre sí** — cada uno ve y edita solo lo suyo, pero
+puede ver (no editar) el registro de cualquier otro desde la sección
+"Amigos" del perfil.
 
-> **Si ya habías probado la app antes de la versión con colecciones
-> separadas:** los datos antiguos vivían en una única colección `items` y no
-> se migran solos.
+Quién puede entrar se controla en **dos sitios que tienen que coincidir**:
+
+1. **`js/allowed-emails.js`** — un array de correos. Controla lo que ve la
+   persona en el navegador (si no está en la lista, se le avisa y se le
+   cierra la sesión al momento).
+2. **`firestore.rules`** — la misma lista, dentro de la función
+   `isAllowedUser()`. Esta es la que de verdad protege los datos: aunque
+   alguien manipulase el código de la web, sin estar en esta lista de las
+   reglas no puede leer ni escribir nada en la base de datos.
+
+**Cada vez que añadas o quites un amigo, cámbialo en los dos archivos**, y
+en el caso de `firestore.rules`, vuelve a pegar el archivo completo en
+Firebase console → Firestore Database → Reglas → Publicar. Si solo lo
+cambias en uno de los dos sitios, o la persona no podrá entrar aunque la
+hayas "añadido", o (peor) podrá entrar en la web pero Firestore le seguirá
+bloqueando los datos y verá errores.
+
+Dentro de Firestore, cada usuario tiene sus propias colecciones:
+`users/{uid}/movies`, `/series`, `/books` (visibles para cualquier otro
+usuario autorizado, con permiso de solo lectura) y `/notifications`
+(privada, nadie más la ve). El documento `users/{uid}` en sí guarda el
+perfil (nombre, foto, email) que se usa para la lista de amigos.
+
+> **Nota de seguridad:** la lista de correos determina quién puede
+> registrarse y usar la app, pero técnicamente cualquiera con una cuenta de
+> Google puede *intentar* iniciar sesión (eso Firebase no lo puede impedir).
+> Lo que de verdad importa es que, si su correo no está en la lista de las
+> reglas, no consigue acceso a ningún dato — ni a los suyos propios ni a
+> los de nadie.
 
 ## 1. Crear el proyecto en Firebase
 
@@ -61,145 +80,115 @@ mi-registro/
    apps" → añade una app **Web** (`</>`) → copia el objeto `firebaseConfig`
    que te muestra.
 
-## 2. Rellenar `js/config.js`
+## 2. Rellenar `js/config.js` y `js/allowed-emails.js`
 
-Pega ahí el `firebaseConfig` del paso anterior, tu email en
-`AUTHORIZED_EMAIL`, y tu clave de TMDB (paso siguiente).
+- En `js/config.js`: pega el `firebaseConfig` del paso anterior y tu clave
+  de TMDB (paso siguiente).
+- En `js/allowed-emails.js`: pon los correos de Gmail de quien pueda
+  registrarse (tú incluido). Recuerda que esta lista tiene que coincidir
+  con la de `firestore.rules` (paso 3).
 
 ## 3. Reglas de seguridad de Firestore
 
 En Firebase console → Firestore Database → pestaña "Reglas", pega el
-contenido de `firestore.rules` (sustituyendo `tu-email@gmail.com` por el
-email con el que vas a iniciar sesión) y publica.
+contenido de `firestore.rules` **sustituyendo los tres correos de ejemplo
+dentro de `isAllowedUser()` por los mismos que pusiste en
+`allowed-emails.js`** (puedes añadir tantos como quieras, es un array) y
+publica.
 
 ## 4. Clave de la API de TMDB (películas y series)
 
 1. Crea una cuenta gratuita en [themoviedb.org](https://www.themoviedb.org).
 2. Configuración de la cuenta → API → solicita una clave de tipo "Developer".
-   Es gratis para uso no comercial; solo te pedirán confirmar que es un
-   proyecto personal.
+   Es gratis para uso no comercial.
 3. Copia la "API Key (v3 auth)" en `TMDB_API_KEY` dentro de `js/config.js`.
 
-> Nota: IMDb no ofrece una API pública asequible (su servicio oficial es
-> para empresas, vía AWS). TMDB es la alternativa estándar y gratuita, con
-> catálogo muy similar. Por eso la usa esta app. Tampoco incluye datos de
-> premios (no forman parte de su base de datos gratuita).
+> IMDb no ofrece API pública asequible ni datos de premios; por eso se usa
+> TMDB, gratuita y con catálogo muy similar.
 
 ## 5. Clave de Google Books (opcional)
 
-Desde esta versión, la búsqueda de libros usa **Open Library como fuente
-principal** (no necesita clave) y Google Books solo como respaldo si Open
-Library no encuentra nada. Si quieres tu propia clave de Google Books para
-ese respaldo:
-
-1. Ve a [console.cloud.google.com](https://console.cloud.google.com) →
-   crea un proyecto → "Credenciales" → "Crear credenciales" → Clave de API.
-2. Restríngela a la **Books API** y, en "Restricciones de aplicación",
-   elige "Referentes HTTP" y añade tu dominio de GitHub Pages
-   (`https://tu-usuario.github.io/*`).
-3. Pega la clave en `GOOGLE_BOOKS_API_KEY`.
-
-(Goodreads no se usa porque su API pública dejó de emitir claves nuevas en
-2020 y está en desuso.)
+La búsqueda de libros usa **Open Library como fuente principal** (agrupa
+por libro, no por edición, y no necesita clave) y Google Books solo como
+respaldo. Si quieres tu propia clave para ese respaldo, sigue el proceso
+de restricción por dominio explicado más abajo en «Solución de problemas».
 
 ## 6. Subir a GitHub y activar Pages
 
-1. Crea un repositorio nuevo en GitHub (será público, es obligatorio en el
-   plan gratuito para poder usar Pages) y sube todo el contenido de esta
-   carpeta, incluido tu `resources/icon.png`.
+1. Crea un repositorio nuevo en GitHub (público, obligatorio en el plan
+   gratuito) y sube todo el contenido de esta carpeta, incluido tu
+   `resources/icon.png`.
 2. Settings → Pages → Source: "Deploy from a branch" → rama `main`,
    carpeta `/ (root)` → Guardar.
 3. En un par de minutos tu web estará en
    `https://tu-usuario.github.io/nombre-del-repo/`.
 
-## 7. Autorizar tu dominio en Firebase (paso que se olvida fácil)
+## 7. Autorizar tu dominio en Firebase
 
-Firebase Authentication solo permite el inicio de sesión desde dominios
-que tú apruebes. Ve a Authentication → Settings → "Authorized domains" →
-añade `tu-usuario.github.io`. Sin este paso, el botón de Google dará un
-error de dominio no autorizado.
+Authentication → Settings → "Authorized domains" → añade
+`tu-usuario.github.io`. Sin este paso, el login de Google falla con un
+error de dominio no autorizado. `localhost` ya viene autorizado por
+defecto para cuando pruebes en local.
 
-## 8. Cómo funciona
+## 8. Cómo se usa
 
 Al abrir la app entras directamente en **Series, filtrado por "Viendo", en
-vista de lista** — pensado para el uso más habitual: marcar el episodio que
-tocaba. Desde ahí puedes cambiar de pestaña, filtro, orden o vista cuando
-quieras.
+vista de lista** — pensado para el uso más habitual.
 
-- **Vista cuadrícula / lista**: alternable con los botones ▦ / ☰ de cada
-  estantería. En lista, cada fila tiene un botón grande para la acción
-  rápida (marcar vista / siguiente episodio / empezar-terminar lectura) y,
-  en móvil, puedes deslizar la fila hacia cualquier lado para lo mismo.
-- **Películas**: solo Pendiente/Vista. «Añadir otro visionado» registra un
-  revisionado sin borrar el historial, y la ficha muestra cuántas veces la
-  has visto.
-- **Series**: episodio a episodio, con fecha editable por episodio. El
-  siguiente pendiente se muestra arriba («Siguiente: T2E5»). Al terminarla,
-  «Volver a verla desde el principio» archiva el visionado en un historial
-  y empieza uno nuevo sin perder el anterior.
-- **Libros**: «Empezar a leer» / «Terminar de leer» con fecha en cada
-  acción; volver a leerlo abre una lectura nueva conservando las anteriores.
-- **Standby / Abandonado** (series y libros): pausa o abandona sin perder el
-  progreso guardado; «Retomar» vuelve al estado normal.
-- **Editar información**: cada ficha tiene un botón «✎ Editar información»
-  para corregir título, año, portada o (en libros) autor/páginas.
-- **Alta manual**: enlace «¿No lo encuentras? Añadir manualmente» en cada
-  pestaña, para lo que no aparezca en TMDB/Open Library (por ejemplo, un
-  libro autopublicado de un amigo). Para series manuales se asume una sola
-  temporada con el número de episodios que indiques.
-- **Buscar en tu propia lista**: el icono 🔍 junto a los filtros busca por
-  título dentro de lo que ya tienes añadido.
-- **Más resultados de búsqueda**: ya no hay límite fijo; el botón «Cargar
-  más» va trayendo más páginas, y «Ocultar resultados» los recoge cuando
-  quieras. Al cambiar de pestaña, la búsqueda se limpia sola.
-- **Información ampliada**: cuando TMDB/Open Library la tienen, se muestra
-  duración, género, director o creadores, reparto principal y sinopsis
-  (se piden una sola vez, al añadir el título, no en cada búsqueda).
-- **Notificaciones**: la campana 🔔 avisa cuando una película pendiente de
-  estreno ya se ha estrenado, o cuando hay un episodio nuevo disponible de
-  una serie que sigues. Se comprueba una vez al día. Las tarjetas de algo
-  aún no estrenado llevan una etiqueta «Aún no estrenada», y si intentas
-  marcar como visto un episodio con fecha de emisión futura, te avisa antes
-  de dejarte seguir (no lo bloquea del todo, por si TMDB va mal informado).
-- **Perfil y estadísticas**: pulsando tu foto se abre un resumen con
-  películas vistas, episodios vistos, series completadas y libros leídos,
-  con selector Siempre/Este año/Este mes y dos gráficas (actividad por mes
-  y reparto de estados).
-- **Colores por estado**: cada tarjeta/fila se tiñe muy suavemente según su
-  estado (viendo, vista, en pausa, abandonada...) para distinguirlas de un
-  vistazo sin que el color destaque en exceso.
+- **Vista cuadrícula / lista**, con acción rápida (botón grande o
+  deslizar en móvil) para marcar visto/siguiente episodio/avanzar lectura.
+- **Películas**: Pendiente/Vista, con historial de visionados (revisionados
+  incluidos) y aviso si intentas marcarla vista antes de su estreno.
+- **Series**: episodio a episodio, con fecha editable, y ahora también
+  **valoración individual por episodio** (aparece debajo de cada episodio
+  ya marcado como visto). "Volver a verla desde el principio" archiva el
+  visionado en un historial sin perder el anterior.
+- **Libros**: empezar/terminar lectura con fecha, relecturas con historial.
+- **Standby / Abandonado** (series y libros), **editar información**, **alta
+  manual** (con nº de episodios para series manuales), **buscar en tu
+  propia lista**, **más resultados con "Cargar más"**, **colores pastel por
+  estado**, **información ampliada** (duración, género, director/creadores,
+  reparto, sinopsis) — todo esto ya explicado en versiones anteriores de
+  este README, sigue funcionando igual.
+- **Notificaciones** (🔔): avisa de estrenos y episodios nuevos, una vez al
+  día. Esa misma comprobación diaria **también rellena información que
+  faltase** (sinopsis, reparto, director, fecha de estreno...) en cualquier
+  ficha que la tuviera incompleta — útil tanto para lo que añadiste antes
+  de que la app recogiera esos datos, como para series en producción que
+  aún no tienen todo publicado en TMDB: en cuanto TMDB lo actualice, tu
+  ficha se completa sola al día siguiente.
+- **Perfil**: pulsando tu foto se abre con dos secciones:
+  - **Estadísticas**: resumen (pelis vistas, episodios, series completadas,
+    libros leídos) con selector Siempre/Año/Mes y dos gráficas.
+  - **Amigos**: lista de todos los usuarios registrados; al pulsar uno ves
+    su registro completo en modo solo lectura (sin notas personales, esas
+    siempre son privadas).
 
-### Sobre "Amigos"
+## Solución de problemas
 
-No lo he incluido todavía: la app ahora mismo solo deja entrar a **una**
-cuenta (la tuya, fijada en `AUTHORIZED_EMAIL` y en las reglas), así que
-"amigos" reales con su propia cuenta implicaría rediseñar la autenticación y
-las reglas de seguridad para permitir accesos cruzados controlados. Es
-totalmente viable, pero prefiero comentarte las opciones antes de
-construirlo a ciegas — lo hablamos en el chat.
+**Error 503 "Service temporarily unavailable" al buscar libros** — fallo
+puntual del servidor, no tuyo. La app reintenta sola; si persiste, espera
+unos segundos.
 
-### Si la búsqueda de libros da un error 503 "Service temporarily unavailable"
-
-Es un fallo puntual del servidor, no de tu configuración. La app reintenta
-sola un par de veces; si sigue fallando, espera unos segundos y repite.
-
-### Si la búsqueda de libros da un error 403 "referrer blocked"
-
-Pasa si restringiste la clave de Google Books por dominio y pruebas desde
-`file://` en tu disco. Prueba desde tu URL real de GitHub Pages o desde un
-servidor local (`python3 -m http.server`), añadiendo
+**Error 403 "referrer blocked" al buscar libros** — solo afecta al
+respaldo de Google Books. Pasa si restringiste esa clave por dominio y
+pruebas desde `file://` en tu disco en vez de desde GitHub Pages o un
+servidor local (`python3 -m http.server`, añadiendo
 `http://localhost:PUERTO/*` a los referrers permitidos en Google Cloud
-Console. Como Open Library es ahora la fuente principal y no necesita
-clave, esto ya solo afecta al respaldo.
+Console).
+
+**Un amigo no puede entrar aunque lo añadí** — revisa que su correo esté
+en los DOS sitios: `js/allowed-emails.js` (y que el cambio esté subido a
+GitHub Pages) y `firestore.rules` (y que hayas vuelto a publicar las
+reglas en Firebase console; los cambios en el archivo del repositorio no
+se aplican solos a la base de datos).
 
 ## Límites a tener en cuenta
 
-- Firebase Spark (gratis): 50.000 lecturas/día y 1 GiB de almacenamiento en
-  Firestore — de sobra para un uso personal.
-- TMDB: uso gratuito solo no comercial, con atribución (ya incluida en el
-  pie de la página).
-- La comprobación de estrenos hace una petición a TMDB por cada serie activa
-  (no abandonada) una vez al día como máximo, así que no debería notarse en
-  la cuota.
-- Si algún día quieres exportar tus datos, puedes hacerlo desde la propia
-  consola de Firestore (exportar colección a JSON).
+- Firebase Spark (gratis): 50.000 lecturas/día y 1 GiB de almacenamiento —
+  de sobra para un grupo pequeño de amigos.
+- TMDB: uso gratuito solo no comercial, con atribución (pie de página).
+- La comprobación diaria hace una petición a TMDB por cada película o serie
+  activa que aún tenga datos incompletos o esté pendiente de estreno, y una
+  a Open Library por cada libro sin sinopsis — una vez rellenos, dejan de
+  consultarse, así que el gasto de peticiones baja solo con el tiempo.

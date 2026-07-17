@@ -1,14 +1,60 @@
 rules_version = '2';
 
-// Solo tu cuenta (identificada por email) puede leer o escribir
-// cualquier documento bajo /users/{userId}/... Aunque el código
-// fuente de la web sea público, nadie más puede ver ni modificar
-// tus datos sin haber iniciado sesión con ese email exacto.
+// =============================================================
+// Modelo: cualquier correo de la lista puede registrarse y usar la
+// app. Como el acceso ya está controlado por esa lista, todos los
+// usuarios registrados se consideran "amigos" entre sí:
+//   - Cada uno solo puede ESCRIBIR sus propios datos.
+//   - Cualquiera de la lista puede LEER los datos de cualquier otro
+//     (para la sección de Amigos).
+//   - Las notificaciones son privadas: cada uno solo ve las suyas.
+//
+// IMPORTANTE: la lista de abajo debe coincidir exactamente con la
+// de js/allowed-emails.js. Si añades o quitas un correo, cámbialo
+// en los dos sitios y vuelve a pegar este archivo completo en
+// Firebase console → Firestore Database → Reglas → Publicar.
+// =============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null
-                          && request.auth.token.email == "gonzalojh596@gmail.com";
+
+    function isAllowedUser() {
+      return request.auth != null && request.auth.token.email in [
+        "gonzalojh596@gmail.com",
+        "djoserralozanopinilla@gmail.com",
+        "antoniolopeznoriega01@gmail.com"
+      ];
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // El perfil (nombre, foto, email) lo puede ver cualquier usuario
+      // autorizado, para poder listar "amigos". Solo el dueño lo edita.
+      allow read: if isAllowedUser();
+      allow write: if isAllowedUser() && isOwner(userId);
+
+      match /movies/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
+      match /series/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
+      match /books/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
+      // Las notificaciones son privadas: nadie más puede leerlas.
+      match /notifications/{notifId} {
+        allow read, write: if isAllowedUser() && isOwner(userId);
+      }
     }
   }
 }

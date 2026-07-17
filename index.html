@@ -228,11 +228,15 @@
     </footer>
   </div>
 
-  <!-- Vista de perfil / estadísticas -->
+  <!-- Vista de perfil / estadísticas / amigos -->
   <div id="profile-view" class="profile-view hidden">
     <div class="profile-view__header">
       <button type="button" class="btn btn--ghost" id="btn-close-profile">← Volver</button>
       <h1 class="app-title">Tu perfil</h1>
+      <div class="profile-subtabs">
+        <button type="button" class="profile-subtab is-active" data-section="stats">Estadísticas</button>
+        <button type="button" class="profile-subtab" data-section="friends">Amigos</button>
+      </div>
       <select id="stats-period-select">
         <option value="all">Siempre</option>
         <option value="year">Este año</option>
@@ -240,15 +244,39 @@
       </select>
     </div>
     <div class="profile-view__body">
-      <div class="stats-grid" id="stats-summary"></div>
-      <div class="stats-charts">
-        <div class="chart-card">
-          <h3>Actividad por mes</h3>
-          <canvas id="chart-activity"></canvas>
+      <div id="profile-section-stats">
+        <div class="stats-grid" id="stats-summary"></div>
+        <div class="stats-charts">
+          <div class="chart-card">
+            <h3>Actividad por mes</h3>
+            <canvas id="chart-activity"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Estados actuales</h3>
+            <canvas id="chart-status"></canvas>
+          </div>
         </div>
-        <div class="chart-card">
-          <h3>Estados actuales</h3>
-          <canvas id="chart-status"></canvas>
+      </div>
+
+      <div id="profile-section-friends" class="hidden">
+        <div id="friends-list" class="friends-list"></div>
+
+        <div id="friend-detail" class="friend-detail hidden">
+          <button type="button" class="btn-link" id="btn-back-to-friends">← Todos los amigos</button>
+          <h2 id="friend-detail-name" class="friend-detail__name"></h2>
+
+          <div class="friend-detail__section">
+            <h3>Películas</h3>
+            <div id="friend-movies" class="library-grid"></div>
+          </div>
+          <div class="friend-detail__section">
+            <h3>Series</h3>
+            <div id="friend-series" class="library-grid"></div>
+          </div>
+          <div class="friend-detail__section">
+            <h3>Libros</h3>
+            <div id="friend-books" class="library-grid"></div>
+          </div>
         </div>
       </div>
     </div>

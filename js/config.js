@@ -19,9 +19,8 @@ export const firebaseConfig = {
     measurementId: "G-HH7JJYF8SR"
   };
 
-// El email con el que vas a iniciar sesión (debe coincidir EXACTAMENTE
-// con el que pongas en firestore.rules)
-export const AUTHORIZED_EMAIL = "gonzalojh596@gmail.com";
+  // La lista de quién puede entrar vive en su propio archivo:
+// ver js/allowed-emails.js
 
 // Clave de la API de TMDB (gratuita, no comercial)
 // Consíguela en https://www.themoviedb.org/settings/api
