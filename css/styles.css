@@ -215,6 +215,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.4rem;
 }
@@ -658,6 +659,7 @@ button {
 .modal-actions {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 1.2rem;
 }
@@ -742,6 +744,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.5rem 0.6rem;
   background: #fff;
@@ -758,12 +761,21 @@ button {
   color: var(--ink);
   text-align: left;
   flex: 1;
+  min-width: 0;
   padding: 0;
 }
 
 .season-chevron {
   color: var(--ink-soft);
   font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.season-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .season-count {
@@ -871,7 +883,8 @@ button {
 .log-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
   background: #fff;
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
@@ -885,7 +898,13 @@ button {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--ink);
-  flex: 1;
+  flex: 1 1 108px;
+  min-width: 0;
+}
+
+.log-row .btn {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .log-row__arrow {
@@ -899,6 +918,7 @@ button {
 
 .log-add-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
@@ -911,6 +931,8 @@ button {
   font-size: 0.82rem;
   background: #fff;
   color: var(--ink);
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
 /* =========================================================
@@ -1499,6 +1521,8 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   font-weight: 600;
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
@@ -1584,14 +1608,49 @@ button {
   flex-wrap: wrap;
 }
 
-.profile-view__header select {
+.stats-period {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.profile-view__header select {
   background: var(--ink-raised);
   color: var(--paper);
   border: 1px solid rgba(241, 234, 217, 0.3);
   border-radius: 999px;
   padding: 0.35rem 0.7rem;
   font-size: 0.82rem;
+}
+
+.stats-range-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--paper);
+}
+
+.stats-range-fields input[type="date"] {
+  min-width: 0;
+  flex: 1 1 120px;
+}
+
+.stats-range-fields input[type="date"] {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid rgba(241, 234, 217, 0.3);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.stats-range-fields input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
 }
 
 .stats-grid {
@@ -1626,7 +1685,7 @@ button {
 
 .stats-charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 1.2rem;
 }
 
@@ -1660,7 +1719,9 @@ button {
   .log-add-row input[type="date"],
   .episode-row input.episode-date,
   .sort-select,
-  #stats-period-select {
+  #stats-period-select,
+  #stats-range-start,
+  #stats-range-end {
     font-size: 16px;
   }
 }

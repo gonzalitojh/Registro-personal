@@ -35,6 +35,7 @@ import {
   setEpisodeRating,
   setSeasonWatched,
   startRewatch,
+  normalizeEntry,
 } from "./tv-progress.js";
 import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import {
@@ -1009,7 +1010,22 @@ const friendsSection = document.getElementById("profile-section-friends");
 const friendsListEl = document.getElementById("friends-list");
 const friendDetailEl = document.getElementById("friend-detail");
 const friendDetailNameEl = document.getElementById("friend-detail-name");
+const statsPeriodWrap = document.querySelector(".stats-period");
 const statsPeriodSelect = document.getElementById("stats-period-select");
+const statsRangeFields = document.getElementById("stats-range-fields");
+const statsRangeStart = document.getElementById("stats-range-start");
+const statsRangeEnd = document.getElementById("stats-range-end");
+
+function getCurrentStatsFilter() {
+  if (statsPeriodSelect.value === "custom") {
+    return {
+      type: "custom",
+      start: statsRangeStart.value || null,
+      end: statsRangeEnd.value || null,
+    };
+  }
+  return { type: statsPeriodSelect.value };
+}
 
 document.getElementById("btn-open-profile").addEventListener("click", () => {
   document.getElementById("app").classList.add("hidden");
@@ -1018,8 +1034,17 @@ document.getElementById("btn-open-profile").addEventListener("click", () => {
   document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
   statsSection.classList.remove("hidden");
   friendsSection.classList.add("hidden");
-  statsPeriodSelect.classList.remove("hidden");
-  renderStats(statsPeriodSelect.value);
+  statsPeriodWrap.classList.remove("hidden");
+  // Esperamos a que el navegador termine de mostrar el contenedor antes de
+  // crear los gráficos: si Chart.js dibuja mientras el <canvas> aún está
+  // oculto (display:none), calcula un tamaño de 0 y queda en blanco hasta
+  // que algo lo vuelve a dibujar. Con dos vueltas de rAF nos aseguramos de
+  // que ya hay un layout real cuando llamamos a renderStats.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      renderStats(getCurrentStatsFilter());
+    });
+  });
 });
 
 document.getElementById("btn-close-profile").addEventListener("click", () => {
@@ -1027,8 +1052,18 @@ document.getElementById("btn-close-profile").addEventListener("click", () => {
   document.getElementById("app").classList.remove("hidden");
 });
 
-statsPeriodSelect.addEventListener("change", (e) => {
-  renderStats(e.target.value);
+statsPeriodSelect.addEventListener("change", () => {
+  const isCustom = statsPeriodSelect.value === "custom";
+  statsRangeFields.classList.toggle("hidden", !isCustom);
+  if (!isCustom) renderStats(getCurrentStatsFilter());
+  else if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter());
+});
+
+statsRangeStart.addEventListener("change", () => {
+  if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter());
+});
+statsRangeEnd.addEventListener("change", () => {
+  if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter());
 });
 
 profileSubtabs.forEach((btn) => {
@@ -1038,7 +1073,7 @@ profileSubtabs.forEach((btn) => {
     const section = btn.dataset.section;
     statsSection.classList.toggle("hidden", section !== "stats");
     friendsSection.classList.toggle("hidden", section !== "friends");
-    statsPeriodSelect.classList.toggle("hidden", section !== "stats");
+    statsPeriodWrap.classList.toggle("hidden", section !== "stats");
     if (section === "friends") {
       friendDetailEl.classList.add("hidden");
       friendsListEl.classList.remove("hidden");
@@ -1082,13 +1117,20 @@ document.getElementById("btn-back-to-friends").addEventListener("click", () => {
   friendsListEl.classList.remove("hidden");
 });
 
-function withinPeriod(dateStr, period) {
+function withinPeriod(dateStr, filter) {
   if (!dateStr) return false;
-  if (period === "all") return true;
+  if (filter.type === "all") return true;
+  if (filter.type === "custom") {
+    if (filter.start && dateStr < filter.start) return false;
+    if (filter.end && dateStr > filter.end) return false;
+    return true;
+  }
   const now = new Date();
   const d = new Date(dateStr);
-  if (period === "year") return d.getFullYear() === now.getFullYear();
-  if (period === "month") return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  if (filter.type === "year") return d.getFullYear() === now.getFullYear();
+  if (filter.type === "month") {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
   return true;
 }
 
@@ -1100,12 +1142,12 @@ const STATUS_LABELS_NEUTRAL = {
   abandonado: "Abandonado",
 };
 
-function computeStats(period) {
+function computeStats(filter) {
   const monthly = {};
   let moviesWatched = 0;
   allItems.movies.forEach((m) => {
     (m.watchLog || []).forEach((date) => {
-      if (withinPeriod(date, period)) {
+      if (withinPeriod(date, filter)) {
         moviesWatched++;
         const key = date.slice(0, 7);
         monthly[key] = (monthly[key] || 0) + 1;
@@ -1117,21 +1159,25 @@ function computeStats(period) {
   let seriesCompleted = 0;
   allItems.tv.forEach((s) => {
     Object.values(s.watched || {}).forEach((seasonMap) => {
-      Object.values(seasonMap).forEach((date) => {
-        if (withinPeriod(date, period)) {
+      // Cada episodio es { date, rating } (o, en datos antiguos, solo
+      // una fecha en texto plano) — normalizeEntry cubre ambos casos.
+      Object.values(seasonMap).forEach((raw) => {
+        const entry = normalizeEntry(raw);
+        if (!entry || !entry.date) return;
+        if (withinPeriod(entry.date, filter)) {
           episodesWatched++;
-          const key = date.slice(0, 7);
+          const key = entry.date.slice(0, 7);
           monthly[key] = (monthly[key] || 0) + 1;
         }
       });
     });
-    if (s.status === "completado" && withinPeriod(s.lastWatchedAt, period)) seriesCompleted++;
+    if (s.status === "completado" && withinPeriod(s.lastWatchedAt, filter)) seriesCompleted++;
   });
 
   let booksRead = 0;
   allItems.books.forEach((b) => {
     (b.readLog || []).forEach((entry) => {
-      if (entry.finishedAt && withinPeriod(entry.finishedAt, period)) {
+      if (entry.finishedAt && withinPeriod(entry.finishedAt, filter)) {
         booksRead++;
         const key = entry.finishedAt.slice(0, 7);
         monthly[key] = (monthly[key] || 0) + 1;
@@ -1150,8 +1196,8 @@ function computeStats(period) {
 let activityChart = null;
 let statusChart = null;
 
-function renderStats(period) {
-  const stats = computeStats(period);
+function renderStats(filter) {
+  const stats = computeStats(filter);
   const summaryEl = document.getElementById("stats-summary");
   summaryEl.innerHTML = `
     <div class="stat-tile"><span class="stat-tile__value">${stats.moviesWatched}</span><span class="stat-tile__label">Películas vistas</span></div>

@@ -239,11 +239,21 @@
         <button type="button" class="profile-subtab is-active" data-section="stats">Estadísticas</button>
         <button type="button" class="profile-subtab" data-section="friends">Amigos</button>
       </div>
-      <select id="stats-period-select">
-        <option value="all">Siempre</option>
-        <option value="year">Este año</option>
-        <option value="month">Este mes</option>
-      </select>
+      <div class="stats-period">
+        <select id="stats-period-select">
+          <option value="all">Siempre</option>
+          <option value="year">Este año</option>
+          <option value="month">Este mes</option>
+          <option value="custom">Rango personalizado…</option>
+        </select>
+        <div id="stats-range-fields" class="stats-range-fields hidden">
+          <label class="visually-hidden" for="stats-range-start">Desde</label>
+          <input type="date" id="stats-range-start" />
+          <span>→</span>
+          <label class="visually-hidden" for="stats-range-end">Hasta</label>
+          <input type="date" id="stats-range-end" />
+        </div>
+      </div>
     </div>
     <div class="profile-view__body">
       <div id="profile-section-stats">
