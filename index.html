@@ -67,7 +67,7 @@
       </div>
 
       <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab tab--media" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv">
+        <button class="tab tab--media is-active" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv">
           Series
         </button>
         <button class="tab tab--media" id="tab-movies" role="tab" aria-selected="false" data-panel="panel-movies">
@@ -184,6 +184,10 @@
           </div>
           <button type="submit" class="btn btn--accent-books">Buscar</button>
         </form>
+        <label class="lang-filter-check">
+          <input type="checkbox" id="books-spanish-only" checked />
+          Solo en español
+        </label>
         <div id="search-books-results" class="results-strip"></div>
         <div class="results-toolbar hidden" id="results-toolbar-books">
           <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-books">Cargar más</button>

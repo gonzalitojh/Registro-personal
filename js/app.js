@@ -388,10 +388,11 @@ document.getElementById("btn-load-more-tv").addEventListener("click", () => {
 /* ---------- Búsqueda: libros ---------- */
 
 const resultsBooks = document.getElementById("search-books-results");
+const booksSpanishOnly = document.getElementById("books-spanish-only");
 
 async function runBookSearch(query, page, forceSource) {
   try {
-    const result = await searchBooks(query, page, forceSource || null);
+    const result = await searchBooks(query, page, forceSource || null, booksSpanishOnly.checked);
     lastBookResults = page === 1 ? result.items : [...lastBookResults, ...result.items];
     searchState.books = { query, page, hasMore: result.hasMore, source: result.source };
     ui.renderSearchResults(resultsBooks, lastBookResults, existingIdsFor("books"), handleAdd);
@@ -406,6 +407,10 @@ document.getElementById("form-search-books").addEventListener("submit", (e) => {
   const query = document.getElementById("search-books-input").value.trim();
   if (!query) return;
   runBookSearch(query, 1, null);
+});
+
+booksSpanishOnly.addEventListener("change", () => {
+  if (searchState.books.query) runBookSearch(searchState.books.query, 1, null);
 });
 
 document.getElementById("btn-load-more-books").addEventListener("click", () => {

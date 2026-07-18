@@ -1853,3 +1853,21 @@ button {
 .friend-detail__section .empty-state {
   color: rgba(241, 234, 217, 0.5);
 }
+
+/* =========================================================
+   Casilla "Solo en español" (búsqueda de libros)
+   ========================================================= */
+
+.lang-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: rgba(241, 234, 217, 0.7);
+  margin: 0.5rem 0 0.3rem;
+  cursor: pointer;
+}
+
+.lang-filter-check input {
+  accent-color: var(--ochre-spine);
+}

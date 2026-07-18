@@ -57,6 +57,16 @@ function dedupeBooks(results) {
 
 /* ---------- Open Library (fuente principal) ---------- */
 
+function extractEditionLanguage(doc) {
+  const edition = doc.editions && doc.editions.docs && doc.editions.docs[0];
+  if (!edition || !edition.language) return null;
+  const lang = Array.isArray(edition.language) ? edition.language[0] : edition.language;
+  if (!lang) return null;
+  if (typeof lang === "string") return lang;
+  if (lang.key) return String(lang.key).replace("/languages/", "");
+  return null;
+}
+
 function mapOpenLibraryResult(d) {
   return {
     externalId: d.key, // p.ej. "/works/OL27258W"
@@ -66,18 +76,37 @@ function mapOpenLibraryResult(d) {
     year: d.first_publish_year ? String(d.first_publish_year) : "",
     pages: null,
     coverUrl: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+    // "spa" = español, según el código ISO 639-2 de la edición que Open
+    // Library eligió como representativa de este libro.
+    language: extractEditionLanguage(d),
   };
 }
 
-export async function searchOpenLibrary(searchTerm, page = 1) {
+// spanishOnly: si es true, descarta directamente los libros cuya edición
+// representativa esté confirmada en otro idioma (se conservan los que no
+// tienen ese dato, para no perder resultados por falta de metadatos).
+// Si es false, no se descarta nada, pero los que sí están en español
+// aparecen primero.
+export async function searchOpenLibrary(searchTerm, page = 1, spanishOnly = false) {
   const url =
     `${OPEN_LIBRARY_URL}?q=${encodeURIComponent(searchTerm)}` +
     `&page=${page}&limit=${PAGE_SIZE}&lang=es` +
-    `&fields=key,title,author_name,first_publish_year,cover_i`;
+    `&fields=key,title,author_name,first_publish_year,cover_i,editions,editions.key,editions.language,editions.cover_i`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo buscar en Open Library.");
   });
-  const items = dedupeBooks((data.docs || []).map(mapOpenLibraryResult));
+  let items = dedupeBooks((data.docs || []).map(mapOpenLibraryResult));
+
+  if (spanishOnly) {
+    items = items.filter((r) => r.language === "spa" || !r.language);
+  } else {
+    items = [...items].sort((a, b) => {
+      const aEs = a.language === "spa" ? 0 : 1;
+      const bEs = b.language === "spa" ? 0 : 1;
+      return aEs - bEs;
+    });
+  }
+
   const hasMore = (data.numFound || 0) > page * PAGE_SIZE;
   return { items, hasMore, source: "openlibrary" };
 }
@@ -132,7 +161,7 @@ export async function searchGoogleBooksResults(searchTerm, page = 1) {
 // page 1: decide sola qué fuente usar (Open Library primero).
 // Para páginas siguientes, pásale la fuente que devolvió la página 1
 // en forceSource, para seguir "cargando más" desde la misma fuente.
-export async function searchBooks(searchTerm, page = 1, forceSource = null) {
+export async function searchBooks(searchTerm, page = 1, forceSource = null, spanishOnly = false) {
   const source = forceSource || "openlibrary";
 
   if (source === "googlebooks") {
@@ -140,7 +169,7 @@ export async function searchBooks(searchTerm, page = 1, forceSource = null) {
   }
 
   try {
-    const result = await searchOpenLibrary(searchTerm, page);
+    const result = await searchOpenLibrary(searchTerm, page, spanishOnly);
     if (result.items.length || forceSource === "openlibrary") return result;
   } catch (err) {
     if (forceSource === "openlibrary") throw err;

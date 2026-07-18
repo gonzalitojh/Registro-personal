@@ -148,8 +148,13 @@ vista de lista** — pensado para el uso más habitual.
   manual** (con nº de episodios para series manuales), **buscar en tu
   propia lista**, **más resultados con "Cargar más"**, **colores pastel por
   estado**, **información ampliada** (duración, género, director/creadores,
-  reparto, sinopsis) — todo esto ya explicado en versiones anteriores de
-  este README, sigue funcionando igual.
+  reparto, sinopsis), y una casilla **"Solo en español"** en la búsqueda de
+  libros (activada por defecto): sin marcarla, los resultados en español
+  simplemente aparecen primero; marcándola, se descartan directamente los
+  que Open Library confirma en otro idioma (los que no tienen ese dato no
+  se descartan, para no perder resultados por falta de metadatos) — todo
+  esto ya explicado en versiones anteriores de este README, sigue
+  funcionando igual.
 - **Notificaciones** (🔔): avisa de estrenos y episodios nuevos, una vez al
   día. Esa misma comprobación diaria **también rellena información que
   faltase** (sinopsis, reparto, director, fecha de estreno...) en cualquier
