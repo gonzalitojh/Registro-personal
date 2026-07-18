@@ -12,7 +12,7 @@
 // =============================================================
 
 export const ALLOWED_EMAILS = [
-  "tu-email@gmail.com",
-  "amigo1@gmail.com",
-  "amigo2@gmail.com",
+  "gonzalojh596@gmail.com",
+  "djoserralozanopinilla@gmail.com",
+  "antoniolopeznoriega01@gmail.com",
 ];
