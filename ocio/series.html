@@ -1,0 +1,51 @@
+<!--
+  Contenido de la pestaña "Series". app.js lo carga con fetch() y lo
+  inyecta dentro de <section id="panel-tv">. El propio <section> (con su
+  id, clases y data-type-group) vive en index.html; aquí solo va lo de
+  dentro, para que se pueda mantener por separado.
+-->
+<form id="form-search-tv" class="search-slip" autocomplete="off">
+  <div class="search-input-wrap">
+    <input id="search-tv-input" type="text" placeholder="Busca una serie… (ej. Severance)" />
+    <button type="button" class="search-clear-btn hidden" data-scope="tv" aria-label="Borrar búsqueda">✕</button>
+  </div>
+  <button type="submit" class="btn btn--accent-media">Buscar</button>
+</form>
+<div id="search-tv-results" class="results-strip"></div>
+<div class="results-toolbar hidden" id="results-toolbar-tv">
+  <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-tv">Cargar más</button>
+  <button type="button" class="btn-link" id="btn-hide-results-tv">Ocultar resultados</button>
+</div>
+<button type="button" class="btn-link" id="btn-manual-tv">¿No la encuentras? Añadir manualmente</button>
+
+<div class="library-head">
+  <h2>Mis series</h2>
+  <div class="library-controls">
+    <div class="library-search">
+      <span aria-hidden="true">🔍</span>
+      <input type="search" class="library-search-input" data-scope="tv" placeholder="Buscar en mi lista…" />
+    </div>
+    <div class="filter-chips" data-scope="tv">
+      <button class="chip" data-status="todos">Todos</button>
+      <button class="chip" data-status="pendiente">Pendiente</button>
+      <button class="chip is-active" data-status="en_curso">Viendo</button>
+      <button class="chip" data-status="completado">Vista</button>
+      <button class="chip" data-status="standby">Standby</button>
+      <button class="chip" data-status="abandonado">Abandonada</button>
+    </div>
+    <select class="sort-select" data-scope="tv">
+      <option value="añadido">Añadidas recientemente</option>
+      <option value="fecha">Fecha de visionado</option>
+      <option value="alfabetico">Alfabético</option>
+      <option value="anio">Año de estreno</option>
+    </select>
+    <div class="view-toggle" data-scope="tv">
+      <button type="button" class="view-toggle__btn" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+      <button type="button" class="view-toggle__btn is-active" data-view="list" aria-label="Vista en lista">☰</button>
+    </div>
+  </div>
+</div>
+<div id="library-tv" class="library-grid"></div>
+<p id="empty-tv" class="empty-state hidden">
+  Aún no hay nada aquí. Busca una serie arriba y pulsa «Añadir».
+</p>

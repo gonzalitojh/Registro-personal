@@ -18,6 +18,7 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="ocio/ocio.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -80,152 +81,18 @@
     </header>
 
     <main>
-      <!-- Panel Series -->
-      <section id="panel-tv" class="panel" data-type-group="tv">
-        <form id="form-search-tv" class="search-slip" autocomplete="off">
-          <div class="search-input-wrap">
-            <input id="search-tv-input" type="text" placeholder="Busca una serie… (ej. Severance)" />
-            <button type="button" class="search-clear-btn hidden" data-scope="tv" aria-label="Borrar búsqueda">✕</button>
-          </div>
-          <button type="submit" class="btn btn--accent-media">Buscar</button>
-        </form>
-        <div id="search-tv-results" class="results-strip"></div>
-        <div class="results-toolbar hidden" id="results-toolbar-tv">
-          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-tv">Cargar más</button>
-          <button type="button" class="btn-link" id="btn-hide-results-tv">Ocultar resultados</button>
-        </div>
-        <button type="button" class="btn-link" id="btn-manual-tv">¿No la encuentras? Añadir manualmente</button>
-
-        <div class="library-head">
-          <h2>Mis series</h2>
-          <div class="library-controls">
-            <div class="library-search">
-              <span aria-hidden="true">🔍</span>
-              <input type="search" class="library-search-input" data-scope="tv" placeholder="Buscar en mi lista…" />
-            </div>
-            <div class="filter-chips" data-scope="tv">
-              <button class="chip" data-status="todos">Todos</button>
-              <button class="chip" data-status="pendiente">Pendiente</button>
-              <button class="chip is-active" data-status="en_curso">Viendo</button>
-              <button class="chip" data-status="completado">Vista</button>
-              <button class="chip" data-status="standby">Standby</button>
-              <button class="chip" data-status="abandonado">Abandonada</button>
-            </div>
-            <select class="sort-select" data-scope="tv">
-              <option value="añadido">Añadidas recientemente</option>
-              <option value="fecha">Fecha de visionado</option>
-              <option value="alfabetico">Alfabético</option>
-              <option value="anio">Año de estreno</option>
-            </select>
-            <div class="view-toggle" data-scope="tv">
-              <button type="button" class="view-toggle__btn" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
-              <button type="button" class="view-toggle__btn is-active" data-view="list" aria-label="Vista en lista">☰</button>
-            </div>
-          </div>
-        </div>
-        <div id="library-tv" class="library-grid"></div>
-        <p id="empty-tv" class="empty-state hidden">
-          Aún no hay nada aquí. Busca una serie arriba y pulsa «Añadir».
-        </p>
+      <!-- El contenido de cada pestaña vive en ocio/*.html y lo inyecta
+           app.js con fetch() dentro de estas tres secciones. -->
+      <section id="panel-tv" class="panel" data-type-group="tv" data-ocio-src="ocio/series.html">
+        <p class="empty-state">Cargando…</p>
       </section>
 
-      <!-- Panel Películas -->
-      <section id="panel-movies" class="panel hidden" data-type-group="movies">
-        <form id="form-search-movies" class="search-slip" autocomplete="off">
-          <div class="search-input-wrap">
-            <input id="search-movies-input" type="text" placeholder="Busca una película… (ej. Dune)" />
-            <button type="button" class="search-clear-btn hidden" data-scope="movies" aria-label="Borrar búsqueda">✕</button>
-          </div>
-          <button type="submit" class="btn btn--accent-media">Buscar</button>
-        </form>
-        <div id="search-movies-results" class="results-strip"></div>
-        <div class="results-toolbar hidden" id="results-toolbar-movies">
-          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-movies">Cargar más</button>
-          <button type="button" class="btn-link" id="btn-hide-results-movies">Ocultar resultados</button>
-        </div>
-        <button type="button" class="btn-link" id="btn-manual-movie">¿No la encuentras? Añadir manualmente</button>
-
-        <div class="library-head">
-          <h2>Mis películas</h2>
-          <div class="library-controls">
-            <div class="library-search">
-              <span aria-hidden="true">🔍</span>
-              <input type="search" class="library-search-input" data-scope="movies" placeholder="Buscar en mi lista…" />
-            </div>
-            <div class="filter-chips" data-scope="movies">
-              <button class="chip is-active" data-status="todos">Todos</button>
-              <button class="chip" data-status="pendiente">Pendiente</button>
-              <button class="chip" data-status="completado">Vista</button>
-            </div>
-            <select class="sort-select" data-scope="movies">
-              <option value="añadido">Añadidas recientemente</option>
-              <option value="fecha">Fecha de visionado</option>
-              <option value="alfabetico">Alfabético</option>
-              <option value="anio">Año de estreno</option>
-            </select>
-            <div class="view-toggle" data-scope="movies">
-              <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
-              <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
-            </div>
-          </div>
-        </div>
-        <div id="library-movies" class="library-grid"></div>
-        <p id="empty-movies" class="empty-state hidden">
-          Aún no hay nada aquí. Busca un título arriba y pulsa «Añadir».
-        </p>
+      <section id="panel-movies" class="panel hidden" data-type-group="movies" data-ocio-src="ocio/peliculas.html">
+        <p class="empty-state">Cargando…</p>
       </section>
 
-      <!-- Panel Libros -->
-      <section id="panel-books" class="panel hidden" data-type-group="books">
-        <form id="form-search-books" class="search-slip" autocomplete="off">
-          <div class="search-input-wrap">
-            <input id="search-books-input" type="text" placeholder="Busca un libro o autor…" />
-            <button type="button" class="search-clear-btn hidden" data-scope="books" aria-label="Borrar búsqueda">✕</button>
-          </div>
-          <button type="submit" class="btn btn--accent-books">Buscar</button>
-        </form>
-        <label class="lang-filter-check">
-          <input type="checkbox" id="books-spanish-only" checked />
-          Solo en español
-        </label>
-        <div id="search-books-results" class="results-strip"></div>
-        <div class="results-toolbar hidden" id="results-toolbar-books">
-          <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-books">Cargar más</button>
-          <button type="button" class="btn-link" id="btn-hide-results-books">Ocultar resultados</button>
-        </div>
-        <button type="button" class="btn-link" id="btn-manual-book">¿No lo encuentras? Añadir manualmente</button>
-
-        <div class="library-head">
-          <h2>Mi biblioteca</h2>
-          <div class="library-controls">
-            <div class="library-search">
-              <span aria-hidden="true">🔍</span>
-              <input type="search" class="library-search-input" data-scope="books" placeholder="Buscar en mi lista…" />
-            </div>
-            <div class="filter-chips" data-scope="books">
-              <button class="chip is-active" data-status="todos">Todos</button>
-              <button class="chip" data-status="pendiente">Pendiente</button>
-              <button class="chip" data-status="en_curso">Leyendo</button>
-              <button class="chip" data-status="completado">Leído</button>
-              <button class="chip" data-status="standby">Standby</button>
-              <button class="chip" data-status="abandonado">Abandonado</button>
-            </div>
-            <select class="sort-select" data-scope="books">
-              <option value="añadido">Añadidos recientemente</option>
-              <option value="fecha">Fecha de lectura</option>
-              <option value="alfabetico">Alfabético</option>
-              <option value="anio">Año de publicación</option>
-            </select>
-            <div class="view-toggle" data-scope="books">
-              <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
-              <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
-            </div>
-          </div>
-        </div>
-        <div id="library-books" class="library-grid"></div>
-        <p id="empty-books" class="empty-state hidden">
-          Tu biblioteca está vacía. Busca un libro arriba y pulsa «Añadir».
-        </p>
+      <section id="panel-books" class="panel hidden" data-type-group="books" data-ocio-src="ocio/libros.html">
+        <p class="empty-state">Cargando…</p>
       </section>
     </main>
 

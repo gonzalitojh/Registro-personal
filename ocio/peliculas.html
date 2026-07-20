@@ -1,0 +1,46 @@
+<!--
+  Contenido de la pestaña "Películas". Se inyecta dentro de
+  <section id="panel-movies"> (ver ocio/series.html para la explicación).
+-->
+<form id="form-search-movies" class="search-slip" autocomplete="off">
+  <div class="search-input-wrap">
+    <input id="search-movies-input" type="text" placeholder="Busca una película… (ej. Dune)" />
+    <button type="button" class="search-clear-btn hidden" data-scope="movies" aria-label="Borrar búsqueda">✕</button>
+  </div>
+  <button type="submit" class="btn btn--accent-media">Buscar</button>
+</form>
+<div id="search-movies-results" class="results-strip"></div>
+<div class="results-toolbar hidden" id="results-toolbar-movies">
+  <button type="button" class="btn btn--small btn--outline-dark" id="btn-load-more-movies">Cargar más</button>
+  <button type="button" class="btn-link" id="btn-hide-results-movies">Ocultar resultados</button>
+</div>
+<button type="button" class="btn-link" id="btn-manual-movie">¿No la encuentras? Añadir manualmente</button>
+
+<div class="library-head">
+  <h2>Mis películas</h2>
+  <div class="library-controls">
+    <div class="library-search">
+      <span aria-hidden="true">🔍</span>
+      <input type="search" class="library-search-input" data-scope="movies" placeholder="Buscar en mi lista…" />
+    </div>
+    <div class="filter-chips" data-scope="movies">
+      <button class="chip is-active" data-status="todos">Todos</button>
+      <button class="chip" data-status="pendiente">Pendiente</button>
+      <button class="chip" data-status="completado">Vista</button>
+    </div>
+    <select class="sort-select" data-scope="movies">
+      <option value="añadido">Añadidas recientemente</option>
+      <option value="fecha">Fecha de visionado</option>
+      <option value="alfabetico">Alfabético</option>
+      <option value="anio">Año de estreno</option>
+    </select>
+    <div class="view-toggle" data-scope="movies">
+      <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+      <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
+    </div>
+  </div>
+</div>
+<div id="library-movies" class="library-grid"></div>
+<p id="empty-movies" class="empty-state hidden">
+  Aún no hay nada aquí. Busca un título arriba y pulsa «Añadir».
+</p>

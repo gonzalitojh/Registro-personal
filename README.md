@@ -7,11 +7,17 @@ Firebase como base de datos multiusuario.
 
 ```
 mi-registro/
-├── index.html
+├── index.html               ← armazón: cabecera, login, modal, perfil
+├── manifest.json             (tuyo, no lo toca este proyecto)
 ├── resources/
 │   └── icon.png            ← tu icono (ya lo tienes puesto)
+├── ocio/                    ← sección "ocio": pelis, series y libros
+│   ├── series.html          contenido de la pestaña Series
+│   ├── peliculas.html       contenido de la pestaña Películas
+│   ├── libros.html          contenido de la pestaña Libros
+│   └── ocio.css             estilos específicos de esta sección
 ├── css/
-│   └── styles.css
+│   └── styles.css          ← estilos del armazón (compartidos)
 ├── js/
 │   ├── config.js           ← claves de Firebase/TMDB/Books (rellenar)
 │   ├── allowed-emails.js   ← lista de quién puede registrarse (rellenar)
@@ -29,6 +35,35 @@ mi-registro/
 ├── firestore.rules         ← reglas de seguridad (¡mantener igual que allowed-emails.js!)
 └── README.md
 ```
+
+## Cómo está organizado el HTML/CSS
+
+Sigue siendo **una sola página** (una URL, sin recargas al cambiar de
+pestaña): `index.html` trae el armazón —cabecera, pestañas, pantalla de
+login, modal, perfil— y dentro de cada `<section>` de pestaña solo hay un
+`data-ocio-src="ocio/....html"`. Al cargar, `app.js` pide esos tres
+archivos con `fetch()` y los inyecta en su sitio antes de conectar el
+resto de la aplicación. Para quien la usa no cambia nada; para ti, el
+código de cada pestaña vive en su propio archivo dentro de `ocio/`.
+
+El CSS sigue la misma idea: `css/styles.css` tiene los tokens de color y
+tipografía y todo lo que es "armazón" (login, cabecera, modal vacío,
+perfil, notificaciones); `ocio/ocio.css` tiene todo lo específico de
+pelis/series/libros (buscador, tarjetas, temporadas, formularios...).
+Ambos se cargan siempre juntos, así que las variables de color definidas
+en uno están disponibles en el otro sin nada especial.
+
+Si en el futuro añades otra sección (no-ocio), sería una carpeta hermana
+de `ocio/` con su propia estructura (`.html` por pestaña + su `.css`),
+enganchada al mismo armazón.
+
+> **Importante para probarlo en local:** como ahora `app.js` usa
+> `fetch()` para traer esos archivos, abrir `index.html` directamente
+> haciendo doble clic (protocolo `file://`) **ya no funciona en
+> absoluto** — los navegadores bloquean `fetch()` de archivos locales por
+> seguridad. Prueba siempre desde un servidor local
+> (`python3 -m http.server` en la carpeta del proyecto) o directamente
+> desde tu URL de GitHub Pages.
 
 ## Cómo funciona el acceso (léelo con calma, es lo más delicado)
 

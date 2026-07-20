@@ -70,7 +70,29 @@ const librarySearchText = { movies: "", tv: "", books: "" };
 
 const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book" };
 
-/* ---------- Pestañas ---------- */
+// Carga el contenido de cada pestaña desde su propio archivo en ocio/ y lo
+// inyecta dentro de la sección correspondiente. Cada <section> ya trae su
+// id, sus clases y data-ocio-src en index.html; aquí solo se rellena.
+async function loadOcioPartials() {
+  const sections = document.querySelectorAll("[data-ocio-src]");
+  await Promise.all(
+    Array.from(sections).map(async (section) => {
+      try {
+        const res = await fetch(section.dataset.ocioSrc);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        section.innerHTML = await res.text();
+      } catch (err) {
+        section.innerHTML = `<p class="empty-state">No se pudo cargar esta sección (${section.dataset.ocioSrc}). Comprueba que estás sirviendo la web desde un servidor (no abriendo el archivo directamente) y recarga la página.</p>`;
+        console.error("No se pudo cargar", section.dataset.ocioSrc, err);
+      }
+    })
+  );
+}
+
+async function init() {
+  await loadOcioPartials();
+
+  /* ---------- Pestañas ---------- */
 
 const tabs = document.querySelectorAll(".tab");
 const panels = {
@@ -1242,3 +1264,9 @@ function renderStats(filter) {
     options: { responsive: true },
   });
 }
+
+} // fin de init()
+
+init().catch((err) => {
+  console.error("No se pudo iniciar la aplicación:", err);
+});
