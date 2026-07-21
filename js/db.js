@@ -68,9 +68,14 @@ export async function getItemsOnce(uid, type) {
 }
 
 // Se suscribe en tiempo real a los items de un tipo concreto.
+// Se ordena por addedAt (la fecha en la que TÚ lo añadiste, que no
+// cambia nunca) y no por updatedAt (que se actualiza con cualquier
+// escritura, incluida la revisión diaria en segundo plano que rellena
+// metadatos) — así, que se complete información de una ficha no la hace
+// saltar al principio de "Añadidas recientemente".
 // Devuelve una función para cancelar la suscripción.
 export function subscribeToItems(uid, type, onChange, onError) {
-  const q = query(itemsRef(uid, type), orderBy("updatedAt", "desc"));
+  const q = query(itemsRef(uid, type), orderBy("addedAt", "desc"));
   return onSnapshot(
     q,
     (snapshot) => {

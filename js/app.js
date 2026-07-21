@@ -322,7 +322,7 @@ function applySort(items, sortKey) {
   if (sortKey === "alfabetico") return [...items].sort(compareAlphabetical);
   if (sortKey === "anio") return [...items].sort(compareByYearDesc);
   if (sortKey === "fecha") return [...items].sort(compareByDateDesc);
-  return items;
+  return items; // "añadido": ya viene ordenado por addedAt desc desde Firestore
 }
 
 function itemsByGroup(group) {
