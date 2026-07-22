@@ -296,17 +296,25 @@ function compareByYearDesc(a, b) {
 }
 
 function getSortDate(item) {
+  let activity = null;
   if (item.type === "movie") {
-    return item.watchLog && item.watchLog.length ? item.watchLog[item.watchLog.length - 1] : null;
-  }
-  if (item.type === "tv") return item.lastWatchedAt || null;
-  if (item.type === "book") {
+    activity = item.watchLog && item.watchLog.length ? item.watchLog[item.watchLog.length - 1] : null;
+  } else if (item.type === "tv") {
+    activity = item.lastWatchedAt || null;
+  } else if (item.type === "book") {
     const log = item.readLog || [];
-    if (!log.length) return null;
-    const last = log[log.length - 1];
-    return last.finishedAt || last.startedAt || null;
+    if (log.length) {
+      const last = log[log.length - 1];
+      activity = last.finishedAt || last.startedAt || null;
+    }
   }
-  return null;
+  // Si se acaba de detectar que se ha estrenado (pelis y series que
+  // estaban pendientes de estreno), eso también cuenta como actividad,
+  // para que suba en el orden aunque todavía no se haya visto.
+  if (item.releasedNoticedAt && (!activity || item.releasedNoticedAt > activity)) {
+    activity = item.releasedNoticedAt;
+  }
+  return activity;
 }
 
 function compareByDateDesc(a, b) {
@@ -318,11 +326,39 @@ function compareByDateDesc(a, b) {
   return db.localeCompare(da);
 }
 
+// Normaliza a un texto comparable tanto las fechas "YYYY-MM-DD" que
+// guardamos nosotros como los Timestamp de Firestore (addedAt), para
+// poder compararlos entre sí en el mismo orden.
+function toComparableTime(value) {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (typeof value.seconds === "number") return new Date(value.seconds * 1000).toISOString();
+  return null;
+}
+
+// Última actividad real (último episodio visto, última vez vista/leída);
+// si todavía no hay ninguna, se usa la fecha en la que se añadió.
+function getActivityOrAddedTime(item) {
+  return toComparableTime(getSortDate(item)) || toComparableTime(item.addedAt);
+}
+
+function compareByActivityDesc(a, b) {
+  const da = getActivityOrAddedTime(a);
+  const db = getActivityOrAddedTime(b);
+  if (!da && !db) return 0;
+  if (!da) return 1;
+  if (!db) return -1;
+  return db.localeCompare(da);
+}
+
 function applySort(items, sortKey) {
   if (sortKey === "alfabetico") return [...items].sort(compareAlphabetical);
   if (sortKey === "anio") return [...items].sort(compareByYearDesc);
   if (sortKey === "fecha") return [...items].sort(compareByDateDesc);
-  return items; // "añadido": ya viene ordenado por addedAt desc desde Firestore
+  // "añadido" (por defecto): lo visto/leído más recientemente sube arriba;
+  // lo que aún no se ha empezado se ordena por cuándo se añadió.
+  return [...items].sort(compareByActivityDesc);
 }
 
 function itemsByGroup(group) {
@@ -922,6 +958,7 @@ async function checkForUpdates() {
           message: `«${movie.title}» ya se ha estrenado (${formatDateEs(fresh.releaseDate)}).`,
         });
         updates.awaitingRelease = false;
+        updates.releasedNoticedAt = today;
       }
 
       if (Object.keys(updates).length) {
@@ -944,6 +981,7 @@ async function checkForUpdates() {
       if (show.awaitingRelease && fresh.firstAirDate && fresh.firstAirDate <= today) {
         await addNotification(currentUser.uid, { message: `«${show.title}» ya se ha estrenado.` });
         updates.awaitingRelease = false;
+        updates.releasedNoticedAt = today;
         justPremiered = true;
       }
 
