@@ -170,9 +170,32 @@ function quickActionLabel(item) {
   return "Empezar ✓";
 }
 
+// El siguiente episodio que le toca ver coincide con el próximo episodio
+// que TMDB dice que aún no se ha emitido (copia local de la misma
+// comprobación que hace app.js para el orden, para no acoplar ui.js a
+// la lógica de negocio de otro módulo).
+function isNextEpisodeUnreleased(item) {
+  if (item.type !== "tv" || !item.nextEpisode || !item.nextEpisodeToAir) return false;
+  return (
+    item.nextEpisodeToAir.season === item.nextEpisode.season &&
+    item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
+    Boolean(item.nextEpisodeToAir.airDate) &&
+    item.nextEpisodeToAir.airDate > todayISO()
+  );
+}
+
 function upcomingBadge(item) {
   if (item.awaitingRelease) {
-    return `<div class="item-card__upcoming">Aún no estrenada</div>`;
+    const date = item.type === "movie" ? item.releaseDate : item.firstAirDate;
+    return `<div class="item-card__upcoming">Aún no estrenada${
+      date ? ` · ${formatDateEs(date)}` : ""
+    }</div>`;
+  }
+  if (isNextEpisodeUnreleased(item)) {
+    const { season, episode, airDate } = item.nextEpisodeToAir;
+    return `<div class="item-card__upcoming item-card__upcoming--episode">
+      Aún no estrenado · T${season}E${episode}${airDate ? ` · ${formatDateEs(airDate)}` : ""}
+    </div>`;
   }
   return "";
 }
@@ -183,8 +206,9 @@ function renderGrid(gridEl, items, onOpen) {
     .map((item, index) => {
       const stars = item.rating ? "★".repeat(item.rating) : "";
       const progress = progressLine(item);
+      const blockedClass = isNextEpisodeUnreleased(item) ? " item-card--episode-unreleased" : "";
       return `
-      <article class="item-card item-card--${item.status}">
+      <article class="item-card item-card--${item.status}${blockedClass}">
         <div class="item-card__cover-wrap">
           <img class="item-card__cover" loading="lazy"
                src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
@@ -253,8 +277,9 @@ function renderList(gridEl, items, { onOpen, onQuickAction }) {
   gridEl.innerHTML = items
     .map((item, index) => {
       const progress = progressLine(item);
+      const blockedClass = isNextEpisodeUnreleased(item) ? " list-row--episode-unreleased" : "";
       return `
-      <div class="list-row list-row--${item.status}" data-index="${index}">
+      <div class="list-row list-row--${item.status}${blockedClass}" data-index="${index}">
         <div class="list-row__swipe-bg">✓ ${escapeHtml(quickActionLabel(item))}</div>
         <div class="list-row__content">
           <button class="list-row__open" data-index="${index}"
@@ -860,7 +885,9 @@ function renderEpisodeRows(episodes, seasonWatched) {
           </label>
           <span class="episode-row__num">E${e.episodeNumber}</span>
           <span class="episode-row__name">${escapeHtml(e.name)}${
-        future ? ` <em class="episode-row__future">(sin estrenar)</em>` : ""
+        future
+          ? ` <em class="episode-row__future">(sin estrenar · ${formatDateEs(e.airDate)})</em>`
+          : ""
       }</span>
           <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
         </div>

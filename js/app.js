@@ -343,7 +343,22 @@ function getActivityOrAddedTime(item) {
   return toComparableTime(getSortDate(item)) || toComparableTime(item.addedAt);
 }
 
+// El siguiente episodio que le toca ver al usuario coincide con el
+// próximo episodio que TMDB dice que aún no se ha emitido.
+function isNextEpisodeUnreleased(item) {
+  if (item.type !== "tv" || !item.nextEpisode || !item.nextEpisodeToAir) return false;
+  return (
+    item.nextEpisodeToAir.season === item.nextEpisode.season &&
+    item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
+    Boolean(item.nextEpisodeToAir.airDate) &&
+    item.nextEpisodeToAir.airDate > todayISO()
+  );
+}
+
 function compareByActivityDesc(a, b) {
+  const aBlocked = isNextEpisodeUnreleased(a);
+  const bBlocked = isNextEpisodeUnreleased(b);
+  if (aBlocked !== bBlocked) return aBlocked ? 1 : -1;
   const da = getActivityOrAddedTime(a);
   const db = getActivityOrAddedTime(b);
   if (!da && !db) return 0;
@@ -974,6 +989,7 @@ async function checkForUpdates() {
   for (const show of activeShows) {
     try {
       const needsBackfill = !show.overview || show.awaitingRelease;
+      const wasEpisodeBlocked = isNextEpisodeUnreleased(show);
       const fresh = await getTvExtraDetails(show.externalId);
       const updates = {};
       let justPremiered = false;
@@ -1000,6 +1016,18 @@ async function checkForUpdates() {
         }
       }
       if (fresh.nextEpisodeToAir) updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
+
+      // Si el episodio que tenía pendiente de ver acaba de estrenarse
+      // (según los datos frescos), cuenta como actividad para que la
+      // serie suba en el orden aunque todavía no se haya marcado como
+      // vista.
+      if (
+        !justPremiered &&
+        wasEpisodeBlocked &&
+        !isNextEpisodeUnreleased({ ...show, nextEpisodeToAir: fresh.nextEpisodeToAir })
+      ) {
+        updates.releasedNoticedAt = today;
+      }
 
       if (needsBackfill) {
         if (fresh.overview) updates.overview = fresh.overview;

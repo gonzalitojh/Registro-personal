@@ -867,6 +867,27 @@
   margin-bottom: 0.3rem;
 }
 
+.item-card__upcoming--episode {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Serie con el próximo episodio aún sin estrenar: rayas entre el color
+   de "Viendo" y el de "Abandonada", para que se distinga de un vistazo
+   sin necesitar leer la insignia. Va después de los colores de estado
+   para que gane sobre el fondo plano de item-card--en_curso, etc. */
+.item-card--episode-unreleased {
+  background: repeating-linear-gradient(
+    135deg,
+    #c3ddd6 0px,
+    #c3ddd6 14px,
+    #f0c2b8 14px,
+    #f0c2b8 28px
+  );
+}
+.item-card--episode-unreleased .item-card__body {
+  background: transparent;
+}
 
 /* =========================================================
    Vista de lista
@@ -916,6 +937,19 @@
 .list-row--completado .list-row__content { background: #f0d9a3; }
 .list-row--standby .list-row__content { background: #d9d2c0; }
 .list-row--abandonado .list-row__content { background: #f0c2b8; }
+
+/* Serie con el próximo episodio aún sin estrenar (vista de lista):
+   mismas rayas que en la cuadrícula. Va después de los colores de
+   estado para que gane sobre el fondo plano. */
+.list-row--episode-unreleased .list-row__content {
+  background: repeating-linear-gradient(
+    135deg,
+    #c3ddd6 0px,
+    #c3ddd6 14px,
+    #f0c2b8 14px,
+    #f0c2b8 28px
+  );
+}
 
 .list-row__open {
   flex: 1;
