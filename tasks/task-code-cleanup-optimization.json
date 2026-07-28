@@ -1,0 +1,27 @@
+{
+  "title": "Limpieza, optimización y mejoras arquitectónicas del proyecto",
+  "description": "Revisión completa del proyecto Registro-personal para realizar limpieza de código, optimización de rendimiento y mejoras arquitectónicas. El proyecto es una app web estática (HTML+CSS+JS con módulos nativos) que usa Firebase y APIs externas (TMDB, Open Library, Google Books). Actualmente el archivo app.js es un monolito de 1338 líneas que contiene toda la lógica de negocio, y ui.js tiene 1323 líneas con todo el renderizado. Se necesitan mejoras en modularidad, eliminación de código duplicado, y mejoras de arquitectura.",
+  "status": "documented",
+  "acceptance criteria": [
+    "Se elimina código duplicado (funciones isNextEpisodeUnreleased duplicadas en app.js y ui.js)",
+    "Se extraen callbacks repetitivos del init() en app.js a funciones modulares separadas",
+    "Se unifica la lógica de renderizado de modales que comparten patrones similares",
+    "Se crea un módulo centralizado de constantes (STATUS_LABELS, TYPE_BY_GROUP, GRID_IDS, etc.)",
+    "Se optimiza la gestión de estado del init() usando un objeto de estado centralizado",
+    "Se eliminan variables globales innecesarias y se encapsula el estado",
+    "Todas las funciones de comparación de ordenación se extraen a un módulo dedicado (sort.js o similar)",
+    "Se mejora la separación de responsabilidades entre módulos",
+    "El código debe seguir funcionando exactamente igual tras los cambios (sin regresiones)",
+    "No se introducen dependencias externas nuevas"
+  ],
+  "definition of done": [
+    "app.js reducido significativamente de tamaño, con lógica delegada a módulos especializados",
+    "Código duplicado eliminado (isNextEpisodeUnreleased, STATUS_LABELS, etc.)",
+    "Nuevo módulo sort.js o similar para lógica de ordenación",
+    "Nuevo módulo constants.js para constantes compartidas",
+    "Estado centralizado en un objeto o módulo dedicado",
+    "Todos los módulos existentes siguen exportando la misma interfaz pública",
+    "No hay regresiones funcionales: la app funciona igual que antes",
+    "Documentación ADR del cambio completada"
+  ]
+}

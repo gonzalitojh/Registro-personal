@@ -26,12 +26,22 @@ mi-registro/
 │   ├── api-movies.js        búsqueda, temporadas/episodios y datos ampliados en TMDB
 │   ├── api-books.js         búsqueda en Open Library / Google Books
 │   ├── dates.js              utilidades de fecha
+│   ├── constants.js          constantes compartidas (STATUS_LABELS, TYPE_BY_GROUP)
+│   ├── sorting.js            funciones de ordenación y comparación
 │   ├── tv-progress.js       episodios vistos (con valoración por episodio), revisionados
 │   ├── watch-log.js          historial de visionados (películas)
 │   ├── reading-log.js        historial de lecturas (libros)
 │   ├── db.js                 lectura/escritura en Firestore, perfiles, amigos
 │   ├── ui.js                  renderizado del DOM
-│   └── app.js                 punto de entrada
+│   ├── search.js              búsqueda y alta de ítems
+│   ├── modal-handlers.js      apertura y gestión de modales
+│   ├── quick-actions.js       acciones rápidas (marcar vista/siguiente)
+│   ├── daily-check.js         comprobación diaria de estrenos
+│   ├── notifications-setup.js wiring de notificaciones
+│   ├── profile.js             perfil, estadísticas y amigos
+│   └── app.js                 punto de entrada y orquestador
+├── docs/
+│   └── adr-001-code-cleanup-refactoring.md
 ├── firestore.rules         ← reglas de seguridad (¡mantener igual que allowed-emails.js!)
 └── README.md
 ```
@@ -56,6 +66,23 @@ en uno están disponibles en el otro sin nada especial.
 Si en el futuro añades otra sección (no-ocio), sería una carpeta hermana
 de `ocio/` con su propia estructura (`.html` por pestaña + su `.css`),
 enganchada al mismo armazón.
+
+## Cómo está organizado el JavaScript
+
+El código JS sigue un patrón de **orquestador + módulos especializados**:
+
+- **`app.js`** es el punto de entrada y orquestador: gestiona el estado
+  global, las suscripciones a Firestore, los filtros/orden y conecta los
+  módulos especializados.
+- Cada módulo especializado (`search.js`, `modal-handlers.js`, `profile.js`,
+  etc.) recibe un objeto `ctx` con funciones de acceso al estado y a las
+  dependencias, lo que hace todas las dependencias explícitas y evita
+  importaciones circulares.
+- `constants.js` y `sorting.js` contienen lógica pura reutilizable por
+  varios módulos.
+- `ui.js` sigue centralizando todo el renderizado del DOM.
+
+Para ver los detalles del refactoring, consulta `docs/adr-001-code-cleanup-refactoring.md`.
 
 > **Importante para probarlo en local:** como ahora `app.js` usa
 > `fetch()` para traer esos archivos, abrir `index.html` directamente

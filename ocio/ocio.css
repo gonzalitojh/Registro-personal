@@ -410,9 +410,12 @@
 
 .seasons-list {
   margin-bottom: 1.1rem;
-  border: 1px solid var(--paper-line);
+  border: none;
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .season-block + .season-block {
@@ -426,7 +429,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.5rem 0.6rem;
-  background: #fff;
+  background: var(--paper-dim);
 }
 
 .season-toggle {
@@ -1041,15 +1044,6 @@
    lista HTML suelta
    ========================================================= */
 
-.seasons-list {
-  border: none;
-  border-radius: var(--radius);
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
 .season-block {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
@@ -1059,10 +1053,6 @@
 }
 .season-block + .season-block {
   border-top: 1px solid var(--paper-line);
-}
-
-.season-header {
-  background: var(--paper-dim);
 }
 
 .episode-row {

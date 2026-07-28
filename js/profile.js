@@ -1,0 +1,237 @@
+// =============================================================
+// Perfil, estadísticas y amigos. Extraído de app.js.
+// Maneja la vista de perfil con gráficas (Chart.js) y la sección
+// de amigos (lista + detalle de solo lectura).
+// =============================================================
+
+import { normalizeEntry } from "./tv-progress.js";
+import { STATUS_LABELS_NEUTRAL } from "./constants.js";
+import * as ui from "./ui.js";
+
+let activityChart = null;
+let statusChart = null;
+
+function getCurrentStatsFilter() {
+  const statsPeriodSelect = document.getElementById("stats-period-select");
+  const statsRangeStart = document.getElementById("stats-range-start");
+  const statsRangeEnd = document.getElementById("stats-range-end");
+
+  if (statsPeriodSelect.value === "custom") {
+    return {
+      type: "custom",
+      start: statsRangeStart.value || null,
+      end: statsRangeEnd.value || null,
+    };
+  }
+  return { type: statsPeriodSelect.value };
+}
+
+function withinPeriod(dateStr, filter) {
+  if (!dateStr) return false;
+  if (filter.type === "all") return true;
+  if (filter.type === "custom") {
+    if (filter.start && dateStr < filter.start) return false;
+    if (filter.end && dateStr > filter.end) return false;
+    return true;
+  }
+  const now = new Date();
+  const d = new Date(dateStr);
+  if (filter.type === "year") return d.getFullYear() === now.getFullYear();
+  if (filter.type === "month") {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  return true;
+}
+
+function computeStats(filter, ctx) {
+  const allItems = ctx.getAllItems();
+  const monthly = {};
+  let moviesWatched = 0;
+  allItems.movies.forEach((m) => {
+    (m.watchLog || []).forEach((date) => {
+      if (withinPeriod(date, filter)) {
+        moviesWatched++;
+        const key = date.slice(0, 7);
+        monthly[key] = (monthly[key] || 0) + 1;
+      }
+    });
+  });
+
+  let episodesWatched = 0;
+  let seriesCompleted = 0;
+  allItems.tv.forEach((s) => {
+    Object.values(s.watched || {}).forEach((seasonMap) => {
+      Object.values(seasonMap).forEach((raw) => {
+        const entry = normalizeEntry(raw);
+        if (!entry || !entry.date) return;
+        if (withinPeriod(entry.date, filter)) {
+          episodesWatched++;
+          const key = entry.date.slice(0, 7);
+          monthly[key] = (monthly[key] || 0) + 1;
+        }
+      });
+    });
+    if (s.status === "completado" && withinPeriod(s.lastWatchedAt, filter)) seriesCompleted++;
+  });
+
+  let booksRead = 0;
+  allItems.books.forEach((b) => {
+    (b.readLog || []).forEach((entry) => {
+      if (entry.finishedAt && withinPeriod(entry.finishedAt, filter)) {
+        booksRead++;
+        const key = entry.finishedAt.slice(0, 7);
+        monthly[key] = (monthly[key] || 0) + 1;
+      }
+    });
+  });
+
+  const statusCounts = {};
+  [...allItems.movies, ...allItems.tv, ...allItems.books].forEach((i) => {
+    statusCounts[i.status] = (statusCounts[i.status] || 0) + 1;
+  });
+
+  return { moviesWatched, episodesWatched, seriesCompleted, booksRead, monthly, statusCounts };
+}
+
+function renderStats(filter, ctx) {
+  const stats = computeStats(filter, ctx);
+  const summaryEl = document.getElementById("stats-summary");
+  summaryEl.innerHTML = `
+    <div class="stat-tile"><span class="stat-tile__value">${stats.moviesWatched}</span><span class="stat-tile__label">Películas vistas</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.episodesWatched}</span><span class="stat-tile__label">Episodios vistos</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.seriesCompleted}</span><span class="stat-tile__label">Series completadas</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.booksRead}</span><span class="stat-tile__label">Libros leídos</span></div>
+  `;
+
+  if (typeof Chart === "undefined") return;
+
+  const months = Object.keys(stats.monthly).sort();
+  const activityCtx = document.getElementById("chart-activity");
+  if (activityChart) activityChart.destroy();
+  activityChart = new Chart(activityCtx, {
+    type: "bar",
+    data: {
+      labels: months,
+      datasets: [{ label: "Actividad", data: months.map((m) => stats.monthly[m]), backgroundColor: "#2b6459" }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+
+  const statusLabelsPresent = Object.keys(stats.statusCounts).filter((k) => stats.statusCounts[k] > 0);
+  const statusCtx = document.getElementById("chart-status");
+  if (statusChart) statusChart.destroy();
+  statusChart = new Chart(statusCtx, {
+    type: "doughnut",
+    data: {
+      labels: statusLabelsPresent.map((k) => STATUS_LABELS_NEUTRAL[k] || k),
+      datasets: [
+        {
+          data: statusLabelsPresent.map((k) => stats.statusCounts[k]),
+          backgroundColor: ["#948a76", "#2b6459", "#b9822e", "#8f6522", "#a63b2e"],
+        },
+      ],
+    },
+    options: { responsive: true },
+  });
+}
+
+export function setupProfile(ctx) {
+  const profileSubtabs = document.querySelectorAll(".profile-subtab");
+  const statsSection = document.getElementById("profile-section-stats");
+  const friendsSection = document.getElementById("profile-section-friends");
+  const friendsListEl = document.getElementById("friends-list");
+  const friendDetailEl = document.getElementById("friend-detail");
+  const friendDetailNameEl = document.getElementById("friend-detail-name");
+  const statsPeriodWrap = document.querySelector(".stats-period");
+  const statsPeriodSelect = document.getElementById("stats-period-select");
+  const statsRangeFields = document.getElementById("stats-range-fields");
+  const statsRangeStart = document.getElementById("stats-range-start");
+  const statsRangeEnd = document.getElementById("stats-range-end");
+
+  async function loadFriendsList() {
+    friendsListEl.innerHTML = `<p class="empty-state">Cargando…</p>`;
+    try {
+      const profiles = await ctx.getAllUserProfiles();
+      ui.renderFriendsList(friendsListEl, profiles, ctx.getCurrentUser().uid, openFriend);
+    } catch (err) {
+      friendsListEl.innerHTML = `<p class="empty-state">No se pudo cargar la lista de amigos.</p>`;
+    }
+  }
+
+  async function openFriend(profile) {
+    friendsListEl.classList.add("hidden");
+    friendDetailEl.classList.remove("hidden");
+    friendDetailNameEl.textContent = profile.displayName || profile.email || "Amigo";
+    const friendName = profile.displayName || profile.email || "tu amigo";
+    document.getElementById("friend-movies").innerHTML = `<p class="empty-state">Cargando…</p>`;
+    document.getElementById("friend-series").innerHTML = "";
+    document.getElementById("friend-books").innerHTML = "";
+    try {
+      const [movies, series, books] = await Promise.all([
+        ctx.getItemsOnce(profile.uid, "movie"),
+        ctx.getItemsOnce(profile.uid, "tv"),
+        ctx.getItemsOnce(profile.uid, "book"),
+      ]);
+      ui.renderFriendDetail(movies, series, books, (item) => ui.openReadOnlyModal(item, friendName));
+    } catch (err) {
+      document.getElementById("friend-movies").innerHTML = `<p class="empty-state">No se pudo cargar.</p>`;
+    }
+  }
+
+  /* ---------- Event listeners ---------- */
+
+  document.getElementById("btn-open-profile").addEventListener("click", () => {
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("profile-view").classList.remove("hidden");
+    profileSubtabs.forEach((b) => b.classList.remove("is-active"));
+    document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
+    statsSection.classList.remove("hidden");
+    friendsSection.classList.add("hidden");
+    statsPeriodWrap.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        renderStats(getCurrentStatsFilter(), ctx);
+      });
+    });
+  });
+
+  document.getElementById("btn-close-profile").addEventListener("click", () => {
+    document.getElementById("profile-view").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+  });
+
+  statsPeriodSelect.addEventListener("change", () => {
+    const isCustom = statsPeriodSelect.value === "custom";
+    statsRangeFields.classList.toggle("hidden", !isCustom);
+    if (!isCustom) renderStats(getCurrentStatsFilter(), ctx);
+    else if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter(), ctx);
+  });
+
+  statsRangeStart.addEventListener("change", () => {
+    if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter(), ctx);
+  });
+  statsRangeEnd.addEventListener("change", () => {
+    if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter(), ctx);
+  });
+
+  profileSubtabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      profileSubtabs.forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      const section = btn.dataset.section;
+      statsSection.classList.toggle("hidden", section !== "stats");
+      friendsSection.classList.toggle("hidden", section !== "friends");
+      statsPeriodWrap.classList.toggle("hidden", section !== "stats");
+      if (section === "friends") {
+        friendDetailEl.classList.add("hidden");
+        friendsListEl.classList.remove("hidden");
+        loadFriendsList();
+      }
+    });
+  });
+
+  document.getElementById("btn-back-to-friends").addEventListener("click", () => {
+    friendDetailEl.classList.add("hidden");
+    friendsListEl.classList.remove("hidden");
+  });
+}

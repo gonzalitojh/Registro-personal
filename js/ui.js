@@ -5,23 +5,9 @@
 // =============================================================
 
 import { todayISO, formatDateEs } from "./dates.js";
-
-const STATUS_LABELS = {
-  media: {
-    pendiente: "Pendiente",
-    en_curso: "Viendo",
-    completado: "Vista",
-    standby: "Standby",
-    abandonado: "Abandonada",
-  },
-  book: {
-    pendiente: "Pendiente",
-    en_curso: "Leyendo",
-    completado: "Leído",
-    standby: "Standby",
-    abandonado: "Abandonado",
-  },
-};
+import { STATUS_LABELS } from "./constants.js";
+import { isNextEpisodeUnreleased } from "./sorting.js";
+import { normalizeEntry } from "./tv-progress.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : "media";
@@ -168,20 +154,6 @@ function quickActionLabel(item) {
   if (isReading) return "Terminar ✓";
   if (log.length) return "Releer ↺";
   return "Empezar ✓";
-}
-
-// El siguiente episodio que le toca ver coincide con el próximo episodio
-// que TMDB dice que aún no se ha emitido (copia local de la misma
-// comprobación que hace app.js para el orden, para no acoplar ui.js a
-// la lógica de negocio de otro módulo).
-function isNextEpisodeUnreleased(item) {
-  if (item.type !== "tv" || !item.nextEpisode || !item.nextEpisodeToAir) return false;
-  return (
-    item.nextEpisodeToAir.season === item.nextEpisode.season &&
-    item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
-    Boolean(item.nextEpisodeToAir.airDate) &&
-    item.nextEpisodeToAir.airDate > todayISO()
-  );
 }
 
 function upcomingBadge(item) {
@@ -861,16 +833,10 @@ function renderSeasonBlock(s, watched) {
     </div>`;
 }
 
-function localNormalizeEntry(entry) {
-  if (!entry) return null;
-  if (typeof entry === "string") return { date: entry, rating: null };
-  return entry;
-}
-
 function renderEpisodeRows(episodes, seasonWatched) {
   return episodes
     .map((e) => {
-      const entry = localNormalizeEntry(seasonWatched[String(e.episodeNumber)]);
+      const entry = normalizeEntry(seasonWatched[String(e.episodeNumber)]);
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
       const checked = Boolean(date);
