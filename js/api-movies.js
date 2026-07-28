@@ -93,7 +93,8 @@ export async function getSeasonEpisodes(tvId, seasonNumber) {
 }
 
 // Datos ampliados de una película: duración, sinopsis, género,
-// director y reparto principal. Se piden una sola vez, al añadirla.
+// director, reparto principal y colección/saga. Se piden una sola
+// vez, al añadirla.
 export async function getMovieDetails(id) {
   const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
@@ -109,6 +110,35 @@ export async function getMovieDetails(id) {
     director: director ? director.name : null,
     releaseDate: data.release_date || null,
     communityRating: data.vote_count > 0 ? data.vote_average : null,
+    collectionId: data.belongs_to_collection ? String(data.belongs_to_collection.id) : null,
+    collectionName: data.belongs_to_collection ? data.belongs_to_collection.name : null,
+    collectionPoster: data.belongs_to_collection?.poster_path
+      ? `${IMG_BASE.replace("w342", "w92")}${data.belongs_to_collection.poster_path}`
+      : null,
+  };
+}
+
+// Datos de una colección/saga de TMDB: nombre, póster y lista de
+// películas que la componen. Se usa al pulsar "Añadir resto de la
+// saga" desde la ficha de una película.
+export async function getCollectionDetails(collectionId) {
+  const url = `${BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}&language=es-ES`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    posterPath: data.poster_path || null,
+    parts: (data.parts || []).map((p) => ({
+      externalId: String(p.id),
+      title: p.title,
+      year: (p.release_date || "").slice(0, 4),
+      posterUrl: p.poster_path
+        ? `${IMG_BASE.replace("w342", "w185")}${p.poster_path}`
+        : null,
+      overview: p.overview || "",
+      releaseDate: p.release_date || null,
+    })),
   };
 }
 
