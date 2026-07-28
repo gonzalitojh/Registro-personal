@@ -27,6 +27,34 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;");
 }
 
+// HTML para la puntuación de la comunidad (TMDB) en tarjetas compactas.
+// Devuelve cadena vacía si no hay datos (no ocupa espacio en la cuadrícula).
+function communityRatingHtml(item) {
+  if (item.communityRating == null) return "";
+  const val = Number(item.communityRating).toFixed(1);
+  return `<span class="community-rating">
+    <span class="community-rating__label">TMDB</span>
+    <span class="community-rating__value">${val}</span>
+  </span>`;
+}
+
+// Para modales: siempre muestra una línea, ya sea la nota real o
+// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB.
+function communityRatingDisplay(item) {
+  if (item.communityRating != null) {
+    const val = Number(item.communityRating).toFixed(1);
+    return `<div class="modal-detail__ratings">
+      <span class="community-rating">
+        <span class="community-rating__label">TMDB</span>
+        <span class="community-rating__value">${val}</span>
+      </span>
+    </div>`;
+  }
+  return `<div class="modal-detail__ratings">
+    <span class="community-rating community-rating--empty">Sin puntuaciones</span>
+  </div>`;
+}
+
 function typeLabel(type) {
   if (type === "movie") return "Película";
   if (type === "tv") return "Serie";
@@ -183,6 +211,8 @@ function renderGrid(gridEl, items, onOpen) {
   gridEl.innerHTML = items
     .map((item, index) => {
       const stars = item.rating ? "★".repeat(item.rating) : "";
+      const communityBadge = communityRatingHtml(item);
+      const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
       const blockedClass = isNextEpisodeUnreleased(item) ? " item-card--episode-unreleased" : "";
       return `
@@ -200,7 +230,10 @@ function renderGrid(gridEl, items, onOpen) {
           <div class="item-card__title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
           <div class="item-card__meta" title="${escapeHtml(metaLineFor(item))}">${escapeHtml(metaLineFor(item))}</div>
           ${progress ? `<div class="item-card__progress">${escapeHtml(progress)}</div>` : ""}
-          ${stars ? `<div class="item-card__rating">${stars}</div>` : ""}
+          ${hasRatings ? `<div class="item-card__ratings">
+            ${stars ? `<span class="item-card__rating">${stars}</span>` : ""}
+            ${communityBadge}
+          </div>` : ""}
         </div>
         <button class="item-card__btn" data-index="${index}"
                 title="${escapeHtml(item.title)} — ${escapeHtml(metaLineFor(item))}"
@@ -602,6 +635,7 @@ export function openMovieModal(item, callbacks) {
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
     ${extraInfoHtml(item)}
 
     <div class="field-group">
@@ -914,6 +948,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
     ${extraInfoHtml(item)}
 
     <div class="progress-banner">
@@ -1314,6 +1349,7 @@ export function openReadOnlyModal(item, ownerName) {
     <p class="read-only-badge">👀 Viendo la ficha de ${escapeHtml(ownerName)} · solo lectura</p>
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
     ${extraInfoHtml(item)}
 
     <div class="field-group">

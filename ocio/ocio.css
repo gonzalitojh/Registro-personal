@@ -364,7 +364,6 @@
 }
 
 .item-card__rating {
-  margin-top: auto;
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   color: var(--ochre-spine-dark);
@@ -1330,4 +1329,62 @@
 
 .lang-filter-check input {
   accent-color: var(--ochre-spine);
+}
+
+
+/* =========================================================
+   Puntuación de la comunidad (TMDB)
+   ========================================================= */
+
+/* Contenedor de puntuaciones en tarjetas (estrellas + TMDB) */
+.item-card__ratings {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+/* Distintivo comunitario */
+.community-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.community-rating__label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--teal-reel);
+  color: var(--paper);
+  border-radius: 2px;
+  padding: 0.08rem 0.3rem;
+  line-height: 1.4;
+}
+
+.community-rating__value {
+  font-weight: 700;
+  color: var(--teal-reel-dark);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+/* Versión «sin datos» en modales */
+.community-rating--empty {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--font-body);
+}
+
+/* Fila de puntuaciones en modales (debajo del título/metadatos) */
+.modal-detail__ratings {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
 }
