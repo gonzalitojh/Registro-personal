@@ -59,6 +59,9 @@ export async function checkForUpdates(ctx) {
       if (movie.communityRating == null && fresh.communityRating != null) {
         updates.communityRating = fresh.communityRating;
       }
+      if (!movie.trailerUrl && fresh.trailerUrl) {
+        updates.trailerUrl = fresh.trailerUrl;
+      }
       if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
         updates.releaseDate = fresh.releaseDate;
       }
@@ -134,6 +137,9 @@ export async function checkForUpdates(ctx) {
         if (!show.episodeRuntime && fresh.episodeRuntime) updates.episodeRuntime = fresh.episodeRuntime;
         if (show.communityRating == null && fresh.communityRating != null) {
           updates.communityRating = fresh.communityRating;
+        }
+        if (!show.trailerUrl && fresh.trailerUrl) {
+          updates.trailerUrl = fresh.trailerUrl;
         }
       }
 

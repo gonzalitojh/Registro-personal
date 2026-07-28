@@ -55,6 +55,16 @@ function communityRatingDisplay(item) {
   </div>`;
 }
 
+// HTML para el botón de tráiler de YouTube.
+// Devuelve cadena vacía si no hay URL de tráiler disponible.
+function trailerButtonHtml(item) {
+  if (!item.trailerUrl) return "";
+  return `<a href="${escapeHtml(item.trailerUrl)}" target="_blank" rel="noopener noreferrer" class="trailer-btn" aria-label="Ver tráiler en YouTube">
+    <span class="trailer-btn__icon" aria-hidden="true">▶</span>
+    <span class="trailer-btn__label">Tráiler</span>
+  </a>`;
+}
+
 function typeLabel(type) {
   if (type === "movie") return "Película";
   if (type === "tv") return "Serie";
@@ -636,6 +646,7 @@ export function openMovieModal(item, callbacks) {
 
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
     ${extraInfoHtml(item)}
 
     ${item.collectionId ? `
@@ -1024,6 +1035,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
 
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="progress-banner">
@@ -1425,6 +1437,7 @@ export function openReadOnlyModal(item, ownerName) {
 
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="field-group">
