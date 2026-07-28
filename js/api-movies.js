@@ -92,11 +92,25 @@ export async function getSeasonEpisodes(tvId, seasonNumber) {
   }));
 }
 
+// Extrae la URL del tráiler oficial de YouTube a partir de la
+// respuesta del endpoint /videos de TMDB. Prioriza "Trailer" sobre
+// "Teaser" y, dentro del mismo tipo, el más reciente (por id).
+function _extractTrailerUrl(videos) {
+  if (!videos || !videos.results || !videos.results.length) return null;
+  const trailers = videos.results.filter(
+    (v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+  );
+  if (!trailers.length) return null;
+  // Priorizar "Trailer" sobre "Teaser"
+  const best = trailers.find((v) => v.type === "Trailer") || trailers[0];
+  return `https://www.youtube.com/watch?v=${best.key}`;
+}
+
 // Datos ampliados de una película: duración, sinopsis, género,
-// director, reparto principal y colección/saga. Se piden una sola
-// vez, al añadirla.
+// director, reparto principal, colección/saga y tráiler. Se piden
+// una sola vez, al añadirla.
 export async function getMovieDetails(id) {
-  const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits`;
+  const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   const director = ((data.credits && data.credits.crew) || []).find(
@@ -110,6 +124,7 @@ export async function getMovieDetails(id) {
     director: director ? director.name : null,
     releaseDate: data.release_date || null,
     communityRating: data.vote_count > 0 ? data.vote_average : null,
+    trailerUrl: _extractTrailerUrl(data.videos),
     collectionId: data.belongs_to_collection ? String(data.belongs_to_collection.id) : null,
     collectionName: data.belongs_to_collection ? data.belongs_to_collection.name : null,
     collectionPoster: data.belongs_to_collection?.poster_path
@@ -143,10 +158,10 @@ export async function getCollectionDetails(collectionId) {
 }
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,
-// género, creadores, reparto principal, estado de emisión y próximo
-// episodio a emitir (si lo hay). También se piden una sola vez.
+// género, creadores, reparto principal, estado de emisión, próximo
+// episodio a emitir (si lo hay) y tráiler. También se piden una sola vez.
 export async function getTvExtraDetails(id) {
-  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits`;
+  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   return {
@@ -165,5 +180,6 @@ export async function getTvExtraDetails(id) {
         }
       : null,
     communityRating: data.vote_count > 0 ? data.vote_average : null,
+    trailerUrl: _extractTrailerUrl(data.videos),
   };
 }

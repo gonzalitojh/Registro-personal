@@ -1390,6 +1390,38 @@
 }
 
 /* =========================================================
+   Botón de tráiler (enlace a YouTube)
+   ========================================================= */
+
+.trailer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ff0000;
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+  margin-bottom: 0.6rem;
+}
+.trailer-btn:hover {
+  background: #cc0000;
+  color: #fff;
+}
+
+.trailer-btn__icon {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.trailer-btn__label {
+  font-family: var(--font-body);
+}
+
+/* =========================================================
    Saga/collection banner (modal de película)
    ========================================================= */
 
