@@ -1388,3 +1388,99 @@
   gap: 0.6rem;
   margin-bottom: 0.6rem;
 }
+
+/* =========================================================
+   Saga/collection banner (modal de película)
+   ========================================================= */
+
+.saga-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.saga-banner__label {
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+/* =========================================================
+   Modal selector de saga (checklist de películas)
+   ========================================================= */
+
+.saga-subtitle {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.8rem;
+}
+
+.saga-list {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.4rem;
+  background: #fff;
+}
+
+.saga-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.saga-row:hover {
+  background: var(--paper-dim);
+}
+
+.saga-row input[type="checkbox"] {
+  accent-color: var(--teal-reel);
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.saga-row__cover {
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--paper-dim);
+}
+
+.saga-row__title {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saga-row__year {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.saga-count {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  text-align: right;
+  margin: 0 0 0.2rem;
+}
