@@ -108,6 +108,7 @@ export async function getMovieDetails(id) {
     cast: ((data.credits && data.credits.cast) || []).slice(0, 5).map((c) => c.name),
     director: director ? director.name : null,
     releaseDate: data.release_date || null,
+    communityRating: data.vote_count > 0 ? data.vote_average : null,
   };
 }
 
@@ -133,5 +134,6 @@ export async function getTvExtraDetails(id) {
           airDate: data.next_episode_to_air.air_date || null,
         }
       : null,
+    communityRating: data.vote_count > 0 ? data.vote_average : null,
   };
 }

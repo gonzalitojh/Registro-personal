@@ -42,7 +42,7 @@ export async function checkForUpdates(ctx) {
   // Películas: aviso de estreno + rellenar ficha si le faltaba algo
   for (const movie of allMovies) {
     if (movie.manual) continue;
-    const needsCheck = !movie.overview || movie.awaitingRelease;
+    const needsCheck = !movie.overview || movie.awaitingRelease || movie.communityRating == null;
     if (!needsCheck) continue;
     try {
       const fresh = await getMovieDetails(movie.externalId);
@@ -56,6 +56,9 @@ export async function checkForUpdates(ctx) {
       }
       if (!movie.director && fresh.director) updates.director = fresh.director;
       if (!movie.runtime && fresh.runtime) updates.runtime = fresh.runtime;
+      if (movie.communityRating == null && fresh.communityRating != null) {
+        updates.communityRating = fresh.communityRating;
+      }
       if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
         updates.releaseDate = fresh.releaseDate;
       }
@@ -80,7 +83,7 @@ export async function checkForUpdates(ctx) {
   const activeShows = allTv.filter((s) => !s.manual && s.status !== "abandonado");
   for (const show of activeShows) {
     try {
-      const needsBackfill = !show.overview || show.awaitingRelease;
+      const needsBackfill = !show.overview || show.awaitingRelease || show.communityRating == null;
       const wasEpisodeBlocked = isNextEpisodeUnreleased(show);
       const fresh = await getTvExtraDetails(show.externalId);
       const updates = {};
@@ -129,6 +132,9 @@ export async function checkForUpdates(ctx) {
           updates.creators = fresh.creators;
         }
         if (!show.episodeRuntime && fresh.episodeRuntime) updates.episodeRuntime = fresh.episodeRuntime;
+        if (show.communityRating == null && fresh.communityRating != null) {
+          updates.communityRating = fresh.communityRating;
+        }
       }
 
       if (Object.keys(updates).length) {
