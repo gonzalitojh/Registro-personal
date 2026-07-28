@@ -24,6 +24,26 @@ function existingIdsFor(group, ctx) {
   return new Set(ctx.getItemsByGroup(group).map((i) => i.externalId));
 }
 
+// Para libros: detecta si ya están añadidos por externalId O por
+// título+autor (cruce entre fuentes: un libro añadido vía Open
+// Library con ID "/works/..." se detecta también en resultados de
+// Google Books y viceversa).
+function existingBookKeys(ctx) {
+  const books = ctx.getItemsByGroup("books");
+  const keys = new Set();
+  for (const b of books) {
+    const key = `${(b.title || "").trim().toLowerCase()}|${(b.author || "").trim().toLowerCase()}`;
+    keys.add(key);
+  }
+  return keys;
+}
+
+function isBookAlreadyAdded(item, idsSet, keysSet) {
+  if (idsSet.has(item.externalId)) return true;
+  const key = `${(item.title || "").trim().toLowerCase()}|${(item.author || "").trim().toLowerCase()}`;
+  return keysSet.has(key);
+}
+
 function toggleResultsToolbar(group, hasMore, hasResults) {
   document.getElementById(`results-toolbar-${group}`).classList.toggle("hidden", !hasResults);
   document.getElementById(`btn-load-more-${group}`).classList.toggle("hidden", !hasMore);
@@ -56,12 +76,82 @@ export function refreshSearchAddButtons(ctx) {
     ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), (item, btn) => handleAdd(item, btn, ctx));
   }
   if (lastBookResults.length) {
-    ui.renderSearchResults(resultsBooks, lastBookResults, existingIdsFor("books", ctx), (item, btn) => handleAdd(item, btn, ctx));
+    const ids = existingIdsFor("books", ctx);
+    const keys = existingBookKeys(ctx);
+    const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
+    ui.renderSearchResults(resultsBooks, lastBookResults, ids, (item, btn) => handleAdd(item, btn, ctx), bookCheck);
+  }
+}
+
+/* ---------- Alta desde resultados ---------- */
+
+async function doAddBook(item, btn, ctx, choices) {
+  btn.disabled = true;
+  btn.textContent = "Añadiendo…";
+  try {
+    const draft = {
+      externalId: item.externalId,
+      type: "book",
+      title: item.title,
+      year: item.year || "",
+      coverUrl: choices.coverUrl || null,
+      author: item.author || null,
+      pages: item.pages || null,
+      status: "pendiente",
+      rating: null,
+      notes: "",
+      description: choices.description || "",
+      progress: null,
+      readLog: [],
+    };
+
+    // Para libros de Open Library (ID "/works/..."), buscar sinopsis
+    // si no se proporcionó ninguna.
+    if (!draft.description && item.externalId && item.externalId.startsWith("/works/")) {
+      try {
+        draft.description = await getOpenLibraryDescription(item.externalId);
+      } catch (err) {
+        // no bloqueamos el alta
+      }
+    }
+
+    await addItem(ctx.getCurrentUser().uid, "book", draft);
+    ui.closeModal();
+    ui.showToast(`«${item.title}» añadido a tu registro.`);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Añadir";
+    ui.showToast("No se pudo añadir: " + err.message);
   }
 }
 
 async function handleAdd(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return;
+
+  // Para libros con múltiples portadas o sinopsis, abrir modal de
+  // selección antes de añadir.
+  if (
+    item.type === "book" &&
+    ((item.allCovers && item.allCovers.length > 1) ||
+      (item.allDescriptions && item.allDescriptions.length > 1))
+  ) {
+    ui.openBookConfirmModal(item, {
+      onConfirm: (choices) => doAddBook(item, btn, ctx, choices),
+      onCancel: () => ui.closeModal(),
+    });
+    return;
+  }
+
+  // Ruta rápida: sin opciones que elegir (o fuente Open Library con una portada).
+  if (item.type === "book") {
+    await doAddBook(item, btn, ctx, {
+      coverUrl: item.coverUrl,
+      description: item.description || "",
+    });
+    return;
+  }
+
+  // --- Películas / series (sin cambios) ---
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
   try {
@@ -100,18 +190,6 @@ async function handleAdd(item, btn, ctx) {
         if (details.firstAirDate && details.firstAirDate > todayISO()) draft.awaitingRelease = true;
       } catch (err) {
         // ídem
-      }
-    } else if (item.type === "book") {
-      draft.progress = null;
-      draft.readLog = [];
-      if (item.description) {
-        draft.description = item.description;
-      } else if (item.externalId && item.externalId.startsWith("/works/")) {
-        try {
-          draft.description = await getOpenLibraryDescription(item.externalId);
-        } catch (err) {
-          // ídem
-        }
       }
     }
 
@@ -205,7 +283,10 @@ export function setupSearch(ctx) {
       const result = await apiSearchBooks(query, page, forceSource || null, booksSpanishOnly.checked);
       lastBookResults = page === 1 ? result.items : [...lastBookResults, ...result.items];
       searchState.books = { query, page, hasMore: result.hasMore, source: result.source };
-      ui.renderSearchResults(resultsBooks, lastBookResults, existingIdsFor("books", ctx), onAdd);
+      const ids = existingIdsFor("books", ctx);
+      const keys = existingBookKeys(ctx);
+      const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
+      ui.renderSearchResults(resultsBooks, lastBookResults, ids, onAdd, bookCheck);
       toggleResultsToolbar("books", result.hasMore, lastBookResults.length > 0);
     } catch (err) {
       ui.showToast(err.message);

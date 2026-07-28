@@ -122,6 +122,102 @@
   padding: 0.45rem 0.4rem;
 }
 
+/* Badge de ediciones agrupadas (Google Books) */
+.result-card__editions {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ochre-spine-dark);
+  background: rgba(185, 130, 46, 0.12);
+  border-radius: 999px;
+  padding: 0.08rem 0.4rem;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+/* =========================================================
+   Modal de confirmación al añadir libro (cover picker +
+   description selector)
+   ========================================================= */
+
+.book-confirm__editions {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.8rem;
+}
+
+.cover-picker {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.3rem 0;
+  scrollbar-width: thin;
+}
+
+.cover-picker__item {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.cover-picker__item:hover {
+  opacity: 0.85;
+}
+.cover-picker__item.is-selected {
+  opacity: 1;
+  border-color: var(--ochre-spine);
+}
+
+.cover-picker__item img {
+  width: 80px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+  background: var(--paper-dim);
+}
+
+.desc-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.desc-picker__item {
+  background: #fff;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.desc-picker__item:hover {
+  background: var(--paper-dim);
+}
+.desc-picker__item.is-selected {
+  border-color: var(--ochre-spine);
+  background: rgba(185, 130, 46, 0.08);
+}
+
+.desc-picker__text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 
 /* =========================================================
    Estantería / biblioteca personal

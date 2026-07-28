@@ -1,0 +1,23 @@
+{
+  "title": "Lista de ideas para mejorar películas/series y la web",
+  "description": "Lista de ideas para implementar en futuras iteraciones. No es una tarea de implementación, sino un backlog.",
+  "status": "backlog",
+  "acceptance criteria": [],
+  "definition of done": [],
+  "ideas": [
+    "Dónde verla: TMDB tiene datos de plataformas de streaming (Netflix, HBO Max, etc.) por país — mostrarse 'Disponible en...' en la ficha.",
+    "Tráiler: enlace o vista previa del tráiler (TMDB también lo tiene).",
+    "Colecciones/sagas: TMDB sabe si una película pertenece a una saga (Marvel, Harry Potter...) — mostrar y ofrecer añadir el resto de golpe.",
+    "Recomendaciones: 'si te gustó esto, quizá te guste...' usando el endpoint de similares de TMDB.",
+    "Nota de la comunidad: mostrar la puntuación media de TMDB junto a la tuya, como referencia.",
+    "Calendario de estrenos: exportar un .ics con las fechas de los próximos episodios/estrenos que esperas, para tu calendario del móvil.",
+    "PWA de verdad: añadir un service worker que dé 'Añadir a pantalla de inicio' con funcionamiento offline básico.",
+    "Exportar copia de seguridad: botón para descargar un JSON con todos tus datos.",
+    "Modo claro: alternativa al tema oscuro actual.",
+    "Buscador global: uno solo que busque a la vez en tus películas, series, libros y amigos.",
+    "Actividad de amigos: un feed tipo 'tu amigo X ha terminado la serie Y', aprovechando lo que ya existe.",
+    "Deshacer: aviso tras borrar algo con opción de 'deshacer' unos segundos, por si acaso.",
+    "Página de ajustes: gestionar el tema, notificaciones, etc. desde la propia web en vez de editar archivos.",
+    "Repaso de accesibilidad: navegación por teclado y lectores de pantalla, ahora que la web ha crecido bastante."
+  ]
+}

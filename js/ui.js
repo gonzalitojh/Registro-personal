@@ -66,7 +66,9 @@ export function setAuthError(message) {
 
 /* ---------- Resultados de búsqueda ---------- */
 
-export function renderSearchResults(container, results, existingIds, onAdd) {
+// customCheck: función opcional (item) => boolean para detectar si
+// un libro ya está añadido por título+autor (cruce entre fuentes).
+export function renderSearchResults(container, results, existingIds, onAdd, customCheck) {
   if (!results.length) {
     container.innerHTML = `<p class="empty-state" style="margin:0">Sin resultados.</p>`;
     return;
@@ -74,15 +76,19 @@ export function renderSearchResults(container, results, existingIds, onAdd) {
 
   container.innerHTML = results
     .map((r, index) => {
-      const added = existingIds.has(r.externalId);
+      const added = customCheck ? customCheck(r) : existingIds.has(r.externalId);
       const metaLine =
         r.type === "book" ? [r.author, r.year].filter(Boolean).join(" · ") : r.year;
+      const editionsBadge =
+        r.type === "book" && r.editionsCount > 1
+          ? `<span class="result-card__editions">${r.editionsCount} eds.</span>`
+          : "";
       return `
       <article class="result-card">
         <img class="result-card__cover" loading="lazy"
              src="${r.coverUrl || PLACEHOLDER_COVER}" alt="" />
         <div class="result-card__body">
-          <div class="result-card__title">${escapeHtml(r.title)}</div>
+          <div class="result-card__title">${escapeHtml(r.title)}${editionsBadge}</div>
           <div class="result-card__meta">${escapeHtml(metaLine || "")}</div>
           <button class="btn ${
             r.type === "book" ? "btn--accent-books" : "btn--accent-media"
@@ -1158,6 +1164,125 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
 
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
     onDelete();
+  });
+
+  modal.classList.remove("hidden");
+}
+
+/* ---------- Modal de confirmación al añadir libro ---------- */
+
+// Muestra un modal de selección cuando un libro tiene múltiples
+// portadas o sinopsis (resultado de agrupar ediciones de Google Books).
+// Si no hay nada que elegir, llama directamente a onConfirm.
+export function openBookConfirmModal(item, { onConfirm, onCancel }) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+
+  const hasMultipleCovers = item.allCovers && item.allCovers.length > 1;
+  const hasMultipleDescriptions = item.allDescriptions && item.allDescriptions.length > 1;
+
+  // Si no hay nada que elegir, confirmar directamente
+  if (!hasMultipleCovers && !hasMultipleDescriptions) {
+    onConfirm({ coverUrl: item.coverUrl, description: item.description || "" });
+    return;
+  }
+
+  const metaLine = [item.author, item.year].filter(Boolean).join(" · ");
+  const editionNote =
+    item.editionsCount > 1
+      ? `<p class="book-confirm__editions">${item.editionsCount} ediciones encontradas</p>`
+      : "";
+
+  // Selector de portadas
+  let coverPickerHtml = "";
+  if (hasMultipleCovers) {
+    coverPickerHtml = `
+      <div class="field-group">
+        <label>Elige una portada</label>
+        <div class="cover-picker" id="cover-picker">
+          ${item.allCovers
+            .map(
+              (url, i) => `
+            <button type="button" class="cover-picker__item ${i === 0 ? "is-selected" : ""}" data-index="${i}">
+              <img src="${url}" alt="Edición ${i + 1}" loading="lazy" />
+            </button>`
+            )
+            .join("")}
+        </div>
+      </div>`;
+  }
+
+  // Selector de sinopsis
+  let descSelectorHtml = "";
+  if (hasMultipleDescriptions) {
+    descSelectorHtml = `
+      <div class="field-group">
+        <label>Elige una sinopsis</label>
+        <div class="desc-picker" id="desc-picker">
+          ${item.allDescriptions
+            .map(
+              (desc, i) => `
+            <button type="button" class="desc-picker__item ${i === 0 ? "is-selected" : ""}" data-index="${i}">
+              <p class="desc-picker__text">${escapeHtml(desc.length > 250 ? desc.slice(0, 250) + "…" : desc)}</p>
+            </button>`
+            )
+            .join("")}
+        </div>
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <h3 class="modal-detail__title" style="margin-bottom:0.5rem">Añadir libro</h3>
+    <div class="modal-detail__header" style="margin-bottom:0.5rem">
+      <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div>
+        <div style="font-weight:600;font-size:0.95rem">${escapeHtml(item.title)}</div>
+        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
+      </div>
+    </div>
+    ${editionNote}
+    ${coverPickerHtml}
+    ${descSelectorHtml}
+    <div class="modal-actions">
+      <button type="button" class="btn btn--outline" id="btn-confirm-cancel">Cancelar</button>
+      <button type="button" class="btn btn--accent-books" id="btn-confirm-add">Añadir</button>
+    </div>
+  `;
+
+  // Wiring del selector de portadas
+  let selectedCoverIndex = 0;
+  if (hasMultipleCovers) {
+    content.querySelectorAll("#cover-picker .cover-picker__item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedCoverIndex = Number(btn.dataset.index);
+        content.querySelectorAll("#cover-picker .cover-picker__item").forEach((b) =>
+          b.classList.toggle("is-selected", b === btn)
+        );
+      });
+    });
+  }
+
+  // Wiring del selector de sinopsis
+  let selectedDescIndex = 0;
+  if (hasMultipleDescriptions) {
+    content.querySelectorAll("#desc-picker .desc-picker__item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectedDescIndex = Number(btn.dataset.index);
+        content.querySelectorAll("#desc-picker .desc-picker__item").forEach((b) =>
+          b.classList.toggle("is-selected", b === btn)
+        );
+      });
+    });
+  }
+
+  content.querySelector("#btn-confirm-cancel").addEventListener("click", onCancel);
+  content.querySelector("#btn-confirm-add").addEventListener("click", () => {
+    onConfirm({
+      coverUrl: hasMultipleCovers ? item.allCovers[selectedCoverIndex] : item.coverUrl,
+      description: hasMultipleDescriptions
+        ? item.allDescriptions[selectedDescIndex]
+        : item.description || "",
+    });
   });
 
   modal.classList.remove("hidden");

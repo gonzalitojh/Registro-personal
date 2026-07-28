@@ -1,12 +1,10 @@
 // =============================================================
 // Búsqueda de libros.
-// Fuente principal: Open Library. A diferencia de Google Books,
-// agrupa resultados por LIBRO (obra), no por edición, así que una
-// búsqueda no te llena la lista con la misma novela en tapa dura,
-// bolsillo, inglés, francés... Es, con diferencia, la que más se
-// parece al estilo "un libro = un resultado" de Goodreads (cuya
-// API pública dejó de emitir claves nuevas en 2020).
-// Fuente de respaldo: Google Books, solo si Open Library no
+// Fuente principal: Google Books, con agrupación inteligente por
+// título + autor para que múltiples ediciones de la misma obra
+// aparezcan como un solo resultado. Se muestran todas las portadas
+// y sinopsis disponibles al añadir, dejando al usuario elegir.
+// Fuente de respaldo: Open Library, cuando Google Books no
 // encuentra nada o falla.
 // =============================================================
 
@@ -37,10 +35,134 @@ async function fetchWithRetry(url, retries = 2, delayMs = 700) {
   throw lastError;
 }
 
-// Por si dos ediciones distintas se cuelan como resultados aparte
-// (pasa poco con Open Library, pero puede pasar con Google Books),
-// nos quedamos con una por título + autor, prefiriendo la que tenga
-// portada.
+/* ---------- Utilidades de agrupación (Google Books) ---------- */
+
+// Normaliza un título para agrupación: minúsculas, quita información
+// de serie tipo "(Series, #N)" y normaliza espacios. No elimina
+// subtítulos porque Google Books ya los separa en volumeInfo.subtitle.
+function normalizeTitle(title) {
+  return (title || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*#\d+\)\s*$/, "")   // "(Harry Potter, #1)"
+    .replace(/\s*\([^)]*book \d+\)\s*$/i, "") // "(Book 1)"
+    .replace(/\s+/g, " ");
+}
+
+// Puntuación de una edición para elegir la mejor representante de un
+// grupo. Prioriza portada + sinopsis + más metadatos.
+function scoreEdition(item) {
+  const info = item.volumeInfo || {};
+  let score = 0;
+  if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) score += 3;
+  if (info.description) score += 2;
+  if (info.pageCount) score += 1;
+  if (info.publishedDate) score += 1;
+  if (info.language) score += 1;
+  return score;
+}
+
+// Elige la mejor edición de un grupo para servir como representante
+// (título, autor, año, páginas, externalId).
+function pickBestEdition(editions) {
+  let best = editions[0];
+  let bestScore = scoreEdition(best);
+  for (let i = 1; i < editions.length; i++) {
+    const score = scoreEdition(editions[i]);
+    if (score > bestScore) {
+      best = editions[i];
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+// Normaliza una URL de portada: http → https, quita parámetros innecesarios.
+function normalizeCoverUrl(url) {
+  if (!url) return null;
+  return url.replace(/^http:\/\//, "https://");
+}
+
+// Agrupa raw items de Google Books por título+autor normalizados.
+// Devuelve un array de resultados enriquecidos con allCovers[],
+// allDescriptions[] y editionsCount.
+function groupBooksByWork(rawItems) {
+  const groups = new Map();
+
+  for (const item of rawItems) {
+    const info = item.volumeInfo || {};
+    const title = normalizeTitle(info.title);
+    const firstAuthor = (info.authors || [])[0] || "";
+    const authorKey = firstAuthor.trim().toLowerCase();
+    const key = `${title}|${authorKey}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, { editions: [], covers: [], descriptions: [], editionIds: [] });
+    }
+    const group = groups.get(key);
+    group.editions.push(item);
+    group.editionIds.push(item.id);
+
+    // Recoger portadas únicas (preferir thumbnail)
+    const coverRaw =
+      (info.imageLinks && info.imageLinks.thumbnail) ||
+      (info.imageLinks && info.imageLinks.smallThumbnail);
+    const cover = normalizeCoverUrl(coverRaw);
+    if (cover && !group.covers.includes(cover)) {
+      group.covers.push(cover);
+    }
+
+    // Recoger sinopsis únicas (recortar y deduplicar)
+    const desc = (info.description || "").trim();
+    if (desc && !group.descriptions.includes(desc)) {
+      group.descriptions.push(desc);
+    }
+  }
+
+  // Convertir cada grupo en un único resultado de búsqueda
+  return Array.from(groups.values()).map((group) => {
+    const best = pickBestEdition(group.editions);
+    const info = best.volumeInfo || {};
+    return {
+      externalId: best.id,
+      type: "book",
+      title: info.title || "Sin título",
+      subtitle: info.subtitle || "",
+      author: (info.authors || []).join(", "),
+      year: (info.publishedDate || "").slice(0, 4),
+      pages: info.pageCount || null,
+      coverUrl: group.covers[0] || null,
+      description: group.descriptions[0] || "",
+      // Campos enriquecidos (solo para resultados de Google Books agrupados)
+      allCovers: group.covers,
+      allDescriptions: group.descriptions,
+      editionsCount: group.editions.length,
+    };
+  });
+}
+
+/* ---------- Google Books (fuente principal) ---------- */
+
+export async function searchGoogleBooksResults(searchTerm, page = 1) {
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : "";
+  const url =
+    `${GOOGLE_BOOKS_URL}?q=${encodeURIComponent(searchTerm)}` +
+    `&maxResults=${PAGE_SIZE}&startIndex=${startIndex}&langRestrict=es${keyParam}`;
+
+  const res = await fetchWithRetry(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const rawItems = data.items || [];
+  const items = groupBooksByWork(rawItems);
+  const hasMore = (data.totalItems || 0) > startIndex + rawItems.length;
+  return { items, hasMore, source: "googlebooks" };
+}
+
+/* ---------- Open Library (respaldo) ---------- */
+
+// Dedupe simple para Open Library (ya agrupa por obra, pero por
+// si acaso dos ediciones distintas se cuelan).
 function dedupeBooks(results) {
   const seen = new Map();
   for (const r of results) {
@@ -54,8 +176,6 @@ function dedupeBooks(results) {
   }
   return Array.from(seen.values());
 }
-
-/* ---------- Open Library (fuente principal) ---------- */
 
 function extractEditionLanguage(doc) {
   const edition = doc.editions && doc.editions.docs && doc.editions.docs[0];
@@ -76,9 +196,11 @@ function mapOpenLibraryResult(d) {
     year: d.first_publish_year ? String(d.first_publish_year) : "",
     pages: null,
     coverUrl: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
-    // "spa" = español, según el código ISO 639-2 de la edición que Open
-    // Library eligió como representativa de este libro.
     language: extractEditionLanguage(d),
+    // Open Library no tiene allCovers/allDescriptions: un solo resultado por obra.
+    allCovers: d.cover_i ? [`https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`] : [],
+    allDescriptions: [],
+    editionsCount: 1,
   };
 }
 
@@ -124,62 +246,33 @@ export async function getOpenLibraryDescription(workKey) {
   return "";
 }
 
-/* ---------- Google Books (respaldo) ---------- */
-
-function mapGoogleBooksResult(item) {
-  const info = item.volumeInfo || {};
-  const cover = info.imageLinks && info.imageLinks.thumbnail;
-  return {
-    externalId: item.id,
-    type: "book",
-    title: info.title || "Sin título",
-    author: (info.authors || []).join(", "),
-    year: (info.publishedDate || "").slice(0, 4),
-    pages: info.pageCount || null,
-    coverUrl: cover ? cover.replace("http://", "https://") : null,
-    description: info.description || "",
-  };
-}
-
-export async function searchGoogleBooksResults(searchTerm, page = 1) {
-  const startIndex = (page - 1) * PAGE_SIZE;
-  const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : "";
-  const url =
-    `${GOOGLE_BOOKS_URL}?q=${encodeURIComponent(searchTerm)}` +
-    `&maxResults=${PAGE_SIZE}&startIndex=${startIndex}&langRestrict=es${keyParam}`;
-
-  const res = await fetchWithRetry(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const items = dedupeBooks((data.items || []).map(mapGoogleBooksResult));
-  const hasMore = (data.totalItems || 0) > startIndex + items.length;
-  return { items, hasMore, source: "googlebooks" };
-}
-
 /* ---------- Punto de entrada ---------- */
 
-// page 1: decide sola qué fuente usar (Open Library primero).
+// page 1: Google Books como fuente principal (mejores metadatos,
+// agrupación inteligente por título+autor).
 // Para páginas siguientes, pásale la fuente que devolvió la página 1
 // en forceSource, para seguir "cargando más" desde la misma fuente.
+// Si Google Books falla o no encuentra nada, se intenta Open Library.
 export async function searchBooks(searchTerm, page = 1, forceSource = null, spanishOnly = false) {
-  const source = forceSource || "openlibrary";
+  const source = forceSource || "googlebooks";
 
-  if (source === "googlebooks") {
-    return searchGoogleBooksResults(searchTerm, page);
+  if (source === "openlibrary") {
+    return searchOpenLibrary(searchTerm, page, spanishOnly);
   }
 
   try {
-    const result = await searchOpenLibrary(searchTerm, page, spanishOnly);
-    if (result.items.length || forceSource === "openlibrary") return result;
+    const result = await searchGoogleBooksResults(searchTerm, page);
+    if (result.items.length || forceSource === "googlebooks") return result;
   } catch (err) {
-    if (forceSource === "openlibrary") throw err;
+    if (forceSource === "googlebooks") throw err;
   }
 
+  // Respaldo: Open Library
   try {
-    return await searchGoogleBooksResults(searchTerm, page);
+    return await searchOpenLibrary(searchTerm, page, spanishOnly);
   } catch (err) {
     throw new Error(
-      "No se pudo buscar el libro ahora mismo (Open Library y Google Books no responden). Prueba de nuevo en unos segundos."
+      "No se pudo buscar el libro ahora mismo (Google Books y Open Library no responden). Prueba de nuevo en unos segundos."
     );
   }
 }
