@@ -1,0 +1,22 @@
+{
+  "title": "Página de ajustes para gestionar tema, notificaciones y preferencias desde la web",
+  "description": "Crear una página o sección de ajustes accesible desde la interfaz que permita al usuario configurar preferencias sin editar archivos manualmente. Debe incluir: selector de tema (oscuro/claro), configuración de notificaciones, y cualquier otra preferencia relevante. Las preferencias deben persistirse en localStorage y/o Firestore según corresponda.",
+  "status": "created",
+  "acceptance criteria": [
+    "Página/sección de ajustes accesible desde un icono/menú en la interfaz",
+    "Selector de tema (oscuro/claro) funcional",
+    "Configuración de notificaciones (activar/desactivar tipos)",
+    "Las preferencias se persisten correctamente (localStorage + Firestore)",
+    "Diseño responsive y coherente con el resto de la aplicación",
+    "Los cambios se aplican inmediatamente sin recargar la página",
+    "No se rompe la funcionalidad existente"
+  ],
+  "definition of done": [
+    "Página de ajustes con interfaz de usuario implementada",
+    "Selector de tema oscuro/claro funcional con persistencia",
+    "Configuración de notificaciones funcional",
+    "Posibilidad de añadir más ajustes en el futuro (diseño extensible)",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

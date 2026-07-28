@@ -1,0 +1,21 @@
+{
+  "title": "Recomendaciones de contenido similar desde TMDB",
+  "description": "Añadir una sección de recomendaciones en la ficha de películas y series usando los endpoints de similares de TMDB (`/movie/{id}/similar` y `/tv/{id}/similar`). Mostrar una lista de títulos similares con carátula, título y año, con la opción de añadirlos directamente al registro del usuario. La sección debería titularse 'Si te gustó esto, quizá te guste...'.",
+  "status": "created",
+  "acceptance criteria": [
+    "Se obtienen recomendaciones desde los endpoints de similares de TMDB",
+    "Se muestran en la ficha de la película/serie con carátula, título y año",
+    "Se puede añadir directamente un recomendado al registro del usuario",
+    "Se excluyen de las recomendaciones los items ya registrados por el usuario",
+    "Se muestra un número razonable de recomendaciones (5-10)",
+    "No se rompe la funcionalidad existente"
+  ],
+  "definition of done": [
+    "Nuevas funciones en api-movies.js para obtener similares de películas y series",
+    "Sección visual de recomendaciones en la ficha de cada item",
+    "Botón de 'Añadir' funcional en cada recomendación",
+    "Filtrado de items ya registrados",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

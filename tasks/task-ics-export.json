@@ -1,0 +1,20 @@
+{
+  "title": "Exportar calendario de estrenos/próximos episodios a formato .ics",
+  "description": "Crear una funcionalidad que permita exportar un archivo .ics (formato iCalendar estándar) con las fechas de próximos episodios de series que el usuario está siguiendo y/o estrenos de películas esperadas. El archivo .ics debe poder importarse en calendarios de móvil (Google Calendar, Apple Calendar, etc.). Debe incluir las fechas de emisión de próximos episodios (next_episode_to_air) y fechas de estreno de películas marcadas como 'pendientes' o 'esperadas'.",
+  "status": "created",
+  "acceptance criteria": [
+    "Se genera un archivo .ics válido según el formato iCalendar (RFC 5545)",
+    "Incluye los próximos episodios de series en emisión con sus fechas",
+    "Opcionalmente incluye fechas de estreno de películas esperadas",
+    "El archivo se descarga al hacer clic en un botón",
+    "Se puede importar correctamente en Google Calendar y Apple Calendar",
+    "No se rompe la funcionalidad existente"
+  ],
+  "definition of done": [
+    "Nuevo módulo o función para generar el contenido .ics",
+    "Botón de exportación en la interfaz (ej: en página de series o ajustes)",
+    "El archivo generado es válido (se puede verificar con validador de iCalendar)",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "title": "Mostrar plataformas de streaming disponibles (\"Dónde verla\") desde TMDB",
+  "description": "Añadir a la ficha de películas y series la información de en qué plataformas de streaming están disponibles (Netflix, HBO Max, Disney+, Prime Video, etc.) obtenida desde el endpoint de proveedores de TMDB. Debe mostrar el logo/nombre del servicio y filtrar por el país del usuario (o permitir seleccionar país). Usar el endpoint `/movie/{id}/watch/providers` y `/tv/{id}/watch/providers` de TMDB.",
+  "status": "created",
+  "acceptance criteria": [
+    "Se obtienen los proveedores de streaming desde TMDB para películas y series",
+    "Se detecta el país del usuario o se permite seleccionarlo",
+    "Se muestran los logos y nombres de las plataformas disponibles en la ficha del item",
+    "Se distingue entre streaming, alquiler y compra (priorizando streaming)",
+    "No se rompe la funcionalidad existente de fichas de películas/series",
+    "La información se muestra de forma clara y no intrusiva"
+  ],
+  "definition of done": [
+    "Nueva función en api-movies.js para obtener watch providers de películas y series",
+    "La ficha de película/serie muestra las plataformas disponibles",
+    "Soporte de selección de país (por defecto el del usuario)",
+    "Los datos se cachean para evitar llamadas redundantes a la API",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

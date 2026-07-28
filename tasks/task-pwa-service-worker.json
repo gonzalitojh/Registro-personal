@@ -1,0 +1,24 @@
+{
+  "title": "Añadir service worker para PWA completa con soporte offline básico",
+  "description": "La web ya tiene manifest.json, pero necesita un service worker para ser una Progressive Web App (PWA) completa. El service worker debe permitir 'Añadir a pantalla de inicio' con funcionalidad offline básica (mostrar al menos una página de respaldo o la app pre-cacheadas). Debe seguir las mejores prácticas de Workbox o implementación manual con estrategias de caché apropiadas (Cache First para recursos estáticos, Network First para datos dinámicos).",
+  "status": "created",
+  "acceptance criteria": [
+    "Service worker registrado correctamente desde index.html",
+    "Se puede 'Añadir a pantalla de inicio' en navegadores compatibles",
+    "La app carga offline mostrando al menos la interfaz básica (HTML, CSS, JS cacheados)",
+    "Estrategia de caché definida para recursos estáticos (Cache First)",
+    "Estrategia de caché definida para datos dinámicos (Network First o Network Only)",
+    "El service worker se actualiza correctamente cuando hay cambios",
+    "No interfiere con la funcionalidad existente de Firebase y Chart.js"
+  ],
+  "definition of done": [
+    "Archivo service-worker.js creado en la raíz del proyecto",
+    "Registro del service worker desde index.html",
+    "Cache de recursos estáticos al instalar (HTML, CSS, JS, fuentes, iconos)",
+    "Estrategias de caché implementadas para diferentes tipos de recursos",
+    "Manejo de actualizaciones del service worker",
+    "Verificación de que funciona 'Añadir a pantalla de inicio'",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

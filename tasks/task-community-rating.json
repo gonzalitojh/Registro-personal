@@ -1,0 +1,20 @@
+{
+  "title": "Mostrar puntuación media de TMDB (nota de la comunidad) junto a la puntuación personal",
+  "description": "Añadir en la ficha de películas y series la puntuación media de TMDB (vote_average) como referencia de 'nota de la comunidad', mostrándola junto a la puntuación personal que el usuario asigna. Debe mostrar ambas puntuaciones de forma clara y diferenciada, permitiendo la comparación.",
+  "status": "created",
+  "acceptance criteria": [
+    "Se obtiene la puntuación media de TMDB al cargar detalles de películas y series",
+    "Se muestra la puntuación de TMDB junto a la puntuación personal del usuario",
+    "Ambas puntuaciones se diferencian visualmente (color, etiqueta, icono)",
+    "Si no hay datos de TMDB, se muestra un indicador de 'Sin puntuaciones'",
+    "El formato de puntuación es claro (ej: 7.4/10 o estrellas)",
+    "No se rompe la funcionalidad existente"
+  ],
+  "definition of done": [
+    "La ficha de película/serie muestra la puntuación TMDB (comunidad) y la personal",
+    "Diferenciación visual clara entre ambas puntuaciones",
+    "Manejo de casos sin puntuación disponible",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

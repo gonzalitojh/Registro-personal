@@ -1,0 +1,20 @@
+{
+  "title": "Mejorar visualización de etiquetas de libros con muchos autores",
+  "description": "Cuando un libro tiene muchos autores, la etiqueta donde se muestra su información se alarga horizontalmente, obligando a desplazarse. Se necesita aplicar un tamaño fijo a las etiquetas de libros con texto truncado (puntos suspensivos) cuando haya múltiples autores, para mantener la cuadrícula uniforme y legible.",
+  "status": "created",
+  "acceptance criteria": [
+    "Las tarjetas/etiquetas de libros tienen un tamaño fijo (ancho y alto consistentes)",
+    "Cuando un libro tiene muchos autores, el texto se trunca con puntos suspensivos (...) al final",
+    "El título del libro siempre se muestra completo (o truncado con tooltip)",
+    "Se puede ver la lista completa de autores al hacer hover/clic en un tooltip o modal",
+    "La cuadrícula de libros se mantiene ordenada y alineada",
+    "No se rompe la funcionalidad existente de libros"
+  ],
+  "definition of done": [
+    "CSS actualizado para tarjetas de libros con tamaño fijo y text-overflow: ellipsis",
+    "Tooltip o modal que muestra la lista completa de autores al interactuar",
+    "Verificación visual de que la cuadrícula se mantiene ordenada",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}

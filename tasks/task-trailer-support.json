@@ -1,0 +1,20 @@
+{
+  "title": "Añadir enlace o vista previa del tráiler desde TMDB",
+  "description": "Añadir a la ficha de películas y series un enlace al tráiler oficial (YouTube) obtenido desde el endpoint de vídeos de TMDB. Usar el endpoint `/movie/{id}/videos` y `/tv/{id}/videos` para obtener los vídeos disponibles, filtrar por tipo 'Trailer' y mostrar un botón o vista previa incrustada.",
+  "status": "created",
+  "acceptance criteria": [
+    "Se obtienen los vídeos desde TMDB para películas y series",
+    "Se filtra por tipo 'Trailer' y/o 'Teaser' oficial",
+    "Se muestra un botón/enlace al tráiler en YouTube",
+    "Opcionalmente se puede incrustar una vista previa del vídeo",
+    "Si no hay tráiler disponible, no se muestra nada (sin errores)",
+    "No se rompe la funcionalidad existente"
+  ],
+  "definition of done": [
+    "Nueva función en api-movies.js para obtener vídeos de películas y series",
+    "La ficha muestra enlace/botón al tráiler cuando está disponible",
+    "Manejo correcto de casos sin tráiler disponible",
+    "Documentación ADR del cambio completada",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}
