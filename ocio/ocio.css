@@ -341,18 +341,26 @@
   flex-direction: column;
   gap: 0.3rem;
   flex: 1;
+  min-width: 0;
 }
 
 .item-card__title {
   font-weight: 600;
   font-size: 0.88rem;
   line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .item-card__meta {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-card__rating {
@@ -1089,6 +1097,9 @@
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .list-row__progress {

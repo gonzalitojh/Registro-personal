@@ -197,12 +197,13 @@ function renderGrid(gridEl, items, onOpen) {
         <div class="item-card__perforation"></div>
         <div class="item-card__body">
           ${upcomingBadge(item)}
-          <div class="item-card__title">${escapeHtml(item.title)}</div>
-          <div class="item-card__meta">${escapeHtml(metaLineFor(item))}</div>
+          <div class="item-card__title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+          <div class="item-card__meta" title="${escapeHtml(metaLineFor(item))}">${escapeHtml(metaLineFor(item))}</div>
           ${progress ? `<div class="item-card__progress">${escapeHtml(progress)}</div>` : ""}
           ${stars ? `<div class="item-card__rating">${stars}</div>` : ""}
         </div>
         <button class="item-card__btn" data-index="${index}"
+                title="${escapeHtml(item.title)} — ${escapeHtml(metaLineFor(item))}"
                 aria-label="Ver detalles de ${escapeHtml(item.title)}"></button>
       </article>`;
     })
@@ -265,8 +266,8 @@ function renderList(gridEl, items, { onOpen, onQuickAction }) {
             <img class="list-row__cover" loading="lazy"
                  src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
             <div class="list-row__info">
-              <div class="list-row__title">${escapeHtml(item.title)}</div>
-              <div class="list-row__meta">${escapeHtml(metaLineFor(item))}</div>
+              <div class="list-row__title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+              <div class="list-row__meta" title="${escapeHtml(metaLineFor(item))}">${escapeHtml(metaLineFor(item))}</div>
               ${progress ? `<div class="list-row__progress">${escapeHtml(progress)}</div>` : ""}
               ${upcomingBadge(item)}
             </div>
