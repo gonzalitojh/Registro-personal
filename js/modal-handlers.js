@@ -10,17 +10,12 @@ import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, st
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import * as ui from "./ui.js";
+import { scheduleDeletion } from "./undo-delete.js";
 
 function confirmDelete(item, kind, ctx) {
-  return async () => {
-    if (!window.confirm(`¿Eliminar «${item.title}» de tu registro?`)) return;
-    try {
-      await ctx.deleteItem(ctx.getCurrentUser().uid, kind, item.id);
-      ui.showToast("Eliminado.");
-      ui.closeModal();
-    } catch (err) {
-      ui.showToast("No se pudo eliminar: " + err.message);
-    }
+  return () => {
+    scheduleDeletion(item, ctx.getCurrentUser().uid, kind, ctx);
+    ui.closeModal();
   };
 }
 

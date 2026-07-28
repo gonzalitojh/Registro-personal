@@ -353,6 +353,30 @@ button {
   z-index: 60;
 }
 
+/* Toast con botón de deshacer (undo delete) */
+.toast--undo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.1rem 0.6rem 1.4rem;
+}
+
+.toast__btn {
+  background: var(--teal-reel);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+.toast__btn:hover {
+  background: var(--teal-reel-dark);
+}
+
 
 /* =========================================================
    Enlace "Añadir manualmente"

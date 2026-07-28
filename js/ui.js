@@ -1406,10 +1406,62 @@ export function renderNotifications(listEl, badgeEl, emptyEl, notifications, { o
 /* ---------- Aviso flotante ---------- */
 
 let toastTimer = null;
+let undoState = null; // { hide } del toast de deshacer activo, o null
+
+function clearUndoState() {
+  if (undoState) {
+    undoState.hide();
+    undoState = null;
+  }
+}
+
 export function showToast(message) {
+  // Si hay un toast de deshacer activo, ocultarlo
+  clearUndoState();
+  clearTimeout(toastTimer);
+
   const toast = document.getElementById("toast");
   toast.textContent = message;
   toast.classList.remove("hidden");
-  clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.add("hidden"), 3200);
+}
+
+/**
+ * Muestra un toast con mensaje y botón "Deshacer".
+ * El toast NO se oculta automáticamente — el llamador controla su
+ * ciclo de vida mediante el método `hide()` del objeto devuelto.
+ *
+ * @param {string}   title   - Título del ítem que se eliminará
+ * @param {Function} onUndo  - Callback al hacer clic en "Deshacer"
+ * @returns {{ hide: () => void }}
+ */
+export function showUndoToast(title, onUndo) {
+  // Si ya hay otro toast de deshacer visible, ocultarlo
+  clearUndoState();
+  clearTimeout(toastTimer);
+
+  const toast = document.getElementById("toast");
+  toast.innerHTML = `
+    <span>«${escapeHtml(title)}» se eliminará…</span>
+    <button class="toast__btn">Deshacer</button>
+  `;
+  toast.classList.add("toast--undo");
+  toast.classList.remove("hidden");
+
+  const hide = () => {
+    if (undoState !== state) return; // Otro toast ya tomó el control
+    toast.classList.remove("toast--undo");
+    toast.classList.add("hidden");
+    toast.innerHTML = "";
+    undoState = null;
+  };
+
+  const state = { hide };
+  undoState = state;
+
+  toast.querySelector(".toast__btn").addEventListener("click", () => {
+    onUndo();
+  });
+
+  return { hide };
 }
