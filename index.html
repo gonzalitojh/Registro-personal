@@ -111,6 +111,7 @@
       <div class="profile-subtabs">
         <button type="button" class="profile-subtab is-active" data-section="stats">Estadísticas</button>
         <button type="button" class="profile-subtab" data-section="friends">Amigos</button>
+        <button type="button" class="profile-subtab" data-section="data">Datos</button>
       </div>
       <div class="stats-period">
         <select id="stats-period-select">
@@ -162,6 +163,24 @@
             <h3>Libros</h3>
             <div id="friend-books" class="library-grid"></div>
           </div>
+        </div>
+      </div>
+
+      <div id="profile-section-data" class="hidden">
+        <div class="data-card">
+          <h3>Exportar datos</h3>
+          <p>Descarga una copia de seguridad completa de todos tus datos (películas, series, libros, perfil y notificaciones) en formato JSON.</p>
+          <button type="button" class="btn btn--accent-media" id="btn-export-backup">
+            Exportar copia de seguridad
+          </button>
+        </div>
+
+        <div class="data-card">
+          <h3>Importar datos</h3>
+          <p>Restaura datos desde un archivo JSON previamente exportado. Los elementos se añadirán a los existentes (no los reemplaza).</p>
+          <button type="button" class="btn btn--accent-books" id="btn-import-backup">
+            Importar copia de seguridad
+          </button>
         </div>
       </div>
     </div>

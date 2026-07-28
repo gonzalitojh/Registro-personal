@@ -1,7 +1,7 @@
 {
   "title": "Exportar copia de seguridad de todos los datos en JSON",
   "description": "Añadir un botón en la interfaz que permita descargar un archivo JSON con todos los datos del usuario (películas, series, libros, amigos, lecturas, progreso, etc.) como copia de seguridad. El JSON debe estar bien estructurado y ser legible, con una fecha de exportación. Idealmente también permitir importar estos datos para restaurar una copia de seguridad.",
-  "status": "created",
+  "status": "documented",
   "acceptance criteria": [
     "Botón 'Exportar copia de seguridad' visible en la interfaz de usuario",
     "Descarga un archivo JSON con todos los datos del usuario",
