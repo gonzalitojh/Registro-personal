@@ -7,6 +7,7 @@
 import { normalizeEntry } from "./tv-progress.js";
 import { STATUS_LABELS_NEUTRAL } from "./constants.js";
 import * as ui from "./ui.js";
+import { setupExportBackup } from "./export-backup.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -139,6 +140,7 @@ export function setupProfile(ctx) {
   const profileSubtabs = document.querySelectorAll(".profile-subtab");
   const statsSection = document.getElementById("profile-section-stats");
   const friendsSection = document.getElementById("profile-section-friends");
+  const dataSection = document.getElementById("profile-section-data");
   const friendsListEl = document.getElementById("friends-list");
   const friendDetailEl = document.getElementById("friend-detail");
   const friendDetailNameEl = document.getElementById("friend-detail-name");
@@ -187,6 +189,7 @@ export function setupProfile(ctx) {
     document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
     statsSection.classList.remove("hidden");
     friendsSection.classList.add("hidden");
+    if (dataSection) dataSection.classList.add("hidden");
     statsPeriodWrap.classList.remove("hidden");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -214,6 +217,9 @@ export function setupProfile(ctx) {
     if (statsRangeStart.value && statsRangeEnd.value) renderStats(getCurrentStatsFilter(), ctx);
   });
 
+  // Inicializar botones de exportación/importación de datos
+  setupExportBackup(ctx);
+
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
       profileSubtabs.forEach((b) => b.classList.remove("is-active"));
@@ -221,6 +227,7 @@ export function setupProfile(ctx) {
       const section = btn.dataset.section;
       statsSection.classList.toggle("hidden", section !== "stats");
       friendsSection.classList.toggle("hidden", section !== "friends");
+      if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
       statsPeriodWrap.classList.toggle("hidden", section !== "stats");
       if (section === "friends") {
         friendDetailEl.classList.add("hidden");
