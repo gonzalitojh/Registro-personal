@@ -11,7 +11,7 @@ import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getWatchProviders } from "./api-movies.js";
 import { addItem } from "./db.js";
 
 function confirmDelete(item, kind, ctx) {
@@ -59,13 +59,28 @@ function progressWithStatus(seasonsMeta, item) {
   return base;
 }
 
-function openMovieItem(item, ctx) {
+function getUserCountry() {
+  return localStorage.getItem("watch-provider-country")
+    || (navigator.language && navigator.language.split("-")[1]?.toUpperCase())
+    || "ES";
+}
+
+async function openMovieItem(item, ctx) {
   const reopen = () => openMovieItem(item, ctx);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status });
     item.watchLog = newLog;
     item.status = status;
+  }
+
+  // Obtener watch providers (no crítico, si falla se muestra sin providers)
+  if (item.externalId) {
+    try {
+      item.watchProviders = await getWatchProviders(item.externalId, "movie", getUserCountry());
+    } catch {
+      item.watchProviders = null;
+    }
   }
 
   ui.openMovieModal(item, {
@@ -194,6 +209,15 @@ async function openTvItem(item, ctx) {
 
   const progress = progressWithStatus(seasonsMeta, item);
   const reopen = () => openTvItem(item, ctx);
+
+  // Obtener watch providers
+  if (item.externalId) {
+    try {
+      item.watchProviders = await getWatchProviders(item.externalId, "tv", getUserCountry());
+    } catch {
+      item.watchProviders = null;
+    }
+  }
 
   async function persistWatched(newWatched) {
     const newProgress = computeProgress(seasonsMeta, newWatched);

@@ -183,3 +183,70 @@ export async function getTvExtraDetails(id) {
     trailerUrl: _extractTrailerUrl(data.videos),
   };
 }
+
+// =============================================================
+// Plataformas de streaming (watch providers) desde TMDB.
+// Devuelve los proveedores de streaming, alquiler y compra para
+// un título (película o serie) en un país concreto.
+// Los resultados se cachean en memoria para evitar llamadas
+// redundantes durante la misma sesión.
+// =============================================================
+
+const IMG_LOGO = "https://image.tmdb.org/t/p/w92";
+const providersCache = new Map();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+
+function getCached(key) {
+  const entry = providersCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    providersCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  providersCache.set(key, { data, timestamp: Date.now() });
+}
+
+/**
+ * Obtiene los watch providers de una película o serie en TMDB.
+ * @param {string|number} id          - ID externo de TMDB
+ * @param {'movie'|'tv'}  type        - Tipo de contenido
+ * @param {string}        countryCode - Código ISO 3166-1 alpha-2 (ej: "ES", "US")
+ * @returns {Promise<{flatrate:Array, rent:Array, buy:Array, link:string|null}|null>}
+ */
+export async function getWatchProviders(id, type, countryCode = "ES") {
+  const cacheKey = `wp_${type}_${id}_${countryCode}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const endpoint = type === "tv" ? "tv" : "movie";
+  const url = `${BASE_URL}/${endpoint}/${id}/watch/providers?api_key=${TMDB_API_KEY}`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data || !data.results || !data.results[countryCode]) {
+    setCache(cacheKey, null);
+    return null;
+  }
+
+  const country = data.results[countryCode];
+  const result = {
+    flatrate: (country.flatrate || []).map(normalizeProvider),
+    rent: (country.rent || []).map(normalizeProvider),
+    buy: (country.buy || []).map(normalizeProvider),
+    link: country.link || null,
+  };
+
+  setCache(cacheKey, result);
+  return result;
+}
+
+function normalizeProvider(p) {
+  return {
+    providerId: p.provider_id,
+    providerName: p.provider_name,
+    logoUrl: p.logo_path ? `${IMG_LOGO}${p.logo_path}` : null,
+    displayPriority: p.display_priority || 99,
+  };
+}
