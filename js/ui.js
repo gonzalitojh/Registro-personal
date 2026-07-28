@@ -609,6 +609,51 @@ export function openManualAddModal(type, onSubmit) {
   modal.classList.remove("hidden");
 }
 
+/* ---------- Plataformas de streaming (watch providers) ---------- */
+
+function providersGroupHtml(providers, label) {
+  if (!providers || !providers.length) return "";
+  return `
+    <div class="watch-providers__group">
+      <span class="watch-providers__type-label">${label}</span>
+      <div class="watch-providers__logos">
+        ${providers
+          .map(
+            (p) => `
+          <span class="watch-provider" title="${escapeHtml(p.providerName)}">
+            ${p.logoUrl
+              ? `<img class="watch-provider__logo" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml(p.providerName)}" loading="lazy" />`
+              : ""
+            }
+            <span class="watch-provider__name">${escapeHtml(p.providerName)}</span>
+          </span>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function watchProvidersHtml(item) {
+  const wp = item.watchProviders;
+  if (!wp) return "";
+  const hasAny = (wp.flatrate && wp.flatrate.length) ||
+                 (wp.rent && wp.rent.length) ||
+                 (wp.buy && wp.buy.length);
+  if (!hasAny) {
+    return `<div class="watch-providers watch-providers--empty">
+      <span class="watch-providers__title">Sin info. de streaming para este país</span>
+    </div>`;
+  }
+  return `
+    <div class="watch-providers">
+      <span class="watch-providers__title">Disponible en:</span>
+      ${providersGroupHtml(wp.flatrate, "Streaming")}
+      ${providersGroupHtml(wp.rent, "Alquiler")}
+      ${providersGroupHtml(wp.buy, "Compra")}
+      ${wp.link ? `<a class="watch-providers__link" href="${escapeHtml(wp.link)}" target="_blank" rel="noopener">Ver opciones en TMDB</a>` : ""}
+    </div>`;
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -647,6 +692,7 @@ export function openMovieModal(item, callbacks) {
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
     ${item.collectionId ? `
@@ -1036,6 +1082,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="progress-banner">
@@ -1438,6 +1485,7 @@ export function openReadOnlyModal(item, ownerName) {
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="field-group">
