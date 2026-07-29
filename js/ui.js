@@ -126,8 +126,8 @@ export function renderSearchResults(container, results, existingIds, onAdd, cust
         <img class="result-card__cover" loading="lazy"
              src="${r.coverUrl || PLACEHOLDER_COVER}" alt="" />
         <div class="result-card__body">
-          <div class="result-card__title">${escapeHtml(r.title)}${editionsBadge}</div>
-          <div class="result-card__meta">${escapeHtml(metaLine || "")}</div>
+          <div class="result-card__title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}${editionsBadge}</div>
+          <div class="result-card__meta" title="${escapeHtml(metaLine || "")}">${escapeHtml(metaLine || "")}</div>
           <button class="btn ${
             r.type === "book" ? "btn--accent-books" : "btn--accent-media"
           }" data-index="${index}" ${added ? "disabled" : ""}>
