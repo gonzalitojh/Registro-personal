@@ -1,7 +1,7 @@
 {
   "title": "Mostrar colecciones/sagas de películas desde TMDB y permitir añadir el resto",
   "description": "TMDB proporciona información sobre si una película pertenece a una colección o saga (Marvel, Harry Potter, El Señor de los Anillos, etc.) mediante el campo `belongs_to_collection`. Se debe mostrar en la ficha de la película a qué colección pertenece y ofrecer un botón para añadir el resto de películas de la saga que el usuario aún no tenga registradas.",
-  "status": "published",
+  "status": "documented",
   "acceptance criteria": [
     "Se obtiene la información de colección al obtener detalles de una película desde TMDB",
     "Se muestra el nombre de la colección/saga en la ficha de la película",

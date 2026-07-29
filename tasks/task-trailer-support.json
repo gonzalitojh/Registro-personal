@@ -1,7 +1,7 @@
 {
   "title": "Añadir enlace o vista previa del tráiler desde TMDB",
   "description": "Añadir a la ficha de películas y series un enlace al tráiler oficial (YouTube) obtenido desde el endpoint de vídeos de TMDB. Usar el endpoint `/movie/{id}/videos` y `/tv/{id}/videos` para obtener los vídeos disponibles, filtrar por tipo 'Trailer' y mostrar un botón o vista previa incrustada.",
-  "status": "created",
+  "status": "documented",
   "acceptance criteria": [
     "Se obtienen los vídeos desde TMDB para películas y series",
     "Se filtra por tipo 'Trailer' y/o 'Teaser' oficial",
