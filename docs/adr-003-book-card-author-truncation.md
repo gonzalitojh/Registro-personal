@@ -100,6 +100,14 @@ y autor completos.
   item, la pieza clave que faltaba) y a `.item-card__body`,
   `-webkit-line-clamp` a `.item-card__title`, y `text-overflow:
   ellipsis` a `.item-card__meta` y `.list-row__meta`.
+  En las tarjetas de resultados de búsqueda (`.result-card`):
+  `min-width: 0` en `.result-card__body`, `text-overflow: ellipsis`
+  en `.result-card__title` y `.result-card__meta`.
 - `js/ui.js` — Añadidos atributos `title` a los elementos de
   título y metadatos en `renderGrid()` y `renderList()`, y al
-  botón `.item-card__btn` en cuadrícula.
+  botón `.item-card__btn` en cuadrícula. También en
+  `renderSearchResults()` para `.result-card__title` y
+  `.result-card__meta`.
+- `js/global-search.js` — Añadidos atributos `title` a los
+  elementos `.global-search__item-title` y
+  `.global-search__item-meta`.
