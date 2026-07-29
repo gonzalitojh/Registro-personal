@@ -1706,3 +1706,116 @@ export function showUndoToast(title, onUndo) {
 
   return { hide };
 }
+
+/* ---------- Feed de actividad de amigos ---------- */
+
+const PLACEHOLDER_COVER_SMALL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='60'%3E%3Crect fill='%23333' width='40' height='60'/%3E%3Ctext x='20' y='35' text-anchor='middle' fill='%23777' font-size='10'%3EN/A%3C/text%3E%3C/svg%3E";
+
+/**
+ * Renderiza el feed de actividad de amigos en un contenedor.
+ * @param {Element} container - Elemento DOM donde renderizar
+ * @param {Array<object>} events - Array de eventos de buildGlobalFeed()
+ * @param {Function} onItemClick - Callback al hacer clic en un item (recibe el item)
+ */
+export function renderActivityFeed(container, events, onItemClick) {
+  if (!events || events.length === 0) {
+    container.innerHTML = `<p class="empty-state">Todavía no hay actividad reciente de tus amigos.</p>`;
+    return;
+  }
+
+  // Agrupar por fecha
+  const groups = {};
+  events.forEach((ev) => {
+    const dateLabel = formatDateLabel(ev.date);
+    if (!groups[dateLabel]) groups[dateLabel] = [];
+    groups[dateLabel].push(ev);
+  });
+
+  // Ordenar grupos por fecha (las keys son "Hoy", "Ayer", o YYYY-MM-DD)
+  const groupKeys = Object.keys(groups).sort((a, b) => {
+    // Las fechas reales empiezan con dígito, los labels como "Hoy" van primero
+    const aIsDate = /^\d/.test(a);
+    const bIsDate = /^\d/.test(b);
+    if (!aIsDate && bIsDate) return -1;
+    if (aIsDate && !bIsDate) return 1;
+    if (!aIsDate && !bIsDate) return 0;
+    return b.localeCompare(a); // descendente para fechas
+  });
+
+  let html = "";
+  groupKeys.forEach((dateLabel) => {
+    html += `<div class="activity-group">
+      <div class="activity-group__header">${escapeHtml(dateLabel)}</div>
+      <div class="activity-group__items">`;
+
+    groups[dateLabel].forEach((ev, idx) => {
+      const item = ev.item || {};
+      const coverSrc = item.coverUrl || PLACEHOLDER_COVER_SMALL;
+      html += `
+        <div class="activity-event" data-event-index="${idx}">
+          <div class="activity-event__cover-wrap">
+            <img class="activity-event__cover" src="${coverSrc}" alt="" loading="lazy" />
+          </div>
+          <div class="activity-event__body">
+            <div class="activity-event__text">
+              <strong>${escapeHtml(ev.friendName)}</strong>
+              ${escapeHtml(ev.label)}
+              <em>${escapeHtml(item.title || "sin título")}</em>
+              ${ev.detail ? `<span class="activity-event__detail">${escapeHtml(ev.detail)}</span>` : ""}
+            </div>
+            <div class="activity-event__meta">
+              <span class="activity-event__icon">${eventIcon(ev.type)}</span>
+            </div>
+          </div>
+        </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Asignar click handlers usando el índice global
+  let globalIdx = 0;
+  container.querySelectorAll(".activity-event").forEach((el) => {
+    const eventData = events[globalIdx];
+    if (eventData && eventData.item && onItemClick) {
+      el.addEventListener("click", () => onItemClick(eventData.item, eventData.friendName));
+    }
+    globalIdx++;
+  });
+}
+
+/**
+ * Formatea una fecha YYYY-MM-DD como "Hoy", "Ayer" o "DD de Mes, YYYY".
+ */
+function formatDateLabel(dateStr) {
+  if (!dateStr) return "";
+  // Usar la misma lógica que todayISO() para consistencia (fecha UTC)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
+
+  if (dateStr === todayStr) return "Hoy";
+  if (dateStr === yesterdayStr) return "Ayer";
+
+  const d = new Date(dateStr + "T12:00:00");
+  const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  return `${d.getDate()} de ${months[d.getMonth()]}, ${d.getFullYear()}`;
+}
+
+/**
+ * Devuelve un icono para el tipo de evento.
+ */
+function eventIcon(type) {
+  const icons = {
+    movie_watched: "🎬",
+    series_started: "📺",
+    series_completed: "🏁",
+    series_episodes: "📺",
+    book_started: "📖",
+    book_finished: "📚",
+  };
+  return icons[type] || "📌";
+}

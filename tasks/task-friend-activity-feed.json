@@ -1,7 +1,7 @@
 {
   "title": "Feed de actividad de amigos (\"tu amigo X ha terminado la serie Y\")",
   "description": "Crear un feed de actividad que muestre las acciones recientes de los amigos del usuario. Por ejemplo: 'Tu amigo X ha terminado la serie Y', 'Tu amigo Z ha visto la película W', 'Tu amigo A ha empezado el libro B'. Debe aprovechar los datos existentes de amigos y su progreso para generar este feed, ordenado cronológicamente de más reciente a más antiguo.",
-  "status": "created",
+  "status": "documented",
   "acceptance criteria": [
     "Feed visible en la interfaz con actividades de amigos ordenadas por fecha",
     "Muestra eventos relevantes: terminó serie, vio película, empezó/terminó libro, etc.",
