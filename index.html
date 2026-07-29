@@ -59,6 +59,9 @@
               <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
             </div>
           </div>
+          <button type="button" class="icon-btn" id="btn-settings" aria-label="Ajustes">
+            <span aria-hidden="true">⚙️</span>
+          </button>
           <button type="button" class="theme-toggle icon-btn" id="btn-theme-toggle"
                   aria-label="Cambiar a modo claro" role="switch" aria-checked="false">
             <span aria-hidden="true" id="theme-toggle-icon">☀️</span>
@@ -114,6 +117,7 @@
         <button type="button" class="profile-subtab is-active" data-section="stats">Estadísticas</button>
         <button type="button" class="profile-subtab" data-section="friends">Amigos</button>
         <button type="button" class="profile-subtab" data-section="data">Datos</button>
+        <button type="button" class="profile-subtab" data-section="settings">Ajustes</button>
       </div>
       <div class="stats-period">
         <select id="stats-period-select">
@@ -183,6 +187,52 @@
           <button type="button" class="btn btn--accent-books" id="btn-import-backup">
             Importar copia de seguridad
           </button>
+        </div>
+      </div>
+
+      <div id="profile-section-settings" class="hidden">
+        <div class="settings-card">
+          <h3>Apariencia</h3>
+          <div class="settings-row">
+            <label for="settings-theme-select">Tema</label>
+            <select id="settings-theme-select" class="settings-select">
+              <option value="dark">Oscuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Notificaciones</h3>
+          <p class="settings-desc">Controla qué tipo de notificaciones quieres recibir.</p>
+          <div class="settings-row">
+            <label for="notif-movie-release">Estrenos de películas</label>
+            <label class="switch" aria-label="Alternar estrenos de películas">
+              <input type="checkbox" id="notif-movie-release" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <label for="notif-new-episode">Nuevos episodios de series</label>
+            <label class="switch" aria-label="Alternar nuevos episodios">
+              <input type="checkbox" id="notif-new-episode" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <label for="notif-series-premiere">Estrenos de series</label>
+            <label class="switch" aria-label="Alternar estrenos de series">
+              <input type="checkbox" id="notif-series-premiere" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <label for="notif-friend-activity">Actividad de amigos</label>
+            <label class="switch" aria-label="Alternar actividad de amigos">
+              <input type="checkbox" id="notif-friend-activity" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
         </div>
       </div>
     </div>

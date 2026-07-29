@@ -36,6 +36,7 @@ import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
+import { setupSettings, renderSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
 
 // ---------- Estado ----------
 
@@ -80,6 +81,7 @@ function createCtx() {
     getOpenLibraryDescription,
     todayISO,
     formatDateEs,
+    setTheme,
     showToast: ui.showToast,
   };
 }
@@ -182,6 +184,7 @@ function getSavedTheme() {
 async function init() {
   // Restaurar preferencia de tema antes de pintar nada
   setTheme(getSavedTheme());
+  syncThemeToSettings(getSavedTheme());
 
   await loadOcioPartials();
 
@@ -224,7 +227,30 @@ async function init() {
   // Tema (modo claro / oscuro)
   document.getElementById("btn-theme-toggle").addEventListener("click", () => {
     const current = document.documentElement.dataset.theme || "dark";
-    setTheme(current === "dark" ? "light" : "dark");
+    const next = current === "dark" ? "light" : "dark";
+    setTheme(next);
+    syncThemeSelect(next);
+    syncThemeToSettings(next);
+  });
+
+  // Botón de ajustes (abre perfil → sección Ajustes)
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("profile-view").classList.remove("hidden");
+
+    const subtabs = document.querySelectorAll(".profile-subtab");
+    subtabs.forEach((b) => b.classList.remove("is-active"));
+    document.querySelector('.profile-subtab[data-section="settings"]').classList.add("is-active");
+
+    document.getElementById("profile-section-stats").classList.add("hidden");
+    document.getElementById("profile-section-friends").classList.add("hidden");
+    document.getElementById("profile-section-data").classList.add("hidden");
+    document.getElementById("profile-section-settings").classList.remove("hidden");
+
+    const statsPeriodWrap = document.querySelector(".stats-period");
+    if (statsPeriodWrap) statsPeriodWrap.classList.add("hidden");
+
+    renderSettings(ctx);
   });
 
   // Filtros, orden, búsqueda en lista, vista
@@ -272,6 +298,7 @@ async function init() {
   setupModalCloseListeners();
   setupNotifications(ctx);
   setupProfile(ctx);
+  setupSettings(ctx);
 
   // Suscripciones en tiempo real
   watchAuthState(async (user) => {
@@ -287,6 +314,7 @@ async function init() {
       allItems.tv = [];
       allItems.books = [];
       notifications = [];
+      cleanupSettings();
       ui.showAuthScreen();
       return;
     }

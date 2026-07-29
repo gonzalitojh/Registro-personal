@@ -8,6 +8,7 @@ import { normalizeEntry } from "./tv-progress.js";
 import { STATUS_LABELS_NEUTRAL } from "./constants.js";
 import * as ui from "./ui.js";
 import { setupExportBackup } from "./export-backup.js";
+import { renderSettings } from "./settings.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -147,6 +148,7 @@ export function setupProfile(ctx) {
   const statsSection = document.getElementById("profile-section-stats");
   const friendsSection = document.getElementById("profile-section-friends");
   const dataSection = document.getElementById("profile-section-data");
+  const settingsSection = document.getElementById("profile-section-settings");
   const friendsListEl = document.getElementById("friends-list");
   const friendDetailEl = document.getElementById("friend-detail");
   const friendDetailNameEl = document.getElementById("friend-detail-name");
@@ -196,6 +198,7 @@ export function setupProfile(ctx) {
     statsSection.classList.remove("hidden");
     friendsSection.classList.add("hidden");
     if (dataSection) dataSection.classList.add("hidden");
+    if (settingsSection) settingsSection.classList.add("hidden");
     statsPeriodWrap.classList.remove("hidden");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -234,11 +237,15 @@ export function setupProfile(ctx) {
       statsSection.classList.toggle("hidden", section !== "stats");
       friendsSection.classList.toggle("hidden", section !== "friends");
       if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
+      if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
       statsPeriodWrap.classList.toggle("hidden", section !== "stats");
       if (section === "friends") {
         friendDetailEl.classList.add("hidden");
         friendsListEl.classList.remove("hidden");
         loadFriendsList();
+      }
+      if (section === "settings" && ctx) {
+        renderSettings(ctx);
       }
     });
   });
