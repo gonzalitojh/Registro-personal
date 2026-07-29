@@ -113,7 +113,7 @@ function renderStats(filter, ctx) {
     type: "bar",
     data: {
       labels: months,
-      datasets: [{ label: "Actividad", data: months.map((m) => stats.monthly[m]), backgroundColor: "#2b6459" }],
+      datasets: [{ label: "Actividad", data: months.map((m) => stats.monthly[m]), backgroundColor: getComputedStyle(document.documentElement).getPropertyValue("--teal-reel").trim() }],
     },
     options: { responsive: true, plugins: { legend: { display: false } } },
   });
@@ -128,7 +128,13 @@ function renderStats(filter, ctx) {
       datasets: [
         {
           data: statusLabelsPresent.map((k) => stats.statusCounts[k]),
-          backgroundColor: ["#948a76", "#2b6459", "#b9822e", "#8f6522", "#a63b2e"],
+          backgroundColor: [
+            getComputedStyle(document.documentElement).getPropertyValue("--ink-soft").trim(),
+            getComputedStyle(document.documentElement).getPropertyValue("--teal-reel").trim(),
+            getComputedStyle(document.documentElement).getPropertyValue("--ochre-spine").trim(),
+            getComputedStyle(document.documentElement).getPropertyValue("--ochre-spine-dark").trim(),
+            getComputedStyle(document.documentElement).getPropertyValue("--stamp").trim(),
+          ],
         },
       ],
     },

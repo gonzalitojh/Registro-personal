@@ -145,9 +145,42 @@ async function loadOcioPartials() {
   );
 }
 
+// ---------- Tema (modo claro / oscuro) ----------
+
+const STORAGE_KEY_THEME = "mi-registro-theme";
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(STORAGE_KEY_THEME, theme);
+  const toggle = document.getElementById("btn-theme-toggle");
+  const icon = document.getElementById("theme-toggle-icon");
+  if (!toggle || !icon) return;
+  if (theme === "light") {
+    icon.textContent = "🌙";
+    toggle.setAttribute("aria-label", "Cambiar a modo oscuro");
+    toggle.setAttribute("aria-checked", "true");
+    // Update theme-color meta tag
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = "#faf6f0";
+  } else {
+    icon.textContent = "☀️";
+    toggle.setAttribute("aria-label", "Cambiar a modo claro");
+    toggle.setAttribute("aria-checked", "false");
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = "#171512";
+  }
+}
+
+function getSavedTheme() {
+  return localStorage.getItem(STORAGE_KEY_THEME) || "dark";
+}
+
 // ---------- Inicialización ----------
 
 async function init() {
+  // Restaurar preferencia de tema antes de pintar nada
+  setTheme(getSavedTheme());
+
   await loadOcioPartials();
 
   const ctx = createCtx();
@@ -185,6 +218,12 @@ async function init() {
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => logout());
+
+  // Tema (modo claro / oscuro)
+  document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+    const current = document.documentElement.dataset.theme || "dark";
+    setTheme(current === "dark" ? "light" : "dark");
+  });
 
   // Filtros, orden, búsqueda en lista, vista
   document.querySelectorAll(".filter-chips").forEach((group) => {
