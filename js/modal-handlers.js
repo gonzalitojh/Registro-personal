@@ -376,9 +376,32 @@ export function openItem(item, ctx) {
 }
 
 export function setupModalCloseListeners() {
-  document.getElementById("modal-close").addEventListener("click", ui.closeModal);
-  document.getElementById("modal-backdrop").addEventListener("click", ui.closeModal);
+  document.getElementById("modal-close").addEventListener("click", () => {
+    ui.closeModal();
+  });
+  document.getElementById("modal-backdrop").addEventListener("click", () => {
+    ui.closeModal();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") ui.closeModal();
+    if (e.key === "Escape") {
+      const modal = document.getElementById("item-modal");
+      const globalSearch = document.getElementById("global-search");
+      const notifDropdown = document.getElementById("notif-dropdown");
+
+      // Prioridad: modal activo > búsqueda global (maneja su propio Escape) > notificaciones
+      if (!modal.classList.contains("hidden")) {
+        e.preventDefault();
+        ui.closeModal();
+      } else if (!globalSearch.classList.contains("hidden")) {
+        // Global search already handles Escape internally
+        return;
+      } else if (notifDropdown && !notifDropdown.classList.contains("hidden")) {
+        e.preventDefault();
+        notifDropdown.classList.add("hidden");
+        // Restaurar foco al botón de notificaciones
+        const notifBtn = document.getElementById("btn-notifications");
+        if (notifBtn) notifBtn.focus();
+      }
+    }
   });
 }

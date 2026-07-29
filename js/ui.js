@@ -8,6 +8,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
 import { isNextEpisodeUnreleased } from "./sorting.js";
 import { normalizeEntry } from "./tv-progress.js";
+import { trapFocus } from "./focus-utils.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : "media";
@@ -547,7 +548,10 @@ export function openEditModal(item, { onSave, onCancel }) {
 
   content.querySelector("#btn-edit-cancel").addEventListener("click", onCancel);
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 export function openManualAddModal(type, onSubmit) {
@@ -606,7 +610,10 @@ export function openManualAddModal(type, onSubmit) {
 
   content.querySelector("#btn-manual-cancel").addEventListener("click", closeModal);
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Plataformas de streaming (watch providers) ---------- */
@@ -833,7 +840,10 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     onDelete();
   });
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Modal selector de sagas ---------- */
@@ -895,7 +905,10 @@ export function openSagaSelectionModal(collectionName, movies, callbacks) {
     callbacks.onConfirm(selectedIndices.map((i) => movies[i]));
   });
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Modal de detalle: libros ---------- */
@@ -1035,7 +1048,10 @@ export function openBookModal(item, callbacks) {
     onDelete();
   });
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Modal de detalle: series (temporadas y episodios) ---------- */
@@ -1074,10 +1090,11 @@ function renderEpisodeRows(episodes, seasonWatched) {
            data-air-date="${e.airDate || ""}">
         <div class="episode-row__main">
           <label class="episode-checkbox-wrap">
-            <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""} />
+            <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""}
+                   aria-label="Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto" />
             <span class="episode-checkbox-visual" aria-hidden="true"></span>
           </label>
-          <span class="episode-row__num">E${e.episodeNumber}</span>
+          <span class="episode-row__num" aria-hidden="true">E${e.episodeNumber}</span>
           <span class="episode-row__name">${escapeHtml(e.name)}${
         future
           ? ` <em class="episode-row__future">(sin estrenar · ${formatDateEs(e.airDate)})</em>`
@@ -1405,7 +1422,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     });
   }
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Modal de confirmación al añadir libro ---------- */
@@ -1524,11 +1544,28 @@ export function openBookConfirmModal(item, { onConfirm, onCancel }) {
     });
   });
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 export function closeModal() {
-  document.getElementById("item-modal").classList.add("hidden");
+  const modal = document.getElementById("item-modal");
+
+  // Restaurar foco al elemento que lo tenía antes de abrir
+  if (modal._previousActiveElement && typeof modal._previousActiveElement.focus === 'function') {
+    modal._previousActiveElement.focus();
+  }
+
+  // Limpiar focus trap
+  if (modal._focusTrapCleanup) {
+    modal._focusTrapCleanup();
+    modal._focusTrapCleanup = null;
+  }
+  modal._previousActiveElement = null;
+
+  modal.classList.add("hidden");
   document.getElementById("modal-content").innerHTML = "";
 }
 
@@ -1567,7 +1604,10 @@ export function openReadOnlyModal(item, ownerName) {
     ${stars ? `<p class="item-card__rating" style="font-size:1rem;">${stars}</p>` : ""}
   `;
 
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 }
 
 /* ---------- Amigos ---------- */
@@ -1582,7 +1622,7 @@ export function renderFriendsList(container, profiles, myUid, onSelect) {
     .map(
       (p, index) => `
       <button class="friend-card" data-index="${index}">
-        <img class="friend-card__avatar" src="${p.photoURL || PLACEHOLDER_COVER}" alt="" />
+        <img class="friend-card__avatar" src="${p.photoURL || PLACEHOLDER_COVER}" alt="Avatar de ${escapeHtml(p.displayName || p.email || 'amigo')}" />
         <span class="friend-card__name">${escapeHtml(p.displayName || p.email || "Sin nombre")}</span>
       </button>`
     )
@@ -1752,7 +1792,7 @@ export function renderActivityFeed(container, events, onItemClick) {
       const item = ev.item || {};
       const coverSrc = item.coverUrl || PLACEHOLDER_COVER_SMALL;
       html += `
-        <div class="activity-event" data-event-index="${idx}">
+        <div class="activity-event" data-event-index="${idx}" tabindex="0" role="button">
           <div class="activity-event__cover-wrap">
             <img class="activity-event__cover" src="${coverSrc}" alt="" loading="lazy" />
           </div>
@@ -1775,12 +1815,18 @@ export function renderActivityFeed(container, events, onItemClick) {
 
   container.innerHTML = html;
 
-  // Asignar click handlers usando el índice global
+  // Asignar click y teclado handlers usando el índice global
   let globalIdx = 0;
   container.querySelectorAll(".activity-event").forEach((el) => {
     const eventData = events[globalIdx];
     if (eventData && eventData.item && onItemClick) {
       el.addEventListener("click", () => onItemClick(eventData.item, eventData.friendName));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onItemClick(eventData.item, eventData.friendName);
+        }
+      });
     }
     globalIdx++;
   });

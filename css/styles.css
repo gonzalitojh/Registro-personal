@@ -158,10 +158,106 @@ button {
   cursor: pointer;
 }
 
-:focus-visible {
-  outline: 2px solid var(--paper);
-  outline-offset: 3px;
+/* =========================================================
+   Skip link — visible solo al recibir foco
+   ========================================================= */
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 100;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: top 0.15s ease;
 }
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0;
+  outline: 3px solid var(--teal-reel);
+  outline-offset: 0;
+}
+
+/* =========================================================
+   Foco visible mejorado para todos los elementos
+   ========================================================= */
+
+:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Foco específico para componentes */
+
+.friend-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.profile-subtab:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.global-search__close:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+.global-search__item:focus-visible,
+.global-search__friend:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: -2px;
+  background: var(--ink-alpha-10);
+}
+
+.notif-row__delete:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.season-toggle:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.list-row__action:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -2px;
+}
+
+.item-card__btn:focus-visible {
+  outline-offset: -3px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.btn-link:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* El user-badge__name en modo claro usa el --ink-soft ya definido
+   que proporciona contraste suficiente contra fondos oscuros */
 
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -1051,8 +1147,11 @@ button {
   color: var(--paper, #f1ead9);
   font-size: 1rem;
   font-family: inherit;
-  outline: none;
   padding: 4px 0;
+}
+.global-search__input:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
 }
 
 .global-search__input::placeholder {

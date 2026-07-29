@@ -282,8 +282,12 @@ export function setupProfile(ctx) {
 
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
-      profileSubtabs.forEach((b) => b.classList.remove("is-active"));
+      profileSubtabs.forEach((b) => {
+        b.classList.remove("is-active");
+        b.setAttribute("aria-selected", "false");
+      });
       btn.classList.add("is-active");
+      btn.setAttribute("aria-selected", "true");
       const section = btn.dataset.section;
       statsSection.classList.toggle("hidden", section !== "stats");
       friendsSection.classList.toggle("hidden", section !== "friends");

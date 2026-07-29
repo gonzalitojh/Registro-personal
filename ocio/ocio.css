@@ -946,7 +946,8 @@
   color: var(--paper-alpha-40);
 }
 .library-search-input:focus-visible {
-  outline: none;
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 
@@ -1674,4 +1675,49 @@
   .rec-card:hover {
     box-shadow: var(--shadow-card);
   }
+}
+
+/* =========================================================
+   Foco visible para componentes específicos de ocio
+   ========================================================= */
+
+.view-toggle__btn:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: -1px;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.season-mark-all:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.episode-rating__star:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.cover-picker__item:focus-visible {
+  outline: 2px solid var(--ochre-spine);
+  outline-offset: 2px;
+}
+
+.desc-picker__item:focus-visible {
+  outline: 2px solid var(--ochre-spine);
+  outline-offset: 2px;
+}
+
+.saga-row:focus-within {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+.sort-select:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }

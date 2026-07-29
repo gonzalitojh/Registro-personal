@@ -208,7 +208,16 @@ async function init() {
       tab.classList.add("is-active");
       tab.setAttribute("aria-selected", "true");
       Object.values(panels).forEach((p) => p.classList.add("hidden"));
-      panels[tab.dataset.panel].classList.remove("hidden");
+      const activePanel = panels[tab.dataset.panel];
+      activePanel.classList.remove("hidden");
+
+      // Mover foco al título de la sección activa
+      const heading = activePanel.querySelector("h2");
+      if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus();
+      }
+
       clearAllSearches();
     });
   });

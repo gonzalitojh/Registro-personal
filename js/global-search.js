@@ -5,6 +5,7 @@
 
 import { openItem } from "./modal-handlers.js";
 import * as ui from "./ui.js";
+import { trapFocus } from "./focus-utils.js";
 
 // ---- Estado interno ----
 
@@ -138,7 +139,7 @@ function renderResults(results, query) {
         const avatar = entry.photoURL || "";
         const name = entry.displayName || entry.name || "Amigo";
         const email = entry.email || "";
-        html += `<div class="global-search__friend" data-global-idx="${globalIdx}" tabindex="-1">
+        html += `<div class="global-search__friend" data-global-idx="${globalIdx}" tabindex="0">
           <img class="global-search__friend-avatar" src="${escapeHtml(avatar)}" alt="" loading="lazy" />
           <div class="global-search__friend-info">
             <div class="global-search__friend-name">${escapeHtml(name)}</div>
@@ -158,7 +159,7 @@ function renderResults(results, query) {
         if (key === "books" && author) metaParts.push(author);
         const meta = metaParts.join(" · ");
 
-        html += `<div class="global-search__item" data-global-idx="${globalIdx}" tabindex="-1">
+        html += `<div class="global-search__item" data-global-idx="${globalIdx}" tabindex="0">
           <img class="global-search__item-cover" src="${escapeHtml(cover)}" alt="" loading="lazy" />
           <div class="global-search__item-info">
             <div class="global-search__item-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
@@ -176,12 +177,23 @@ function renderResults(results, query) {
   flatResults = newFlat;
   highlightedIndex = -1;
 
-  // Conectar eventos de click en cada resultado
+  // Conectar eventos de click y teclado en cada resultado
   resultsEl.querySelectorAll("[data-global-idx]").forEach((el) => {
     el.addEventListener("click", () => {
       const idx = parseInt(el.dataset.globalIdx, 10);
       if (flatResults[idx]) {
         navigateTo(flatResults[idx]);
+      }
+    });
+
+    // Enter y Space para activar el resultado
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const idx = parseInt(el.dataset.globalIdx, 10);
+        if (flatResults[idx]) {
+          navigateTo(flatResults[idx]);
+        }
       }
     });
 
@@ -222,12 +234,19 @@ function navigateTo(result) {
 function openGlobalSearch() {
   if (isOpen) return;
   isOpen = true;
+
+  // Recordar qué elemento tenía el foco antes de abrir
+  el._previousActiveElement = document.activeElement;
+
   el.classList.remove("hidden");
   input.value = "";
   resultsEl.innerHTML = `<p class="global-search__hint">Escribe para buscar en tus películas, series, libros y amigos.</p>`;
   flatResults = [];
   highlightedIndex = -1;
   setTimeout(() => input.focus(), 50);
+
+  // Atrapar foco dentro del panel de búsqueda
+  el._focusTrapCleanup = trapFocus(el.querySelector(".global-search__panel"));
 
   // Cachear perfiles de amigos al abrir
   if (!cachedProfiles && searchCtx) {
@@ -252,6 +271,18 @@ function closeGlobalSearch() {
   flatResults = [];
   highlightedIndex = -1;
   input.blur();
+
+  // Limpiar focus trap
+  if (el._focusTrapCleanup) {
+    el._focusTrapCleanup();
+    el._focusTrapCleanup = null;
+  }
+
+  // Restaurar foco al elemento que abrió la búsqueda
+  if (el._previousActiveElement && typeof el._previousActiveElement.focus === 'function') {
+    el._previousActiveElement.focus();
+  }
+  el._previousActiveElement = null;
 }
 
 // ---- Navegación por teclado ----

@@ -23,6 +23,9 @@
 </head>
 <body>
 
+  <!-- Skip link: salto al contenido principal -->
+  <a href="#main-content" class="skip-link" id="skip-link">Saltar al contenido principal</a>
+
   <!-- Pantalla de acceso -->
   <section id="auth-screen" class="auth-screen">
     <div class="library-card">
@@ -50,7 +53,7 @@
               <span aria-hidden="true">🔔</span>
               <span class="notif-badge hidden" id="notif-badge"></span>
             </button>
-            <div class="notif-dropdown hidden" id="notif-dropdown">
+            <div class="notif-dropdown hidden" id="notif-dropdown" role="dialog" aria-label="Notificaciones">
               <div class="notif-dropdown__header">
                 <span>Notificaciones</span>
                 <button type="button" class="btn-link" id="btn-clear-notifs">Borrar todas</button>
@@ -90,18 +93,18 @@
       </nav>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <!-- El contenido de cada pestaña vive en ocio/*.html y lo inyecta
            app.js con fetch() dentro de estas tres secciones. -->
-      <section id="panel-tv" class="panel" data-type-group="tv" data-ocio-src="ocio/series.html">
+      <section id="panel-tv" class="panel" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-movies" class="panel hidden" data-type-group="movies" data-ocio-src="ocio/peliculas.html">
+      <section id="panel-movies" class="panel hidden" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-books" class="panel hidden" data-type-group="books" data-ocio-src="ocio/libros.html">
+      <section id="panel-books" class="panel hidden" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
     </main>
@@ -112,19 +115,19 @@
   </div>
 
   <!-- Vista de perfil / estadísticas / amigos -->
-  <div id="profile-view" class="profile-view hidden">
+  <div id="profile-view" class="profile-view hidden" role="main" aria-label="Vista de perfil">
     <div class="profile-view__header">
       <button type="button" class="btn btn--ghost" id="btn-close-profile">← Volver</button>
       <h1 class="app-title">Tu perfil</h1>
-      <div class="profile-subtabs">
-        <button type="button" class="profile-subtab is-active" data-section="stats">Estadísticas</button>
-        <button type="button" class="profile-subtab" data-section="friends">Amigos</button>
-        <button type="button" class="profile-subtab" data-section="activity">Actividad</button>
-        <button type="button" class="profile-subtab" data-section="data">Datos</button>
-        <button type="button" class="profile-subtab" data-section="settings">Ajustes</button>
+      <div class="profile-subtabs" role="tablist" aria-label="Secciones del perfil">
+        <button type="button" class="profile-subtab is-active" role="tab" aria-selected="true" aria-controls="profile-section-stats" data-section="stats">Estadísticas</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-friends" data-section="friends">Amigos</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-activity" data-section="activity">Actividad</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-data" data-section="data">Datos</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-settings" data-section="settings">Ajustes</button>
       </div>
       <div class="stats-period">
-        <select id="stats-period-select">
+        <select id="stats-period-select" aria-label="Periodo de estadísticas">
           <option value="all">Siempre</option>
           <option value="year">Este año</option>
           <option value="month">Este mes</option>
@@ -133,14 +136,15 @@
         <div id="stats-range-fields" class="stats-range-fields hidden">
           <label class="visually-hidden" for="stats-range-start">Desde</label>
           <input type="date" id="stats-range-start" />
-          <span>→</span>
+          <span aria-hidden="true">→</span>
           <label class="visually-hidden" for="stats-range-end">Hasta</label>
           <input type="date" id="stats-range-end" />
         </div>
       </div>
     </div>
     <div class="profile-view__body">
-      <div id="profile-section-stats">
+      <section id="profile-section-stats" role="tabpanel" aria-labelledby="profile-section-stats-heading">
+        <h2 id="profile-section-stats-heading" class="visually-hidden">Estadísticas</h2>
         <div class="stats-grid" id="stats-summary"></div>
         <div class="stats-charts">
           <div class="chart-card">
@@ -152,9 +156,10 @@
             <canvas id="chart-status"></canvas>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div id="profile-section-friends" class="hidden">
+      <section id="profile-section-friends" class="hidden" role="tabpanel" aria-labelledby="profile-section-friends-heading">
+        <h2 id="profile-section-friends-heading" class="visually-hidden">Amigos</h2>
         <div id="friends-list" class="friends-list"></div>
 
         <div id="friend-detail" class="friend-detail hidden">
@@ -174,14 +179,16 @@
             <div id="friend-books" class="library-grid"></div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div id="profile-section-activity" class="hidden">
-        <div id="activity-feed-container" class="activity-feed"></div>
+      <section id="profile-section-activity" class="hidden" role="tabpanel" aria-labelledby="profile-section-activity-heading">
+        <h2 id="profile-section-activity-heading" class="visually-hidden">Actividad de amigos</h2>
+        <div id="activity-feed-container" class="activity-feed" aria-live="polite" aria-atomic="true"></div>
         <p class="empty-state" id="activity-feed-loading">Cargando actividad…</p>
-      </div>
+      </section>
 
-      <div id="profile-section-data" class="hidden">
+      <section id="profile-section-data" class="hidden" role="tabpanel" aria-labelledby="profile-section-data-heading">
+        <h2 id="profile-section-data-heading" class="visually-hidden">Exportar e importar datos</h2>
         <div class="data-card">
           <h3>Exportar datos</h3>
           <p>Descarga una copia de seguridad completa de todos tus datos (películas, series, libros, perfil y notificaciones) en formato JSON.</p>
@@ -205,9 +212,10 @@
             Exportar calendario (.ics)
           </button>
         </div>
-      </div>
+      </section>
 
-      <div id="profile-section-settings" class="hidden">
+      <section id="profile-section-settings" class="hidden" role="tabpanel" aria-labelledby="profile-section-settings-heading">
+        <h2 id="profile-section-settings-heading" class="visually-hidden">Ajustes</h2>
         <div class="settings-card">
           <h3>Apariencia</h3>
           <div class="settings-row">
@@ -224,34 +232,34 @@
           <p class="settings-desc">Controla qué tipo de notificaciones quieres recibir.</p>
           <div class="settings-row">
             <label for="notif-movie-release">Estrenos de películas</label>
-            <label class="switch" aria-label="Alternar estrenos de películas">
+            <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-movie-release" class="switch__input" checked />
               <span class="switch__slider"></span>
             </label>
           </div>
           <div class="settings-row">
             <label for="notif-new-episode">Nuevos episodios de series</label>
-            <label class="switch" aria-label="Alternar nuevos episodios">
+            <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-new-episode" class="switch__input" checked />
               <span class="switch__slider"></span>
             </label>
           </div>
           <div class="settings-row">
             <label for="notif-series-premiere">Estrenos de series</label>
-            <label class="switch" aria-label="Alternar estrenos de series">
+            <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-series-premiere" class="switch__input" checked />
               <span class="switch__slider"></span>
             </label>
           </div>
           <div class="settings-row">
             <label for="notif-friend-activity">Actividad de amigos</label>
-            <label class="switch" aria-label="Alternar actividad de amigos">
+            <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-friend-activity" class="switch__input" checked />
               <span class="switch__slider"></span>
             </label>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 
@@ -288,7 +296,7 @@
     </div>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>
