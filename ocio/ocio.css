@@ -101,18 +101,25 @@
   flex-direction: column;
   gap: 0.35rem;
   flex: 1;
+  min-width: 0;
 }
 
 .result-card__title {
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .result-card__meta {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .result-card .btn {
@@ -286,6 +293,7 @@
   text-align: left;
   border: none;
   padding: 0;
+  min-width: 0;
 }
 
 .item-card__cover-wrap {

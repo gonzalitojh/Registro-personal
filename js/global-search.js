@@ -161,8 +161,8 @@ function renderResults(results, query) {
         html += `<div class="global-search__item" data-global-idx="${globalIdx}" tabindex="-1">
           <img class="global-search__item-cover" src="${escapeHtml(cover)}" alt="" loading="lazy" />
           <div class="global-search__item-info">
-            <div class="global-search__item-title">${escapeHtml(title)}</div>
-            <div class="global-search__item-meta">${escapeHtml(meta)}</div>
+            <div class="global-search__item-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
+            <div class="global-search__item-meta" title="${escapeHtml(meta)}">${escapeHtml(meta)}</div>
           </div>
           <span class="global-search__item-status chip ${statusClass(status)}">${ui.statusLabel(status, entry.type)}</span>
         </div>`;

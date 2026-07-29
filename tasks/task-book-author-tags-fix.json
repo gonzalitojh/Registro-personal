@@ -1,7 +1,7 @@
 {
   "title": "Mejorar visualización de etiquetas de libros con muchos autores",
   "description": "Cuando un libro tiene muchos autores, la etiqueta donde se muestra su información se alarga horizontalmente, obligando a desplazarse. Se necesita aplicar un tamaño fijo a las etiquetas de libros con texto truncado (puntos suspensivos) cuando haya múltiples autores, para mantener la cuadrícula uniforme y legible.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Las tarjetas/etiquetas de libros tienen un tamaño fijo (ancho y alto consistentes)",
     "Cuando un libro tiene muchos autores, el texto se trunca con puntos suspensivos (...) al final",
