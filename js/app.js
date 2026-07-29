@@ -245,6 +245,8 @@ async function init() {
 
     document.getElementById("profile-section-stats").classList.add("hidden");
     document.getElementById("profile-section-friends").classList.add("hidden");
+    const activitySec = document.getElementById("profile-section-activity");
+    if (activitySec) activitySec.classList.add("hidden");
     document.getElementById("profile-section-data").classList.add("hidden");
     document.getElementById("profile-section-settings").classList.remove("hidden");
 

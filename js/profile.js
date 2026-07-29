@@ -10,6 +10,7 @@ import * as ui from "./ui.js";
 import { setupExportBackup } from "./export-backup.js";
 import { setupExportIcs } from "./export-ics.js";
 import { renderSettings } from "./settings.js";
+import { buildGlobalFeed } from "./activity-feed.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -148,12 +149,15 @@ export function setupProfile(ctx) {
   const profileSubtabs = document.querySelectorAll(".profile-subtab");
   const statsSection = document.getElementById("profile-section-stats");
   const friendsSection = document.getElementById("profile-section-friends");
+  const activitySection = document.getElementById("profile-section-activity");
   const dataSection = document.getElementById("profile-section-data");
   const settingsSection = document.getElementById("profile-section-settings");
   const friendsListEl = document.getElementById("friends-list");
   const friendDetailEl = document.getElementById("friend-detail");
   const friendDetailNameEl = document.getElementById("friend-detail-name");
   const statsPeriodWrap = document.querySelector(".stats-period");
+  const activityFeedContainer = document.getElementById("activity-feed-container");
+  const activityFeedLoading = document.getElementById("activity-feed-loading");
   const statsPeriodSelect = document.getElementById("stats-period-select");
   const statsRangeFields = document.getElementById("stats-range-fields");
   const statsRangeStart = document.getElementById("stats-range-start");
@@ -198,6 +202,7 @@ export function setupProfile(ctx) {
     document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
     statsSection.classList.remove("hidden");
     friendsSection.classList.add("hidden");
+    if (activitySection) activitySection.classList.add("hidden");
     if (dataSection) dataSection.classList.add("hidden");
     if (settingsSection) settingsSection.classList.add("hidden");
     statsPeriodWrap.classList.remove("hidden");
@@ -231,6 +236,50 @@ export function setupProfile(ctx) {
   setupExportBackup(ctx);
   setupExportIcs(ctx);
 
+  async function loadActivityFeed() {
+    if (!activityFeedContainer || !activityFeedLoading) return;
+    activityFeedLoading.classList.remove("hidden");
+    activityFeedContainer.innerHTML = "";
+    try {
+      const profiles = await ctx.getAllUserProfiles();
+      const myUid = ctx.getCurrentUser().uid;
+      const others = profiles.filter((p) => p.uid !== myUid);
+
+      // Cargar items de cada amigo en paralelo
+      const friendsData = await Promise.all(
+        others.map(async (profile) => {
+          try {
+            const [movies, series, books] = await Promise.all([
+              ctx.getItemsOnce(profile.uid, "movie"),
+              ctx.getItemsOnce(profile.uid, "tv"),
+              ctx.getItemsOnce(profile.uid, "book"),
+            ]);
+            return { profile, movies, series, books };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const validFriendsData = friendsData.filter(Boolean);
+      const events = buildGlobalFeed(validFriendsData);
+
+      activityFeedLoading.classList.add("hidden");
+
+      if (events.length === 0) {
+        activityFeedContainer.innerHTML = `<p class="empty-state">Todavía no hay actividad reciente de tus amigos.</p>`;
+        return;
+      }
+
+      ui.renderActivityFeed(activityFeedContainer, events, (item, friendName) => {
+        ui.openReadOnlyModal(item, friendName);
+      });
+    } catch (err) {
+      activityFeedLoading.classList.add("hidden");
+      activityFeedContainer.innerHTML = `<p class="empty-state">No se pudo cargar la actividad de amigos.</p>`;
+    }
+  }
+
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
       profileSubtabs.forEach((b) => b.classList.remove("is-active"));
@@ -238,6 +287,7 @@ export function setupProfile(ctx) {
       const section = btn.dataset.section;
       statsSection.classList.toggle("hidden", section !== "stats");
       friendsSection.classList.toggle("hidden", section !== "friends");
+      if (activitySection) activitySection.classList.toggle("hidden", section !== "activity");
       if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
       if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
       statsPeriodWrap.classList.toggle("hidden", section !== "stats");
@@ -245,6 +295,9 @@ export function setupProfile(ctx) {
         friendDetailEl.classList.add("hidden");
         friendsListEl.classList.remove("hidden");
         loadFriendsList();
+      }
+      if (section === "activity") {
+        loadActivityFeed();
       }
       if (section === "settings" && ctx) {
         renderSettings(ctx);

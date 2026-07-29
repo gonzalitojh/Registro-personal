@@ -1,7 +1,7 @@
 {
   "title": "Buscador global que busque en películas, series, libros y amigos simultáneamente",
   "description": "Crear un buscador global (tipo cmd+K o barra de búsqueda en el header) que permita buscar simultáneamente en todos los datos del usuario: películas, series, libros y amigos. Los resultados deben agruparse por categoría y permitir navegar al item seleccionado. Debe ser rápido y responsive, filtrando en tiempo real mientras el usuario escribe.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Campo de búsqueda global visible en el header o accesible con atajo de teclado",
     "Busca en tiempo real en películas, series, libros y amigos",
