@@ -286,6 +286,7 @@
   text-align: left;
   border: none;
   padding: 0;
+  min-width: 0;
 }
 
 .item-card__cover-wrap {

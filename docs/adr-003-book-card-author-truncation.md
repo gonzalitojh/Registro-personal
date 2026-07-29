@@ -25,16 +25,28 @@ de tamaño uniforme sin perder información:
 2. **CSS `-webkit-line-clamp: 2`** en `.item-card__title` para
    limitar el título a un máximo de 2 líneas antes de truncar.
 
-3. **`min-width: 0`** en `.item-card__body` para evitar que el
-   contenido fuerce al contenedor flex a expandirse más allá del
-   ancho de la columna del grid.
+3. **`min-width: 0`** en `.item-card` (grid item) para que la
+   columna del grid pueda encogerse por debajo del tamaño del
+   contenido. Sin esto, los grid items tienen `min-width: auto`
+   por defecto y el `text-overflow: ellipsis` nunca se activa
+   porque el elemento nunca se ve forzado a ser más angosto.
 
-4. **Atributo HTML `title`** nativo en los elementos de título y
+4. **`min-width: 0`** en `.item-card__body` para evitar que el
+   contenido fuerce al contenedor flex (dentro del grid item) a
+   expandirse más allá del ancho de la columna.
+
+   > **Nota**: Ambos `min-width: 0` son necesarios: uno a nivel
+   > grid item (`.item-card`) y otro a nivel flex child
+   > (`.item-card__body`). El primero permite que la columna del
+   > grid se encoja, y el segundo permite que el body flex se
+   > encoja dentro del card.
+
+5. **Atributo HTML `title`** nativo en los elementos de título y
    metadatos, tanto en vista cuadrícula como lista, para que el
    contenido completo sea visible como tooltip del navegador al
    hacer hover.
 
-5. **`title` en el botón `.item-card__btn`** (capa absoluta que
+6. **`title` en el botón `.item-card__btn`** (capa absoluta que
    cubre toda la tarjeta) con el título y autor completos, para
    garantizar que el tooltip sea accesible en vista cuadrícula
    donde el botón overlay intercepta los eventos del ratón.
@@ -84,7 +96,8 @@ y autor completos.
   solo se añadió el `title` attribute y truncado en el meta.
 
 ## Archivos modificados
-- `ocio/ocio.css` — Añadido `min-width: 0` a `.item-card__body`,
+- `ocio/ocio.css` — Añadido `min-width: 0` a `.item-card` (grid
+  item, la pieza clave que faltaba) y a `.item-card__body`,
   `-webkit-line-clamp` a `.item-card__title`, y `text-overflow:
   ellipsis` a `.item-card__meta` y `.list-row__meta`.
 - `js/ui.js` — Añadidos atributos `title` a los elementos de
