@@ -1,7 +1,7 @@
 {
   "title": "Añadir opción 'Deshacer' al borrar elementos",
   "description": "Implementar un sistema de 'deshacer' que muestre un aviso/notificación temporal tras borrar un elemento (película, serie, libro, etc.) con un botón de 'Deshacer' visible durante unos segundos (ej: 5 segundos). Si el usuario hace clic en deshacer, el elemento se restaura. Si no, se elimina definitivamente al expirar el tiempo. Debe funcionar para todos los tipos de contenido.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Al borrar un elemento, aparece un aviso temporal con botón 'Deshacer'",
     "El aviso es visible durante 5-7 segundos antes de desaparecer",

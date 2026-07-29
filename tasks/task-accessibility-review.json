@@ -1,7 +1,7 @@
 {
   "title": "Revisión y mejora de accesibilidad: navegación por teclado y lectores de pantalla",
   "description": "Realizar una revisión completa de accesibilidad de la web, enfocándose en navegación por teclado (tabindex, focus visible, skip links) y compatibilidad con lectores de pantalla (ARIA labels, roles, landmarks). La aplicación ha crecido significativamente y necesita asegurar que sea utilizable por personas con discapacidades visuales o que usan solo teclado.",
-  "status": "publishing",
+  "status": "published",
   "acceptance criteria": [
     "Todos los elementos interactivos son accesibles por teclado (Tab, Enter, Escape)",
     "Focus visible en todos los elementos enfocables (outline claro)",

@@ -1,7 +1,7 @@
 {
   "title": "Limpieza, optimización y mejoras arquitectónicas del proyecto",
   "description": "Revisión completa del proyecto Registro-personal para realizar limpieza de código, optimización de rendimiento y mejoras arquitectónicas. El proyecto es una app web estática (HTML+CSS+JS con módulos nativos) que usa Firebase y APIs externas (TMDB, Open Library, Google Books). Actualmente el archivo app.js es un monolito de 1338 líneas que contiene toda la lógica de negocio, y ui.js tiene 1323 líneas con todo el renderizado. Se necesitan mejoras en modularidad, eliminación de código duplicado, y mejoras de arquitectura.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Se elimina código duplicado (funciones isNextEpisodeUnreleased duplicadas en app.js y ui.js)",
     "Se extraen callbacks repetitivos del init() en app.js a funciones modulares separadas",

@@ -1,7 +1,7 @@
 {
   "title": "Añadir modo claro (light theme) como alternativa al tema oscuro",
   "description": "Actualmente la web tiene un tema oscuro. Se necesita añadir un modo claro (light theme) que los usuarios puedan activar desde la interfaz. Debe implementarse usando variables CSS (custom properties) para que el cambio sea limpio y mantenible. El usuario debe poder alternar entre modo claro y oscuro, y la preferencia debe persistirse (localStorage o Firestore).",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Modo claro implementado con variables CSS (custom properties)",
     "Las variables CSS actuales se refactorizan para soportar ambos temas",

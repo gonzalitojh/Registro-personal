@@ -1,7 +1,7 @@
 {
   "title": "Mejora de búsqueda de libros con Google Books API y deduplicación inteligente",
   "description": "Cambiar la búsqueda de libros para usar Google Books API como fuente principal con deduplicación inteligente por título+autor. Al añadir un libro, mostrar todas las portadas disponibles para que el usuario elija. Unificar sinopsis y metadatos de todas las fuentes, dando al usuario poder de decisión cuando haya múltiples opciones.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Búsqueda de libros usa Google Books API como fuente principal",
     "Deduplicación inteligente por título+autor agrupa resultados similares",

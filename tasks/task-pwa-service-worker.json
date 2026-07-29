@@ -1,7 +1,7 @@
 {
   "title": "Añadir service worker para PWA completa con soporte offline básico",
   "description": "La web ya tiene manifest.json, pero necesita un service worker para ser una Progressive Web App (PWA) completa. El service worker debe permitir 'Añadir a pantalla de inicio' con funcionalidad offline básica (mostrar al menos una página de respaldo o la app pre-cacheadas). Debe seguir las mejores prácticas de Workbox o implementación manual con estrategias de caché apropiadas (Cache First para recursos estáticos, Network First para datos dinámicos).",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Service worker registrado correctamente desde index.html",
     "Se puede 'Añadir a pantalla de inicio' en navegadores compatibles",
