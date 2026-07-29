@@ -654,6 +654,48 @@ function watchProvidersHtml(item) {
     </div>`;
 }
 
+/* ---------- Recomendaciones (contenido similar) ---------- */
+
+/**
+ * Genera el HTML de la sección de recomendaciones.
+ * @param {Array}  items       - Items recomendados [{externalId, type, title, year, coverUrl}]
+ * @param {Set}    existingIds - Set de externalId ya añadidos para deshabilitar botones
+ * @param {string} group       - "movie" o "tv" (para clases de botón)
+ * @param {boolean} interactive - true si se deben mostrar botones "Añadir"
+ * @returns {string} HTML del bloque de recomendaciones, o cadena vacía
+ */
+function renderRecommendations(items, existingIds, group, interactive) {
+  if (!items || !items.length) return "";
+  const accentClass = "btn--accent-media";
+  const cardsHtml = items
+    .map((rec, index) => {
+      const added = existingIds.has(rec.externalId);
+      const btnHtml = interactive
+        ? `<button class="btn btn--small ${accentClass} rec-card__add" data-rec-index="${index}" ${added ? "disabled" : ""}>
+             ${added ? "Añadido" : "Añadir"}
+           </button>`
+        : "";
+      return `
+        <div class="rec-card" data-rec-index="${index}">
+          <img class="rec-card__cover" src="${rec.coverUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+          <div class="rec-card__body">
+            <div class="rec-card__title">${escapeHtml(rec.title)}</div>
+            <div class="rec-card__year">${escapeHtml(rec.year || "")}</div>
+            ${btnHtml}
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  return `
+    <div class="recommendations">
+      <h4 class="recommendations__title">Si te gustó esto, quizá te guste...</h4>
+      <div class="recommendations__scroll">
+        ${cardsHtml}
+      </div>
+    </div>`;
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -673,8 +715,8 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, callbacks) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga } = callbacks;
+export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set()) {
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -700,6 +742,8 @@ export function openMovieModal(item, callbacks) {
       <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
       <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
     </div>` : ""}
+
+    ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation)}
 
     <div class="field-group">
       <label>Visionados</label>
@@ -730,6 +774,17 @@ export function openMovieModal(item, callbacks) {
   if (addSagaBtn) {
     addSagaBtn.addEventListener("click", () => {
       if (onAddSaga) onAddSaga();
+    });
+  }
+
+  // Wire recommendation "Añadir" buttons
+  if (onAddRecommendation) {
+    content.querySelectorAll(".rec-card__add").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.recIndex);
+        const recItem = recommendations[index];
+        if (recItem) onAddRecommendation(recItem, btn);
+      });
     });
   }
 
@@ -1045,7 +1100,7 @@ function renderEpisodeRows(episodes, seasonWatched) {
     .join("");
 }
 
-export function openTvModal(item, seasonsMeta, progress, callbacks) {
+export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set()) {
   const {
     onExpandSeason,
     onSetEpisodeDate,
@@ -1056,6 +1111,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     onSaveMeta,
     onDelete,
     onEdit,
+    onAddRecommendation,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
@@ -1084,6 +1140,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     ${trailerButtonHtml(item)}
     ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
+
+    ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation)}
 
     <div class="progress-banner">
       <span class="next-line">${nextLine}</span>
@@ -1335,6 +1393,17 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
     onDelete();
   });
+
+  // Wire recommendation "Añadir" buttons
+  if (onAddRecommendation) {
+    content.querySelectorAll(".rec-card__add").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.recIndex);
+        const recItem = recommendations[index];
+        if (recItem) onAddRecommendation(recItem, btn);
+      });
+    });
+  }
 
   modal.classList.remove("hidden");
 }

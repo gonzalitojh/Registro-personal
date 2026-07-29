@@ -11,7 +11,7 @@ import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
 import { addItem } from "./db.js";
 
 function confirmDelete(item, kind, ctx) {
@@ -83,6 +83,19 @@ async function openMovieItem(item, ctx) {
     }
   }
 
+  // --- Cargar recomendaciones (similares) ---
+  let recommendations = [];
+  let existingIds = new Set();
+  if (item.externalId) {
+    try {
+      recommendations = await getSimilarMovies(item.externalId);
+      recommendations = recommendations.slice(0, 10);
+    } catch {
+      recommendations = [];
+    }
+    existingIds = new Set(ctx.getItemsByGroup("movies").map((m) => m.externalId));
+  }
+
   ui.openMovieModal(item, {
     onAddWatch: (date) => persist(addWatch(item.watchLog, date)),
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
@@ -91,7 +104,8 @@ async function openMovieItem(item, ctx) {
     onDelete: confirmDelete(item, "movie", ctx),
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
-  });
+    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
+  }, recommendations, existingIds);
 }
 
 /* ---------- Lógica de colecciones/sagas ---------- */
@@ -114,6 +128,65 @@ async function addSagaMovie(movie, ctx) {
     draft.awaitingRelease = true;
   }
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
+}
+
+/**
+ * Añade un ítem recomendado (película o serie) al registro del usuario.
+ * Reutiliza el mismo flujo que handleAdd en search.js para movies/TV.
+ */
+async function addFromRecommendation(item, btn, ctx) {
+  btn.disabled = true;
+  btn.textContent = "Añadiendo…";
+  try {
+    const draft = {
+      externalId: item.externalId,
+      type: item.type,
+      title: item.title,
+      year: item.year || "",
+      coverUrl: item.coverUrl || null,
+      status: "pendiente",
+      rating: null,
+      notes: "",
+    };
+
+    if (item.type === "movie") {
+      draft.watchLog = [];
+      try {
+        const details = await getMovieDetails(item.externalId);
+        Object.assign(draft, details);
+        if (details.releaseDate && details.releaseDate > todayISO()) {
+          draft.awaitingRelease = true;
+        }
+      } catch (err) {
+        // no bloqueamos el alta si falla la obtención de detalles extra
+      }
+    } else {
+      // TV
+      draft.watched = {};
+      draft.nextEpisode = { season: 1, episode: 1 };
+      draft.firstWatchedAt = null;
+      draft.lastWatchedAt = null;
+      draft.timesCompleted = 0;
+      draft.history = [];
+      try {
+        const details = await getTvExtraDetails(item.externalId);
+        Object.assign(draft, details);
+        if (details.firstAirDate && details.firstAirDate > todayISO()) {
+          draft.awaitingRelease = true;
+        }
+      } catch (err) {
+        // ídem
+      }
+    }
+
+    await addItem(ctx.getCurrentUser().uid, item.type, draft);
+    btn.textContent = "Añadido";
+    ui.showToast(`«${item.title}» añadido a tu registro.`);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Añadir";
+    ui.showToast("No se pudo añadir: " + err.message);
+  }
 }
 
 async function openSagaSelector(item, ctx) {
@@ -236,6 +309,19 @@ async function openTvItem(item, ctx) {
     return newProgress;
   }
 
+  // --- Cargar recomendaciones (similares) ---
+  let recommendations = [];
+  let existingIds = new Set();
+  if (item.externalId) {
+    try {
+      recommendations = await getSimilarTv(item.externalId);
+      recommendations = recommendations.slice(0, 10);
+    } catch {
+      recommendations = [];
+    }
+    existingIds = new Set(ctx.getItemsByGroup("tv").map((t) => t.externalId));
+  }
+
   ui.openTvModal(item, seasonsMeta, progress, {
     onExpandSeason: (seasonNumber) =>
       item.manual
@@ -279,7 +365,8 @@ async function openTvItem(item, ctx) {
     onSaveMeta: saveMeta(item, "tv", ctx),
     onDelete: confirmDelete(item, "tv", ctx),
     onEdit: editHandlerFor(item, "tv", reopen, ctx),
-  });
+    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
+  }, recommendations, existingIds);
 }
 
 export function openItem(item, ctx) {
