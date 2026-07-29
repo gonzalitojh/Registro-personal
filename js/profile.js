@@ -8,6 +8,7 @@ import { normalizeEntry } from "./tv-progress.js";
 import { STATUS_LABELS_NEUTRAL } from "./constants.js";
 import * as ui from "./ui.js";
 import { setupExportBackup } from "./export-backup.js";
+import { setupExportIcs } from "./export-ics.js";
 import { renderSettings } from "./settings.js";
 
 let activityChart = null;
@@ -228,6 +229,7 @@ export function setupProfile(ctx) {
 
   // Inicializar botones de exportación/importación de datos
   setupExportBackup(ctx);
+  setupExportIcs(ctx);
 
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
