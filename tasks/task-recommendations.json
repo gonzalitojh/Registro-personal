@@ -1,7 +1,7 @@
 {
   "title": "Recomendaciones de contenido similar desde TMDB",
   "description": "Añadir una sección de recomendaciones en la ficha de películas y series usando los endpoints de similares de TMDB (`/movie/{id}/similar` y `/tv/{id}/similar`). Mostrar una lista de títulos similares con carátula, título y año, con la opción de añadirlos directamente al registro del usuario. La sección debería titularse 'Si te gustó esto, quizá te guste...'.",
-  "status": "created",
+  "status": "documented",
   "acceptance criteria": [
     "Se obtienen recomendaciones desde los endpoints de similares de TMDB",
     "Se muestran en la ficha de la película/serie con carátula, título y año",

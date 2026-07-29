@@ -242,6 +242,27 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
   return result;
 }
 
+// =============================================================
+// Recomendaciones (contenido similar) desde TMDB. Devuelve
+// listas de películas o series similares usando el endpoint
+// /similar de TMDB. Los resultados tienen la misma forma que
+// los de búsqueda (externalId, title, year, coverUrl, overview).
+// =============================================================
+
+export async function getSimilarMovies(id) {
+  const url = `${BASE_URL}/movie/${id}/similar?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data || !data.results) return [];
+  return data.results.map(mapMovieResult);
+}
+
+export async function getSimilarTv(id) {
+  const url = `${BASE_URL}/tv/${id}/similar?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data || !data.results) return [];
+  return data.results.map(mapTvResult);
+}
+
 function normalizeProvider(p) {
   return {
     providerId: p.provider_id,
