@@ -1,0 +1,21 @@
+{
+  "title": "Mejorar el estilo visual del botón de ver tráiler",
+  "description": "El botón de 'Tráiler' que aparece en las fichas de películas y series funciona correctamente (abre el enlace de YouTube), pero no tiene ningún estilo CSS aplicado. Se ve como un enlace de texto sin formato, lo que lo hace visualmente poco atractivo y no se integra con el diseño de la aplicación. Hay que añadir estilos CSS para que sea un botón atractivo con los colores de acento de la app (--teal-reel) y que sea coherente con el resto de la interfaz.",
+  "status": "security-cleared",
+  "acceptance criteria": [
+    "El botón de tráiler tiene un diseño visual atractivo y coherente con la aplicación",
+    "Usa la paleta de colores del tema (--teal-reel, --paper, etc.)",
+    "Incluye un icono de reproducción y la etiqueta 'Tráiler'",
+    "Tiene efecto hover/active para feedback visual",
+    "Es responsivo y se ve bien en móvil y escritorio",
+    "Sigue siendo accesible (aria-label, contraste suficiente)",
+    "No se rompe ninguna funcionalidad existente"
+  ],
+  "definition of done": [
+    "CSS añadido en ocio/ocio.css (o css/styles.css) para la clase .trailer-btn y sus elementos",
+    "El botón tiene un diseño tipo badge/chip con color de acento teal",
+    "Se mantienen las clases existentes (.trailer-btn, .trailer-btn__icon, .trailer-btn__label)",
+    "Se ha verificado que el botón se ve correctamente en las fichas de películas y series",
+    "No hay regresiones en la funcionalidad existente"
+  ]
+}
