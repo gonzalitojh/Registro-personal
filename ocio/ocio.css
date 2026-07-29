@@ -802,6 +802,32 @@
 
 
 /* =========================================================
+   Acciones de estado (pausar / abandonar / retomar)
+   ========================================================= */
+
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.standby-banner {
+  background: var(--paper-dim);
+  border: 1px dashed var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+
+/* =========================================================
    Saga/collection banner (modal de película)
    ========================================================= */
 
@@ -816,11 +842,11 @@
   padding: 0.6rem 0.8rem;
   margin-bottom: 1.1rem;
   font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+}
+
+.saga-banner__label {
+  font-size: 0.85rem;
+  color: var(--ink);
 }
 
 
@@ -856,8 +882,19 @@
   width: 100%;
 }
 
-.saga-banner__label {
+.search-clear-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
   font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  line-height: 1;
+}
+.search-clear-btn:hover {
   color: var(--ink);
 }
 
@@ -981,27 +1018,47 @@
   background: transparent;
 }
 
-.saga-list {
-  max-height: 340px;
-  overflow-y: auto;
+/* =========================================================
+   Vista de lista
+   ========================================================= */
+
+.library-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  padding: 0.4rem;
-  background: #fff;
+  gap: 0.6rem;
 }
 
-.saga-row {
+.list-row {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--teal-reel);
+  touch-action: pan-y;
+}
+
+.list-row__swipe-bg {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.35rem 0.4rem;
+  justify-content: center;
+  color: var(--paper);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.list-row__content {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: var(--paper);
   border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.1s ease;
+  transition: transform 0.2s ease;
+  box-shadow: var(--shadow-card);
+}
+.list-row.is-dragging .list-row__content {
+  transition: none;
 }
 
 .list-row--pendiente .list-row__content { background: var(--paper); }
@@ -1023,28 +1080,45 @@
   );
 }
 
-.saga-row input[type="checkbox"] {
-  accent-color: var(--teal-reel);
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+.list-row__open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--ink);
+  min-width: 0;
 }
 
-.saga-row__cover {
-  width: 36px;
-  height: 54px;
+.list-row__cover {
+  width: 44px;
+  height: 64px;
   object-fit: cover;
   border-radius: 2px;
   flex-shrink: 0;
   background: var(--paper-dim);
 }
 
-.saga-row__title {
+.list-row__info {
+  min-width: 0;
   flex: 1;
-  font-size: 0.82rem;
-  font-weight: 500;
+}
+
+.list-row__title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.list-row__meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1168,6 +1242,32 @@
 
 
 /* =========================================================
+   Valoración por episodio
+   ========================================================= */
+
+.episode-rating {
+  display: flex;
+  gap: 0.15rem;
+  padding-left: 30px;
+}
+
+.episode-rating__star {
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--paper-line);
+  padding: 0.1rem;
+}
+.episode-rating__star.is-active {
+  color: var(--ochre-spine);
+}
+.episode-rating__star:disabled {
+  opacity: 0.5;
+}
+
+
+/* =========================================================
    Información ampliada (duración, reparto, sinopsis...)
    ========================================================= */
 
@@ -1198,7 +1298,70 @@
   margin-bottom: 1rem;
 }
 
-.saga-row__year {
+
+/* =========================================================
+   Puntuación de la comunidad (TMDB)
+   ========================================================= */
+
+/* Contenedor de puntuaciones en tarjetas (estrellas + TMDB) */
+.item-card__ratings {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+/* Distintivo comunitario */
+.community-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.community-rating__label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--teal-reel);
+  color: var(--paper);
+  border-radius: 2px;
+  padding: 0.08rem 0.3rem;
+  line-height: 1.4;
+}
+
+.community-rating__value {
+  font-weight: 700;
+  color: var(--teal-reel-dark);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+/* Versión «sin datos» en modales */
+.community-rating--empty {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-family: var(--font-body);
+}
+
+/* Fila de puntuaciones en modales (debajo del título/metadatos) */
+.modal-detail__ratings {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+
+/* =========================================================
+   Ficha de solo lectura (amigos)
+   ========================================================= */
+
+.read-only-badge {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-soft);
@@ -1207,6 +1370,74 @@
   padding: 0.25rem 0.6rem;
   display: inline-block;
   margin-bottom: 1rem;
+}
+
+/* =========================================================
+   Modal selector de saga (checklist de películas)
+   ========================================================= */
+
+.saga-subtitle {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.8rem;
+}
+
+.saga-list {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.4rem;
+  background: #fff;
+}
+
+.saga-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.saga-row:hover {
+  background: var(--paper-dim);
+}
+
+.saga-row input[type="checkbox"] {
+  accent-color: var(--teal-reel);
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.saga-row__cover {
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: var(--paper-dim);
+}
+
+.saga-row__title {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saga-row__year {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
 }
 
 
@@ -1224,11 +1455,36 @@
   cursor: pointer;
 }
 
+.lang-filter-check input {
+  accent-color: var(--ochre-spine);
+}
+
 .saga-count {
   font-size: 0.78rem;
   color: var(--ink-soft);
   text-align: right;
   margin: 0 0 0.2rem;
+}
+
+/* =========================================================
+   Móvil: evitar que iOS haga zoom automático al enfocar los
+   campos propios de ocio (Safari hace zoom si el font-size es
+   menor de 16px)
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .search-slip input,
+  .library-search-input,
+  .field-group input,
+  .field-group select,
+  .field-group textarea,
+  .manual-form input,
+  .log-row input[type="date"],
+  .log-add-row input[type="date"],
+  .episode-row input.episode-date,
+  .sort-select {
+    font-size: 16px;
+  }
 }
 
 /* =========================================================
