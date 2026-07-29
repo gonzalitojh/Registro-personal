@@ -37,6 +37,7 @@ import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, renderSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
+import { setupGlobalSearch } from "./global-search.js";
 
 // ---------- Estado ----------
 
@@ -299,6 +300,7 @@ async function init() {
   setupNotifications(ctx);
   setupProfile(ctx);
   setupSettings(ctx);
+  setupGlobalSearch(ctx);
 
   // Suscripciones en tiempo real
   watchAuthState(async (user) => {
