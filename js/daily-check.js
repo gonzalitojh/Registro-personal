@@ -7,6 +7,7 @@
 // =============================================================
 
 import { isNextEpisodeUnreleased } from "./sorting.js";
+import { getNotificationPrefs } from "./settings.js";
 
 export async function checkForUpdates(ctx) {
   const {
@@ -38,6 +39,7 @@ export async function checkForUpdates(ctx) {
   const allMovies = getItemsByGroup("movies");
   const allTv = getItemsByGroup("tv");
   const allBooks = getItemsByGroup("books");
+  const prefs = getNotificationPrefs();
 
   // Películas: aviso de estreno + rellenar ficha si le faltaba algo
   for (const movie of allMovies) {
@@ -66,7 +68,7 @@ export async function checkForUpdates(ctx) {
         updates.releaseDate = fresh.releaseDate;
       }
 
-      if (movie.awaitingRelease && fresh.releaseDate && fresh.releaseDate <= today) {
+      if (prefs.movie_release !== false && movie.awaitingRelease && fresh.releaseDate && fresh.releaseDate <= today) {
         await addNotification(user.uid, {
           message: `«${movie.title}» ya se ha estrenado (${formatDateEs(fresh.releaseDate)}).`,
         });
@@ -92,7 +94,7 @@ export async function checkForUpdates(ctx) {
       const updates = {};
       let justPremiered = false;
 
-      if (show.awaitingRelease && fresh.firstAirDate && fresh.firstAirDate <= today) {
+      if (prefs.series_premiere !== false && show.awaitingRelease && fresh.firstAirDate && fresh.firstAirDate <= today) {
         await addNotification(user.uid, { message: `«${show.title}» ya se ha estrenado.` });
         updates.awaitingRelease = false;
         updates.releasedNoticedAt = today;
@@ -100,6 +102,7 @@ export async function checkForUpdates(ctx) {
       }
 
       if (
+        prefs.new_episode !== false &&
         !justPremiered &&
         fresh.nextEpisodeToAir &&
         fresh.nextEpisodeToAir.airDate &&
