@@ -92,10 +92,25 @@ export async function getSeasonEpisodes(tvId, seasonNumber) {
   }));
 }
 
+// Extrae la URL del tráiler oficial de YouTube a partir de la
+// respuesta del endpoint /videos de TMDB. Prioriza "Trailer" sobre
+// "Teaser" y, dentro del mismo tipo, el más reciente (por id).
+function _extractTrailerUrl(videos) {
+  if (!videos || !videos.results || !videos.results.length) return null;
+  const trailers = videos.results.filter(
+    (v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser")
+  );
+  if (!trailers.length) return null;
+  // Priorizar "Trailer" sobre "Teaser"
+  const best = trailers.find((v) => v.type === "Trailer") || trailers[0];
+  return `https://www.youtube.com/watch?v=${best.key}`;
+}
+
 // Datos ampliados de una película: duración, sinopsis, género,
-// director y reparto principal. Se piden una sola vez, al añadirla.
+// director, reparto principal, colección/saga y tráiler. Se piden
+// una sola vez, al añadirla.
 export async function getMovieDetails(id) {
-  const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits`;
+  const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   const director = ((data.credits && data.credits.crew) || []).find(
@@ -108,14 +123,45 @@ export async function getMovieDetails(id) {
     cast: ((data.credits && data.credits.cast) || []).slice(0, 5).map((c) => c.name),
     director: director ? director.name : null,
     releaseDate: data.release_date || null,
+    communityRating: data.vote_count > 0 ? data.vote_average : null,
+    trailerUrl: _extractTrailerUrl(data.videos),
+    collectionId: data.belongs_to_collection ? String(data.belongs_to_collection.id) : null,
+    collectionName: data.belongs_to_collection ? data.belongs_to_collection.name : null,
+    collectionPoster: data.belongs_to_collection?.poster_path
+      ? `${IMG_BASE.replace("w342", "w92")}${data.belongs_to_collection.poster_path}`
+      : null,
+  };
+}
+
+// Datos de una colección/saga de TMDB: nombre, póster y lista de
+// películas que la componen. Se usa al pulsar "Añadir resto de la
+// saga" desde la ficha de una película.
+export async function getCollectionDetails(collectionId) {
+  const url = `${BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}&language=es-ES`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name,
+    posterPath: data.poster_path || null,
+    parts: (data.parts || []).map((p) => ({
+      externalId: String(p.id),
+      title: p.title,
+      year: (p.release_date || "").slice(0, 4),
+      posterUrl: p.poster_path
+        ? `${IMG_BASE.replace("w342", "w185")}${p.poster_path}`
+        : null,
+      overview: p.overview || "",
+      releaseDate: p.release_date || null,
+    })),
   };
 }
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,
-// género, creadores, reparto principal, estado de emisión y próximo
-// episodio a emitir (si lo hay). También se piden una sola vez.
+// género, creadores, reparto principal, estado de emisión, próximo
+// episodio a emitir (si lo hay) y tráiler. También se piden una sola vez.
 export async function getTvExtraDetails(id) {
-  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits`;
+  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   return {
@@ -133,5 +179,74 @@ export async function getTvExtraDetails(id) {
           airDate: data.next_episode_to_air.air_date || null,
         }
       : null,
+    communityRating: data.vote_count > 0 ? data.vote_average : null,
+    trailerUrl: _extractTrailerUrl(data.videos),
+  };
+}
+
+// =============================================================
+// Plataformas de streaming (watch providers) desde TMDB.
+// Devuelve los proveedores de streaming, alquiler y compra para
+// un título (película o serie) en un país concreto.
+// Los resultados se cachean en memoria para evitar llamadas
+// redundantes durante la misma sesión.
+// =============================================================
+
+const IMG_LOGO = "https://image.tmdb.org/t/p/w92";
+const providersCache = new Map();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+
+function getCached(key) {
+  const entry = providersCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    providersCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  providersCache.set(key, { data, timestamp: Date.now() });
+}
+
+/**
+ * Obtiene los watch providers de una película o serie en TMDB.
+ * @param {string|number} id          - ID externo de TMDB
+ * @param {'movie'|'tv'}  type        - Tipo de contenido
+ * @param {string}        countryCode - Código ISO 3166-1 alpha-2 (ej: "ES", "US")
+ * @returns {Promise<{flatrate:Array, rent:Array, buy:Array, link:string|null}|null>}
+ */
+export async function getWatchProviders(id, type, countryCode = "ES") {
+  const cacheKey = `wp_${type}_${id}_${countryCode}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const endpoint = type === "tv" ? "tv" : "movie";
+  const url = `${BASE_URL}/${endpoint}/${id}/watch/providers?api_key=${TMDB_API_KEY}`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data || !data.results || !data.results[countryCode]) {
+    setCache(cacheKey, null);
+    return null;
+  }
+
+  const country = data.results[countryCode];
+  const result = {
+    flatrate: (country.flatrate || []).map(normalizeProvider),
+    rent: (country.rent || []).map(normalizeProvider),
+    buy: (country.buy || []).map(normalizeProvider),
+    link: country.link || null,
+  };
+
+  setCache(cacheKey, result);
+  return result;
+}
+
+function normalizeProvider(p) {
+  return {
+    providerId: p.provider_id,
+    providerName: p.provider_name,
+    logoUrl: p.logo_path ? `${IMG_LOGO}${p.logo_path}` : null,
+    displayPriority: p.display_priority || 99,
   };
 }

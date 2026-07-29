@@ -27,6 +27,44 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;");
 }
 
+// HTML para la puntuación de la comunidad (TMDB) en tarjetas compactas.
+// Devuelve cadena vacía si no hay datos (no ocupa espacio en la cuadrícula).
+function communityRatingHtml(item) {
+  if (item.communityRating == null) return "";
+  const val = Number(item.communityRating).toFixed(1);
+  return `<span class="community-rating">
+    <span class="community-rating__label">TMDB</span>
+    <span class="community-rating__value">${val}</span>
+  </span>`;
+}
+
+// Para modales: siempre muestra una línea, ya sea la nota real o
+// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB.
+function communityRatingDisplay(item) {
+  if (item.communityRating != null) {
+    const val = Number(item.communityRating).toFixed(1);
+    return `<div class="modal-detail__ratings">
+      <span class="community-rating">
+        <span class="community-rating__label">TMDB</span>
+        <span class="community-rating__value">${val}</span>
+      </span>
+    </div>`;
+  }
+  return `<div class="modal-detail__ratings">
+    <span class="community-rating community-rating--empty">Sin puntuaciones</span>
+  </div>`;
+}
+
+// HTML para el botón de tráiler de YouTube.
+// Devuelve cadena vacía si no hay URL de tráiler disponible.
+function trailerButtonHtml(item) {
+  if (!item.trailerUrl) return "";
+  return `<a href="${escapeHtml(item.trailerUrl)}" target="_blank" rel="noopener noreferrer" class="trailer-btn" aria-label="Ver tráiler en YouTube">
+    <span class="trailer-btn__icon" aria-hidden="true">▶</span>
+    <span class="trailer-btn__label">Tráiler</span>
+  </a>`;
+}
+
 function typeLabel(type) {
   if (type === "movie") return "Película";
   if (type === "tv") return "Serie";
@@ -183,6 +221,8 @@ function renderGrid(gridEl, items, onOpen) {
   gridEl.innerHTML = items
     .map((item, index) => {
       const stars = item.rating ? "★".repeat(item.rating) : "";
+      const communityBadge = communityRatingHtml(item);
+      const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
       const blockedClass = isNextEpisodeUnreleased(item) ? " item-card--episode-unreleased" : "";
       return `
@@ -200,7 +240,10 @@ function renderGrid(gridEl, items, onOpen) {
           <div class="item-card__title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
           <div class="item-card__meta" title="${escapeHtml(metaLineFor(item))}">${escapeHtml(metaLineFor(item))}</div>
           ${progress ? `<div class="item-card__progress">${escapeHtml(progress)}</div>` : ""}
-          ${stars ? `<div class="item-card__rating">${stars}</div>` : ""}
+          ${hasRatings ? `<div class="item-card__ratings">
+            ${stars ? `<span class="item-card__rating">${stars}</span>` : ""}
+            ${communityBadge}
+          </div>` : ""}
         </div>
         <button class="item-card__btn" data-index="${index}"
                 title="${escapeHtml(item.title)} — ${escapeHtml(metaLineFor(item))}"
@@ -566,6 +609,51 @@ export function openManualAddModal(type, onSubmit) {
   modal.classList.remove("hidden");
 }
 
+/* ---------- Plataformas de streaming (watch providers) ---------- */
+
+function providersGroupHtml(providers, label) {
+  if (!providers || !providers.length) return "";
+  return `
+    <div class="watch-providers__group">
+      <span class="watch-providers__type-label">${label}</span>
+      <div class="watch-providers__logos">
+        ${providers
+          .map(
+            (p) => `
+          <span class="watch-provider" title="${escapeHtml(p.providerName)}">
+            ${p.logoUrl
+              ? `<img class="watch-provider__logo" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml(p.providerName)}" loading="lazy" />`
+              : ""
+            }
+            <span class="watch-provider__name">${escapeHtml(p.providerName)}</span>
+          </span>`
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function watchProvidersHtml(item) {
+  const wp = item.watchProviders;
+  if (!wp) return "";
+  const hasAny = (wp.flatrate && wp.flatrate.length) ||
+                 (wp.rent && wp.rent.length) ||
+                 (wp.buy && wp.buy.length);
+  if (!hasAny) {
+    return `<div class="watch-providers watch-providers--empty">
+      <span class="watch-providers__title">Sin info. de streaming para este país</span>
+    </div>`;
+  }
+  return `
+    <div class="watch-providers">
+      <span class="watch-providers__title">Disponible en:</span>
+      ${providersGroupHtml(wp.flatrate, "Streaming")}
+      ${providersGroupHtml(wp.rent, "Alquiler")}
+      ${providersGroupHtml(wp.buy, "Compra")}
+      ${wp.link ? `<a class="watch-providers__link" href="${escapeHtml(wp.link)}" target="_blank" rel="noopener">Ver opciones en TMDB</a>` : ""}
+    </div>`;
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -586,7 +674,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit } = callbacks;
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -602,7 +690,16 @@ export function openMovieModal(item, callbacks) {
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
+
+    ${item.collectionId ? `
+    <div class="saga-banner">
+      <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
+      <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
+    </div>` : ""}
 
     <div class="field-group">
       <label>Visionados</label>
@@ -628,6 +725,13 @@ export function openMovieModal(item, callbacks) {
   const rerender = () => openMovieModal(item, callbacks);
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
+
+  const addSagaBtn = content.querySelector("#btn-add-saga");
+  if (addSagaBtn) {
+    addSagaBtn.addEventListener("click", () => {
+      if (onAddSaga) onAddSaga();
+    });
+  }
 
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
@@ -672,6 +776,68 @@ export function openMovieModal(item, callbacks) {
 
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
     onDelete();
+  });
+
+  modal.classList.remove("hidden");
+}
+
+/* ---------- Modal selector de sagas ---------- */
+
+// Muestra un modal con checklist de películas de una saga para que
+// el usuario seleccione cuáles quiere añadir a su registro.
+export function openSagaSelectionModal(collectionName, movies, callbacks) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+
+  function renderList() {
+    return movies.map((m, i) => `
+      <label class="saga-row" data-index="${i}">
+        <input type="checkbox" class="saga-checkbox" data-index="${i}" checked />
+        <img class="saga-row__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+        <span class="saga-row__title">${escapeHtml(m.title)}</span>
+        <span class="saga-row__year">${escapeHtml(m.year || "")}</span>
+      </label>
+    `).join("");
+  }
+
+  content.innerHTML = `
+    <h3 class="modal-detail__title" style="margin-bottom:0.3rem">${escapeHtml(collectionName)}</h3>
+    <p class="saga-subtitle">Selecciona las películas que quieras añadir:</p>
+    <div class="saga-list" id="saga-list">
+      ${renderList()}
+    </div>
+    <p class="saga-count" id="saga-count">Seleccionadas: ${movies.length}/${movies.length}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn--outline" id="btn-saga-cancel">Cancelar</button>
+      <button type="button" class="btn btn--accent-media" id="btn-saga-confirm">Añadir seleccionadas</button>
+    </div>
+  `;
+
+  function allSelected() {
+    return content.querySelectorAll(".saga-checkbox:checked").length;
+  }
+
+  content.querySelectorAll(".saga-checkbox").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      content.querySelector("#saga-count").textContent =
+        `Seleccionadas: ${allSelected()}/${movies.length}`;
+    });
+  });
+
+  content.querySelector("#btn-saga-cancel").addEventListener("click", () => {
+    callbacks.onCancel();
+  });
+
+  content.querySelector("#btn-saga-confirm").addEventListener("click", () => {
+    const selectedIndices = [];
+    content.querySelectorAll(".saga-checkbox:checked").forEach((cb) => {
+      selectedIndices.push(Number(cb.dataset.index));
+    });
+    if (!selectedIndices.length) {
+      showToast("Selecciona al menos una película.");
+      return;
+    }
+    callbacks.onConfirm(selectedIndices.map((i) => movies[i]));
   });
 
   modal.classList.remove("hidden");
@@ -914,6 +1080,9 @@ export function openTvModal(item, seasonsMeta, progress, callbacks) {
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="progress-banner">
@@ -1314,6 +1483,9 @@ export function openReadOnlyModal(item, ownerName) {
     <p class="read-only-badge">👀 Viendo la ficha de ${escapeHtml(ownerName)} · solo lectura</p>
 
     ${upcomingBadge(item)}
+    ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
     <div class="field-group">

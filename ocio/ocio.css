@@ -802,19 +802,16 @@
 
 
 /* =========================================================
-   Acciones de estado (pausar / abandonar / retomar)
+   Saga/collection banner (modal de película)
    ========================================================= */
 
-.status-actions {
+.saga-banner {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  margin-bottom: 1.1rem;
-}
-
-.standby-banner {
+  gap: 0.5rem;
   background: var(--paper-dim);
-  border: 1px dashed var(--paper-line);
   border-radius: var(--radius);
   padding: 0.6rem 0.8rem;
   margin-bottom: 1.1rem;
@@ -859,19 +856,8 @@
   width: 100%;
 }
 
-.search-clear-btn {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  color: var(--ink-soft);
+.saga-banner__label {
   font-size: 0.85rem;
-  padding: 0.2rem 0.4rem;
-  line-height: 1;
-}
-.search-clear-btn:hover {
   color: var(--ink);
 }
 
@@ -920,7 +906,7 @@
 
 
 /* =========================================================
-   Alternar vista: cuadrícula / lista
+   Modal selector de saga (checklist de películas)
    ========================================================= */
 
 .view-toggle {
@@ -995,47 +981,27 @@
   background: transparent;
 }
 
-/* =========================================================
-   Vista de lista
-   ========================================================= */
-
-.library-list {
+.saga-list {
+  max-height: 340px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-}
-
-.list-row {
-  position: relative;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--paper-line);
   border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--teal-reel);
-  touch-action: pan-y;
+  padding: 0.4rem;
+  background: #fff;
 }
 
-.list-row__swipe-bg {
-  position: absolute;
-  inset: 0;
+.saga-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--paper);
-  font-weight: 600;
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
-}
-
-.list-row__content {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  background: var(--paper);
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem;
   border-radius: var(--radius);
-  transition: transform 0.2s ease;
-  box-shadow: var(--shadow-card);
-}
-.list-row.is-dragging .list-row__content {
-  transition: none;
+  cursor: pointer;
+  transition: background 0.1s ease;
 }
 
 .list-row--pendiente .list-row__content { background: var(--paper); }
@@ -1057,45 +1023,28 @@
   );
 }
 
-.list-row__open {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.5rem 0.7rem;
-  background: transparent;
-  border: none;
-  text-align: left;
-  color: var(--ink);
-  min-width: 0;
+.saga-row input[type="checkbox"] {
+  accent-color: var(--teal-reel);
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
-.list-row__cover {
-  width: 44px;
-  height: 64px;
+.saga-row__cover {
+  width: 36px;
+  height: 54px;
   object-fit: cover;
   border-radius: 2px;
   flex-shrink: 0;
   background: var(--paper-dim);
 }
 
-.list-row__info {
-  min-width: 0;
+.saga-row__title {
   flex: 1;
-}
-
-.list-row__title {
-  font-weight: 600;
-  font-size: 0.88rem;
-  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.list-row__meta {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--ink-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1249,59 +1198,7 @@
   margin-bottom: 1rem;
 }
 
-
-/* =========================================================
-   Móvil: evitar que iOS haga zoom automático al enfocar los
-   campos propios de ocio (Safari hace zoom si el font-size es
-   menor de 16px)
-   ========================================================= */
-
-@media (max-width: 768px) {
-  .search-slip input,
-  .library-search-input,
-  .field-group input,
-  .field-group select,
-  .field-group textarea,
-  .manual-form input,
-  .log-row input[type="date"],
-  .log-add-row input[type="date"],
-  .episode-row input.episode-date,
-  .sort-select {
-    font-size: 16px;
-  }
-}
-
-/* =========================================================
-   Valoración por episodio
-   ========================================================= */
-
-.episode-rating {
-  display: flex;
-  gap: 0.15rem;
-  padding-left: 30px;
-}
-
-.episode-rating__star {
-  background: transparent;
-  border: none;
-  font-size: 0.95rem;
-  line-height: 1;
-  color: var(--paper-line);
-  padding: 0.1rem;
-}
-.episode-rating__star.is-active {
-  color: var(--ochre-spine);
-}
-.episode-rating__star:disabled {
-  opacity: 0.5;
-}
-
-
-/* =========================================================
-   Ficha de solo lectura (amigos)
-   ========================================================= */
-
-.read-only-badge {
+.saga-row__year {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   color: var(--ink-soft);
@@ -1327,6 +1224,95 @@
   cursor: pointer;
 }
 
-.lang-filter-check input {
-  accent-color: var(--ochre-spine);
+.saga-count {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  text-align: right;
+  margin: 0 0 0.2rem;
+}
+
+/* =========================================================
+   Plataformas de streaming (watch providers de TMDB)
+   ========================================================= */
+
+.watch-providers {
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.watch-providers__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.watch-providers--empty .watch-providers__title {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.watch-providers__group {
+  margin-bottom: 0.45rem;
+}
+.watch-providers__group:last-child {
+  margin-bottom: 0;
+}
+
+.watch-providers__type-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.watch-providers__logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.watch-provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #fff;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
+}
+
+.watch-provider__logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  object-fit: contain;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.watch-provider__name {
+  color: var(--ink);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.watch-providers__link {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--teal-reel);
+  margin-top: 0.35rem;
+  text-decoration: underline;
+}
+.watch-providers__link:hover {
+  color: var(--teal-reel-dark);
 }

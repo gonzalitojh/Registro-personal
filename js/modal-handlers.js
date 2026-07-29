@@ -11,6 +11,8 @@ import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
+import { getCollectionDetails, getMovieDetails, getWatchProviders } from "./api-movies.js";
+import { addItem } from "./db.js";
 
 function confirmDelete(item, kind, ctx) {
   return () => {
@@ -57,13 +59,28 @@ function progressWithStatus(seasonsMeta, item) {
   return base;
 }
 
-function openMovieItem(item, ctx) {
+function getUserCountry() {
+  return localStorage.getItem("watch-provider-country")
+    || (navigator.language && navigator.language.split("-")[1]?.toUpperCase())
+    || "ES";
+}
+
+async function openMovieItem(item, ctx) {
   const reopen = () => openMovieItem(item, ctx);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status });
     item.watchLog = newLog;
     item.status = status;
+  }
+
+  // Obtener watch providers (no crítico, si falla se muestra sin providers)
+  if (item.externalId) {
+    try {
+      item.watchProviders = await getWatchProviders(item.externalId, "movie", getUserCountry());
+    } catch {
+      item.watchProviders = null;
+    }
   }
 
   ui.openMovieModal(item, {
@@ -73,7 +90,84 @@ function openMovieItem(item, ctx) {
     onSaveMeta: saveMeta(item, "movie", ctx),
     onDelete: confirmDelete(item, "movie", ctx),
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
+    onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
   });
+}
+
+/* ---------- Lógica de colecciones/sagas ---------- */
+
+async function addSagaMovie(movie, ctx) {
+  const details = await getMovieDetails(movie.externalId);
+  const draft = {
+    externalId: movie.externalId,
+    type: "movie",
+    title: movie.title,
+    year: movie.year || "",
+    coverUrl: movie.posterUrl || null,
+    status: "pendiente",
+    rating: null,
+    notes: "",
+    watchLog: [],
+    ...details,
+  };
+  if (details.releaseDate && details.releaseDate > todayISO()) {
+    draft.awaitingRelease = true;
+  }
+  await addItem(ctx.getCurrentUser().uid, "movie", draft);
+}
+
+async function openSagaSelector(item, ctx) {
+  if (!item.collectionId) return;
+  try {
+    const collection = await getCollectionDetails(item.collectionId);
+    if (!collection || !collection.parts.length) {
+      ui.showToast("No se pudo obtener la información de la saga.");
+      return;
+    }
+
+    const existingIds = new Set(
+      ctx.getItemsByGroup("movies").map((m) => m.externalId)
+    );
+
+    const missingMovies = collection.parts.filter(
+      (p) => !existingIds.has(p.externalId)
+    );
+
+    if (!missingMovies.length) {
+      ui.showToast("Ya tienes todas las películas de esta saga.");
+      return;
+    }
+
+    ui.closeModal();
+
+    ui.openSagaSelectionModal(collection.name, missingMovies, {
+      onConfirm: async (selectedMovies) => {
+        ui.closeModal();
+        let added = 0;
+        let failed = 0;
+
+        for (const movie of selectedMovies) {
+          try {
+            await addSagaMovie(movie, ctx);
+            added++;
+          } catch (err) {
+            console.error("Error al añadir", movie.title, err);
+            failed++;
+          }
+        }
+
+        if (added > 0) {
+          ui.showToast(`${added} película${added !== 1 ? "s" : ""} añadida${added !== 1 ? "s" : ""} de ${collection.name}.`);
+        }
+        if (failed > 0) {
+          ui.showToast(`${failed} película${failed !== 1 ? "s" : ""} no pudieron añadirse.`);
+        }
+      },
+      onCancel: () => ui.closeModal(),
+    });
+  } catch (err) {
+    ui.showToast("Error al consultar la saga: " + err.message);
+  }
 }
 
 function openBookItem(item, ctx) {
@@ -115,6 +209,15 @@ async function openTvItem(item, ctx) {
 
   const progress = progressWithStatus(seasonsMeta, item);
   const reopen = () => openTvItem(item, ctx);
+
+  // Obtener watch providers
+  if (item.externalId) {
+    try {
+      item.watchProviders = await getWatchProviders(item.externalId, "tv", getUserCountry());
+    } catch {
+      item.watchProviders = null;
+    }
+  }
 
   async function persistWatched(newWatched) {
     const newProgress = computeProgress(seasonsMeta, newWatched);

@@ -1,7 +1,9 @@
 {
   "name": "Registro Personal",
   "short_name": "Registro",
+  "description": "Registro personal de películas, series y libros.",
   "start_url": "/Registro-personal/",
+  "scope": "/Registro-personal/",
   "display": "standalone",
   "background_color": "#171512",
   "theme_color": "#171512",

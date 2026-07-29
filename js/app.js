@@ -22,7 +22,7 @@ import {
   deleteNotification,
   markNotificationRead,
 } from "./db.js";
-import { getTvSeasonsMeta, getSeasonEpisodes } from "./api-movies.js";
+import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails } from "./api-movies.js";
 import { getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { applySort } from "./sorting.js";
@@ -73,6 +73,8 @@ function createCtx() {
     getUserProfile,
     getAllUserProfiles,
     getItemsOnce,
+    getMovieDetails,
+    getTvExtraDetails,
     getTvSeasonsMeta,
     getSeasonEpisodes,
     getOpenLibraryDescription,
