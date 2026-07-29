@@ -19,6 +19,17 @@ let searchCtx = null;
 
 let el, input, resultsEl, backdrop, closeBtn;
 
+// ---- Utilidades ----
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 // ---- Búsqueda ----
 
 function getSearchableText(item) {
