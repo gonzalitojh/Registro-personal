@@ -15,7 +15,7 @@
    ========================================================= */
 
 :root {
-  /* Paleta */
+  /* Paleta — modo oscuro (por defecto) */
   --ink: #171512;
   --ink-raised: #211e19;
   --ink-soft: #948a76;
@@ -29,6 +29,43 @@
   --stamp: #a63b2e;
   --stamp-dark: #7e2c22;
 
+  /* Neutros */
+  --white: #ffffff;
+  --backdrop: rgba(10, 9, 7, 0.65);
+
+  /* Opacidades de ink (fondo oscuro) */
+  --ink-alpha-06: rgba(23, 21, 18, 0.06);
+  --ink-alpha-08: rgba(23, 21, 18, 0.08);
+  --ink-alpha-10: rgba(23, 21, 18, 0.10);
+  --ink-alpha-15: rgba(23, 21, 18, 0.15);
+  --ink-alpha-20: rgba(23, 21, 18, 0.20);
+
+  /* Opacidades de paper (fondo claro) */
+  --paper-alpha-10: rgba(241, 234, 217, 0.10);
+  --paper-alpha-14: rgba(241, 234, 217, 0.14);
+  --paper-alpha-20: rgba(241, 234, 217, 0.20);
+  --paper-alpha-30: rgba(241, 234, 217, 0.30);
+  --paper-alpha-35: rgba(241, 234, 217, 0.35);
+  --paper-alpha-40: rgba(241, 234, 217, 0.40);
+  --paper-alpha-92: rgba(241, 234, 217, 0.92);
+
+  /* Opacidades de acentos */
+  --teal-alpha-06: rgba(43, 100, 89, 0.06);
+  --teal-alpha-18: rgba(43, 100, 89, 0.18);
+  --ochre-alpha-08: rgba(185, 130, 46, 0.08);
+  --ochre-alpha-12: rgba(185, 130, 46, 0.12);
+  --ochre-alpha-14: rgba(185, 130, 46, 0.14);
+  --stamp-alpha-12: rgba(166, 59, 46, 0.12);
+
+  /* Fondos de estado para tarjetas (compartidos por ambos temas) */
+  --bg-state-en_curso: #c3ddd6;
+  --bg-state-completado: #f0d9a3;
+  --bg-state-standby: #d9d2c0;
+  --bg-state-abandonado: #f0c2b8;
+
+  /* Filtros para el icono del date picker */
+  --date-picker-filter: invert(1);
+
   /* Tipografía */
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -37,6 +74,58 @@
   --radius: 3px;
   --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.35);
   --shadow-pop: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+/* =========================================================
+   MODO CLARO
+   ========================================================= */
+[data-theme="light"] {
+  --ink: #1e1b16;
+  --ink-raised: #f2ede6;
+  --ink-soft: #6b6559;
+  --paper: #faf6f0;
+  --paper-dim: #f0e8dc;
+  --paper-line: #d4c9b8;
+  --teal-reel: #2b6459;
+  --teal-reel-dark: #1a6b5c;
+  --ochre-spine: #b9822e;
+  --ochre-spine-dark: #a07028;
+  --stamp: #a63b2e;
+  --stamp-dark: #b83e2e;
+
+  --white: #ffffff;
+  --backdrop: rgba(0, 0, 0, 0.35);
+
+  --ink-alpha-06: rgba(30, 27, 22, 0.06);
+  --ink-alpha-08: rgba(30, 27, 22, 0.08);
+  --ink-alpha-10: rgba(30, 27, 22, 0.10);
+  --ink-alpha-15: rgba(30, 27, 22, 0.15);
+  --ink-alpha-20: rgba(30, 27, 22, 0.20);
+
+  --paper-alpha-10: rgba(250, 246, 240, 0.10);
+  --paper-alpha-14: rgba(250, 246, 240, 0.14);
+  --paper-alpha-20: rgba(250, 246, 240, 0.20);
+  --paper-alpha-30: rgba(250, 246, 240, 0.30);
+  --paper-alpha-35: rgba(250, 246, 240, 0.35);
+  --paper-alpha-40: rgba(250, 246, 240, 0.40);
+  --paper-alpha-92: rgba(250, 246, 240, 0.92);
+
+  --teal-alpha-06: rgba(43, 100, 89, 0.06);
+  --teal-alpha-18: rgba(43, 100, 89, 0.18);
+  --ochre-alpha-08: rgba(185, 130, 46, 0.08);
+  --ochre-alpha-12: rgba(185, 130, 46, 0.12);
+  --ochre-alpha-14: rgba(185, 130, 46, 0.14);
+  --stamp-alpha-12: rgba(182, 62, 46, 0.12);
+
+  --bg-state-en_curso: #c3ddd6;
+  --bg-state-completado: #f0d9a3;
+  --bg-state-standby: #d9d2c0;
+  --bg-state-abandonado: #f0c2b8;
+
+  --date-picker-filter: none;
+
+  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.12);
+  --shadow-pop: 0 20px 45px rgba(0, 0, 0, 0.18);
 }
 
 * {
@@ -104,13 +193,13 @@ button {
   color: var(--ink);
 }
 .btn--primary:hover {
-  background: #fff;
+  background: var(--white);
 }
 
 .btn--ghost {
   background: transparent;
   color: var(--paper);
-  border-color: rgba(241, 234, 217, 0.35);
+  border-color: var(--paper-alpha-35);
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
 }
@@ -143,8 +232,8 @@ button {
   place-items: center;
   padding: 1.5rem;
   background:
-    radial-gradient(circle at 20% 20%, rgba(43, 100, 89, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 80%, rgba(185, 130, 46, 0.14), transparent 45%),
+    radial-gradient(circle at 20% 20%, var(--teal-alpha-18, rgba(43, 100, 89, 0.18)), transparent 45%),
+    radial-gradient(circle at 80% 80%, var(--ochre-alpha-14, rgba(185, 130, 46, 0.14)), transparent 45%),
     var(--ink);
 }
 
@@ -185,7 +274,7 @@ button {
 
 .library-card__subtitle {
   font-size: 0.95rem;
-  color: #4a4436;
+  color: var(--ink-soft);
   margin: 0 0 1.6rem;
 }
 
@@ -233,7 +322,7 @@ button {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(241, 234, 217, 0.4);
+  border: 1px solid var(--paper-alpha-40);
 }
 
 .user-badge__name {
@@ -256,7 +345,7 @@ button {
 .tab {
   background: var(--ink-raised);
   color: var(--ink-soft);
-  border: 1px solid rgba(241, 234, 217, 0.14);
+  border: 1px solid var(--paper-alpha-14);
   border-bottom: none;
   border-radius: var(--radius) var(--radius) 0 0;
   padding: 0.6rem 1.1rem 0.5rem;
@@ -288,7 +377,7 @@ button {
 .modal__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(10, 9, 7, 0.65);
+  background: var(--backdrop);
 }
 
 .modal {
@@ -334,7 +423,7 @@ button {
 .app-footer {
   margin-top: 3rem;
   font-size: 0.72rem;
-  color: rgba(241, 234, 217, 0.35);
+  color: var(--paper-alpha-35);
   text-align: center;
   line-height: 1.5;
 }
@@ -415,10 +504,10 @@ button {
 .btn--outline-dark {
   background: transparent;
   color: var(--paper);
-  border-color: rgba(241, 234, 217, 0.4);
+  border-color: var(--paper-alpha-40);
 }
 .btn--outline-dark:hover {
-  background: rgba(241, 234, 217, 0.1);
+  background: var(--paper-alpha-10);
 }
 
 
@@ -504,7 +593,7 @@ button {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius);
   padding: 0.45rem 0.55rem;
   font-size: 0.78rem;
@@ -533,6 +622,16 @@ button {
   color: var(--ink-soft);
   font-style: italic;
   margin: 0.4rem 0 0;
+}
+
+.theme-toggle {
+  font-size: 1.1rem;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+.theme-toggle:hover {
+  opacity: 1;
 }
 
 .user-badge__avatar-btn {
@@ -575,7 +674,7 @@ button {
 .profile-view__header select {
   background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid rgba(241, 234, 217, 0.3);
+  border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
   padding: 0.35rem 0.7rem;
   font-size: 0.82rem;
@@ -598,14 +697,14 @@ button {
 .stats-range-fields input[type="date"] {
   background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid rgba(241, 234, 217, 0.3);
+  border: 1px solid var(--paper-alpha-30);
   border-radius: var(--radius);
   padding: 0.3rem 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
 }
 .stats-range-fields input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  filter: var(--date-picker-filter);
   opacity: 0.7;
 }
 
@@ -685,7 +784,7 @@ button {
 .profile-subtab {
   background: var(--ink-raised);
   color: var(--ink-soft);
-  border: 1px solid rgba(241, 234, 217, 0.2);
+  border: 1px solid var(--paper-alpha-20);
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
   font-size: 0.82rem;
@@ -759,7 +858,7 @@ button {
 }
 
 .friend-detail__section .empty-state {
-  color: rgba(241, 234, 217, 0.5);
+  color: var(--ink-soft);
 }
 
 

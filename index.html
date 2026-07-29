@@ -10,8 +10,6 @@
   <link rel="apple-touch-icon" href="resources/icon.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#171512">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -61,6 +59,10 @@
               <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
             </div>
           </div>
+          <button type="button" class="theme-toggle icon-btn" id="btn-theme-toggle"
+                  aria-label="Cambiar a modo claro" role="switch" aria-checked="false">
+            <span aria-hidden="true" id="theme-toggle-icon">☀️</span>
+          </button>
           <button type="button" class="user-badge__avatar-btn" id="btn-open-profile" aria-label="Ver perfil">
             <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
           </button>
@@ -197,34 +199,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Aviso de actualización del Service Worker (PWA) -->
-  <div id="sw-update-toast" class="toast toast--undo hidden">
-    <span>Nueva versión disponible</span>
-    <button type="button" class="toast__btn" id="btn-sw-update">Actualizar</button>
-  </div>
-
   <script type="module" src="js/app.js"></script>
-  <script type="module">
-    // Registro del Service Worker y manejo de actualizaciones (PWA)
-    import { registerSW, applySWUpdate } from './js/sw-register.js';
-
-    if ('serviceWorker' in navigator) {
-      registerSW();
-
-      document.addEventListener('sw-update-ready', (e) => {
-        const toast = document.getElementById('sw-update-toast');
-        if (!toast) return;
-        toast.classList.remove('hidden');
-
-        const btn = document.getElementById('btn-sw-update');
-        if (btn) {
-          btn.onclick = () => {
-            toast.classList.add('hidden');
-            applySWUpdate(e.detail.registration);
-          };
-        }
-      });
-    }
-  </script>
 </body>
 </html>
