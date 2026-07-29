@@ -59,6 +59,9 @@
               <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
             </div>
           </div>
+          <button type="button" class="icon-btn" id="btn-global-search" aria-label="Buscar (Ctrl+K)">
+            <span aria-hidden="true">🔍</span>
+          </button>
           <button type="button" class="icon-btn" id="btn-settings" aria-label="Ajustes">
             <span aria-hidden="true">⚙️</span>
           </button>
@@ -244,6 +247,30 @@
     <div class="modal__card" role="dialog" aria-modal="true">
       <button id="modal-close" class="modal__close" aria-label="Cerrar">✕</button>
       <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Buscador Global -->
+  <div id="global-search" class="global-search hidden">
+    <div class="global-search__backdrop" id="global-search-backdrop"></div>
+    <div class="global-search__panel" role="dialog" aria-modal="true" aria-label="Buscador global">
+      <div class="global-search__header">
+        <span class="global-search__icon" aria-hidden="true">🔍</span>
+        <input
+          id="global-search-input"
+          type="search"
+          class="global-search__input"
+          placeholder="Buscar películas, series, libros o amigos..."
+          autocomplete="off"
+          aria-label="Buscar en todo tu registro"
+        />
+        <button type="button" class="global-search__close" id="global-search-close" aria-label="Cerrar">
+          <kbd>ESC</kbd>
+        </button>
+      </div>
+      <div class="global-search__results" id="global-search-results">
+        <p class="global-search__hint">Escribe para buscar en tus películas, series, libros y amigos.</p>
+      </div>
     </div>
   </div>
 
