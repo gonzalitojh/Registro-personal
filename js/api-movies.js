@@ -78,18 +78,27 @@ export async function getTvSeasonsMeta(tvId) {
     }));
 }
 
-// Episodios (número, nombre y fecha de emisión) de una temporada
-// concreta. Se piden solo cuando el usuario despliega esa temporada.
+// Episodios (número, nombre, fecha de emisión y valoración de la
+// comunidad) de una temporada concreta. Se piden solo cuando el
+// usuario despliega esa temporada o marca un episodio, y se cachean
+// en memoria 24 h (misma caché compartida que los watch providers).
 export async function getSeasonEpisodes(tvId, seasonNumber) {
+  const cacheKey = `season_${tvId}_${seasonNumber}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const url = `${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=es-ES`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => {
     throw new Error("No se pudo obtener la temporada desde TMDB.");
   });
-  return (data.episodes || []).map((e) => ({
+  const episodes = (data.episodes || []).map((e) => ({
     episodeNumber: e.episode_number,
     name: e.name || `Episodio ${e.episode_number}`,
     airDate: e.air_date || null,
+    episodeRating: e.vote_count > 0 ? e.vote_average : null,
   }));
+  setCache(cacheKey, episodes);
+  return episodes;
 }
 
 // Extrae la URL del tráiler oficial de YouTube a partir de la

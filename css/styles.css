@@ -625,6 +625,16 @@ button {
   color: var(--ink);
 }
 
+/* Ventana de valoración emergente (issue #21): se superpone a los
+   modales de detalle, así que va por encima en el eje z. */
+.modal--top {
+  z-index: 70;
+}
+
+.modal__card--small {
+  width: min(400px, 100%);
+}
+
 /* =========================================================
    Pie y aviso
    ========================================================= */
@@ -648,7 +658,10 @@ button {
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
   font-size: 0.85rem;
-  z-index: 60;
+  /* Por encima de cualquier modal (el más alto es la ventana de
+     valoración, .modal--top con 70) para que los avisos siempre
+     sean visibles */
+  z-index: 80;
 }
 
 /* Toast con botón de deshacer (undo delete) */

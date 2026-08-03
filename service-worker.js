@@ -31,6 +31,7 @@ const STATIC_ASSETS = [
   '/Registro-personal/js/notifications-setup.js',
   '/Registro-personal/js/profile.js',
   '/Registro-personal/js/quick-actions.js',
+  '/Registro-personal/js/rating-modal.js',
   '/Registro-personal/js/reading-log.js',
   '/Registro-personal/js/search.js',
   '/Registro-personal/js/sorting.js',

@@ -13,7 +13,30 @@ import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
+import { openRatingModal, closeRatingModal } from "./rating-modal.js";
 import { addItem } from "./db.js";
+
+// Abre la ventana de valoración tras marcar como vista/leída una
+// película o un libro (issue #21). Nunca lanza: si algo falla, se
+// registra en consola y el marcado ya persistido sigue intacto.
+async function maybeOpenItemRatingWindow(item, ctx, type) {
+  try {
+    await openRatingModal({
+      type,
+      title: item.title,
+      coverUrl: item.coverUrl,
+      communityRating: item.communityRating ?? null,
+      communityLabel: "TMDB",
+      initialRating: item.rating ?? null,
+      onSave: async (rating) => {
+        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
+        item.rating = rating;
+      },
+    });
+  } catch (err) {
+    console.error("No se pudo abrir la valoración:", err);
+  }
+}
 
 function confirmDelete(item, kind, ctx) {
   return () => {
@@ -98,7 +121,10 @@ async function openMovieItem(item, ctx) {
   }
 
   ui.openMovieModal(item, {
-    onAddWatch: (date) => persist(addWatch(item.watchLog, date)),
+    onAddWatch: async (date) => {
+      await persist(addWatch(item.watchLog, date));
+      await maybeOpenItemRatingWindow(item, ctx, "movie");
+    },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
     onSaveMeta: saveMeta(item, "movie", ctx),
@@ -255,7 +281,10 @@ function openBookItem(item, ctx) {
 
   ui.openBookModal(item, {
     onStartReading: (date) => persist(startReading(item.readLog, date)),
-    onFinishReading: (date) => persist(finishReading(item.readLog, date)),
+    onFinishReading: async (date) => {
+      await persist(finishReading(item.readLog, date));
+      await maybeOpenItemRatingWindow(item, ctx, "book");
+    },
     onUpdateEntry: (index, changes) => persist(updateReadEntry(item.readLog, index, changes)),
     onRemoveEntry: (index) => persist(removeReadEntry(item.readLog, index)),
     onSetStatus: async (newStatusOrNull) => {
@@ -310,6 +339,37 @@ async function openTvItem(item, ctx) {
     return newProgress;
   }
 
+  // Abre la ventana de valoración de un episodio recién marcado
+  // (issue #21). Muestra la nota de comunidad DEL EPISODIO (TMDB),
+  // no la de la serie. Nunca lanza: el marcado ya persistido queda
+  // intacto aunque falle la consulta de metadatos o el guardado.
+  async function maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber) {
+    try {
+      let meta = null;
+      if (!item.manual && item.externalId) {
+        const episodes = await ctx.getSeasonEpisodes(item.externalId, seasonNumber);
+        meta = episodes.find((e) => e.episodeNumber === episodeNumber) || null;
+      }
+      const entry = normalizeEntry(
+        (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+      ) || {};
+      await openRatingModal({
+        type: "tv",
+        title: item.title,
+        coverUrl: item.coverUrl,
+        episodeLabel: meta ? `T${seasonNumber}E${episodeNumber} · ${meta.name}` : `T${seasonNumber}E${episodeNumber}`,
+        communityRating: meta ? meta.episodeRating : null,
+        communityLabel: "TMDB · episodio",
+        initialRating: entry.rating || null,
+        onSave: async (rating) => {
+          await persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating));
+        },
+      });
+    } catch (err) {
+      console.error("No se pudo abrir la valoración del episodio:", err);
+    }
+  }
+
   // --- Cargar recomendaciones (similares) ---
   let recommendations = [];
   let existingIds = new Set();
@@ -335,8 +395,19 @@ async function openTvItem(item, ctx) {
           )
         : ctx.getSeasonEpisodes(item.externalId, seasonNumber),
 
-    onSetEpisodeDate: (seasonNumber, episodeNumber, dateOrNull) =>
-      persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)),
+    onSetEpisodeDate: async (seasonNumber, episodeNumber, dateOrNull) => {
+      const prevEntry = normalizeEntry(
+        (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+      );
+      const wasWatched = Boolean(prevEntry && prevEntry.date);
+      const newProgress = await persistWatched(
+        setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)
+      );
+      if (!wasWatched && dateOrNull) {
+        await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber);
+      }
+      return newProgress;
+    },
 
     onSetEpisodeRating: (seasonNumber, episodeNumber, rating) =>
       persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating)),
@@ -385,11 +456,17 @@ export function setupModalCloseListeners() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const ratingModal = document.getElementById("rating-modal");
       const modal = document.getElementById("item-modal");
       const globalSearch = document.getElementById("global-search");
       const notifDropdown = document.getElementById("notif-dropdown");
 
-      // Prioridad: modal activo > búsqueda global (maneja su propio Escape) > notificaciones
+      // Prioridad: ventana de valoración > modal activo > búsqueda global (maneja su propio Escape) > notificaciones
+      if (ratingModal && !ratingModal.classList.contains("hidden")) {
+        e.preventDefault();
+        closeRatingModal();
+        return;
+      }
       if (!modal.classList.contains("hidden")) {
         e.preventDefault();
         ui.closeModal();
