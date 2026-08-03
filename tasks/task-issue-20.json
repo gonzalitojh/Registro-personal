@@ -1,7 +1,7 @@
 {
   "title": "Entorno de desarrollo (rama dev + despliegue Cloudflare Pages)",
   "description": "Crear un entorno de desarrollo. Hacer una rama `dev` sobre la que se hagan las PR. Desplegar esa rama en algún entorno para poder ver las actualizaciones. Las opciones son: Vercel, Netlify, Cloudflare Pages, GitHub Actions. Se eligió Cloudflare Pages por el límite de despliegues.\n\nParte del usuario (hecha): rama `dev` creada en el remoto y sesión iniciada en Cloudflare Pages para el despliegue del entorno de desarrollo.\n\nParte del agente (esta tarea): a partir de ahora, TODAS las Pull Requests creadas por el agente deben apuntar a la rama `dev` como rama base (en lugar de `main`). El usuario promoverá `dev` a `main` cuando estime que la versión es estable.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "El agente publisher crea las PR con rama base `dev` (no la rama por defecto del repositorio).",
     "Las instrucciones del agente maestro SDD reflejan que las PR se hacen contra `dev` y que el usuario promueve `dev` a `main` cuando es estable.",
