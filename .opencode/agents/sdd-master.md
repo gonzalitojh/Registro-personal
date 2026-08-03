@@ -136,7 +136,7 @@ After successful validation and security clearance, invoke a documentation agent
 
 ## Step 5 — Publishing
 
-After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher will include "Closes #NUMERO_ISSUE" in the PR description (so GitHub closes the issue on merge) and set the issue to `ai-needs-review`.
+After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher will include "Closes #NUMERO_ISSUE" in the PR description (so GitHub closes the issue on merge) and set the issue to `ai-needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
 
 ## Step 6 — Session start: reconciliation
 
