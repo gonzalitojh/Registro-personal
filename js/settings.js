@@ -3,6 +3,8 @@
 // persistencia de preferencias en localStorage + Firestore.
 // =============================================================
 
+import { syncNow, isSyncRunning } from "./daily-check.js";
+
 const STORAGE_KEY = "mi-registro-settings";
 const DEBOUNCE_MS = 2000;
 
@@ -90,6 +92,11 @@ export function renderSettings(ctx) {
     themeSelect.value = settings.theme || "dark";
   }
 
+  // Mientras haya una sincronización en curso, el botón de sincronizar
+  // permanece deshabilitado (también lo cubre el flag durante el clic).
+  const syncBtn = document.getElementById("btn-sync-now");
+  if (syncBtn) syncBtn.disabled = isSyncRunning();
+
   const checkboxMap = {
     "notif-movie-release": "movie_release",
     "notif-new-episode": "new_episode",
@@ -104,6 +111,36 @@ export function renderSettings(ctx) {
 }
 
 // ---- Event Wiring ----
+
+// Botón "Sincronizar ahora": lanza syncNow (daily-check.js) con
+// cooldown de 30 minutos y feedback vía toast. Restaura el botón
+// en finally para que nunca quede bloqueado si algo falla.
+function wireSyncButton(ctx) {
+  const btn = document.getElementById("btn-sync-now");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = "Sincronizando…";
+    try {
+      const result = await syncNow(ctx);
+      if (result.ok) {
+        ctx.showToast("Datos sincronizados con las APIs.");
+      } else if (result.reason === "cooldown") {
+        ctx.showToast("Sincronización reciente, inténtalo en un rato.");
+      } else if (result.reason === "running") {
+        ctx.showToast("Ya hay una sincronización en curso.");
+      } else {
+        ctx.showToast("No se pudo sincronizar: " + (result.message || "error desconocido."));
+      }
+    } catch (err) {
+      ctx.showToast("No se pudo sincronizar: " + (err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+}
 
 function wireThemeSelect(ctx) {
   const select = document.getElementById("settings-theme-select");
@@ -146,6 +183,7 @@ function wireNotificationToggles(ctx) {
 export function setupSettings(ctx) {
   wireThemeSelect(ctx);
   wireNotificationToggles(ctx);
+  wireSyncButton(ctx);
 }
 
 /**

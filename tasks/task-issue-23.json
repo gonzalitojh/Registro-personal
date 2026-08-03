@@ -24,6 +24,7 @@
     "PR creada con 'Closes #23' en la descripción",
     "Issue #23 label actualizada a su estado final"
   ],
-  "plan": null,
+  "status": "documented",
+  "plan": "Refresco diario completo (sobrescritura truthy-only) para TODOS los ítems no manuales incluidos los abandonados + botón 'Sincronizar ahora' en Ajustes con cooldown 30 min (profile.lastManualSyncAt) + flag isRefreshing anti-concurrencia + pool de 4 peticiones (mapConcurrent) + guard force en checkForUpdates + nuevos campos tmdbStatus (series) y coverUrl (poster_path en getMovieDetails/getTvExtraDetails) + APP_VERSION bump. Funciones: buildMovieUpdates/buildTvUpdates/buildBookUpdates, syncNow(ctx), isSyncRunning(). ADR adr-021.",
   "pr": null
 }

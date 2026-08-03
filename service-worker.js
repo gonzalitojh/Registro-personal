@@ -16,9 +16,9 @@ const STATIC_ASSETS = [
   '/Registro-personal/',
   '/Registro-personal/index.html',
   '/Registro-personal/manifest.json',
-  '/Registro-personal/css/styles.css?v=20260803',
-  '/Registro-personal/ocio/ocio.css?v=20260803',
-  '/Registro-personal/js/app.js?v=20260803',
+  '/Registro-personal/css/styles.css?v=20260804',
+  '/Registro-personal/ocio/ocio.css?v=20260804',
+  '/Registro-personal/js/app.js?v=20260804',
   '/Registro-personal/js/ui.js',
   '/Registro-personal/js/db.js',
   '/Registro-personal/js/firebase.js',
@@ -49,9 +49,9 @@ const STATIC_ASSETS = [
   '/Registro-personal/js/global-search.js',
   '/Registro-personal/js/settings.js',
   '/Registro-personal/resources/icon.png',
-  '/Registro-personal/ocio/series.html?v=20260803',
-  '/Registro-personal/ocio/peliculas.html?v=20260803',
-  '/Registro-personal/ocio/libros.html?v=20260803',
+  '/Registro-personal/ocio/series.html?v=20260804',
+  '/Registro-personal/ocio/peliculas.html?v=20260804',
+  '/Registro-personal/ocio/libros.html?v=20260804',
 ];
 
 // -------------------------------------------------------------

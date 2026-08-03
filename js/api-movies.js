@@ -130,6 +130,7 @@ export async function getMovieDetails(id) {
     collectionPoster: data.belongs_to_collection?.poster_path
       ? `${IMG_BASE.replace("w342", "w92")}${data.belongs_to_collection.poster_path}`
       : null,
+    coverUrl: data.poster_path ? `${IMG_BASE}${data.poster_path}` : null,
   };
 }
 
@@ -181,6 +182,7 @@ export async function getTvExtraDetails(id) {
       : null,
     communityRating: data.vote_count > 0 ? data.vote_average : null,
     trailerUrl: _extractTrailerUrl(data.videos),
+    coverUrl: data.poster_path ? `${IMG_BASE}${data.poster_path}` : null,
   };
 }
 
