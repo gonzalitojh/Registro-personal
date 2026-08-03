@@ -6,7 +6,8 @@
 import { addWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { setEpisodeDate, computeProgress } from "./tv-progress.js";
-import { todayISO, formatDateEs } from "./dates.js";
+import { todayISO } from "./dates.js";
+import { unreleasedConfirmMessage } from "./release.js";
 
 // Meta de temporadas: para series manuales devuelve una sola
 // temporada con el nº de episodios indicado; para el resto, pide
@@ -19,17 +20,8 @@ export async function getSeasonsMetaFor(item, ctx) {
 }
 
 async function quickMarkMovie(item, ctx) {
-  if (item.releaseDate && item.releaseDate > todayISO()) {
-    if (
-      !window.confirm(
-        `Según TMDB esta película se estrena el ${formatDateEs(
-          item.releaseDate
-        )}, todavía no ha pasado. ¿Marcarla igualmente como vista?`
-      )
-    ) {
-      return;
-    }
-  }
+  const confirmMsg = unreleasedConfirmMessage(item);
+  if (confirmMsg && !window.confirm(confirmMsg)) return;
   const newLog = addWatch(item.watchLog, todayISO());
   const status = statusFromWatchLog(newLog);
   await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status });
@@ -54,23 +46,8 @@ async function quickMarkTv(item, ctx) {
     return;
   }
   const { season, episode } = item.nextEpisode;
-  if (
-    item.nextEpisodeToAir &&
-    item.nextEpisodeToAir.season === season &&
-    item.nextEpisodeToAir.episode === episode &&
-    item.nextEpisodeToAir.airDate &&
-    item.nextEpisodeToAir.airDate > todayISO()
-  ) {
-    if (
-      !window.confirm(
-        `Según TMDB este episodio se estrena el ${formatDateEs(
-          item.nextEpisodeToAir.airDate
-        )}. ¿Marcarlo igualmente como visto?`
-      )
-    ) {
-      return;
-    }
-  }
+  const confirmMsg = unreleasedConfirmMessage(item);
+  if (confirmMsg && !window.confirm(confirmMsg)) return;
   const seasonsMeta = await getSeasonsMetaFor(item, ctx);
   const newWatched = setEpisodeDate(item.watched, season, episode, todayISO());
   const newProgress = computeProgress(seasonsMeta, newWatched);

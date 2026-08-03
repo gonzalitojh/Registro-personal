@@ -4,7 +4,7 @@
 // como en ui.js (badges de episodios sin estrenar).
 // =============================================================
 
-import { todayISO } from "./dates.js";
+import { isUnreleasedDate } from "./release.js";
 
 // Comprueba si el siguiente episodio que le toca ver al usuario
 // coincide con el próximo episodio que TMDB dice que aún no se ha
@@ -14,8 +14,7 @@ export function isNextEpisodeUnreleased(item) {
   return (
     item.nextEpisodeToAir.season === item.nextEpisode.season &&
     item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
-    Boolean(item.nextEpisodeToAir.airDate) &&
-    item.nextEpisodeToAir.airDate > todayISO()
+    isUnreleasedDate(item.nextEpisodeToAir.airDate)
   );
 }
 
