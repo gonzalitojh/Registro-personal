@@ -1,0 +1,34 @@
+{
+  "title": "Actualización de datos en base de datos",
+  "description": "Los datos de la base de datos deben estar actualizados con respecto a lo que proviene de la API en todo momento. No puede ser que se actualicen únicamente en un momento del día. Por ejemplo, hay series que siguen sin tener la saga a la que pertenecen, ya que eso se ha añadido posteriormente y ya tenían toda la información completada supuestamente.\nEn caso de que esto sea muy costoso o no se pueda hacer, se debería hacer una actualización periódica diaria por lo menos y añadir un botón de sincronización en los ajustes. Pero esta solución se debe tomar como última opción. Lo idóneo sería que toda la información de base de datos esté siempre actualizada con lo que se obtiene de la API.\n\nContexto técnico actual: js/daily-check.js ejecuta checkForUpdates una vez al día (guard con lastReleaseCheckAt === today) pero SOLO revisa ítems con campos vacíos (needsCheck) y SOLO rellena campos que faltan (if (!movie.X && fresh.X)). Los campos ya completados (p.ej. saga/colección de películas, communityRating, trailerUrl, géneros) nunca se refrescan, aunque la API los haya actualizado posteriormente.",
+  "status": "created",
+  "issue": {
+    "number": 23,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/23",
+    "title": "Actualización de datos en base de datos"
+  },
+  "acceptance criteria": [
+    "Los campos de metadatos de un ítem ya completado se refrescan si la API devuelve datos nuevos (p.ej. saga/colección añadida posteriormente en TMDB)",
+    "La revisión periódica cubre TODOS los ítems no manuales (no solo los que tienen campos vacíos)",
+    "Los campos editables por el usuario (watchLog, readLog, status, notas) nunca se sobrescriben",
+    "Se mantiene la limitación de coste: como máximo una pasada completa por usuario y día (o un intervalo mínimo respetable por ítem) para no exceder límites de TMDB",
+    "Opción mínima (si el refresco completo no es viable): botón de sincronización manual en los ajustes que fuerza la actualización inmediata"
+  ],
+  "definition of done": [
+    "Análisis de la lógica actual de sincronización (daily-check.js, api-movies.js) completado",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación realizada (refresco de metadatos dinámicos para todos los ítems y/o sincronización manual)",
+    "Validación QA aprobada (criterios de aceptación y casos borde cubiertos)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #23' en la descripción",
+    "Issue #23 label actualizada a su estado final"
+  ],
+  "status": "review",
+  "plan": "Refresco diario completo (sobrescritura truthy-only) para TODOS los ítems no manuales incluidos los abandonados + botón 'Sincronizar ahora' en Ajustes con cooldown 30 min (profile.lastManualSyncAt) + flag isRefreshing anti-concurrencia + pool de 4 peticiones (mapConcurrent) + guard force en checkForUpdates + nuevos campos tmdbStatus (series) y coverUrl (poster_path en getMovieDetails/getTvExtraDetails) + APP_VERSION bump. Funciones: buildMovieUpdates/buildTvUpdates/buildBookUpdates, syncNow(ctx), isSyncRunning(). ADR adr-021.",
+  "pr": {
+    "number": 34,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/34",
+    "title": "feat: actualización continua de datos con la API (issue #23)"
+  }
+}
