@@ -8,6 +8,23 @@
 
 import { isNextEpisodeUnreleased } from "./sorting.js";
 import { getNotificationPrefs } from "./settings.js";
+import { isUnreleasedDate } from "./release.js";
+import { normalizeEntry } from "./tv-progress.js";
+
+// ¿La serie tiene algún episodio marcado como visto (cualquier temporada)?
+// Recorre watched (temporada -> episodio -> { date, rating }) y también
+// tolera el formato antiguo de fecha como texto plano vía normalizeEntry.
+function hasAnyWatchedEpisode(show) {
+  if (!show.watched) return false;
+  for (const seasonMap of Object.values(show.watched)) {
+    if (!seasonMap) continue;
+    for (const entry of Object.values(seasonMap)) {
+      const n = normalizeEntry(entry);
+      if (n && n.date) return true;
+    }
+  }
+  return false;
+}
 
 export async function checkForUpdates(ctx) {
   const {
@@ -44,7 +61,7 @@ export async function checkForUpdates(ctx) {
   // Películas: aviso de estreno + rellenar ficha si le faltaba algo
   for (const movie of allMovies) {
     if (movie.manual) continue;
-    const needsCheck = !movie.overview || movie.awaitingRelease || movie.communityRating == null;
+    const needsCheck = !movie.overview || movie.awaitingRelease || movie.communityRating == null || (!movie.releaseDate && !(movie.watchLog && movie.watchLog.length));
     if (!needsCheck) continue;
     try {
       const fresh = await getMovieDetails(movie.externalId);
@@ -66,6 +83,10 @@ export async function checkForUpdates(ctx) {
       }
       if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
         updates.releaseDate = fresh.releaseDate;
+      }
+
+      if (!movie.awaitingRelease && fresh.releaseDate !== undefined && !(movie.watchLog && movie.watchLog.length) && isUnreleasedDate(fresh.releaseDate)) {
+        updates.awaitingRelease = true;
       }
 
       if (prefs.movie_release !== false && movie.awaitingRelease && fresh.releaseDate && fresh.releaseDate <= today) {
@@ -144,6 +165,10 @@ export async function checkForUpdates(ctx) {
         if (!show.trailerUrl && fresh.trailerUrl) {
           updates.trailerUrl = fresh.trailerUrl;
         }
+      }
+
+      if (!show.awaitingRelease && fresh.firstAirDate !== undefined && !hasAnyWatchedEpisode(show) && isUnreleasedDate(fresh.firstAirDate)) {
+        updates.awaitingRelease = true;
       }
 
       if (Object.keys(updates).length) {

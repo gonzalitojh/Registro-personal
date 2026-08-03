@@ -9,6 +9,7 @@ import { STATUS_LABELS } from "./constants.js";
 import { isNextEpisodeUnreleased } from "./sorting.js";
 import { normalizeEntry } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
+import { unreleasedConfirmMessage } from "./release.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : "media";
@@ -798,17 +799,8 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
     if (!dateVal) return;
-    if (item.releaseDate && item.releaseDate > todayISO()) {
-      if (
-        !window.confirm(
-          `Según TMDB esta película se estrena el ${formatDateEs(
-            item.releaseDate
-          )}, todavía no ha pasado. ¿Marcarla igualmente como vista?`
-        )
-      ) {
-        return;
-      }
-    }
+    const confirmMsg = unreleasedConfirmMessage(item);
+    if (confirmMsg && !window.confirm(confirmMsg)) return;
     await onAddWatch(dateVal);
     rerender();
   });

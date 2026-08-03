@@ -9,6 +9,7 @@ import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFr
 import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
+import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
@@ -124,7 +125,7 @@ async function addSagaMovie(movie, ctx) {
     watchLog: [],
     ...details,
   };
-  if (details.releaseDate && details.releaseDate > todayISO()) {
+  if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
     draft.awaitingRelease = true;
   }
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
@@ -154,7 +155,7 @@ async function addFromRecommendation(item, btn, ctx) {
       try {
         const details = await getMovieDetails(item.externalId);
         Object.assign(draft, details);
-        if (details.releaseDate && details.releaseDate > todayISO()) {
+        if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
           draft.awaitingRelease = true;
         }
       } catch (err) {
@@ -171,7 +172,7 @@ async function addFromRecommendation(item, btn, ctx) {
       try {
         const details = await getTvExtraDetails(item.externalId);
         Object.assign(draft, details);
-        if (details.firstAirDate && details.firstAirDate > todayISO()) {
+        if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) {
           draft.awaitingRelease = true;
         }
       } catch (err) {

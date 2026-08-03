@@ -26,6 +26,7 @@ const STATIC_ASSETS = [
   '/Registro-personal/js/constants.js',
   '/Registro-personal/js/dates.js',
   '/Registro-personal/js/http.js',
+  '/Registro-personal/js/release.js',
   '/Registro-personal/js/modal-handlers.js',
   '/Registro-personal/js/notifications-setup.js',
   '/Registro-personal/js/profile.js',
