@@ -5,8 +5,8 @@
 // escrituras y endpoints de autenticación.
 // =============================================================
 
-const CACHE_STATIC = 'mi-registro-v1-static';
-const CACHE_DYNAMIC = 'mi-registro-v1-dynamic';
+const CACHE_STATIC = 'mi-registro-v2-static';
+const CACHE_DYNAMIC = 'mi-registro-v2-dynamic';
 const DYNAMIC_MAX_ENTRIES = 50;
 
 // -------------------------------------------------------------
@@ -16,9 +16,9 @@ const STATIC_ASSETS = [
   '/Registro-personal/',
   '/Registro-personal/index.html',
   '/Registro-personal/manifest.json',
-  '/Registro-personal/css/styles.css',
-  '/Registro-personal/ocio/ocio.css',
-  '/Registro-personal/js/app.js',
+  '/Registro-personal/css/styles.css?v=20260803',
+  '/Registro-personal/ocio/ocio.css?v=20260803',
+  '/Registro-personal/js/app.js?v=20260803',
   '/Registro-personal/js/ui.js',
   '/Registro-personal/js/db.js',
   '/Registro-personal/js/firebase.js',
@@ -41,10 +41,16 @@ const STATIC_ASSETS = [
   '/Registro-personal/js/api-books.js',
   '/Registro-personal/js/api-movies.js',
   '/Registro-personal/js/sw-register.js',
+  '/Registro-personal/js/activity-feed.js',
+  '/Registro-personal/js/export-backup.js',
+  '/Registro-personal/js/export-ics.js',
+  '/Registro-personal/js/focus-utils.js',
+  '/Registro-personal/js/global-search.js',
+  '/Registro-personal/js/settings.js',
   '/Registro-personal/resources/icon.png',
-  '/Registro-personal/ocio/series.html',
-  '/Registro-personal/ocio/peliculas.html',
-  '/Registro-personal/ocio/libros.html',
+  '/Registro-personal/ocio/series.html?v=20260803',
+  '/Registro-personal/ocio/peliculas.html?v=20260803',
+  '/Registro-personal/ocio/libros.html?v=20260803',
 ];
 
 // -------------------------------------------------------------
@@ -110,32 +116,59 @@ async function cacheFirst(request) {
 }
 
 /**
- * Network First: intenta la red primero; si falla, busca en
- * la caché dinámica. Limita el número de entradas en caché.
+ * Fetch con timeout: evita que una red lenta o colgada bloquee
+ * la navegación. Rechaza si la respuesta tarda más de `ms` ms,
+ * lo que deja que el fallback de caché de networkFirst actúe.
  */
-async function networkFirst(request) {
+function fetchWithTimeout(request, ms = 3000) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`[SW] Timeout: la petición tardó más de ${ms}ms`)), ms)
+  );
+  return Promise.race([fetch(request), timeout]);
+}
+
+/**
+ * Network First: intenta la red primero; si falla, busca en la
+ * caché dinámica. Limita el número de entradas en caché.
+ *
+ * `timeoutMs` es opcional y SOLO debe usarse para navegación: evita
+ * que una red lenta o colgada bloquee la carga del documento. Las
+ * APIs externas y Firestore no llevan timeout para no provocar
+ * falsos "offline" en redes lentas.
+ *
+ * Devuelve `{ response, fromNetwork }` para que el llamador sepa si
+ * la respuesta vino de la red (y pueda refrescar caches canónicas).
+ */
+async function networkFirst(request, timeoutMs = null) {
+  let fromNetwork = false;
   try {
-    const response = await fetch(request);
+    const response = timeoutMs
+      ? await fetchWithTimeout(request, timeoutMs)
+      : await fetch(request);
     if (response && response.ok) {
+      fromNetwork = true;
       const cache = await caches.open(CACHE_DYNAMIC);
       cache.put(request, response.clone());
       // Limitar tamaño de la caché dinámica
       trimCache(CACHE_DYNAMIC, DYNAMIC_MAX_ENTRIES);
     }
-    return response;
+    return { response, fromNetwork };
   } catch (err) {
     const cached = await caches.match(request);
-    if (cached) return cached;
+    if (cached) return { response: cached, fromNetwork: false };
     // Fallback para navegación
     if (request.mode === 'navigate') {
-      return caches.match('/Registro-personal/index.html');
+      return { response: await caches.match('/Registro-personal/index.html'), fromNetwork: false };
     }
     // Para APIs, devolver un 503 amigable
-    return new Response(JSON.stringify({ error: 'offline', message: 'No hay conexión' }), {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return {
+      response: new Response(JSON.stringify({ error: 'offline', message: 'No hay conexión' }), {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      fromNetwork: false,
+    };
   }
 }
 
@@ -172,6 +205,28 @@ self.addEventListener('fetch', (event) => {
     url.hostname === 'securetoken.googleapis.com'
   ) {
     return; // Pasan sin intervención del SW
+  }
+
+  // ---- Navegación: Network First (con timeout) y fallback al app shell ----
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      networkFirst(event.request, 3000).then(({ response, fromNetwork }) => {
+        // Solo si vino de la red, refrescar la entrada canónica del
+        // app shell en la caché estática, para que el fallback offline
+        // nunca quede desfasado respecto al último deploy. Si la
+        // respuesta vino de la caché (timeout/offline), no se toca.
+        if (fromNetwork && response && response.ok) {
+          caches
+            .open(CACHE_STATIC)
+            .then((cache) => cache.put('/Registro-personal/index.html', response.clone()))
+            .catch((err) =>
+              console.warn('[SW] No se pudo refrescar el app shell en caché:', err)
+            );
+        }
+        return response;
+      })
+    );
+    return;
   }
 
   // ---- Cache First: recursos estáticos propios ----
@@ -222,7 +277,7 @@ self.addEventListener('fetch', (event) => {
     url.hostname === 'www.googleapis.com' ||
     url.hostname === 'openlibrary.org'
   ) {
-    event.respondWith(networkFirst(event.request));
+    event.respondWith(networkFirst(event.request).then(({ response }) => response));
     return;
   }
 
@@ -231,17 +286,7 @@ self.addEventListener('fetch', (event) => {
     url.hostname === 'firestore.googleapis.com' &&
     event.request.method === 'GET'
   ) {
-    event.respondWith(networkFirst(event.request));
-    return;
-  }
-
-  // ---- Navegación: intentar red, fallback a app shell ----
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match('/Registro-personal/index.html')
-      )
-    );
+    event.respondWith(networkFirst(event.request).then(({ response }) => response));
     return;
   }
 

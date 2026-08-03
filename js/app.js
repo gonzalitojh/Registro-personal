@@ -25,6 +25,7 @@ import {
 import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails } from "./api-movies.js";
 import { getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
+import { APP_VERSION } from "./config.js";
 import { applySort } from "./sorting.js";
 import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
@@ -139,7 +140,7 @@ async function loadOcioPartials() {
   await Promise.all(
     Array.from(sections).map(async (section) => {
       try {
-        const res = await fetch(section.dataset.ocioSrc);
+        const res = await fetch(section.dataset.ocioSrc + "?v=" + APP_VERSION);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         section.innerHTML = await res.text();
       } catch (err) {

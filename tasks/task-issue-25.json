@@ -1,0 +1,27 @@
+{
+  "title": "Problemas de actualización de cambios",
+  "description": "En ocasiones, especialmente en el móvil, donde tengo añadida la web como una App Web, hay problemas con los nuevos cambios que se han efectuado. Estos cambios, si accedo a través del navegador si se pueden ver, así que probablemente sea un problema de almacenamiento en caché. Si hay alguna forma de solucionar esto, sería conveniente hacerlo.",
+  "status": "documented",
+  "issue": {
+    "number": 25,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/25",
+    "title": "Problemas de actualización de cambios"
+  },
+  "acceptance criteria": [
+    "Los nuevos cambios desplegados se reflejan de forma fiable en la versión instalada como PWA/App Web en el móvil, sin necesidad de limpiar manualmente la caché",
+    "La estrategia de caché aplicada garantiza que la versión nueva se descarga cuando se publica una actualización",
+    "La solución no degrada el rendimiento ni el funcionamiento offline (si el sitio es offline-first, se preserva el comportamiento)",
+    "Los activos estáticos (JS/CSS) quedan versionados/cacheados con nombres únicos (hashes) para invalidar la caché correctamente",
+    "El problema se verifica reproduciendo el escenario: acceso desde navegador vs acceso desde PWA móvil"
+  ],
+  "definition of done": [
+    "Análisis del service worker y estrategia de caché actual del proyecto completado",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación del fix de caché realizada (cache versionado / estrategia network-first para navegación)",
+    "Validación QA aprobada (criterios de aceptación y casos borde cubiertos)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #25' en la descripción",
+    "Issue #25 label actualizada a su estado final"
+  ]
+}
