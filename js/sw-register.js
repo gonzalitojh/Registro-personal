@@ -10,6 +10,8 @@ let swRegistration = null;
 
 /**
  * Registra el service worker y maneja actualizaciones.
+ * Las actualizaciones se auto-aplican (SKIP_WAITING) sin pedir
+ * confirmación al usuario.
  */
 export function registerSW() {
   if (!('serviceWorker' in navigator)) {
@@ -17,14 +19,15 @@ export function registerSW() {
     return;
   }
 
-  navigator.serviceWorker.register(SW_PATH, { scope: SW_SCOPE })
+  navigator.serviceWorker.register(SW_PATH, { scope: SW_SCOPE, updateViaCache: 'none' })
     .then((registration) => {
       swRegistration = registration;
       console.log('[SW] Registrado correctamente. Ámbito:', registration.scope);
 
-      // Si ya hay un worker esperando (actualización pendiente)
+      // Si ya hay un worker esperando (actualización pendiente de un
+      // registro anterior), auto-aplicarla directamente.
       if (registration.waiting) {
-        notifyUpdateReady(registration);
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
 
       // Detectar nuevos workers en cuanto aparezcan
@@ -34,8 +37,9 @@ export function registerSW() {
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Nueva versión instalada y lista para activarse
-            notifyUpdateReady(registration);
+            // Nueva versión instalada y lista para activarse:
+            // auto-aplicar sin preguntar al usuario (sin toast).
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
           }
         });
       });
@@ -44,7 +48,9 @@ export function registerSW() {
       console.error('[SW] Error al registrar:', err);
     });
 
-  // Recargar la página cuando el SW toma el control
+  // Recargar la página cuando el SW toma el control.
+  // El guard "refreshing" evita recargas dobles si el SW se
+  // reactiva más de una vez.
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return;
@@ -56,8 +62,10 @@ export function registerSW() {
 /**
  * Notifica al usuario que hay una nueva versión disponible.
  * Dispara un evento personalizado que recoge index.html.
+ * Se mantiene como export por compatibilidad con código existente;
+ * el registro ya no la usa (auto-update sin toast).
  */
-function notifyUpdateReady(registration) {
+export function notifyUpdateReady(registration) {
   const event = new CustomEvent('sw-update-ready', {
     detail: { registration },
   });
@@ -66,6 +74,7 @@ function notifyUpdateReady(registration) {
 
 /**
  * Activa el service worker en espera (skipWaiting).
+ * Se mantiene como export por compatibilidad con código existente.
  */
 export function applySWUpdate(registration) {
   if (!registration || !registration.waiting) return;

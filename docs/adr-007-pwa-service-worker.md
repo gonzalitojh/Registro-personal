@@ -3,6 +3,17 @@
 ## Estado
 Aceptado
 
+> **Nota (Agosto 2026):** este ADR describe la implementación original del
+> service worker (cachés `mi-registro-v1-*`). La **estrategia de navegación**
+> y el **flujo de actualización** (toast de "Nueva versión disponible" y
+> registro manual del SW) quedan **superados por ADR-019** — *Estrategia de
+> actualización de caché del service worker* (fix issue #25). Desde entonces,
+> la navegación usa network-first con timeout (3 s), las actualizaciones se
+> auto-aplican (`SKIP_WAITING`) sin toast, los assets llevan versionado
+> `?v=`/`APP_VERSION` y las cachés pasaron a `mi-registro-v2-*`. El resto de
+> estrategias de caché (cache-first para estáticos/CDNs/posters, network-first
+> para APIs, network-only para escrituras y auth) siguen vigentes.
+
 ## Contexto
 La aplicación "Mi Registro" ya contaba con un `manifest.json` que
 definía los metadatos básicos para ser una Progressive Web App
