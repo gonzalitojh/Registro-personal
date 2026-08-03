@@ -1767,3 +1767,25 @@
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
+
+/* =========================================================
+   Ajustes puntuales del modo claro (ocio)
+   La mayoría de los componentes de ocio heredan las variables
+   ya invertidas en css/styles.css; aquí solo se corrigen los
+   que usan --paper como color de texto o --ink como fondo.
+   ========================================================= */
+
+[data-theme="light"] .sort-select,
+[data-theme="light"] .library-search-input {
+  color: var(--ink);
+}
+
+/* La perforación tipo "entrada de cine" agujerea la tarjeta
+   dejando ver el fondo de la página, que en modo claro es
+   --paper-dim (crema), no la tinta oscura */
+[data-theme="light"] .item-card__perforation {
+  background:
+    radial-gradient(circle 6px at 0 50%, var(--paper-dim) 99%, transparent 100%),
+    radial-gradient(circle 6px at 100% 50%, var(--paper-dim) 99%, transparent 100%);
+  background-color: var(--paper);
+}

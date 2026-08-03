@@ -1,23 +1,25 @@
 {
-  "title": "Añadir modo claro (light theme) como alternativa al tema oscuro",
-  "description": "Actualmente la web tiene un tema oscuro. Se necesita añadir un modo claro (light theme) que los usuarios puedan activar desde la interfaz. Debe implementarse usando variables CSS (custom properties) para que el cambio sea limpio y mantenible. El usuario debe poder alternar entre modo claro y oscuro, y la preferencia debe persistirse (localStorage o Firestore).",
-  "status": "published",
+  "title": "Arreglar modo claro/oscuro: contraste, diferencia visual y legibilidad en modo claro",
+  "description": "El modo claro actual apenas se diferencia del modo oscuro porque --ink (color de fondo principal) sigue siendo oscuro (#1e1b16 vs #171512 en modo oscuro). El body y los elementos principales (auth-screen, profile-view, etc.) usan background: var(--ink), por lo que el fondo permanece prácticamente igual. El modo claro debe tener un fondo realmente claro (crema/gris muy claro) y el texto debe ser oscuro. La semántica de --ink y --paper entra en conflicto porque el body usa --ink como fondo y --paper como texto, mientras que las tarjetas usan --paper como fondo y --ink como texto. Esto hace que un único par de variables no pueda servir correctamente a ambos modos. Se necesita redefinir por completo la paleta del modo claro y añadir los overrides necesarios para que todos los elementos se vean correctamente.",
+  "status": "documented",
   "acceptance criteria": [
-    "Modo claro implementado con variables CSS (custom properties)",
-    "Las variables CSS actuales se refactorizan para soportar ambos temas",
-    "Selector/interruptor de tema visible en la interfaz",
-    "La preferencia del usuario se guarda en localStorage",
-    "El modo claro tiene contraste suficiente y es legible",
-    "Todos los elementos de la interfaz se ven correctamente en modo claro",
-    "No hay regresiones: el modo oscuro existente sigue funcionando igual"
+    "El modo claro tiene un fondo realmente claro (∼#f5f0e8) en lugar del fondo oscuro actual",
+    "El texto en modo claro es oscuro (∼#2c2822) con contraste suficiente (WCAG AA)",
+    "Los elementos de tarjeta (item-card, modal, settings-card, etc.) tienen fondo blanco en modo claro",
+    "Los botones, inputs, selects y tabs se ven correctamente en modo claro",
+    "El interruptor de tema (header + settings) sigue funcionando y persistiendo la preferencia",
+    "El buscador global se ve correctamente en modo claro",
+    "El feed de actividad, perfil, estadísticas y amigos se ven correctamente en modo claro",
+    "El modo oscuro existente no sufre regresiones",
+    "Todos los elementos de la interfaz son legibles con suficiente contraste en ambos modos"
   ],
   "definition of done": [
-    "CSS refactorizado con variables de tema (--bg, --text, --primary, etc.)",
-    "Conjunto de variables para modo claro definido",
-    "Interruptor de tema implementado en la interfaz",
-    "Preferencia del usuario persistida",
-    "Verificación visual de que todos los componentes se ven bien en ambos modos",
-    "Documentación ADR del cambio completada",
-    "No hay regresiones en la funcionalidad existente"
+    "Paleta de colores del modo claro completamente redefinida con fondo claro y texto oscuro",
+    "Overrides CSS añadidos para body, html, auth-screen, profile-view, tabs, inputs, global-search y otros elementos que usan --ink/--paper como fondo",
+    "Verificación visual de que todos los componentes se ven bien en modo claro",
+    "Verificación de que el modo oscuro sigue funcionando exactamente igual que antes",
+    "Variables alpha y sombras ajustadas para el modo claro",
+    "Modo oscuro no modificado (sin regresiones)",
+    "Documentación ADR del cambio completada"
   ]
 }

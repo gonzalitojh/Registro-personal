@@ -166,7 +166,7 @@ function setTheme(theme) {
     toggle.setAttribute("aria-checked", "true");
     // Update theme-color meta tag
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = "#faf6f0";
+    if (meta) meta.content = "#f5f0e8";
   } else {
     icon.textContent = "☀️";
     toggle.setAttribute("aria-label", "Cambiar a modo claro");
