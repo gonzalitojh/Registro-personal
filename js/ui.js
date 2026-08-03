@@ -73,7 +73,7 @@ function typeLabel(type) {
   return "Libro";
 }
 
-const PLACEHOLDER_COVER =
+export const PLACEHOLDER_COVER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
@@ -358,11 +358,14 @@ export function renderLibrary(gridEl, emptyEl, items, viewMode, { onOpen, onQuic
 
 /* ---------- Campos comunes ---------- */
 
-function ratingPickerHtml(rating) {
+// HTML del picker de estrellas (1-5). idPrefix evita ids duplicados
+// cuando hay varios pickers en pantalla a la vez (p. ej. el de la
+// ventana de valoración emergente, que usa "rm-rating").
+export function ratingPickerHtml(rating, idPrefix = "field-rating") {
   return `
     <div class="field-group">
       <label>Valoración</label>
-      <div class="rating-picker" id="field-rating">
+      <div class="rating-picker" id="${idPrefix}">
         ${[1, 2, 3, 4, 5]
           .map(
             (n) =>
@@ -383,9 +386,9 @@ function notesFieldHtml(notes) {
     </div>`;
 }
 
-function wireRatingAndGetValue(content, initialRating) {
+export function wireRatingAndGetValue(content, initialRating, idPrefix = "field-rating") {
   let selectedRating = initialRating || 0;
-  const buttons = content.querySelectorAll("#field-rating button");
+  const buttons = content.querySelectorAll(`#${idPrefix} button`);
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const value = Number(btn.dataset.value);
@@ -1259,6 +1262,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           ratingWrap.classList.toggle("hidden", !checkbox.checked);
           if (!checkbox.checked) {
             ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
+          } else {
+            // Reflejar la valoración que pudo dejarse en la ventana
+            // emergente tras marcar el episodio (issue #21)
+            const entry = normalizeEntry(
+              (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+            );
+            const rating = entry ? entry.rating : null;
+            ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
+              s.classList.toggle("is-active", Number(s.dataset.value) <= (rating || 0))
+            );
           }
           const watchedCountInSeason = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedCountInSeason, episodeCount);
