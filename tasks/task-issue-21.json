@@ -1,7 +1,7 @@
 {
   "title": "Ventana de valoración emergente",
   "description": "Al marcar un ítem como visto/leído, ya sea un episodio de una serie, una película o un libro, desplegar una ventana flotante para valorar dicho ítem en cuestión. En esta ventana debe mostrarse la valoración de la comunidad para el mismo. En el caso de las series, esa valoración de la comunidad debe ser del episodio, no de la serie. Además, si se marca una temporada entera como vista, no debe desplegarse esta ventana.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "Al marcar un episodio de una serie como visto, se despliega una ventana flotante para valorar ese episodio.",
     "Al marcar una película como vista, se despliega una ventana flotante para valorarla.",
