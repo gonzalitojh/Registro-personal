@@ -1,7 +1,7 @@
 {
   "title": "Gestión de GitHub Issues por los agentes",
   "description": "Los agentes de IA deben leer las tareas de las GitHub Issues para hacer el análisis y crear sus propias tasks con las que realizar la implementación. Consideraciones:\n- Sólo deben hacer las issues con etiqueta ai-... ya que de lo contrario las debe realizar un usuario.\n- Configurar el agente para que cuando cree la PR incluya la frase Closes #NUMERO_ISSUE en la descripción. De esa forma, al fusionar la PR, GitHub cerrará la issue automáticamente.\n- Implementar que actualice las labels de la issue según el estado de la tarea (ai-todo, ai-in-progress, ai-needs-review, ai-blocked, ai-done).\n- Implementar que actualice el tipo de la Issue si está mal clasificada (type: feature, type: bug, type: style, type: refactor, type: content).\n- Revisar si es necesario alguna label extra, de tipo, de estado o cualquier otra categoría.\n- El usuario debe poder hacer consultas sobre las issues pendientes o completadas, es decir, poder preguntar qué issues hay abiertas para decidir cuál quiere que el agente aborde, ya que la task se creará en el momento de abordarla.",
-  "status": "documented",
+  "status": "published",
   "issue": {
     "number": 18,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/18",

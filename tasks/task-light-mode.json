@@ -1,7 +1,7 @@
 {
   "title": "Arreglar modo claro/oscuro: contraste, diferencia visual y legibilidad en modo claro",
   "description": "El modo claro actual apenas se diferencia del modo oscuro porque --ink (color de fondo principal) sigue siendo oscuro (#1e1b16 vs #171512 en modo oscuro). El body y los elementos principales (auth-screen, profile-view, etc.) usan background: var(--ink), por lo que el fondo permanece prácticamente igual. El modo claro debe tener un fondo realmente claro (crema/gris muy claro) y el texto debe ser oscuro. La semántica de --ink y --paper entra en conflicto porque el body usa --ink como fondo y --paper como texto, mientras que las tarjetas usan --paper como fondo y --ink como texto. Esto hace que un único par de variables no pueda servir correctamente a ambos modos. Se necesita redefinir por completo la paleta del modo claro y añadir los overrides necesarios para que todos los elementos se vean correctamente.",
-  "status": "documented",
+  "status": "published",
   "acceptance criteria": [
     "El modo claro tiene un fondo realmente claro (∼#f5f0e8) en lugar del fondo oscuro actual",
     "El texto en modo claro es oscuro (∼#2c2822) con contraste suficiente (WCAG AA)",
