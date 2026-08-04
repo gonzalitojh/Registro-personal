@@ -14,6 +14,21 @@ export function isUnreleasedDate(dateStr) {
   return !dateStr || dateStr > todayISO();
 }
 
+// Mensaje de confirmación al marcar como visto un episodio concreto
+// (T{season}E{episode}) del que conocemos su fecha de emisión (o la
+// ausencia de ella). Cubre el caso en que TMDB no devuelve
+// next_episode_to_air pero el episodio existe en su temporada.
+// Devuelve null cuando el episodio ya está estrenado.
+export function episodeUnreleasedMessage(title, season, episode, airDate) {
+  if (!isUnreleasedDate(airDate)) return null;
+  if (airDate) {
+    return `Según TMDB este episodio (T${season}E${episode}) se estrena el ${formatDateEs(
+      airDate
+    )}, todavía no ha pasado. ¿Marcarlo igualmente como visto?`;
+  }
+  return `«${title}» (T${season}E${episode}) no tiene fecha de estreno oficial en TMDB; suponemos que aún no está estrenado. ¿Marcarlo igualmente como visto?`;
+}
+
 // Mensaje de confirmación al marcar como visto un ítem sin estrenar.
 // Devuelve null cuando no aplica (manual, estrenado, sin coincidencia
 // de episodio siguiente, tipo no soportado).
@@ -30,6 +45,9 @@ export function unreleasedConfirmMessage(item) {
   }
 
   if (item.type === "tv") {
+    // Las series manuales no tienen fechas reales de TMDB: se excluyen
+    // de toda confirmación de "no estrenado".
+    if (item.manual) return null;
     const { nextEpisode, nextEpisodeToAir } = item;
     if (!nextEpisode || !nextEpisodeToAir) return null;
     if (

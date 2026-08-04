@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 Agosto 2026
 
+**Nota (alcance ampliado por ADR-023):** este documento describe el fix original de la issue #27 (PR #33). Tras la reapertura de la issue —caso `next_episode_to_air = null` en series entre temporadas sin fecha anunciada (p. ej. «Dune: La Profecía» T2)—, el alcance aquí definido queda **ampliado/supersedido** por el [ADR-023](adr-023-episode-unreleased-no-date.md): los checkboxes de episodios individuales, el botón "Marcar todo" de temporada y el badge cuando TMDB no devuelve `next_episode_to_air` ahora SÍ están cubiertos.
+
 ## Contexto
 
 TMDB devuelve la fecha de estreno vacía para películas/episodios sin fecha oficial, y `js/api-movies.js` la normaliza a `null` (`releaseDate: data.release_date || null`). El frontend controlaba el caso de "no estrenado" con el patrón `if (fecha && fecha > todayISO())` en todos los puntos de marcado como visto: al ser `null` falsy, un ítem sin fecha se consideraba **ya estrenado** y podía marcarse como visto **sin ningún aviso**, aunque en realidad no se sabía si había salido.
@@ -62,11 +64,12 @@ En `checkForUpdates`, si un ítem no tiene fecha, no está visto y no tiene `awa
 
 - **Checkboxes de episodios individuales del modal de serie**: NO se tocaron. Las series manuales tienen `airDate: null` en todos sus episodios; aplicar el control ahí rompería el flujo de progreso manual. La protección del "próximo episodio" (`isNextEpisodeUnreleased` + `unreleasedConfirmMessage`) cubre la vía principal de progreso de series con datos de TMDB.
 - **`js/export-ics.js`**: ya excluía los ítems sin fecha (`if (!item.releaseDate) continue;`), por lo que no requirió cambios.
+- **SUPERSEDIDO por ADR-023**: la reapertura de la issue #27 (serie entre temporadas con `next_episode_to_air = null`, p. ej. «Dune: La Profecía» T2) llevó a cubrir lo excluido en los puntos anteriores. El ADR-023 sí protege el checkbox de episodio individual (con guard `!item.manual`, que preserva el flujo de series manuales) y el botón "Marcar todo" de temporada (confirmación contando episodios sin estrenar), y también cubre el badge "Aún no estrenado" cuando TMDB no devuelve `next_episode_to_air` (campo persistido `nextEpisodeAirDate` + `getNextEpisodeAirInfo`). Ver [adr-023-episode-unreleased-no-date.md](adr-023-episode-unreleased-no-date.md).
 
 ## Alternativas descartadas
 
 - **Bloqueo duro (impedir marcar sin confirmación)**: descartado porque el patrón establecido para fechas futuras era confirmación suave (`window.confirm`) y un bloqueo duro sería inconsistente con él; además, un ítem sin fecha oficial puede estar realmente estrenado, y exigir confirmación (no impedirlo) mantiene la flexibilidad sin perder el aviso.
-- **Tocar los checkboxes de episodios del modal de serie**: descartado porque las series manuales tienen `airDate: null` en todos sus episodios, de modo que el control bloquearía todo el flujo de progreso manual. La protección del próximo episodio cubre la vía principal de avance de una serie sin afectar al caso manual.
+- **Tocar los checkboxes de episodios del modal de serie**: descartado porque las series manuales tienen `airDate: null` en todos sus episodios, de modo que el control bloquearía todo el flujo de progreso manual. La protección del próximo episodio cubre la vía principal de avance de una serie sin afectar al caso manual. *(Esta decisión queda ampliada por el ADR-023: la reapertura de la issue #27 añadió el control al checkbox individual y a "Marcar todo" con el guard `!item.manual`, que deja intacto el flujo de las series manuales.)*
 - **No hacer backfill**: descartado porque los ítems existentes (creados antes del fix) sin fecha y sin `awaitingRelease` seguirían marcables sin aviso; la ampliación de `checkForUpdates` los cura de forma progresiva en la comprobación diaria.
 
 ## Consecuencias

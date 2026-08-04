@@ -419,6 +419,17 @@ async function openTvItem(item, ctx) {
       );
     },
 
+    // Fuego-y-olvido: guarda la fecha de emisión del siguiente
+    // episodio ({ season, episode, airDate } o null) para poder avisar
+    // del "no estrenado" aunque TMDB deje de devolver
+    // next_episode_to_air (issue #27). Un fallo no rompe el modal.
+    onUpdateNextEpisodeAirDate: (info) => {
+      item.nextEpisodeAirDate = info;
+      return ctx
+        .updateItem(ctx.getCurrentUser().uid, "tv", item.id, { nextEpisodeAirDate: info })
+        .catch((err) => console.error("No se pudo guardar la fecha del próximo episodio:", err));
+    },
+
     onRewatch: async () => {
       const changes = startRewatch(item);
       await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
