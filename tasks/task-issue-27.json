@@ -1,7 +1,7 @@
 {
   "title": "Asegurar que un episodio/película ha sido estrenado",
-  "description": "Hay películas o episodios de series que no han sido estrenados pero tampoco tienen fecha de estreno oficial. En estos casos, la API devuelve la información relativa a la fecha de estreno vacía y desde la web no se controla esto. Cuando no hay fecha de estreno, se debe suponer que el ítem no ha sido estrenado y, por tanto, no se puede marcar como vista, igual que aquellos cuya fecha de estreno aún no ha llegado.",
-  "status": "published",
+  "description": "Hay películas o episodios de series que no han sido estrenados pero tampoco tienen fecha de estreno oficial. En estos casos, la API devuelve la información relativa a la fecha de estreno vacía y desde la web no se controla esto. Cuando no hay fecha de estreno, se debe suponer que el ítem no ha sido estrenado y, por tanto, no se puede marcar como vista, igual que aquellos cuya fecha de estreno aún no ha llegado.\n\nREABIERTA: el fix del PR #33 cubrió el caso de nextEpisodeToAir presente (con o sin fecha), pero NO el caso en que TMDB devuelve next_episode_to_air = null (serie entre temporadas sin fecha anunciada, p.ej. «Dune: La Profecía» T2). En ese escenario: (1) unreleasedConfirmMessage() devuelve null para TV y no se pide confirmación al marcar el siguiente episodio; (2) isNextEpisodeUnreleased() devuelve false y no aparece el badge \"Aún no estrenado\"; (3) el checkbox de episodio en el modal (ui.js) solo bloquea si airDate existe y es futura, así que un episodio sin fecha (T2E1) se puede marcar como visto sin aviso; (4) \"Marcar todo\" de una temporada tampoco comprueba fechas.",
+  "status": "review",
   "issue": {
     "number": 27,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/27",
@@ -11,20 +11,28 @@
     "Un ítem (película o episodio de serie) sin fecha de estreno se considera NO estrenado",
     "Un ítem no estrenado (sin fecha de estreno o con fecha de estreno futura) no se puede marcar como vista",
     "El control de fecha vacía se aplica en el frontend web (misma lógica que para fechas futuras)",
-    "El comportamiento se verifica con ítems reales de la API sin fecha de estreno"
+    "El comportamiento se verifica con ítems reales de la API sin fecha de estreno",
+    "REABIERTO: al marcar como visto el siguiente episodio de una serie cuyo next_episode_to_air es null y el episodio no tiene fecha de estreno (p.ej. T2E1 de Dune: La Profecía), se debe mostrar la misma confirmación de \"no estrenado\" que en el resto de casos",
+    "REABIERTO: un episodio sin fecha de estreno mostrado en el modal de detalle no se puede marcar como visto sin confirmación (checkbox)",
+    "REABIERTO: \"Marcar todo\" de una temporada cuyos episodios no tienen fecha de estreno o la tienen futura debe requerir confirmación"
   ],
   "definition of done": [
     "Análisis de la lógica actual de marcado como vista y manejo de fecha de estreno completado",
     "Plan de implementación revisado por el arquitecto (task-architect)",
-    "Implementación del fix realizada (fecha de estreno vacía ⇒ ítem no estrenado ⇒ no marcar como vista)",
+    "Implementación del fix realizada (fecha de estreno vacía ⇒ ítem no estrenado ⇒ no marcar como vista, incluido el caso next_episode_to_air = null)",
     "Validación QA aprobada (criterios de aceptación y casos borde cubiertos)",
     "Escaneo de seguridad completado sin hallazgos de severidad alta",
-    "Documentación ADR del cambio completada",
+    "Documentación ADR del cambio completada (actualización del ADR 020 o nuevo ADR)",
     "PR creada con 'Closes #27' en la descripción",
     "Issue #27 label actualizada a su estado final"
   ],
-  "plan": "Helper js/release.js (isUnreleasedDate + unreleasedConfirmMessage); flag awaitingRelease en alta (search.js, modal-handlers.js); confirm unificado en marcado (ui.js, quick-actions.js); isNextEpisodeUnreleased sin Boolean(airDate) (sorting.js); backfill en daily-check.js. Checkboxes de episodios fuera de alcance. ADR adr-020.",
+  "plan": "Fix previo (PR #33): helper js/release.js (isUnreleasedDate + unreleasedConfirmMessage); flag awaitingRelease en alta; confirm unificado en marcado; isNextEpisodeUnreleased sin Boolean(airDate) en sorting.js; backfill en daily-check.js. PENDIENTE: extender la lógica para el caso next_episode_to_air = null consultando el airDate del episodio concreto (getSeasonEpisodes) en quick-actions y modal, y proteger el checkbox individual y \"Marcar todo\" en ui.js.",
   "pr": {
+    "number": 36,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/36",
+    "title": "fix: episodios sin fecha de estreno no se marcan como vistos sin confirmación (issue #27)"
+  },
+  "previousPr": {
     "number": 33,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/33",
     "title": "fix: ítems sin fecha de estreno se tratan como no estrenados (issue #27)"

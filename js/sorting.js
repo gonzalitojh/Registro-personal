@@ -6,16 +6,29 @@
 
 import { isUnreleasedDate } from "./release.js";
 
+// Información de emisión del siguiente episodio que le toca ver al
+// usuario: { season, episode, airDate } o null si se desconoce.
+// Prioriza nextEpisodeToAir (TMDB en vivo) cuando coincide con el
+// siguiente episodio; si no, usa el dato guardado localmente
+// (nextEpisodeAirDate, que puede persistir la fecha aunque TMDB deje
+// de devolver next_episode_to_air, p. ej. serie entre temporadas).
+export function getNextEpisodeAirInfo(item) {
+  const ne = item.nextEpisode;
+  if (item.type !== "tv" || item.manual || !ne) return null;
+  const toAir = item.nextEpisodeToAir;
+  if (toAir && toAir.season === ne.season && toAir.episode === ne.episode) return toAir;
+  const stored = item.nextEpisodeAirDate;
+  if (stored && stored.season === ne.season && stored.episode === ne.episode) return stored;
+  return null;
+}
+
 // Comprueba si el siguiente episodio que le toca ver al usuario
 // coincide con el próximo episodio que TMDB dice que aún no se ha
-// emitido.
+// emitido (o cuyo episodio guardado localmente no tiene fecha o la
+// tiene futura).
 export function isNextEpisodeUnreleased(item) {
-  if (item.type !== "tv" || !item.nextEpisode || !item.nextEpisodeToAir) return false;
-  return (
-    item.nextEpisodeToAir.season === item.nextEpisode.season &&
-    item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
-    isUnreleasedDate(item.nextEpisodeToAir.airDate)
-  );
+  const info = getNextEpisodeAirInfo(item);
+  return !!info && isUnreleasedDate(info.airDate);
 }
 
 // Normaliza a un texto comparable tanto las fechas "YYYY-MM-DD" que

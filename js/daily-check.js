@@ -101,7 +101,18 @@ function buildTvUpdates(show, fresh) {
   if (fresh.firstAirDate && fresh.firstAirDate !== show.firstAirDate) {
     updates.firstAirDate = fresh.firstAirDate;
   }
-  if (fresh.nextEpisodeToAir) updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
+  if (fresh.nextEpisodeToAir) {
+    updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
+    // Copia local de la fecha del próximo episodio: sobrevive aunque
+    // TMDB deje de devolver next_episode_to_air (serie entre
+    // temporadas sin fecha anunciada) y permite seguir avisando del
+    // "no estrenado" sin consultar la temporada.
+    updates.nextEpisodeAirDate = {
+      season: fresh.nextEpisodeToAir.season,
+      episode: fresh.nextEpisodeToAir.episode,
+      airDate: fresh.nextEpisodeToAir.airDate || null,
+    };
+  }
   if (fresh.communityRating != null) updates.communityRating = fresh.communityRating;
   if (fresh.trailerUrl) updates.trailerUrl = fresh.trailerUrl;
   if (fresh.tmdbStatus) updates.tmdbStatus = fresh.tmdbStatus;
