@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 Agosto 2026
 
+**Nota (actualizada por ADR-025, 3ª reapertura):** la fase de confirmación TV en `release.js` que la "Decisión notable" de abajo descartó por el ciclo de imports ES modules quedó **implementada** en la 3ª reapertura de la issue #27: `unreleasedConfirmMessage(item, airInfo = null)` recibe `getNextEpisodeAirInfo` como **parámetro inyectado** desde el consumidor (`quick-actions.js`), de modo que `release.js` sigue importando solo `dates.js` y el ciclo se evita sin mover dependencias. Además, la historia de fuentes se extiende: el nuevo campo persistido `seasonAirDates` (mapa temporada → `air_date`, donde `null` = temporada sin estrenar, refrescado a diario y al abrir el modal) pasa a ser la **2ª fuente** en la precedencia de `getNextEpisodeAirInfo` (toAir > season > stored), por delante del backfill `nextEpisodeAirDate`; y `ensureNextEpisodeAirDate` y el bloque `releasedNoticedAt` de este ADR propagan el mapa fresco en sus spreads. Ver [adr-025-season-air-dates.md](adr-025-season-air-dates.md).
+
 ## Contexto
 
 La issue #27 (2ª reapertura) pedía que el tratamiento de "no estrenado" sea **uniforme en todos los niveles**: un ítem sin fecha de estreno debe tratarse exactamente igual que uno con fecha futura — mismo estilo de rayas en tarjeta y lista, misma relegación al final en la ordenación por actividad y misma etiqueta "Aún no estrenado/a".

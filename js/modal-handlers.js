@@ -201,6 +201,9 @@ async function addFromRecommendation(item, btn, ctx) {
       try {
         const details = await getTvExtraDetails(item.externalId);
         Object.assign(draft, details);
+        if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
+          draft.seasonAirDates = details.seasonAirDates;
+        }
         if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) {
           draft.awaitingRelease = true;
         }
@@ -311,6 +314,23 @@ async function openTvItem(item, ctx) {
   }
   if (!seasonsMeta.length) {
     ui.showToast("TMDB no devuelve temporadas para esta serie todavía.");
+  }
+
+  // Enriquecimiento en vivo de las fechas de temporada (issue #27): si
+  // la meta recién consultada difiere de la persistida, se asigna en
+  // memoria (el badge del modal vía upcomingBadge se pinta al momento)
+  // y se guarda fuego-y-olvido; un fallo aquí no rompe el modal. Las
+  // series manuales no tienen fechas reales de TMDB: se excluyen.
+  if (!item.manual && seasonsMeta.length) {
+    const seasonAirDates = Object.fromEntries(
+      seasonsMeta.filter((s) => !s.manual).map((s) => [String(s.seasonNumber), s.airDate])
+    );
+    if (JSON.stringify(seasonAirDates) !== JSON.stringify(item.seasonAirDates)) {
+      item.seasonAirDates = seasonAirDates;
+      ctx
+        .updateItem(ctx.getCurrentUser().uid, "tv", item.id, { seasonAirDates })
+        .catch((err) => console.error("No se pudieron guardar las fechas de temporada:", err));
+    }
   }
 
   const progress = progressWithStatus(seasonsMeta, item);

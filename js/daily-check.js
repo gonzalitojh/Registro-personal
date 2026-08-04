@@ -117,6 +117,14 @@ function buildTvUpdates(show, fresh) {
   if (fresh.trailerUrl) updates.trailerUrl = fresh.trailerUrl;
   if (fresh.tmdbStatus) updates.tmdbStatus = fresh.tmdbStatus;
   if (fresh.coverUrl) updates.coverUrl = fresh.coverUrl;
+  // Excepción documentada a la política truthy-only: seasonAirDates se
+  // sobrescribe siempre que la llamada tenga éxito (el array de
+  // temporadas es completo entonces), porque un null dentro del mapa es
+  // información real (temporada sin fecha de estreno oficial), no un
+  // dato ausente que haya que conservar.
+  if (fresh.seasonAirDates && Object.keys(fresh.seasonAirDates).length) {
+    updates.seasonAirDates = fresh.seasonAirDates;
+  }
   return updates;
 }
 
@@ -133,7 +141,15 @@ function buildBookUpdates(book, description) {
 // consulta de la temporada falla, no se aborta la pasada.
 async function ensureNextEpisodeAirDate(show, fresh, getSeasonEpisodes) {
   if (show.manual || !show.nextEpisode) return null;
-  if (getNextEpisodeAirInfo({ ...show, nextEpisodeToAir: fresh.nextEpisodeToAir })) return null;
+  if (
+    getNextEpisodeAirInfo({
+      ...show,
+      nextEpisodeToAir: fresh.nextEpisodeToAir,
+      seasonAirDates: fresh.seasonAirDates,
+    })
+  ) {
+    return null;
+  }
   try {
     const episodes = await getSeasonEpisodes(show.externalId, show.nextEpisode.season);
     const ep = episodes.find((e) => e.episodeNumber === show.nextEpisode.episode);
@@ -299,7 +315,11 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
         if (
           !justPremiered &&
           wasEpisodeBlocked &&
-          !isNextEpisodeUnreleased({ ...show, nextEpisodeToAir: fresh.nextEpisodeToAir })
+          !isNextEpisodeUnreleased({
+            ...show,
+            nextEpisodeToAir: fresh.nextEpisodeToAir,
+            seasonAirDates: fresh.seasonAirDates,
+          })
         ) {
           updates.releasedNoticedAt = today;
         }

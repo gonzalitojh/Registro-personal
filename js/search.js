@@ -187,6 +187,9 @@ async function handleAdd(item, btn, ctx) {
       try {
         const details = await getTvExtraDetails(item.externalId);
         Object.assign(draft, details);
+        if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
+          draft.seasonAirDates = details.seasonAirDates;
+        }
         if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) draft.awaitingRelease = true;
       } catch (err) {
         // ídem

@@ -7,18 +7,31 @@
 import { isUnreleasedDate } from "./release.js";
 
 // Información de emisión del siguiente episodio que le toca ver al
-// usuario: { season, episode, airDate } o null si se desconoce.
-// Prioriza nextEpisodeToAir (TMDB en vivo) cuando coincide con el
-// siguiente episodio; si no, usa el dato guardado localmente
-// (nextEpisodeAirDate, que puede persistir la fecha aunque TMDB deje
-// de devolver next_episode_to_air, p. ej. serie entre temporadas).
+// usuario: { season, episode, airDate, source } o null si se desconoce.
+// Precedencia documentada de fuentes:
+//   1. nextEpisodeToAir (TMDB en vivo) cuando coincide con el siguiente
+//      episodio del usuario (source "toAir").
+//   2. seasonAirDates[temporada] (refrescado a diario; null = temporada
+//      aún sin estrenar) cuando el episodio pertenece a esa temporada
+//      (source "season").
+//   3. nextEpisodeAirDate (backfill histórico persistido) (source "stored").
+// El tag `source` es solo informativo del predicado: nunca se persiste
+// (los paths que construyen objetos persistidos lo construyen sin tag).
 export function getNextEpisodeAirInfo(item) {
   const ne = item.nextEpisode;
   if (item.type !== "tv" || item.manual || !ne) return null;
   const toAir = item.nextEpisodeToAir;
-  if (toAir && toAir.season === ne.season && toAir.episode === ne.episode) return toAir;
+  if (toAir && toAir.season === ne.season && toAir.episode === ne.episode) {
+    return { ...toAir, source: "toAir" };
+  }
+  const seasonAir = item.seasonAirDates && item.seasonAirDates[String(ne.season)];
+  if (seasonAir !== undefined) {
+    return { season: ne.season, episode: ne.episode, airDate: seasonAir, source: "season" };
+  }
   const stored = item.nextEpisodeAirDate;
-  if (stored && stored.season === ne.season && stored.episode === ne.episode) return stored;
+  if (stored && stored.season === ne.season && stored.episode === ne.episode) {
+    return { ...stored, source: "stored" };
+  }
   return null;
 }
 
