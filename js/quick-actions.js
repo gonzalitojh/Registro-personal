@@ -47,7 +47,11 @@ async function quickMarkMovie(item, ctx) {
   if (confirmMsg && !window.confirm(confirmMsg)) return;
   const newLog = addWatch(item.watchLog, todayISO());
   const status = statusFromWatchLog(newLog);
-  await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status });
+  // awaitingRelease se limpia al marcar como vista (idempotente, igual
+  // que en el modal de detalle): un ítem ya visto no puede seguir
+  // "sin estrenar".
+  await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status, awaitingRelease: false });
+  item.awaitingRelease = false;
   await maybeQuickItemRating(item, ctx, "movie");
   ctx.showToast(`«${item.title}» marcada como vista.`);
 }
@@ -76,6 +80,9 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
     nextEpisode: newProgress.nextEpisode,
     firstWatchedAt: newProgress.firstWatchedAt,
     lastWatchedAt: newProgress.lastWatchedAt,
+    // Una serie con episodios vistos no puede seguir "sin estrenar"
+    // (idempotente, igual que en el modal de detalle).
+    awaitingRelease: false,
   };
   if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
     payload.nextEpisodeAirDate = nextEpisodeAirDate;
@@ -88,6 +95,7 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
       item.nextEpisode = newProgress.nextEpisode;
       item.firstWatchedAt = newProgress.firstWatchedAt;
       item.lastWatchedAt = newProgress.lastWatchedAt;
+      item.awaitingRelease = false;
       if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
         item.nextEpisodeAirDate = nextEpisodeAirDate;
       }

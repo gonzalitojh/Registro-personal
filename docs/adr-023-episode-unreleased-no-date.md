@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 Agosto 2026
 
+**Nota (ampliado por ADR-024):** la 2ª reapertura de la issue #27 pidió tratamiento uniforme del "no estrenado" en todos los niveles. El [ADR-024](adr-024-unreleased-uniform-treatment.md) renombra las clases CSS citadas en la sección 5 (`item-card--episode-unreleased` / `list-row--episode-unreleased` → `item-card--unreleased` / `list-row--unreleased`, y `item-card__upcoming--episode` → `item-card__upcoming--unreleased`), introduce el predicado unificado `isItemUnreleased` como consumidor de `getNextEpisodeAirInfo` para tarjeta, lista, badge y ordenación (películas incluidas), y añade una **cuarta vía de escritura** de `nextEpisodeAirDate`: el backfill diario `ensureNextEpisodeAirDate` para series entre temporadas cuyo dato aún no se ha persistido. Los helpers aquí descritos (`episodeUnreleasedMessage`, `getNextEpisodeAirInfo`, `nextEpisodeAirDate`) se conservan tal cual.
+
 ## Contexto
 
 El fix original de la issue #27 (ADR-020, PR #33) cubrió el caso de películas sin fecha y de series con `nextEpisodeToAir` presente (con fecha o sin ella). La issue se **reabrió** porque quedaba sin cubrir el caso en que TMDB devuelve `next_episode_to_air = null`: una serie **entre temporadas** sin fecha anunciada, como «Dune: La Profecía» T2. En ese escenario el episodio siguiente del usuario (T2E1) no tiene fecha de estreno y podía marcarse como visto sin ningún aviso.
