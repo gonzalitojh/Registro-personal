@@ -25,3 +25,11 @@ If all checks pass, output a confirmation that the task is ready for completion.
 ## Tasks from GitHub Issues
 
 When the task file references a GitHub Issue (it contains an `issue` block with `number`), verify that the issue labels reflect the task state: the issue should carry `ai-in-progress` while the work is being validated, and the type label (`type: feature|bug|style|refactor|content`) should match the change being reviewed. If the labels are inconsistent with the actual state, mention it in your report so the master agent can sync them with `scripts/gh-issue.sh set-state` / `set-type`. This check is informational; it does not block the review.
+
+## Reglas generales del proyecto
+
+Cuando la tarea toque HTML, CSS o UI, verifica además la regla de
+responsividad del `AGENTS.md` de la raíz: sin scroll horizontal en la página
+ni texto fuera de pantalla en anchos de ~360 px (móvil), ~768 px (tablet) y
+~1280 px (ordenador). Menciona en tu informe cualquier incumplimiento de esta
+regla.
