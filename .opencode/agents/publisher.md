@@ -19,6 +19,7 @@ Before doing anything, verify the workspace state to ensure there is work to com
    - If there are no changes, stop and report: "No changes to commit or PR. Aborting."
 2. **`gh auth status`** — verify GitHub CLI is authenticated.
    - If not authenticated, report the error and stop.
+3. **`git fetch origin --prune`** — refresca las ramas remotas y verifica que `origin/dev` existe: `git branch -r | grep dev`. Si no existe, detente y reporta el error.
 
 ## Workflow
 
@@ -36,7 +37,9 @@ Gather context about the local uncommitted changes to decide on branch names and
 ### 2. Branch, Commit, and Push
 Based on the gathered context:
 1. Generate a descriptive branch name. If the task references issue #N, include it: `fix/issue-18-gh-issues-agent` style (e.g. `<type-prefix>/issue-<N>-<short-slug>`). Type prefixes: `fix` for bugs, `feature` for features/refactors/content, `style` for style work. Otherwise use the generic form (e.g., `feature/add-history-panel`).
-2. Create and switch to the new branch: `git checkout -b <branch-name>`
+2. Create and switch to the new branch FROM the integration branch so the PR diff against `dev` is clean:
+   - `git checkout -b <branch-name> origin/dev`
+   - Si la rama de feature ya existe localmente, NO la recrees: haz `git checkout <branch-name>` y `git rebase origin/dev` si hace falta.
 3. Stage all changes: `git add .`
 4. Commit the changes with a concise, meaningful message: `git commit -m "<Brief description of changes>"`
 5. Push the new branch to the remote: `git push -u origin <branch-name>`
@@ -69,9 +72,11 @@ Closes #18
 <link to ADR if one was created>
 
 ### 4. Create the PR
-Run: `gh pr create --title "<title>" --body "<body>"`
+Run: `gh pr create --base dev --title "<title>" --body "<body>"`
 
 If `gh` is not installed or the command fails, report the error clearly.
+
+Siempre se crea contra `dev` (rama de integración); el usuario promueve `dev` a `main` cuando la versión es estable. Si `gh pr create --base dev` falla, verifica que `origin/dev` existe y que hay commits en tu rama.
 
 ### 5. Update the issue status
 If the task references issue #N and the PR was created successfully, update the issue label to reflect that the work is waiting for review:

@@ -7,7 +7,7 @@
 import { addItem } from "./db.js";
 import { getMovieDetails, getTvExtraDetails, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
-import { todayISO } from "./dates.js";
+import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 
 // Estado interno del módulo
@@ -173,7 +173,7 @@ async function handleAdd(item, btn, ctx) {
       try {
         const details = await getMovieDetails(item.externalId);
         Object.assign(draft, details);
-        if (details.releaseDate && details.releaseDate > todayISO()) draft.awaitingRelease = true;
+        if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) draft.awaitingRelease = true;
       } catch (err) {
         // no bloqueamos el alta si este paso extra falla
       }
@@ -187,7 +187,10 @@ async function handleAdd(item, btn, ctx) {
       try {
         const details = await getTvExtraDetails(item.externalId);
         Object.assign(draft, details);
-        if (details.firstAirDate && details.firstAirDate > todayISO()) draft.awaitingRelease = true;
+        if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
+          draft.seasonAirDates = details.seasonAirDates;
+        }
+        if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) draft.awaitingRelease = true;
       } catch (err) {
         // ídem
       }

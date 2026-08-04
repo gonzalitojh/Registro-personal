@@ -6,9 +6,10 @@
 
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
-import { isNextEpisodeUnreleased } from "./sorting.js";
+import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
 import { normalizeEntry } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
+import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : "media";
@@ -72,7 +73,7 @@ function typeLabel(type) {
   return "Libro";
 }
 
-const PLACEHOLDER_COVER =
+export const PLACEHOLDER_COVER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
@@ -202,19 +203,19 @@ function quickActionLabel(item) {
 }
 
 function upcomingBadge(item) {
-  if (item.awaitingRelease) {
-    const date = item.type === "movie" ? item.releaseDate : item.firstAirDate;
-    return `<div class="item-card__upcoming">Aún no estrenada${
-      date ? ` · ${formatDateEs(date)}` : ""
-    }</div>`;
+  if (!isItemUnreleased(item)) return "";
+  const cls = "item-card__upcoming item-card__upcoming--unreleased";
+  if (item.type === "movie") {
+    return `<div class="${cls}">Aún no estrenada${item.releaseDate ? ` · ${formatDateEs(item.releaseDate)}` : ""}</div>`;
   }
-  if (isNextEpisodeUnreleased(item)) {
-    const { season, episode, airDate } = item.nextEpisodeToAir;
-    return `<div class="item-card__upcoming item-card__upcoming--episode">
-      Aún no estrenado · T${season}E${episode}${airDate ? ` · ${formatDateEs(airDate)}` : ""}
-    </div>`;
+  if (item.awaitingRelease && item.nextEpisode) { // serie sin estrenar (premiere)
+    return `<div class="${cls}">Aún no estrenada${item.firstAirDate ? ` · ${formatDateEs(item.firstAirDate)}` : ""}</div>`;
   }
-  return "";
+  // Serie en curso con el próximo episodio sin estrenar. isItemUnreleased
+  // garantiza que hay info, pero por seguridad si no la hay no se pinta.
+  const info = getNextEpisodeAirInfo(item);
+  if (!info) return "";
+  return `<div class="${cls}">Aún no estrenado · T${info.season}E${info.episode}${info.airDate ? ` · ${formatDateEs(info.airDate)}` : ""}</div>`;
 }
 
 function renderGrid(gridEl, items, onOpen) {
@@ -225,7 +226,7 @@ function renderGrid(gridEl, items, onOpen) {
       const communityBadge = communityRatingHtml(item);
       const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
-      const blockedClass = isNextEpisodeUnreleased(item) ? " item-card--episode-unreleased" : "";
+      const blockedClass = isItemUnreleased(item) ? " item-card--unreleased" : "";
       return `
       <article class="item-card item-card--${item.status}${blockedClass}">
         <div class="item-card__cover-wrap">
@@ -300,7 +301,7 @@ function renderList(gridEl, items, { onOpen, onQuickAction }) {
   gridEl.innerHTML = items
     .map((item, index) => {
       const progress = progressLine(item);
-      const blockedClass = isNextEpisodeUnreleased(item) ? " list-row--episode-unreleased" : "";
+      const blockedClass = isItemUnreleased(item) ? " list-row--unreleased" : "";
       return `
       <div class="list-row list-row--${item.status}${blockedClass}" data-index="${index}">
         <div class="list-row__swipe-bg">✓ ${escapeHtml(quickActionLabel(item))}</div>
@@ -357,11 +358,14 @@ export function renderLibrary(gridEl, emptyEl, items, viewMode, { onOpen, onQuic
 
 /* ---------- Campos comunes ---------- */
 
-function ratingPickerHtml(rating) {
+// HTML del picker de estrellas (1-5). idPrefix evita ids duplicados
+// cuando hay varios pickers en pantalla a la vez (p. ej. el de la
+// ventana de valoración emergente, que usa "rm-rating").
+export function ratingPickerHtml(rating, idPrefix = "field-rating") {
   return `
     <div class="field-group">
       <label>Valoración</label>
-      <div class="rating-picker" id="field-rating">
+      <div class="rating-picker" id="${idPrefix}">
         ${[1, 2, 3, 4, 5]
           .map(
             (n) =>
@@ -382,9 +386,9 @@ function notesFieldHtml(notes) {
     </div>`;
 }
 
-function wireRatingAndGetValue(content, initialRating) {
+export function wireRatingAndGetValue(content, initialRating, idPrefix = "field-rating") {
   let selectedRating = initialRating || 0;
-  const buttons = content.querySelectorAll("#field-rating button");
+  const buttons = content.querySelectorAll(`#${idPrefix} button`);
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const value = Number(btn.dataset.value);
@@ -798,17 +802,8 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   content.querySelector("#btn-add-watch").addEventListener("click", async () => {
     const dateVal = content.querySelector("#field-new-watch-date").value;
     if (!dateVal) return;
-    if (item.releaseDate && item.releaseDate > todayISO()) {
-      if (
-        !window.confirm(
-          `Según TMDB esta película se estrena el ${formatDateEs(
-            item.releaseDate
-          )}, todavía no ha pasado. ¿Marcarla igualmente como vista?`
-        )
-      ) {
-        return;
-      }
-    }
+    const confirmMsg = unreleasedConfirmMessage(item);
+    if (confirmMsg && !window.confirm(confirmMsg)) return;
     await onAddWatch(dateVal);
     rerender();
   });
@@ -1077,14 +1072,16 @@ function renderSeasonBlock(s, watched) {
     </div>`;
 }
 
-function renderEpisodeRows(episodes, seasonWatched) {
+// manual=true (series manuales): no se marcan episodios como "sin
+// estrenar" porque no tienen fechas reales de TMDB.
+function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
   return episodes
     .map((e) => {
       const entry = normalizeEntry(seasonWatched[String(e.episodeNumber)]);
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
       const checked = Boolean(date);
-      const future = e.airDate && e.airDate > todayISO();
+      const future = !manual && isUnreleasedDate(e.airDate);
       return `
       <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}"
            data-air-date="${e.airDate || ""}">
@@ -1097,7 +1094,9 @@ function renderEpisodeRows(episodes, seasonWatched) {
           <span class="episode-row__num" aria-hidden="true">E${e.episodeNumber}</span>
           <span class="episode-row__name">${escapeHtml(e.name)}${
         future
-          ? ` <em class="episode-row__future">(sin estrenar · ${formatDateEs(e.airDate)})</em>`
+          ? ` <em class="episode-row__future">${
+              e.airDate ? `(sin estrenar · ${formatDateEs(e.airDate)})` : "(sin estrenar)"
+            }</em>`
           : ""
       }</span>
           <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
@@ -1129,6 +1128,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onDelete,
     onEdit,
     onAddRecommendation,
+    onUpdateNextEpisodeAirDate,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
@@ -1245,14 +1245,9 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
-        if (checkbox.checked && airDate && airDate > todayISO()) {
-          if (
-            !window.confirm(
-              `Según TMDB este episodio se estrena el ${formatDateEs(
-                airDate
-              )}, todavía no ha pasado. ¿Marcarlo igualmente como visto?`
-            )
-          ) {
+        if (checkbox.checked && !item.manual && isUnreleasedDate(airDate)) {
+          const msg = episodeUnreleasedMessage(item.title, seasonNumber, episodeNumber, airDate);
+          if (!window.confirm(msg)) {
             checkbox.checked = false;
             return;
           }
@@ -1267,6 +1262,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           ratingWrap.classList.toggle("hidden", !checkbox.checked);
           if (!checkbox.checked) {
             ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
+          } else {
+            // Reflejar la valoración que pudo dejarse en la ventana
+            // emergente tras marcar el episodio (issue #21)
+            const entry = normalizeEntry(
+              (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+            );
+            const rating = entry ? entry.rating : null;
+            ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
+              s.classList.toggle("is-active", Number(s.dataset.value) <= (rating || 0))
+            );
           }
           const watchedCountInSeason = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedCountInSeason, episodeCount);
@@ -1330,8 +1335,29 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       block.innerHTML = `<p class="episode-loading">Cargando episodios…</p>`;
       try {
         const episodes = await onExpandSeason(seasonNumber);
+        // Si el siguiente episodio del usuario está en esta temporada,
+        // guardamos su fecha de emisión (o null si TMDB no la tiene)
+        // para poder avisar del "no estrenado" sin más llamadas a la
+        // API. Fuego-y-olvido: un fallo aquí no rompe el modal.
+        if (
+          !item.manual &&
+          onUpdateNextEpisodeAirDate &&
+          item.nextEpisode &&
+          item.nextEpisode.season === seasonNumber
+        ) {
+          const nextEp = episodes.find((e) => e.episodeNumber === item.nextEpisode.episode);
+          if (nextEp) {
+            Promise.resolve(
+              onUpdateNextEpisodeAirDate({
+                season: seasonNumber,
+                episode: item.nextEpisode.episode,
+                airDate: nextEp.airDate || null,
+              })
+            ).catch(() => {});
+          }
+        }
         const seasonWatched = (item.watched && item.watched[String(seasonNumber)]) || {};
-        block.innerHTML = renderEpisodeRows(episodes, seasonWatched);
+        block.innerHTML = renderEpisodeRows(episodes, seasonWatched, { manual: item.manual });
         block.dataset.loaded = "1";
         const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
         wireEpisodeRows(block, seasonNumber, episodeCount);
@@ -1346,6 +1372,40 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       const seasonNumber = Number(btn.dataset.season);
       const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
       const shouldMarkAll = btn.dataset.allWatched === "1";
+
+      // Al marcar toda una temporada, contar los episodios sin estrenar
+      // (sin fecha oficial o con fecha futura) y pedir confirmación.
+      // Las series manuales quedan excluidas: no tienen fechas reales.
+      let unreleasedCount = 0;
+      if (shouldMarkAll && !item.manual) {
+        const episodesBlock = content.querySelector(
+          `.season-episodes[data-season-episodes="${seasonNumber}"]`
+        );
+        let episodes = null;
+        if (episodesBlock && episodesBlock.dataset.loaded) {
+          episodes = [...episodesBlock.querySelectorAll(".episode-row")].map((row) => ({
+            episodeNumber: Number(row.dataset.episode),
+            airDate: row.dataset.airDate || null,
+          }));
+        } else {
+          try {
+            episodes = await onExpandSeason(seasonNumber);
+          } catch (err) {
+            console.error("No se pudo verificar el estreno de la temporada:", err);
+            episodes = null;
+          }
+        }
+        if (episodes) {
+          unreleasedCount = episodes.filter((e) => isUnreleasedDate(e.airDate)).length;
+        }
+      }
+      if (unreleasedCount > 0) {
+        const ok = window.confirm(
+          `«${item.title}» · Temporada ${seasonNumber}: ${unreleasedCount} episodio(s) sin estrenar (sin fecha oficial o con fecha futura). ¿Marcarlos todos igualmente como vistos?`
+        );
+        if (!ok) return;
+      }
+
       btn.disabled = true;
       try {
         const newProgress = await onToggleSeason(seasonNumber, shouldMarkAll);

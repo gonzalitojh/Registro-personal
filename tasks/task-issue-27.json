@@ -1,0 +1,46 @@
+{
+  "title": "Asegurar que un episodio/película ha sido estrenado",
+  "description": "Hay películas o episodios de series que no han sido estrenados pero tampoco tienen fecha de estreno oficial. En estos casos, la API devuelve la información relativa a la fecha de estreno vacía y desde la web no se controla esto. Cuando no hay fecha de estreno, se debe suponer que el ítem no ha sido estrenado y, por tanto, no se puede marcar como vista, igual que aquellos cuya fecha de estreno aún no ha llegado.\n\nREABIERTA (2ª): tras el PR #36 (fix del caso next_episode_to_air = null en confirmaciones y badge vía nextEpisodeAirDate), el usuario pide que el tratamiento de \"no estrenado\" sea UNIFORME EN TODOS LOS NIVELES: los ítems sin fecha de estreno deben tratarse exactamente igual que los que tienen fecha futura. Se debe dar el estilo de rayas (CSS item-card--episode-unreleased / list-row--episode-unreleased), se debe ir al final de la lista (ordenación por actividad), se debe añadir la etiqueta correspondiente (badge 'Aún no estrenado/a'), y todo igual. Problemas actuales: (1) las rayas solo se aplican a series vía isNextEpisodeUnreleased() — las películas con awaitingRelease (sin fecha o con fecha futura) no reciben rayas; (2) compareByActivityDesc solo relega al final las series con isNextEpisodeUnreleased — las películas no estrenadas no van al final; (3) una serie entre temporadas cuyo nextEpisodeAirDate aún no se ha guardado (no se expandió la temporada ni corrió el backfill con next_episode_to_air) no muestra etiqueta/rayas/relegación; (4) el badge de película awaitingRelease existe pero no hay clase CSS de rayas para películas.\n\nREABIERTA (3ª): el usuario consulta la API y señala que el campo air_date viene TANTO en las temporadas como en los episodios. Cuando air_date viene null, se debe entender que la serie no está estrenada y tratarla como tal. La lógica actual solo usa next_episode_to_air / nextEpisodeAirDate (backfill diario) y NO usa el air_date de la temporada (getTvSeasonsMeta/getTvExtraDetails lo normalizan pero nadie lo persiste ni lo consulta). Debe usarse el air_date de la temporada del siguiente episodio (y del episodio) como fuente de verdad: si es null o futuro ⇒ serie no estrenada ⇒ rayas, relegación, badge y confirmaciones.",
+  "status": "documented",
+  "issue": {
+    "number": 27,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/27",
+    "title": "Asegurar que un episodio/película ha sido estrenado"
+  },
+  "acceptance criteria": [
+    "Un ítem (película o episodio de serie) sin fecha de estreno se considera NO estrenado",
+    "Un ítem no estrenado (sin fecha de estreno o con fecha de estreno futura) no se puede marcar como vista",
+    "El control de fecha vacía se aplica en el frontend web (misma lógica que para fechas futuras)",
+    "El comportamiento se verifica con ítems reales de la API sin fecha de estreno",
+    "REABIERTO: al marcar como visto el siguiente episodio de una serie cuyo next_episode_to_air es null y el episodio no tiene fecha de estreno (p.ej. T2E1 de Dune: La Profecía), se debe mostrar la misma confirmación de \"no estrenado\" que en el resto de casos",
+    "REABIERTO: un episodio sin fecha de estreno mostrado en el modal de detalle no se puede marcar como visto sin confirmación (checkbox)",
+    "REABIERTO: \"Marcar todo\" de una temporada cuyos episodios no tienen fecha de estreno o la tienen futura debe requerir confirmación",
+    "REABIERTO (2ª): un ítem sin fecha de estreno (película o serie) recibe el mismo tratamiento visual que uno con fecha futura: estilo de rayas en tarjeta y lista",
+    "REABIERTO (2ª): un ítem sin fecha de estreno va al final de la lista en la ordenación por actividad (igual que uno con fecha futura)",
+    "REABIERTO (2ª): un ítem sin fecha de estreno muestra la etiqueta/badge \"Aún no estrenado/a\" (igual que uno con fecha futura)",
+    "REABIERTO (3ª): el air_date de la TEMPORADA del siguiente episodio se usa como fuente de verdad: si es null o futuro, la serie se considera no estrenada (rayas, relegación, badge) aunque no exista next_episode_to_air ni nextEpisodeAirDate",
+    "REABIERTO (3ª): el air_date del EPISODIO (del siguiente episodio del usuario) con valor null o futuro se usa como fuente de verdad para el tratamiento de no estrenado",
+    "REABIERTO (3ª): el air_date de la temporada se persiste en el ítem (o se consulta) y se mantiene actualizado con el refresco diario"
+  ],
+  "definition of done": [
+    "Análisis de la lógica actual de marcado como vista y manejo de fecha de estreno completado",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación del fix realizada (fecha de estreno vacía ⇒ ítem no estrenado ⇒ no marcar como vista, incluido el caso next_episode_to_air = null)",
+    "Validación QA aprobada (criterios de aceptación y casos borde cubiertos)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada (actualización del ADR 020 o nuevo ADR)",
+    "PR creada con 'Closes #27' en la descripción",
+    "Issue #27 label actualizada a su estado final"
+  ],
+  "plan": "Fix previo (PR #33): helper js/release.js (isUnreleasedDate + unreleasedConfirmMessage); flag awaitingRelease en alta; confirm unificado en marcado; isNextEpisodeUnreleased sin Boolean(airDate) en sorting.js; backfill en daily-check.js. PENDIENTE: extender la lógica para el caso next_episode_to_air = null consultando el airDate del episodio concreto (getSeasonEpisodes) en quick-actions y modal, y proteger el checkbox individual y \"Marcar todo\" en ui.js.",
+  "pr": {
+    "number": 36,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/36",
+    "title": "fix: episodios sin fecha de estreno no se marcan como vistos sin confirmación (issue #27)"
+  },
+  "previousPr": {
+    "number": 33,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/33",
+    "title": "fix: ítems sin fecha de estreno se tratan como no estrenados (issue #27)"
+  }
+}

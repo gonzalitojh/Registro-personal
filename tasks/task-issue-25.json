@@ -1,7 +1,7 @@
 {
   "title": "Problemas de actualización de cambios",
   "description": "En ocasiones, especialmente en el móvil, donde tengo añadida la web como una App Web, hay problemas con los nuevos cambios que se han efectuado. Estos cambios, si accedo a través del navegador si se pueden ver, así que probablemente sea un problema de almacenamiento en caché. Si hay alguna forma de solucionar esto, sería conveniente hacerlo.",
-  "status": "documented",
+  "status": "published",
   "issue": {
     "number": 25,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/25",

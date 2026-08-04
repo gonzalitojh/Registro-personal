@@ -4,19 +4,59 @@
 // como en ui.js (badges de episodios sin estrenar).
 // =============================================================
 
-import { todayISO } from "./dates.js";
+import { isUnreleasedDate } from "./release.js";
+
+// Información de emisión del siguiente episodio que le toca ver al
+// usuario: { season, episode, airDate, source } o null si se desconoce.
+// Precedencia documentada de fuentes:
+//   1. nextEpisodeToAir (TMDB en vivo) cuando coincide con el siguiente
+//      episodio del usuario (source "toAir").
+//   2. seasonAirDates[temporada] (refrescado a diario; null = temporada
+//      aún sin estrenar) cuando el episodio pertenece a esa temporada
+//      (source "season").
+//   3. nextEpisodeAirDate (backfill histórico persistido) (source "stored").
+// El tag `source` es solo informativo del predicado: nunca se persiste
+// (los paths que construyen objetos persistidos lo construyen sin tag).
+export function getNextEpisodeAirInfo(item) {
+  const ne = item.nextEpisode;
+  if (item.type !== "tv" || item.manual || !ne) return null;
+  const toAir = item.nextEpisodeToAir;
+  if (toAir && toAir.season === ne.season && toAir.episode === ne.episode) {
+    return { ...toAir, source: "toAir" };
+  }
+  const seasonAir = item.seasonAirDates && item.seasonAirDates[String(ne.season)];
+  if (seasonAir !== undefined) {
+    return { season: ne.season, episode: ne.episode, airDate: seasonAir, source: "season" };
+  }
+  const stored = item.nextEpisodeAirDate;
+  if (stored && stored.season === ne.season && stored.episode === ne.episode) {
+    return { ...stored, source: "stored" };
+  }
+  return null;
+}
 
 // Comprueba si el siguiente episodio que le toca ver al usuario
 // coincide con el próximo episodio que TMDB dice que aún no se ha
-// emitido.
+// emitido (o cuyo episodio guardado localmente no tiene fecha o la
+// tiene futura).
 export function isNextEpisodeUnreleased(item) {
-  if (item.type !== "tv" || !item.nextEpisode || !item.nextEpisodeToAir) return false;
-  return (
-    item.nextEpisodeToAir.season === item.nextEpisode.season &&
-    item.nextEpisodeToAir.episode === item.nextEpisode.episode &&
-    Boolean(item.nextEpisodeToAir.airDate) &&
-    item.nextEpisodeToAir.airDate > todayISO()
-  );
+  const info = getNextEpisodeAirInfo(item);
+  return !!info && isUnreleasedDate(info.airDate);
+}
+
+// Un ítem está "sin estrenar" si su siguiente contenido (estreno de la
+// película, siguiente episodio o premiere de la serie) no tiene fecha
+// oficial o la tiene futura. Las series manuales quedan excluidas.
+export function isItemUnreleased(item) {
+  if (item.manual) return false;
+  if (item.type === "movie") {
+    return !(item.watchLog && item.watchLog.length) && isUnreleasedDate(item.releaseDate);
+  }
+  if (item.type === "tv") {
+    if (!item.nextEpisode) return false; // completada: nunca "sin estrenar"
+    return item.awaitingRelease === true || isNextEpisodeUnreleased(item);
+  }
+  return false;
 }
 
 // Normaliza a un texto comparable tanto las fechas "YYYY-MM-DD" que
@@ -78,8 +118,8 @@ export function compareByDateDesc(a, b) {
 }
 
 export function compareByActivityDesc(a, b) {
-  const aBlocked = isNextEpisodeUnreleased(a);
-  const bBlocked = isNextEpisodeUnreleased(b);
+  const aBlocked = isItemUnreleased(a);
+  const bBlocked = isItemUnreleased(b);
   if (aBlocked !== bBlocked) return aBlocked ? 1 : -1;
   const da = getActivityOrAddedTime(a);
   const db = getActivityOrAddedTime(b);

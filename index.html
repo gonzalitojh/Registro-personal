@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260803" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260803" />
+  <link rel="stylesheet" href="css/styles.css?v=20260804" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260804" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -261,6 +261,12 @@
             </label>
           </div>
         </div>
+
+        <div class="settings-card">
+          <h3>Sincronización de datos</h3>
+          <p class="settings-desc">Actualiza las fichas con los datos más recientes de TMDB/Open Library: sagas, valoraciones, portadas y tráilers.</p>
+          <button type="button" class="btn btn--outline" id="btn-sync-now">Sincronizar ahora</button>
+        </div>
       </section>
     </div>
   </div>
@@ -271,6 +277,15 @@
     <div class="modal__card" role="dialog" aria-modal="true">
       <button id="modal-close" class="modal__close" aria-label="Cerrar">✕</button>
       <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Ventana de valoración emergente (issue #21) -->
+  <div id="rating-modal" class="modal modal--top hidden">
+    <div class="modal__backdrop" id="rating-modal-backdrop"></div>
+    <div class="modal__card modal__card--small" role="dialog" aria-modal="true" aria-label="Valorar ítem">
+      <button id="rating-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="rating-modal-content"></div>
     </div>
   </div>
 
@@ -300,7 +315,7 @@
 
   <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
-  <script type="module" src="js/app.js?v=20260803"></script>
+  <script type="module" src="js/app.js?v=20260804"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

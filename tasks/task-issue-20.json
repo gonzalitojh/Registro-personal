@@ -1,0 +1,26 @@
+{
+  "title": "Entorno de desarrollo (rama dev + despliegue Cloudflare Pages)",
+  "description": "Crear un entorno de desarrollo. Hacer una rama `dev` sobre la que se hagan las PR. Desplegar esa rama en algún entorno para poder ver las actualizaciones. Las opciones son: Vercel, Netlify, Cloudflare Pages, GitHub Actions. Se eligió Cloudflare Pages por el límite de despliegues.\n\nParte del usuario (hecha): rama `dev` creada en el remoto y sesión iniciada en Cloudflare Pages para el despliegue del entorno de desarrollo.\n\nParte del agente (esta tarea): a partir de ahora, TODAS las Pull Requests creadas por el agente deben apuntar a la rama `dev` como rama base (en lugar de `main`). El usuario promoverá `dev` a `main` cuando estime que la versión es estable.",
+  "status": "published",
+  "acceptance criteria": [
+    "El agente publisher crea las PR con rama base `dev` (no la rama por defecto del repositorio).",
+    "Las instrucciones del agente maestro SDD reflejan que las PR se hacen contra `dev` y que el usuario promueve `dev` a `main` cuando es estable.",
+    "Las ramas de feature se crean a partir de `dev` para que el diff de la PR contra `dev` sea limpio.",
+    "Se documenta el flujo de ramas (dev como rama de integración, main como rama estable) en un ADR.",
+    "La PR que cierre esta issue también debe apuntar a `dev`."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (configuración de los agentes actualizada).",
+    "Validación por agente QA superada.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado documentando la decisión.",
+    "PR creada contra `dev` con 'Closes #20' en la descripción.",
+    "Label de la issue #20 actualizado a su estado final."
+  ],
+  "issue": {
+    "number": 20,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/20",
+    "title": "Entorno de desarrollo"
+  }
+}

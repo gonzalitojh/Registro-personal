@@ -1005,16 +1005,17 @@
   margin-bottom: 0.3rem;
 }
 
-.item-card__upcoming--episode {
+.item-card__upcoming--unreleased {
   background: var(--ink);
   color: var(--paper);
 }
 
-/* Serie con el próximo episodio aún sin estrenar: rayas entre el color
-   de "Viendo" y el de "Abandonada", para que se distinga de un vistazo
-   sin necesitar leer la insignia. Va después de los colores de estado
-   para que gane sobre el fondo plano de item-card--en_curso, etc. */
-.item-card--episode-unreleased {
+/* Ítem sin estrenar (sin fecha de estreno o con fecha futura): rayas
+   entre el color de "Viendo" y el de "Abandonada", para que se
+   distinga de un vistazo sin necesitar leer la insignia. Va después
+   de los colores de estado para que gane sobre el fondo plano de
+   item-card--en_curso, etc. */
+.item-card--unreleased {
   background: repeating-linear-gradient(
     135deg,
     var(--bg-state-en_curso) 0px,
@@ -1023,7 +1024,7 @@
     var(--bg-state-abandonado) 28px
   );
 }
-.item-card--episode-unreleased .item-card__body {
+.item-card--unreleased .item-card__body {
   background: transparent;
 }
 
@@ -1076,10 +1077,10 @@
 .list-row--standby .list-row__content { background: var(--bg-state-standby); }
 .list-row--abandonado .list-row__content { background: var(--bg-state-abandonado); }
 
-/* Serie con el próximo episodio aún sin estrenar (vista de lista):
-   mismas rayas que en la cuadrícula. Va después de los colores de
-   estado para que gane sobre el fondo plano. */
-.list-row--episode-unreleased .list-row__content {
+/* Ítem sin estrenar (vista de lista): mismas rayas que en la
+   cuadrícula. Va después de los colores de estado para que gane sobre
+   el fondo plano. */
+.list-row--unreleased .list-row__content {
   background: repeating-linear-gradient(
     135deg,
     var(--bg-state-en_curso) 0px,
@@ -1363,6 +1364,65 @@
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 0.6rem;
+}
+
+
+/* =========================================================
+   Ventana de valoración emergente (issue #21): cabecera con
+   portada pequeña, línea de episodio, nota de comunidad y
+   picker de estrellas compacto
+   ========================================================= */
+
+.rating-modal__header {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.rating-modal__cover {
+  width: 52px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.rating-modal__info {
+  min-width: 0;
+}
+
+.rating-modal__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.15rem;
+  line-height: 1.2;
+}
+
+.rating-modal__subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.rating-modal__stars {
+  margin-bottom: 0.95rem;
+}
+
+/* Picker compacto para la ventana pequeña */
+.rating-picker--small button {
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+}
+
+.rating-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
 }
 
 
