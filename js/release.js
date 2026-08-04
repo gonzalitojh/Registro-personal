@@ -32,7 +32,12 @@ export function episodeUnreleasedMessage(title, season, episode, airDate) {
 // Mensaje de confirmación al marcar como visto un ítem sin estrenar.
 // Devuelve null cuando no aplica (manual, estrenado, sin coincidencia
 // de episodio siguiente, tipo no soportado).
-export function unreleasedConfirmMessage(item) {
+// airInfo (opcional): resultado de getNextEpisodeAirInfo (sorting.js)
+// con el tag `source`; se inyecta como parámetro para no crear un ciclo
+// de imports (release.js solo importa dates.js). Para series, si no se
+// pasa airInfo (o no coincide con el siguiente episodio) se devuelve
+// null: sin información no hay confirmación.
+export function unreleasedConfirmMessage(item, airInfo = null) {
   if (item.type === "movie") {
     if (item.manual) return null;
     if (!isUnreleasedDate(item.releaseDate)) return null;
@@ -48,18 +53,24 @@ export function unreleasedConfirmMessage(item) {
     // Las series manuales no tienen fechas reales de TMDB: se excluyen
     // de toda confirmación de "no estrenado".
     if (item.manual) return null;
-    const { nextEpisode, nextEpisodeToAir } = item;
-    if (!nextEpisode || !nextEpisodeToAir) return null;
-    if (
-      nextEpisodeToAir.season !== nextEpisode.season ||
-      nextEpisodeToAir.episode !== nextEpisode.episode
-    ) {
-      return null;
+    const { nextEpisode } = item;
+    if (!nextEpisode) return null;
+    const info =
+      airInfo && airInfo.season === nextEpisode.season && airInfo.episode === nextEpisode.episode
+        ? airInfo
+        : null;
+    if (!info) return null;
+    if (!isUnreleasedDate(info.airDate)) return null;
+    // Fuente "season": la temporada entera aún no está estrenada (su
+    // air_date es null o futura), aunque el episodio concreto exista.
+    if (info.source === "season") {
+      return `Según TMDB la temporada ${info.season} de «${item.title}» aún no está estrenada${
+        info.airDate ? ` (se estrena el ${formatDateEs(info.airDate)})` : " (sin fecha oficial)"
+      }. ¿Marcarlo igualmente como visto?`;
     }
-    if (!isUnreleasedDate(nextEpisodeToAir.airDate)) return null;
-    if (nextEpisodeToAir.airDate) {
+    if (info.airDate) {
       return `Según TMDB este episodio se estrena el ${formatDateEs(
-        nextEpisodeToAir.airDate
+        info.airDate
       )}. ¿Marcarlo igualmente como visto?`;
     }
     return `«${item.title}» no tiene fecha de estreno oficial en TMDB; suponemos que aún no está estrenado. ¿Marcarlo igualmente como visto?`;

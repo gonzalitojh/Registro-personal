@@ -8,6 +8,7 @@ import { startReading, finishReading, statusFromReadLog } from "./reading-log.js
 import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
 import { unreleasedConfirmMessage, episodeUnreleasedMessage } from "./release.js";
+import { getNextEpisodeAirInfo } from "./sorting.js";
 import { openRatingModal } from "./rating-modal.js";
 
 // Meta de temporadas: para series manuales devuelve una sola
@@ -139,13 +140,14 @@ async function quickMarkTv(item, ctx) {
     return;
   }
   const { season, episode } = item.nextEpisode;
-  // Confirmación base (nextEpisodeToAir presente y sin estrenar).
-  // Si no aplica y la serie no es manual, se consulta la temporada
-  // para verificar el estreno del episodio concreto: TMDB puede no
-  // devolver next_episode_to_air (p. ej. serie entre temporadas sin
-  // fecha anunciada) aunque el episodio no esté estrenado. Fail-open:
-  // si la API falla, se marca sin confirmación.
-  let confirmMsg = unreleasedConfirmMessage(item);
+  // Confirmación base (cualquier fuente: nextEpisodeToAir en vivo,
+  // seasonAirDates refrescado a diario o backfill persistido). Si no
+  // aplica y la serie no es manual, se consulta la temporada para
+  // verificar el estreno del episodio concreto: TMDB puede no devolver
+  // next_episode_to_air (p. ej. serie entre temporadas sin fecha
+  // anunciada) aunque el episodio no esté estrenado. Fail-open: si la
+  // API falla, se marca sin confirmación.
+  let confirmMsg = unreleasedConfirmMessage(item, getNextEpisodeAirInfo(item));
   let episodes = null;
   if (!confirmMsg && !item.manual && item.externalId) {
     try {
@@ -158,6 +160,22 @@ async function quickMarkTv(item, ctx) {
   }
   if (confirmMsg && !window.confirm(confirmMsg)) return;
   const seasonsMeta = await getSeasonsMetaFor(item, ctx);
+  // Refresco de las fechas de temporada (issue #27): si la meta recién
+  // consultada difiere de la persistida, se actualiza en memoria y se
+  // guarda fuego-y-olvido (mismo patrón que onUpdateNextEpisodeAirDate).
+  // Un fallo aquí no rompe la acción. Las series manuales no tienen
+  // fechas reales de TMDB: se excluyen.
+  if (!item.manual && seasonsMeta.length) {
+    const seasonAirDates = Object.fromEntries(
+      seasonsMeta.filter((s) => !s.manual).map((s) => [String(s.seasonNumber), s.airDate])
+    );
+    if (JSON.stringify(seasonAirDates) !== JSON.stringify(item.seasonAirDates)) {
+      item.seasonAirDates = seasonAirDates;
+      ctx
+        .updateItem(ctx.getCurrentUser().uid, "tv", item.id, { seasonAirDates })
+        .catch((err) => console.error("No se pudo guardar las fechas de temporada:", err));
+    }
+  }
   const newWatched = setEpisodeDate(item.watched, season, episode, todayISO());
 
   // Si el siguiente episodio (tras marcar este) sigue en la misma

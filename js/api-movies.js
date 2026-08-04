@@ -59,16 +59,12 @@ function mapTvResult(r) {
   };
 }
 
-// Lista de temporadas de una serie (nombre y nº de episodios de cada una),
-// más datos "en vivo" sobre el estado de emisión y el próximo episodio
-// (útiles para el aviso de "aún no estrenada"). Se ignoran los
-// "specials" (season_number 0) en la lista de temporadas a marcar.
-export async function getTvSeasonsMeta(tvId) {
-  const url = `${BASE_URL}/tv/${tvId}?api_key=${TMDB_API_KEY}&language=es-ES`;
-  const data = await fetchJson(url, { retries: 1 }).catch(() => {
-    throw new Error("No se pudo obtener la serie desde TMDB.");
-  });
-  return (data.seasons || [])
+// Normaliza la lista de temporadas que devuelve TMDB: se ignoran los
+// "specials" (season_number 0) y la fecha de emisión se normaliza a
+// null cuando TMDB no la anuncia (una temporada sin air_date NO está
+// estrenada; un null es información real, no un fallo de la API).
+function normalizeSeasons(seasons) {
+  return (seasons || [])
     .filter((s) => s.season_number > 0)
     .map((s) => ({
       seasonNumber: s.season_number,
@@ -76,6 +72,27 @@ export async function getTvSeasonsMeta(tvId) {
       episodeCount: s.episode_count,
       airDate: s.air_date || null,
     }));
+}
+
+// Mapa temporada -> fecha de emisión (o null si aún no tiene fecha
+// oficial): { "1": "2020-01-01", "2": null, ... }. Object.fromEntries
+// conserva los null, que son información real de "temporada sin
+// estrenar". Se persiste en el ítem y se refresca a diario.
+export function seasonAirDateMap(seasons) {
+  return Object.fromEntries(
+    normalizeSeasons(seasons).map((s) => [String(s.seasonNumber), s.airDate])
+  );
+}
+
+// Lista de temporadas de una serie (nombre y nº de episodios de cada una),
+// más datos "en vivo" sobre el estado de emisión y el próximo episodio
+// (útiles para el aviso de "aún no estrenada").
+export async function getTvSeasonsMeta(tvId) {
+  const url = `${BASE_URL}/tv/${tvId}?api_key=${TMDB_API_KEY}&language=es-ES`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => {
+    throw new Error("No se pudo obtener la serie desde TMDB.");
+  });
+  return normalizeSeasons(data.seasons);
 }
 
 // Episodios (número, nombre, fecha de emisión y valoración de la
@@ -192,6 +209,10 @@ export async function getTvExtraDetails(id) {
     communityRating: data.vote_count > 0 ? data.vote_average : null,
     trailerUrl: _extractTrailerUrl(data.videos),
     coverUrl: data.poster_path ? `${IMG_BASE}${data.poster_path}` : null,
+    // Fechas de emisión por temporada (null = temporada aún sin estrenar).
+    // Se persiste junto al ítem para poder avisar del "no estrenado"
+    // aunque TMDB deje de devolver next_episode_to_air.
+    seasonAirDates: seasonAirDateMap(data.seasons),
   };
 }
 
