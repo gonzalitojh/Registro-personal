@@ -31,6 +31,21 @@ export function isNextEpisodeUnreleased(item) {
   return !!info && isUnreleasedDate(info.airDate);
 }
 
+// Un ítem está "sin estrenar" si su siguiente contenido (estreno de la
+// película, siguiente episodio o premiere de la serie) no tiene fecha
+// oficial o la tiene futura. Las series manuales quedan excluidas.
+export function isItemUnreleased(item) {
+  if (item.manual) return false;
+  if (item.type === "movie") {
+    return !(item.watchLog && item.watchLog.length) && isUnreleasedDate(item.releaseDate);
+  }
+  if (item.type === "tv") {
+    if (!item.nextEpisode) return false; // completada: nunca "sin estrenar"
+    return item.awaitingRelease === true || isNextEpisodeUnreleased(item);
+  }
+  return false;
+}
+
 // Normaliza a un texto comparable tanto las fechas "YYYY-MM-DD" que
 // guardamos nosotros como los Timestamp de Firestore (addedAt), para
 // poder compararlos entre sí en el mismo orden.
@@ -90,8 +105,8 @@ export function compareByDateDesc(a, b) {
 }
 
 export function compareByActivityDesc(a, b) {
-  const aBlocked = isNextEpisodeUnreleased(a);
-  const bBlocked = isNextEpisodeUnreleased(b);
+  const aBlocked = isItemUnreleased(a);
+  const bBlocked = isItemUnreleased(b);
   if (aBlocked !== bBlocked) return aBlocked ? 1 : -1;
   const da = getActivityOrAddedTime(a);
   const db = getActivityOrAddedTime(b);

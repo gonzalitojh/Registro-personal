@@ -93,9 +93,12 @@ async function openMovieItem(item, ctx) {
   const reopen = () => openMovieItem(item, ctx);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
-    await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status });
+    // awaitingRelease se limpia siempre al marcar como vista: un ítem
+    // ya visto no puede seguir "sin estrenar" (idempotente).
+    await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status, awaitingRelease: false });
     item.watchLog = newLog;
     item.status = status;
+    item.awaitingRelease = false;
   }
 
   // Obtener watch providers (no crítico, si falla se muestra sin providers)
@@ -324,18 +327,23 @@ async function openTvItem(item, ctx) {
 
   async function persistWatched(newWatched) {
     const newProgress = computeProgress(seasonsMeta, newWatched);
+    // awaitingRelease se limpia siempre al marcar un episodio: una
+    // serie con episodios vistos no puede seguir "sin estrenar"
+    // (idempotente).
     await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
       watched: newWatched,
       status: newProgress.status,
       nextEpisode: newProgress.nextEpisode,
       firstWatchedAt: newProgress.firstWatchedAt,
       lastWatchedAt: newProgress.lastWatchedAt,
+      awaitingRelease: false,
     });
     item.watched = newWatched;
     item.status = newProgress.status;
     item.nextEpisode = newProgress.nextEpisode;
     item.firstWatchedAt = newProgress.firstWatchedAt;
     item.lastWatchedAt = newProgress.lastWatchedAt;
+    item.awaitingRelease = false;
     return newProgress;
   }
 

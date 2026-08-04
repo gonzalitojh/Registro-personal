@@ -6,7 +6,7 @@
 
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
-import { isNextEpisodeUnreleased, getNextEpisodeAirInfo } from "./sorting.js";
+import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
 import { normalizeEntry } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
@@ -203,19 +203,19 @@ function quickActionLabel(item) {
 }
 
 function upcomingBadge(item) {
-  if (item.awaitingRelease) {
-    const date = item.type === "movie" ? item.releaseDate : item.firstAirDate;
-    return `<div class="item-card__upcoming">Aún no estrenada${
-      date ? ` · ${formatDateEs(date)}` : ""
-    }</div>`;
+  if (!isItemUnreleased(item)) return "";
+  const cls = "item-card__upcoming item-card__upcoming--unreleased";
+  if (item.type === "movie") {
+    return `<div class="${cls}">Aún no estrenada${item.releaseDate ? ` · ${formatDateEs(item.releaseDate)}` : ""}</div>`;
   }
-  if (isNextEpisodeUnreleased(item)) {
-    const { season, episode, airDate } = getNextEpisodeAirInfo(item);
-    return `<div class="item-card__upcoming item-card__upcoming--episode">
-      Aún no estrenado · T${season}E${episode}${airDate ? ` · ${formatDateEs(airDate)}` : ""}
-    </div>`;
+  if (item.awaitingRelease && item.nextEpisode) { // serie sin estrenar (premiere)
+    return `<div class="${cls}">Aún no estrenada${item.firstAirDate ? ` · ${formatDateEs(item.firstAirDate)}` : ""}</div>`;
   }
-  return "";
+  // Serie en curso con el próximo episodio sin estrenar. isItemUnreleased
+  // garantiza que hay info, pero por seguridad si no la hay no se pinta.
+  const info = getNextEpisodeAirInfo(item);
+  if (!info) return "";
+  return `<div class="${cls}">Aún no estrenado · T${info.season}E${info.episode}${info.airDate ? ` · ${formatDateEs(info.airDate)}` : ""}</div>`;
 }
 
 function renderGrid(gridEl, items, onOpen) {
@@ -226,7 +226,7 @@ function renderGrid(gridEl, items, onOpen) {
       const communityBadge = communityRatingHtml(item);
       const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
-      const blockedClass = isNextEpisodeUnreleased(item) ? " item-card--episode-unreleased" : "";
+      const blockedClass = isItemUnreleased(item) ? " item-card--unreleased" : "";
       return `
       <article class="item-card item-card--${item.status}${blockedClass}">
         <div class="item-card__cover-wrap">
@@ -301,7 +301,7 @@ function renderList(gridEl, items, { onOpen, onQuickAction }) {
   gridEl.innerHTML = items
     .map((item, index) => {
       const progress = progressLine(item);
-      const blockedClass = isNextEpisodeUnreleased(item) ? " list-row--episode-unreleased" : "";
+      const blockedClass = isItemUnreleased(item) ? " list-row--unreleased" : "";
       return `
       <div class="list-row list-row--${item.status}${blockedClass}" data-index="${index}">
         <div class="list-row__swipe-bg">✓ ${escapeHtml(quickActionLabel(item))}</div>

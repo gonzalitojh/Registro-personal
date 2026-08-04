@@ -8,6 +8,8 @@ Agosto 2026
 
 **Nota (alcance ampliado por ADR-023):** este documento describe el fix original de la issue #27 (PR #33). Tras la reapertura de la issue —caso `next_episode_to_air = null` en series entre temporadas sin fecha anunciada (p. ej. «Dune: La Profecía» T2)—, el alcance aquí definido queda **ampliado/supersedido** por el [ADR-023](adr-023-episode-unreleased-no-date.md): los checkboxes de episodios individuales, el botón "Marcar todo" de temporada y el badge cuando TMDB no devuelve `next_episode_to_air` ahora SÍ están cubiertos.
 
+**Nota (clases CSS renombradas y tratamiento uniforme por ADR-024):** tras la 2ª reapertura de la issue #27 (tratamiento uniforme en todos los niveles: rayas, relegación al final y badge "Aún no estrenado/a" iguales para ítems sin fecha y con fecha futura), las clases CSS citadas en la sección 4 (`item-card--episode-unreleased` / `list-row--episode-unreleased`) se renombraron a `item-card--unreleased` / `list-row--unreleased`, y el tratamiento visual y de ordenación pasa a cubrir **cualquier** ítem no estrenado —películas incluidas— vía el predicado unificado `isItemUnreleased`, no solo series con episodio sin estrenar. Ver [adr-024-unreleased-uniform-treatment.md](adr-024-unreleased-uniform-treatment.md).
+
 ## Contexto
 
 TMDB devuelve la fecha de estreno vacía para películas/episodios sin fecha oficial, y `js/api-movies.js` la normaliza a `null` (`releaseDate: data.release_date || null`). El frontend controlaba el caso de "no estrenado" con el patrón `if (fecha && fecha > todayISO())` en todos los puntos de marcado como visto: al ser `null` falsy, un ítem sin fecha se consideraba **ya estrenado** y podía marcarse como visto **sin ningún aviso**, aunque en realidad no se sabía si había salido.

@@ -12,7 +12,7 @@
 // cooldown de 30 minutos persistido en profile.lastManualSyncAt.
 // =============================================================
 
-import { isNextEpisodeUnreleased } from "./sorting.js";
+import { isNextEpisodeUnreleased, getNextEpisodeAirInfo } from "./sorting.js";
 import { getNotificationPrefs } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
 import { normalizeEntry } from "./tv-progress.js";
@@ -127,6 +127,27 @@ function buildBookUpdates(book, description) {
   return { description };
 }
 
+// Rellena nextEpisodeAirDate cuando ni nextEpisodeToAir ni el dato
+// guardado coinciden con el siguiente episodio del usuario (p. ej.
+// serie entre temporadas sin fecha anunciada). Fail-open: si la
+// consulta de la temporada falla, no se aborta la pasada.
+async function ensureNextEpisodeAirDate(show, fresh, getSeasonEpisodes) {
+  if (show.manual || !show.nextEpisode) return null;
+  if (getNextEpisodeAirInfo({ ...show, nextEpisodeToAir: fresh.nextEpisodeToAir })) return null;
+  try {
+    const episodes = await getSeasonEpisodes(show.externalId, show.nextEpisode.season);
+    const ep = episodes.find((e) => e.episodeNumber === show.nextEpisode.episode);
+    return {
+      season: show.nextEpisode.season,
+      episode: show.nextEpisode.episode,
+      airDate: ep ? ep.airDate : null,
+    };
+  } catch (err) {
+    console.error("No se pudo verificar el estreno del siguiente episodio:", show.title, err);
+    return null;
+  }
+}
+
 /**
  * Revisa todos los ítems no manuales y refresca sus metadatos desde
  * TMDB / Open Library, además de la lógica histórica de avisos
@@ -158,6 +179,7 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     getUserProfile,
     getMovieDetails,
     getTvExtraDetails,
+    getSeasonEpisodes,
     getOpenLibraryDescription,
     todayISO,
     formatDateEs,
@@ -239,6 +261,16 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
         const wasEpisodeBlocked = isNextEpisodeUnreleased(show);
         const fresh = await getTvExtraDetails(show.externalId);
         const updates = buildTvUpdates(show, fresh);
+
+        // Backfill de nextEpisodeAirDate: si ni next_episode_to_air ni
+        // el dato guardado coinciden con el siguiente episodio (serie
+        // entre temporadas), se consulta la temporada para conocer su
+        // fecha (o su ausencia) y poder seguir avisando de "no
+        // estrenado". Fail-open: nunca aborta la pasada ni incrementa
+        // consecutiveFailures.
+        const airInfo = await ensureNextEpisodeAirDate(show, fresh, getSeasonEpisodes);
+        if (airInfo) updates.nextEpisodeAirDate = airInfo;
+
         let justPremiered = false;
 
         if (prefs.series_premiere !== false && show.awaitingRelease && fresh.firstAirDate && fresh.firstAirDate <= today) {
