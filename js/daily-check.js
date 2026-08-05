@@ -16,6 +16,7 @@ import { isNextEpisodeUnreleased, getNextEpisodeAirInfo } from "./sorting.js";
 import { getNotificationPrefs } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
 import { normalizeEntry } from "./tv-progress.js";
+import { subtractDays } from "./dates.js";
 
 // Cooldown entre sincronizaciones manuales (30 minutos).
 const MANUAL_SYNC_COOLDOWN_MS = 30 * 60 * 1000;
@@ -44,6 +45,32 @@ function hasAnyWatchedEpisode(show) {
     }
   }
   return false;
+}
+
+// Días sin actividad (visualización o estreno) tras los cuales una serie
+// en curso pasa automáticamente a standby (issue #48).
+const AUTO_STANDBY_DAYS = 365;
+
+// ¿Debe la serie pasar automáticamente a standby?
+// - Solo status "en_curso".
+// - Regla 1: si el próximo episodio está sin estrenar (fecha futura o sin
+//   fecha), la serie está "esperando nuevos episodios": NO se mueve.
+// - Regla 2: si la fecha más actual entre el último estreno (airDate del
+//   próximo episodio ya emitido) y la última visualización (lastWatchedAt)
+//   está dentro del último año, hay actividad: NO se mueve.
+// - Si no hay ninguna fecha conocida, no se mueve (conservador).
+// - Comparaciones de strings "YYYY-MM-DD" (formato canónico del proyecto).
+export function shouldAutoStandby(show, today) {
+  if (!show || show.status !== "en_curso") return false;
+  if (isNextEpisodeUnreleased(show)) return false;
+  const info = getNextEpisodeAirInfo(show);
+  const lastAirDate = info && info.airDate ? info.airDate : null;
+  const lastWatched = show.lastWatchedAt || null;
+  if (!lastAirDate && !lastWatched) return false;
+  let activity = lastAirDate;
+  if (!activity || (lastWatched && lastWatched > activity)) activity = lastWatched;
+  const threshold = subtractDays(today, AUTO_STANDBY_DAYS);
+  return activity <= threshold;
 }
 
 // Ejecuta fn sobre cada ítem con un pool de `limit` promesas
@@ -328,6 +355,19 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
           updates.awaitingRelease = true;
         }
 
+        // Auto-standby por inactividad (issue #48): evaluado con los datos
+        // frescos de esta pasada (incluido el backfill recién calculado).
+        const evaluatedShow = {
+          ...show,
+          nextEpisodeToAir: fresh.nextEpisodeToAir,
+          seasonAirDates: fresh.seasonAirDates,
+          ...(airInfo ? { nextEpisodeAirDate: airInfo } : {}),
+        };
+        if (shouldAutoStandby(evaluatedShow, today)) {
+          updates.status = "standby";
+          updates.autoStandbyAt = today;
+        }
+
         if (Object.keys(updates).length) {
           await updateItem(user.uid, "tv", show.id, updates);
         }
@@ -344,6 +384,21 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
       }
     });
     if (aborted) return { aborted: true };
+
+    // Series manuales en curso: mismo auto-standby, evaluado solo con datos
+    // guardados (no hay datos TMDB). Sin red. Fail-open: un error de
+    // escritura no aborta la pasada ni cuenta como fallo de API.
+    const manualShows = allTv.filter((s) => s.manual && s.status === "en_curso");
+    for (const show of manualShows) {
+      if (aborted) break;
+      try {
+        if (shouldAutoStandby(show, today)) {
+          await updateItem(user.uid, "tv", show.id, { status: "standby", autoStandbyAt: today });
+        }
+      } catch (err) {
+        console.error("No se pudo pausar automáticamente", show.title, err);
+      }
+    }
 
     // Libros: refresco de sinopsis (solo si la nueva es no vacía).
     const books = allBooks.filter((b) => !b.manual && b.externalId && b.externalId.startsWith("/works/"));
