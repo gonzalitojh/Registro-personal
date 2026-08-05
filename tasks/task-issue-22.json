@@ -1,10 +1,11 @@
 {
   "title": "Visualización de información en la búsqueda (issue #22)",
-  "description": "Al buscar una nueva serie, película o libro para añadir, se debe permitir pulsar sobre el ítem en cuestión para ver su información. Como si estuviese ya añadida en la colección. Actualmente los resultados de búsqueda (renderSearchResults en ui.js) solo muestran portada, título, año y un botón \"Añadir\"; no hay forma de previsualizar la información del ítem (sinopsis, duración, reparto, valoración de comunidad, etc.) antes de añadirlo.",
-  "status": "review",
+  "description": "Al buscar una nueva serie, película o libro para añadir, se debe permitir pulsar sobre el ítem en cuestión para ver su información. Como si estuviese ya añadida en la colección. Actualmente los resultados de búsqueda (renderSearchResults en ui.js) solo muestran portada, título, año y un botón \"Añadir\"; no hay forma de previsualizar la información del ítem (sinopsis, duración, reparto, valoración de comunidad, etc.) antes de añadirlo.\n\nV2 (feedback del usuario en comentario de la issue): ampliar la información de la vista previa:\n- Para las series se debe ver también las temporadas y episodios que tiene.\n- Para los libros se debe ver el número de páginas que tiene.",
+  "status": "documented",
   "pr": {
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/61",
-    "number": 61
+    "number": 61,
+    "note": "PR #61 fusionada (vista previa básica). V2: feedback del usuario con temporadas/episodios en series y páginas en libros."
   },
   "acceptance criteria": [
     "Pulsar sobre un resultado de búsqueda (película, serie o libro) abre una vista previa con su información",
@@ -13,7 +14,9 @@
     "Desde la vista previa se puede añadir el ítem al registro (mismo flujo que el botón Añadir) y cerrar",
     "Si el ítem ya está añadido, la vista previa lo indica y el botón Añadir aparece deshabilitado",
     "Funciona en móvil, tablet y escritorio sin scroll horizontal ni textos desbordados",
-    "No se rompe la funcionalidad existente (búsqueda, alta, modales)"
+    "No se rompe la funcionalidad existente (búsqueda, alta, modales)",
+    "V2: la vista previa de una serie muestra sus temporadas y el nº de episodios de cada una (y total)",
+    "V2: la vista previa de un libro muestra el número de páginas (si el resultado lo trae)"
   ],
   "definition of done": [
     "renderSearchResults soporta apertura de vista previa por resultado",
@@ -21,6 +24,7 @@
     "Enriquecimiento con getMovieDetails/getTvExtraDetails/getOpenLibraryDescription sin bloquear",
     "Botón Añadir dentro de la vista previa conectado al flujo de alta existente",
     "CSS responsive añadido (sin scroll horizontal en la página)",
+    "V2: temporadas/episodios visibles en preview de series (datos de TMDB vía getTvSeasonsMeta) y páginas visibles en preview de libros",
     "Documentación ADR del cambio completada",
     "Issue #22 label actualizada a su estado final y PR creado con \"Closes #22\" contra dev"
   ],
