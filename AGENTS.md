@@ -7,7 +7,15 @@ continuar.
 
 ## Reglas generales
 
-### 1. Responsividad obligatoria
+### 1. PRs SIEMPRE contra `dev` (nunca contra `main`)
+
+- Todas las Pull Requests se crean contra la rama de integración `dev`.
+- Prohibido crear PRs contra `main` (o pushear directamente a `main`) en
+  cualquier circunstancia. El único que promueve `dev` a `main` es el usuario,
+  cuando considere que la versión es estable.
+- El publisher debe aplicar `--base dev` automáticamente al crear cada PR.
+
+### 2. Responsividad obligatoria
 
 La web debe verse correctamente en ordenador, tablet y móvil, en cualquier
 ancho de pantalla.
