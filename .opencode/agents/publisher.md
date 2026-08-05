@@ -74,7 +74,7 @@ Closes #18
 <link to ADR if one was created>
 
 ### 4. Create the PR
-Run: `PR_JSON=$(gh pr create --base dev --title "<title>" --body "<body>" --json number,url -q '{n:.number,u:.url}')` y extrae el número (`python3 -c "import json,sys;d=json.loads(sys.argv[1]);print(d['n'])" <<< "$PR_JSON"`).
+Run: `PR_URL=$(gh pr create --base dev --title "<title>" --body "<body>")` — gh imprime la URL de la PR en stdout. Obtén el número con `gh pr view "$PR_URL" --json number -q .number`. NOTA: `gh pr create` NO soporta `--json` (al menos hasta gh 2.45); no uses ese flag. Si el body es muy largo, usa `--body-file <fichero>`.
 
 If `gh` is not installed or the command fails, report the error clearly.
 
