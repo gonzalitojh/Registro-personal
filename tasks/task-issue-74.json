@@ -1,7 +1,7 @@
 {
   "title": "Actualización del sistema de labels de issues (esquema status: * + label ai + cierre al promover dev→main)",
   "description": "Al completar una PR, la issue asociada no está ni marcándose como ai-done ni cerrándose.\n\nAdemás, el usuario ha cambiado las etiquetas. Ahora en lugar de ai-todo, ai-blocked, ai-in-progress, ai-needs-review y ai-done, son todas status: todo, status: blocked, status: in-progress, status: needs-review y status: done y además, hay una etiqueta ai para marcar aquellas issues que debe abordar el agente.\n\nREQUISITO DEL USUARIO (ampliación): NO se debe cerrar la issue ni cambiarla a 'status: done' cuando se haga la PR. En su lugar, crear un workflow (GitHub Action) que se active ÚNICAMENTE cuando el usuario haga un merge de dev a main: buscará todas las Issues con la label 'status: needs-review', les cambiará la label a 'status: done' y las cerrará automáticamente. El workflow actual issue-done-on-merge.yml (que cierra al fusionar la PR en dev) debe ELIMINARSE.\n\nNota del master (análisis): el esquema antiguo (ai-*) se usa en scripts/gh-issue.sh, .github/workflows/issue-done-on-merge.yml, .opencode/agents/sdd-master.md, .opencode/agents/publisher.md, .opencode/agents/qa-reviewer.md y .opencode/command/issues.md. Las labels reales en el repo ya son: 'status: todo|in-progress|needs-review|blocked|done', 'ai' (marcador de issues del agente), 'type: *' y 'priority: *'. El manual de usuario no menciona issues (sin cambios allí).",
-  "status": "documented",
+  "status": "review",
   "no_closes": true,
   "acceptance criteria": [
     "Existe un workflow nuevo (.github/workflows/issues-done-on-main.yml) que se activa SOLO cuando hay un push/merge sobre main (promoción de dev a main) y opcionalmente por workflow_dispatch manual; NO se activa al fusionar PRs en dev",
@@ -27,5 +27,12 @@
     "number": 74,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/74",
     "title": "Actualización issues"
+  },
+  "pr": {
+    "number": 77,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/77",
+    "title": "[bug] Migración de labels de issues a status: * + cierre al promover dev→main (issue #74)",
+    "branch": "fix/issue-74-labels-status",
+    "commit": "0dabad3"
   }
 }
