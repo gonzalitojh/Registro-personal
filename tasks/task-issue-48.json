@@ -1,0 +1,30 @@
+{
+  "title": "Cambio de estado de series automático (Standby por inactividad)",
+  "description": "Issue #48: Pasar automáticamente a _Standby_ las series cuyo último episodio visto fue hace más de un año. Verificado: la funcionalidad NO está implementada actualmente (los cambios de estado son siempre manuales; daily-check.js solo refresca metadatos y avisa de estrenos).\n\nReglas de la issue:\n- Si la serie está esperando nuevos episodios para estrenar, NO se debe mover (aunque no tenga fecha de estreno todavía).\n- Si la serie ya ha estrenado nuevos episodios, pero estos se estrenaron hace menos de un año, NO se debe mover.\n- Criterio: coger la fecha más actual entre la fecha de estreno [del último episodio] y la fecha de última visualización para comprobar si hay actividad en el último año.\n\nDecisiones de diseño (documentar en ADR):\n- Solo aplica a series con status 'en_curso' (estados pendiente/completado/standby/abandonado no se tocan; 'standby' ya está pausado y 'en_curso' es el caso de uso: series que se empezaron y se dejaron de ver).\n- La evaluación se hace dentro de la comprobación diaria existente (daily-check.js), usando los datos frescos de TMDB de la pasada (nextEpisodeToAir / seasonAirDates frescos) para las series no manuales, y los datos guardados para las series manuales.\n- Fecha de referencia: max(airDate del próximo episodio ya emitido según getNextEpisodeAirInfo, lastWatchedAt). Si no hay ninguna fecha conocida, no mover (conservador).\n- Sin notificación extra: el cambio es visible en la lista (el filtro 'Viendo' lo oculta; el usuario lo ve al filtrar por Standby).",
+  "status": "documented",
+  "acceptance criteria": [
+    "Las series con status 'en_curso' sin episodios vistos en el último año pasan automáticamente a 'standby'.",
+    "No se mueven series cuyo próximo episodio está sin estrenar (fecha futura o sin fecha): 'esperando nuevos episodios'.",
+    "No se mueven series que han estrenado nuevos episodios en el último año (fecha de estreno del último episodio dentro del año).",
+    "La fecha más actual entre (fecha de estreno del último episodio, fecha de última visualización) determina si hay actividad en el último año.",
+    "El cambio se ejecuta dentro de la comprobación diaria (checkForUpdates) sin peticiones extra a la API.",
+    "No se tocan las series con status pendiente, completado, standby o abandonado.",
+    "El manual de usuario (docs/manual-de-usuario.md) se actualiza documentando el comportamiento.",
+    "ADR creado documentando la decisión."
+  ],
+  "definition of done": [
+    "Planificación completada",
+    "Implementación completada",
+    "Validación contra criterios de aceptación (QA)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado (docs/adr-XXX-auto-standby.md) con 'Related issue: #48'",
+    "Manual de usuario actualizado",
+    "PR creada contra dev con 'Closes #48' en la descripción",
+    "Issue #48 label actualizado a su estado final"
+  ],
+  "issue": {
+    "number": 48,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/48",
+    "title": "Cambio de estado de series automático"
+  }
+}

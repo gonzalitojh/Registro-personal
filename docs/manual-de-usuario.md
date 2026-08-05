@@ -98,11 +98,16 @@ color sobre la portada):
 | **Pendiente** | La has añadido pero todavía no has visto ningún episodio. |
 | **Viendo** | Has visto al menos un episodio. |
 | **Vista** | Has marcado todos los episodios. |
-| **Standby** | La has pausado tú; tu progreso se conserva. |
+| **Standby** | La has pausado tú, o la web la ha pausado automáticamente por inactividad; tu progreso se conserva. |
 | **Abandonada** | La has abandonado tú; tu progreso también se conserva. |
 
 Una serie **«aún no estrenada»** muestra un aviso con su fecha de estreno
 (y la del próximo episodio si está en emisión).
+
+Si una serie que estás viendo lleva más de un año sin que veas ningún
+episodio ni se estrene ninguno nuevo, la web la pasa sola a Standby (en la
+comprobación diaria). Puedes retomarla cuando quieras desde su ficha; no se
+pierde nada.
 
 ### 4.2 Añadir una serie
 
