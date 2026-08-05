@@ -634,15 +634,25 @@ button {
 }
 
 .modal__close {
-  position: absolute;
+  /* Sticky: el padre .modal__card es el scroll container, así la ✕
+     queda visible en todo momento al hacer scroll dentro del modal.
+     Al estar en flujo, en reposo no se superpone al contenido
+     (corrige el solapamiento latente con títulos largos del header).
+     Issue #26. */
+  position: sticky;
   top: 0.7rem;
   right: 0.7rem;
-  background: transparent;
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  background: var(--paper); /* chip del color del card: tapa limpio el
+                               contenido que pasa por debajo al scrollear */
   border: none;
   font-size: 1.1rem;
   color: var(--ink-soft);
   line-height: 1;
   padding: 0.3rem;
+  border-radius: var(--radius);
 }
 .modal__close:hover {
   color: var(--ink);
