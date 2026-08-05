@@ -70,16 +70,16 @@ export function refreshSearchAddButtons(ctx) {
   const resultsTv = document.getElementById("search-tv-results");
   const resultsBooks = document.getElementById("search-books-results");
   if (lastMoviesResults.length) {
-    ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), (item, btn) => handleAdd(item, btn, ctx));
+    ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), (item, btn) => handleAdd(item, btn, ctx), null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
   }
   if (lastTvResults.length) {
-    ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), (item, btn) => handleAdd(item, btn, ctx));
+    ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), (item, btn) => handleAdd(item, btn, ctx), null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
   }
   if (lastBookResults.length) {
     const ids = existingIdsFor("books", ctx);
     const keys = existingBookKeys(ctx);
     const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
-    ui.renderSearchResults(resultsBooks, lastBookResults, ids, (item, btn) => handleAdd(item, btn, ctx), bookCheck);
+    ui.renderSearchResults(resultsBooks, lastBookResults, ids, (item, btn) => handleAdd(item, btn, ctx), bookCheck, (item, added) => openSearchPreviewFromResults(item, added, ctx));
   }
 }
 
@@ -118,10 +118,12 @@ async function doAddBook(item, btn, ctx, choices) {
     await addItem(ctx.getCurrentUser().uid, "book", draft);
     ui.closeModal();
     ui.showToast(`«${item.title}» añadido a tu registro.`);
+    return true;
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
+    return false;
   }
 }
 
@@ -144,11 +146,10 @@ async function handleAdd(item, btn, ctx) {
 
   // Ruta rápida: sin opciones que elegir (o fuente Open Library con una portada).
   if (item.type === "book") {
-    await doAddBook(item, btn, ctx, {
+    return await doAddBook(item, btn, ctx, {
       coverUrl: item.coverUrl,
       description: item.description || "",
     });
-    return;
   }
 
   // --- Películas / series (sin cambios) ---
@@ -198,11 +199,67 @@ async function handleAdd(item, btn, ctx) {
 
     await addItem(ctx.getCurrentUser().uid, item.type, draft);
     ui.showToast(`«${item.title}» añadido a tu registro.`);
+    return true;
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
+    return false;
   }
+}
+
+/* ---------- Vista previa de resultados de búsqueda (issue #22) ---------- */
+
+// Carga los detalles ampliados de un resultado de búsqueda para la
+// vista previa. Devuelve {} si no hay nada que enriquecer o si falla
+// la llamada a la API (nunca lanza).
+async function enrichSearchItem(item) {
+  if (item.type === "movie") {
+    try {
+      return await getMovieDetails(item.externalId);
+    } catch (err) {
+      return {};
+    }
+  }
+  if (item.type === "tv") {
+    try {
+      return await getTvExtraDetails(item.externalId);
+    } catch (err) {
+      return {};
+    }
+  }
+  // Libro: solo sinopsis, y únicamente para fuentes Open Library
+  // ("/works/...") que aún no la traigan en el resultado de búsqueda.
+  if (item.externalId && item.externalId.startsWith("/works/") && !item.description) {
+    try {
+      return { description: await getOpenLibraryDescription(item.externalId) };
+    } catch (err) {
+      return {};
+    }
+  }
+  return {};
+}
+
+// Abre la vista previa de un resultado de búsqueda. Recalcula `added`
+// con el estado actual del ctx como defensa frente a cambios entre el
+// render y el click (el grupo se mapea a plural porque ctx usa las
+// claves "movies"/"tv"/"books").
+function openSearchPreviewFromResults(item, added, ctx) {
+  const currentAdded =
+    item.type === "book"
+      ? isBookAlreadyAdded(item, existingIdsFor("books", ctx), existingBookKeys(ctx))
+      : existingIdsFor(item.type === "movie" ? "movies" : "tv", ctx).has(item.externalId);
+
+  ui.openSearchPreviewModal(item, {
+    added: currentAdded,
+    onAdd: async (item, btn) => {
+      const ok = await handleAdd(item, btn, ctx);
+      // closeModal es idempotente: los libros ya cerraron en doAddBook
+      if (ok) ui.closeModal();
+      return ok;
+    },
+    onEnrich: enrichSearchItem,
+  });
 }
 
 /* ---------- Alta manual ---------- */
@@ -262,7 +319,7 @@ export function setupSearch(ctx) {
       const result = await apiSearchMovies(query, page);
       lastMoviesResults = page === 1 ? result.items : [...lastMoviesResults, ...result.items];
       searchState.movies = { query, page, hasMore: result.hasMore };
-      ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), onAdd);
+      ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), onAdd, null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
       toggleResultsToolbar("movies", result.hasMore, lastMoviesResults.length > 0);
     } catch (err) {
       ui.showToast(err.message);
@@ -274,7 +331,7 @@ export function setupSearch(ctx) {
       const result = await apiSearchTv(query, page);
       lastTvResults = page === 1 ? result.items : [...lastTvResults, ...result.items];
       searchState.tv = { query, page, hasMore: result.hasMore };
-      ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), onAdd);
+      ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), onAdd, null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
       toggleResultsToolbar("tv", result.hasMore, lastTvResults.length > 0);
     } catch (err) {
       ui.showToast(err.message);
@@ -289,7 +346,7 @@ export function setupSearch(ctx) {
       const ids = existingIdsFor("books", ctx);
       const keys = existingBookKeys(ctx);
       const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
-      ui.renderSearchResults(resultsBooks, lastBookResults, ids, onAdd, bookCheck);
+      ui.renderSearchResults(resultsBooks, lastBookResults, ids, onAdd, bookCheck, (item, added) => openSearchPreviewFromResults(item, added, ctx));
       toggleResultsToolbar("books", result.hasMore, lastBookResults.length > 0);
     } catch (err) {
       ui.showToast(err.message);

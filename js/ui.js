@@ -108,7 +108,9 @@ export function setAuthError(message) {
 
 // customCheck: función opcional (item) => boolean para detectar si
 // un libro ya está añadido por título+autor (cruce entre fuentes).
-export function renderSearchResults(container, results, existingIds, onAdd, customCheck) {
+// onPreview: función opcional (item, added) => void que abre la vista
+// previa de información al pulsar sobre la tarjeta (issue #22).
+export function renderSearchResults(container, results, existingIds, onAdd, customCheck, onPreview) {
   if (!results.length) {
     container.innerHTML = `<p class="empty-state" style="margin:0">Sin resultados.</p>`;
     return;
@@ -123,8 +125,11 @@ export function renderSearchResults(container, results, existingIds, onAdd, cust
         r.type === "book" && r.editionsCount > 1
           ? `<span class="result-card__editions">${r.editionsCount} eds.</span>`
           : "";
+      const cardAttrs = onPreview
+        ? `data-index="${index}" role="button" tabindex="0" aria-label="Ver información de ${escapeHtml(r.title)}"`
+        : "";
       return `
-      <article class="result-card">
+      <article class="result-card" ${cardAttrs}>
         <img class="result-card__cover" loading="lazy"
              src="${r.coverUrl || PLACEHOLDER_COVER}" alt="" />
         <div class="result-card__body">
@@ -146,6 +151,135 @@ export function renderSearchResults(container, results, existingIds, onAdd, cust
       onAdd(item, btn);
     });
   });
+
+  if (onPreview) {
+    container.querySelectorAll(".result-card").forEach((card) => {
+      const openPreview = () => {
+        const item = results[Number(card.dataset.index)];
+        const added = customCheck ? customCheck(item) : existingIds.has(item.externalId);
+        onPreview(item, added);
+      };
+      card.addEventListener("click", (e) => {
+        // El botón Añadir (si está habilitado) gestiona su propio click;
+        // un botón deshabilitado sí deja pasar el click a la tarjeta.
+        const btn = e.target.closest("button");
+        if (btn && !btn.disabled) return;
+        openPreview();
+      });
+      card.addEventListener("keydown", (e) => {
+        // Si el foco está en el botón Añadir, el botón gestiona su
+        // propia tecla (Enter/Space dispara su click, no la preview)
+        if (e.target.closest("button")) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openPreview();
+        }
+      });
+    });
+  }
+}
+
+/* ---------- Vista previa de resultados de búsqueda (issue #22) ---------- */
+
+// Muestra la información de un resultado de búsqueda en el modal de
+// detalle, como si ya estuviese añadido a la colección. El botón
+// "Añadir" delega en onAdd (que devuelve true si el alta fue exitosa,
+// para que el llamador cierre el modal). Si se pasa onEnrich, se
+// cargan los detalles ampliados (duración, reparto, sinopsis, rating,
+// tráiler) sin re-renderizar la estructura del modal.
+export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null } = {}) {
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+  const metaLine =
+    item.type === "book"
+      ? [item.author, item.year, item.pages ? `${item.pages} págs.` : null].filter(Boolean).join(" · ")
+      : [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
+  const editionsNote =
+    item.type === "book" && item.editionsCount > 1
+      ? `<p class="book-confirm__editions">${item.editionsCount} ediciones — al añadir podrás elegir portada</p>`
+      : "";
+  const isBook = item.type === "book";
+
+  content.innerHTML = `
+    <div class="modal-detail__header">
+      <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div>
+        <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
+        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
+      </div>
+    </div>
+    ${editionsNote}
+    <div id="preview-details">
+      ${extraInfoHtml(item)}
+      ${onEnrich ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
+    </div>
+    ${isBook ? "" : `${communityRatingDisplay(item)}${trailerButtonHtml(item)}`}
+    <div class="modal-actions">
+      <button class="btn btn--outline" id="btn-preview-close">Cerrar</button>
+      <button class="btn ${isBook ? "btn--accent-books" : "btn--accent-media"}"
+              id="btn-preview-add" ${added ? "disabled" : ""}>
+        ${added ? "Ya añadido" : "Añadir"}
+      </button>
+    </div>
+  `;
+
+  content.querySelector("#btn-preview-close").addEventListener("click", closeModal);
+
+  const addBtn = content.querySelector("#btn-preview-add");
+  if (onAdd && !added) {
+    addBtn.addEventListener("click", () => onAdd(item, addBtn));
+  }
+
+  // Patrón estándar de apertura del proyecto
+  modal._previousActiveElement = document.activeElement;
+  modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
+
+  if (onEnrich) {
+    const previewDetailsEl = content.querySelector("#preview-details");
+    const loadingHint = content.querySelector("#preview-loading");
+
+    (async () => {
+      let details;
+      try {
+        details = await onEnrich(item);
+      } catch (err) {
+        // Fallo de red/API: no bloqueamos la vista previa
+      }
+      // El hint de carga se elimina siempre (éxito o fallo)
+      if (loadingHint) loadingHint.remove();
+
+      // Guardas: el modal pudo cerrarse o re-renderizarse mientras tanto
+      if (!previewDetailsEl.isConnected || modal.classList.contains("hidden")) return;
+      if (!details) return;
+
+      const prevRating = item.communityRating;
+      const hadTrailer = Boolean(item.trailerUrl);
+      Object.assign(item, details);
+
+      // Solo se re-renderiza el bloque de detalles, no la estructura
+      previewDetailsEl.innerHTML = extraInfoHtml(item);
+
+      // Si llegaron rating de comunidad o tráiler nuevos, refrescar
+      // esos bloques (pueden no existir: p. ej. libros)
+      if (details.communityRating !== undefined && details.communityRating !== prevRating) {
+        const ratingsEl = content.querySelector(".modal-detail__ratings");
+        if (ratingsEl) ratingsEl.outerHTML = communityRatingDisplay(item);
+      }
+      if (details.trailerUrl && !hadTrailer) {
+        const trailerEl = content.querySelector(".trailer-btn");
+        if (trailerEl) {
+          trailerEl.outerHTML = trailerButtonHtml(item);
+        } else {
+          // Los resultados de búsqueda nunca traen trailerUrl, así que
+          // el botón no existe en el render inicial: insertarlo antes
+          // de las acciones del modal
+          const actions = content.querySelector(".modal-actions");
+          if (actions) actions.insertAdjacentHTML("beforebegin", trailerButtonHtml(item));
+        }
+      }
+    })();
+  }
 }
 
 /* ---------- Biblioteca personal: grid y lista ---------- */
@@ -1638,6 +1772,10 @@ export function openBookConfirmModal(item, { onConfirm, onCancel }) {
         : item.description || "",
     });
   });
+
+  // Si venimos de otro modal (p. ej. la preview de búsqueda), limpiar
+  // su focus trap antes de registrar el nuevo
+  if (modal._focusTrapCleanup) modal._focusTrapCleanup();
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
