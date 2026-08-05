@@ -1,11 +1,11 @@
 {
   "title": "Visualización de información en la búsqueda (issue #22)",
   "description": "Al buscar una nueva serie, película o libro para añadir, se debe permitir pulsar sobre el ítem en cuestión para ver su información. Como si estuviese ya añadida en la colección. Actualmente los resultados de búsqueda (renderSearchResults en ui.js) solo muestran portada, título, año y un botón \"Añadir\"; no hay forma de previsualizar la información del ítem (sinopsis, duración, reparto, valoración de comunidad, etc.) antes de añadirlo.\n\nV2 (feedback del usuario en comentario de la issue): ampliar la información de la vista previa:\n- Para las series se debe ver también las temporadas y episodios que tiene.\n- Para los libros se debe ver el número de páginas que tiene.",
-  "status": "documented",
+  "status": "review",
   "pr": {
-    "url": "https://github.com/gonzalitojh/Registro-personal/pull/61",
-    "number": 61,
-    "note": "PR #61 fusionada (vista previa básica). V2: feedback del usuario con temporadas/episodios en series y páginas en libros."
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/63",
+    "number": 63,
+    "note": "PR #61 fusionada (vista previa básica). V2: feedback del usuario con temporadas/episodios en series y páginas en libros (PR #63 en revisión)."
   },
   "acceptance criteria": [
     "Pulsar sobre un resultado de búsqueda (película, serie o libro) abre una vista previa con su información",
