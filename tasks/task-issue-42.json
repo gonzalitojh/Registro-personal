@@ -1,7 +1,16 @@
 {
   "title": "Problemas al hacer scroll vertical",
   "description": "En el modo de visualización de lista, se puede marcar un ítem como visto desplazándolo hacia un lado horizontalmente (swipe). El problema es que, en ese modo de visualización, al hacer scroll vertical para ver los ítems de la lista, es muy fácil desplazar las tarjetas horizontalmente, aunque no se llegue a marcarlas como vistas. Se pide mayor control para no desplazar horizontalmente las etiquetas/tarjetas cuando se está haciendo un desplazamiento vertical por la web.\n\nContexto técnico: el gesto de swipe está implementado en attachSwipe() en js/ui.js. Actualmente touchstart activa el drag incondicionalmente y touchmove aplica translateX al contenido basándose solo en deltaX, sin tener en cuenta el movimiento vertical del dedo. No existe axis lock: cualquier componente horizontal del movimiento (jitter natural del dedo al hacer scroll vertical) desplaza la tarjeta horizontalmente. El CSS ya define touch-action: pan-y en .list-row, por lo que el scroll vertical nativo funciona; falta el bloqueo de dirección en JS.",
-  "status": "documented",
+  "status": "published",
+  "pr": {
+    "number": 55,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/55",
+    "title": "fix: axis lock en swipe de la vista de lista para no desplazar tarjetas con el scroll vertical (issue #42)",
+    "branch": "fix/issue-42-swipe-axis-lock",
+    "commit": "56e1528",
+    "closes": "#42",
+    "bump_pwa": "20260806"
+  },
   "adr": "docs/adr-028-swipe-axis-lock.md creado (Related issue: #42, formato del repo, numeración 028 sin colisión).",
   "security": "SIN HALLAZGOS (PASS): sin secretos, tokens ni credenciales; valores de transform clampados numéricamente sin interpolación de datos de usuario; sin artefactos no deseados. Único hallazgo LOW pre-existente (API keys de cliente en js/config.js, normalización EOL, no introducido por este cambio).",
   "qa": "APROBADO por qa-reviewer: los 5 criterios de aceptación verificados con traces de coordenadas (scroll con jitter → lock vertical sin transform; swipe 71px+ dispara; reveal solo con lock horizontal; passive+pan-y intactos; lock inmutable). Sin regresiones ni scroll horizontal de página. Cambio aislado en js/ui.js (42+/7-).",
@@ -26,5 +35,6 @@
     "Documentación ADR del cambio completada",
     "PR creada con 'Closes #42' en la descripción",
     "Issue #42 label actualizada a su estado final"
-  ]
+  ],
+  "published_at": "2026-08-05 (PR #55 fusionada; cierre y ai-done aplicados manualmente por limpieza de la issue #44)"
 }

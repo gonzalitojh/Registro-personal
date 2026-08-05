@@ -19,6 +19,9 @@
 #   scripts/gh-issue.sh set-state <NUMERO> <ai-todo|ai-in-progress|ai-needs-review|ai-blocked|ai-done>
 #   scripts/gh-issue.sh set-type <NUMERO> <feature|bug|style|refactor|content>
 #   scripts/gh-issue.sh help
+#   - La transición a ai-done (y el cierre de la issue) al fusionar la PR la hace
+#     automáticamente el workflow .github/workflows/issue-done-on-merge.yml; este
+#     script queda como vía manual de respaldo.
 # =============================================================================
 set -euo pipefail
 

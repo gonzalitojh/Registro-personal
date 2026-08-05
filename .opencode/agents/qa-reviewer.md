@@ -26,6 +26,8 @@ If all checks pass, output a confirmation that the task is ready for completion.
 
 When the task file references a GitHub Issue (it contains an `issue` block with `number`), verify that the issue labels reflect the task state: the issue should carry `ai-in-progress` while the work is being validated, and the type label (`type: feature|bug|style|refactor|content`) should match the change being reviewed. If the labels are inconsistent with the actual state, mention it in your report so the master agent can sync them with `scripts/gh-issue.sh set-state` / `set-type`. This check is informational; it does not block the review.
 
+Additionally, if the task status is "review" the issue should carry `ai-needs-review` (applied by the publisher); the transition to `ai-done` (and the issue closing) happens automatically via the `.github/workflows/issue-done-on-merge.yml` workflow when the PR is merged — it is not a manual step.
+
 ## Reglas generales del proyecto
 
 Cuando la tarea toque HTML, CSS o UI, verifica además la regla de

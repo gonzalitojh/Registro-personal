@@ -130,18 +130,34 @@ Keep the issue label in sync with the local task status on EVERY transition. The
 
 Synchronization command: `scripts/gh-issue.sh set-state <N> <label>`. This is BEST-EFFORT: if the command fails (network, rate limit), log the failure in your report and continue the flow — never block the SDD process because of a GitHub API hiccup. Always update the local task file status too.
 
+IMPORTANTE: la transición a `ai-done` (y el cierre de la issue) la aplica AUTOMÁTICAMENTE el workflow `.github/workflows/issue-done-on-merge.yml` al fusionar una PR cuyo body contenga "Closes #N" (las PRs se fusionan contra `dev`, rama no por defecto, donde GitHub NO auto-cierra issues con keywords: por eso el workflow cierra la issue además de poner la label). La sincronización manual de este paso queda como fallback best-effort para los casos en que el workflow no corra.
+
 ## Step 4 — Documentation
 
 After successful validation and security clearance, invoke a documentation agent to document the task following the format of usual ADRs (Architecture Decision Records). This documentation should capture the context, decision, and outcome of the task. If the task references an issue, the ADR must include "Related issue: #N".
 
 ## Step 5 — Publishing
 
-After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher will include "Closes #NUMERO_ISSUE" in the PR description (so GitHub closes the issue on merge) and set the issue to `ai-needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
+After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher ALWAYS includes "Closes #NUMERO_ISSUE" as the first line of the PR description when the task references an issue — including follow-up/iteration PRs for the same issue (never omit it). After creating the PR, the publisher uploads the task file update (status "review" + pr block) to the repository with a second commit and push to the same branch (the PR picks it up automatically), and sets the issue to `ai-needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
 
 ## Step 6 — Session start: reconciliation
 
 At the beginning of a session (or when the user asks), check for pending reviews and finish them:
-- `scripts/gh-issue.sh list --review` — if a PR was merged and the issue is now closed, set `ai-done` (via `set-state`) and update the local task status to "published".
+- `scripts/gh-issue.sh list --review` — for each issue whose PR is now MERGED (check with `gh pr view <PR_NUMBER_DEL_TASK_FILE> --json state -q .state` → "MERGED"):
+  1. `scripts/gh-issue.sh set-state <N> ai-done` (best-effort; si falla, loguea y continúa). El workflow `issue-done-on-merge` normalmente ya ha puesto `ai-done` y cerrado la issue; este paso es el fallback manual.
+  2. If the issue is still OPEN (the workflow didn't run or failed): close it with `gh issue close <N>` first.
+  3. Update the local task file `tasks/task-issue-<N>.json` → `"status": "published"` (python3 round-trip, preservando el resto de campos).
+  4. Upload the change to the repository:
+     ```
+     git status --porcelain        # si hay cambios ajenos sin commitear: git stash push (se hace pop al final)
+     git checkout dev
+     git pull origin dev
+     git add tasks/task-issue-<N>.json     # SOLO el task file; nunca otros archivos
+     git commit -m "chore: task #<N> publicado"
+     git push origin dev
+     git checkout <rama-anterior>  # restaurar el contexto; git stash pop si procede
+     ```
+     Casos borde: si `git pull` da conflicto → aborta y reporta (no resuelvas a medias); si ya estás en `dev` omite el checkout; si el task file tiene otras ediciones pendientes, se sube tal cual (es la fuente de verdad). Este push es OBLIGATORIO: sin él, el estado "published" se queda únicamente local (problema de la issue #44).
 - `scripts/gh-issue.sh list --blocked` — surface blocked issues to the user and ask whether to resume.
 
 ## Step 7 — Quality Assurance
