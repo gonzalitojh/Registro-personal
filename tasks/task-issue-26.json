@@ -1,0 +1,31 @@
+{
+  "title": "Botón de cerrar en la información",
+  "description": "Cuando se abre la información de una serie, película o libro, aparece una pequeña x en la esquina para cerrar esta ventana, pero si desplazamos hacia abajo, esa x no se ve. Debería verse en todo momento, para poder cerrar la ventana en cualquier momento. Es posible que haya que evitar que se superponga al texto que se muestra.",
+  "status": "documented",
+  "adr": "docs/adr-031-close-button-sticky.md (Related issue: #26)",
+  "security": "CLEAN: 0 HIGH, 0 MEDIUM, 3 LOW informativos (task files #45/#60 ajenos al PR — stagear solo css/styles.css y task-issue-26.json; .gitignore ausente preexistente; DoD pendiente de ADR).",
+  "qa_verdict": "APROBADO: 5/5 criterios de aceptación cumplidos. 0 HIGH, 0 MEDIUM, 4 LOW informativos (right:0.7rem inerte en sticky, salto estético ~0.9rem al iniciar scroll, contenido pegado al chip sin margen, z-index no declarado — ninguno bloqueante). Verificación visual 360/768/1280 px, rating modal y ambos temas pendiente de confirmación manual final.",
+  "plan": "CSS puro en css/styles.css: .modal__close pasa de position:absolute a position:sticky (top:0.7rem) con display:block; width:fit-content; margin-left:auto para anclarlo a la derecha, fondo var(--paper) como chip para tapar el contenido al scrollear y border-radius var(--radius). El padre .modal__card es el scroll container, así el botón queda visible siempre. Aplica también a #rating-modal (comparte .modal__close). Sin cambios en HTML/JS.",
+  "issue": {
+    "number": 26,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/26",
+    "title": "Botón de cerrar en la información"
+  },
+  "acceptance criteria": [
+    "El botón de cerrar (x) del panel de información de series, películas y libros es visible en todo momento, incluso al desplazarse hacia abajo dentro del panel",
+    "El botón de cerrar no se superpone al texto/contenido que se muestra en el panel",
+    "El botón de cerrar sigue siendo funcional y cierra el panel correctamente",
+    "La solución es consistente en los tres tipos de contenido (serie, película, libro)",
+    "Se respetan las reglas de responsividad del proyecto (sin scroll horizontal, sin texto fuera de pantalla, unidades relativas)"
+  ],
+  "definition of done": [
+    "Análisis del componente de detalle de información (serie/película/libro) completado",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación del botón de cierre fijo/sticky realizada sin superponerse al contenido",
+    "Validación QA aprobada (criterios de aceptación y casos borde cubiertos, incluyendo los tres anchos de pantalla: 360px, 768px, 1280px)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #26' en la descripción",
+    "Issue #26 label actualizada a su estado final"
+  ]
+}
