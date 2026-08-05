@@ -1,7 +1,7 @@
 {
   "title": "Mejora de cambios de estado de tareas",
   "description": "Hay algunos problemas con los cambios de estado de las tareas.\n\n1) En el caso de los archivos JSON que creas (tasks/task-issue-*.json), una vez publicado, cambia el estado a published, pero esto no se sube al repositorio, ya que el commit es anterior. Debería haber otro commit y push más cuando te asegures de que se ha subido, para subir al repositorio este cambio (o como estime el agente que sea más profesional y óptimo).\n\n2) Las GitHub Issues se marcan con el estado ai-needs-review pero para que luego cambien a ai-done se debe hacer manualmente. Se pide estudiar si hay alguna forma de que, al mergear la PR, el estado cambie automáticamente a ai-done igual que se cierra la Issue añadiendo Closes #NUMERO_ISSUE.\n\n3) Al iterar sobre alguna Issue porque no se había resuelto del todo, cuando sí se ha resuelto, al resolver la PR no se ha cerrado la Issue en cuestión. El cierre de la Issue, así como el marcado de la etiqueta (si se puede), se debe incluir SIEMPRE, para minimizar el trabajo manual.",
-  "status": "documented",
+  "status": "review",
   "issue": {
     "number": 44,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/44",
@@ -24,5 +24,13 @@
     "Issue #44 label actualizada a su estado final",
     "El propio task-issue-44.json queda subido al repositorio con su estado 'review' mediante el nuevo segundo commit del publisher (verificación en vivo del fix)"
   ],
-  "adr": "docs/adr-029-issue-done-on-merge.md creado (Related issue: #44, numeración 029 sin colisión)."
+  "adr": "docs/adr-029-issue-done-on-merge.md creado (Related issue: #44, numeración 029 sin colisión).",
+  "pr": {
+    "number": 58,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/58",
+    "title": "refactor: mejora de cambios de estado de tareas (issue #44)",
+    "branch": "refactor/issue-44-task-status-automation",
+    "commit": "5790632",
+    "closes": "#44"
+  }
 }
