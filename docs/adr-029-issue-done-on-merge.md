@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 Agosto 2026
 
+**NOTA — SUPERADO EN LO RELATIVO AL ESQUEMA DE LABELS Y AL CIERRE**: este ADR queda superado por el ADR-034 (issue #74): el workflow `issue-done-on-merge.yml` queda eliminado y sustituido por `issues-done-on-main.yml`, que al promover `dev` a `main` cierra todas las issues en `status: needs-review` (no al fusionar la PR). El resto se conserva como registro histórico.
+
 ## Contexto
 
 La issue #44 reporta tres problemas en la gestión de los cambios de estado de las tareas SDD:
