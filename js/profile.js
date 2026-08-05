@@ -235,12 +235,20 @@ export function setupProfile(ctx) {
   const btnOpenProfile = document.getElementById("btn-open-profile");
   let focusTrapCleanup = null;
 
+  function escHandler(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeProfileDropdown();
+    }
+  }
+
   function closeProfileDropdown() {
     profileDropdown.classList.add("hidden");
     if (focusTrapCleanup) {
       focusTrapCleanup();
       focusTrapCleanup = null;
     }
+    document.removeEventListener("keydown", escHandler);
     btnOpenProfile.setAttribute("aria-expanded", "false");
     btnOpenProfile.focus();
   }
@@ -253,13 +261,6 @@ export function setupProfile(ctx) {
     }
     btnOpenProfile.setAttribute("aria-expanded", "true");
     focusTrapCleanup = trapFocus(profileDropdown);
-    function escHandler(e) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeProfileDropdown();
-        document.removeEventListener("keydown", escHandler);
-      }
-    }
     document.addEventListener("keydown", escHandler);
   });
 
