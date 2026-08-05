@@ -11,6 +11,8 @@ import { setupExportBackup } from "./export-backup.js";
 import { setupExportIcs } from "./export-ics.js";
 import { renderSettings } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
+import { logout } from "./firebase.js";
+import { trapFocus } from "./focus-utils.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -193,24 +195,90 @@ export function setupProfile(ctx) {
     }
   }
 
-  /* ---------- Event listeners ---------- */
+  /* ---------- Apertura de secciones del perfil ---------- */
 
-  document.getElementById("btn-open-profile").addEventListener("click", () => {
+  function openProfileSection(section, ctx) {
     document.getElementById("app").classList.add("hidden");
     document.getElementById("profile-view").classList.remove("hidden");
-    profileSubtabs.forEach((b) => b.classList.remove("is-active"));
-    document.querySelector('.profile-subtab[data-section="stats"]').classList.add("is-active");
-    statsSection.classList.remove("hidden");
-    friendsSection.classList.add("hidden");
-    if (activitySection) activitySection.classList.add("hidden");
-    if (dataSection) dataSection.classList.add("hidden");
-    if (settingsSection) settingsSection.classList.add("hidden");
-    statsPeriodWrap.classList.remove("hidden");
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        renderStats(getCurrentStatsFilter(), ctx);
-      });
+    profileSubtabs.forEach((b) => {
+      const isActive = b.dataset.section === section;
+      b.classList.toggle("is-active", isActive);
+      b.setAttribute("aria-selected", String(isActive));
     });
+    statsSection.classList.toggle("hidden", section !== "stats");
+    friendsSection.classList.toggle("hidden", section !== "friends");
+    if (activitySection) activitySection.classList.toggle("hidden", section !== "activity");
+    if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
+    if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
+    statsPeriodWrap.classList.toggle("hidden", section !== "stats");
+    if (section === "stats") {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          renderStats(getCurrentStatsFilter(), ctx);
+        });
+      });
+    } else if (section === "friends") {
+      friendDetailEl.classList.add("hidden");
+      friendsListEl.classList.remove("hidden");
+      loadFriendsList();
+    } else if (section === "activity") {
+      loadActivityFeed();
+    } else if (section === "settings" && ctx) {
+      renderSettings(ctx);
+    }
+  }
+
+  /* ---------- Dropdown del menú de perfil ---------- */
+
+  const profileMenuWrap = document.querySelector(".profile-menu-wrap");
+  const profileDropdown = document.getElementById("profile-dropdown");
+  const btnOpenProfile = document.getElementById("btn-open-profile");
+  let focusTrapCleanup = null;
+
+  function closeProfileDropdown() {
+    profileDropdown.classList.add("hidden");
+    if (focusTrapCleanup) {
+      focusTrapCleanup();
+      focusTrapCleanup = null;
+    }
+    btnOpenProfile.setAttribute("aria-expanded", "false");
+    btnOpenProfile.focus();
+  }
+
+  btnOpenProfile.addEventListener("click", () => {
+    profileDropdown.classList.toggle("hidden");
+    if (profileDropdown.classList.contains("hidden")) {
+      closeProfileDropdown();
+      return;
+    }
+    btnOpenProfile.setAttribute("aria-expanded", "true");
+    focusTrapCleanup = trapFocus(profileDropdown);
+    function escHandler(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeProfileDropdown();
+        document.removeEventListener("keydown", escHandler);
+      }
+    }
+    document.addEventListener("keydown", escHandler);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (profileMenuWrap && !profileMenuWrap.contains(e.target) && !profileDropdown.classList.contains("hidden")) {
+      closeProfileDropdown();
+    }
+  });
+
+  profileDropdown.querySelectorAll("[data-section]").forEach((item) => {
+    item.addEventListener("click", () => {
+      closeProfileDropdown();
+      openProfileSection(item.dataset.section, ctx);
+    });
+  });
+
+  document.getElementById("btn-profile-logout").addEventListener("click", () => {
+    closeProfileDropdown();
+    logout();
   });
 
   document.getElementById("btn-close-profile").addEventListener("click", () => {
@@ -282,30 +350,7 @@ export function setupProfile(ctx) {
 
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
-      profileSubtabs.forEach((b) => {
-        b.classList.remove("is-active");
-        b.setAttribute("aria-selected", "false");
-      });
-      btn.classList.add("is-active");
-      btn.setAttribute("aria-selected", "true");
-      const section = btn.dataset.section;
-      statsSection.classList.toggle("hidden", section !== "stats");
-      friendsSection.classList.toggle("hidden", section !== "friends");
-      if (activitySection) activitySection.classList.toggle("hidden", section !== "activity");
-      if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
-      if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
-      statsPeriodWrap.classList.toggle("hidden", section !== "stats");
-      if (section === "friends") {
-        friendDetailEl.classList.add("hidden");
-        friendsListEl.classList.remove("hidden");
-        loadFriendsList();
-      }
-      if (section === "activity") {
-        loadActivityFeed();
-      }
-      if (section === "settings" && ctx) {
-        renderSettings(ctx);
-      }
+      openProfileSection(btn.dataset.section, ctx);
     });
   });
 
@@ -313,4 +358,6 @@ export function setupProfile(ctx) {
     friendDetailEl.classList.add("hidden");
     friendsListEl.classList.remove("hidden");
   });
+
+  return { openProfileSection };
 }
