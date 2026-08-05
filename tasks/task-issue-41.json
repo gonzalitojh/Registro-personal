@@ -1,0 +1,29 @@
+{
+  "title": "Revisión responsividad",
+  "description": "Hacer una revisión general de toda la web para que sea responsiva (visualización correcta en cualquier dispositivo).\n\nReglas del proyecto (AGENTS.md) aplicables: no scroll horizontal a nivel de página en ningún ancho (el scroll horizontal solo dentro de contenedores diseñados para ello, p.ej. tablas con overflow-x: auto); ningún texto fuera de pantalla (overflow-wrap: break-word, min-width: 0 en hijos de flex/grid, unidades relativas); unidades relativas (%, rem, em, fr, vw/vh, minmax()) evitando px fijos en contenedores de ancho completo; prohibido overflow-x: hidden en body/html como parche, corregir siempre la causa raíz.",
+  "status": "documented",
+  "issue": {
+    "number": 41,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/41",
+    "title": "Revisión responsividad"
+  },
+  "acceptance criteria": [
+    "La web se visualiza correctamente en móvil (~360px), tablet (~768px) y ordenador (~1280px) en todas las páginas/secciones existentes",
+    "No existe desplazamiento horizontal a nivel de página en ningún ancho: document.documentElement.scrollWidth <= window.innerWidth debe ser true en los tres anchos",
+    "Ningún texto (títulos, fechas, nombres de autores, sinopsis largas, URLs, palabras sin espacios) se sale de su contenedor: overflow-wrap: break-word y min-width: 0 en hijos de flex/grid donde aplique",
+    "No se usan unidades px fijas en contenedores de ancho completo; se usan unidades relativas (%, rem, em, fr, vw/vh, minmax())",
+    "No existe overflow-x: hidden en body/html como parche; los desbordamientos se corrigen en la causa raíz",
+    "El scroll horizontal interno solo existe dentro de contenedores diseñados para ello (tablas con overflow-x: auto) y no se trunca contenido esencial con ellipsis en móvil"
+  ],
+  "definition of done": [
+    "Auditoría de responsividad completada (revisión de todas las páginas: HTML, CSS y plantillas)",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación realizada (ajustes CSS/HTML para cumplir los criterios)",
+    "Validación QA aprobada (criterios de aceptación verificados en 360px, 768px y 1280px)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #41' en la descripción",
+    "Issue #41 label actualizada a su estado final"
+  ],
+  "plan": "Auditoría del arquitecto: fixes de causa raíz en CSS (toast, episode-row, grids con minmax(min()), search-slip, activity-event, list-row, friend-card, global-search móvil, result-card, notif-row, settings-row, header móvil, item-card__meta móvil, modal-detail header) + bump PWA a 20260805."
+}
