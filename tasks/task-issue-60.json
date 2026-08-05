@@ -1,0 +1,28 @@
+{
+  "title": "Manual de usuario",
+  "description": "Hacer un archivo de manual de usuario. Esta documentación debe explicar todo lo que se puede hacer en la web y cómo funciona todo, sin entrar en tecnicismos, debe ser capaz de leerla y entenderla cualquier usuario.\n\nAdemás, añadir una regla al agente para que siempre que se hagan cambios que afecten al usuario, se incluya la explicación pertinente en este documento.\n\nDebe estar bien organizado, con secciones y subsecciones e incluir todo, desde los diferentes estados, las diferentes opciones y ajustes y acciones, cada cuanto se actualizan los datos, como se busca, etc...",
+  "status": "documented",
+  "acceptance criteria": [
+    "Existe un archivo de manual de usuario (ej. docs/manual-de-usuario.md) que explica todo lo que se puede hacer en la web",
+    "El manual está escrito sin tecnicismos, entendible por cualquier usuario",
+    "El manual está bien organizado con secciones y subsecciones",
+    "El manual cubre: estados, opciones y ajustes, acciones, frecuencia de actualización de datos, búsqueda y todo el resto de funcionalidades de la web",
+    "Se añade una regla al agente (AGENTS.md) para que siempre que se hagan cambios que afecten al usuario se actualice el manual",
+    "El contenido del manual es preciso respecto al comportamiento real de la aplicación"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Manual de usuario redactado y completo",
+    "Regla para el agente añadida en AGENTS.md",
+    "Validación superada (criterios de aceptación y precisión del contenido)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado con 'Related issue: #60'",
+    "PR creado contra dev con 'Closes #60'",
+    "Issue #60 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 60,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/60",
+    "title": "Manual de usuario"
+  }
+}
