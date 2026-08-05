@@ -35,6 +35,7 @@ Se corrigieron los desbordes detectados con `overflow-wrap` y `min-width: 0` (hi
 - **`.search-slip input`**: `min-width: 0` (el input del buscador de la biblioteca ya no empuja al contenedor).
 - **Modal de detalle**: `.modal-detail__header > div` con `min-width: 0` y `.modal-detail__title` con `overflow-wrap: anywhere` (títulos largos sin espacios envuelven en lugar de desbordar el modal).
 - **`.notif-row__text`** y **`.settings-row label:first-child`**: `min-width: 0` + `overflow-wrap: anywhere` (texto de notificaciones y etiquetas de ajustes largas envuelven; el select/switch permanece intacto).
+- **Dropdown de notificaciones (`.notif-dropdown`)**: en móvil el header envuelve en dos filas y el ancla absoluta (`right: 0` respecto a `.user-badge`) quedaba a la izquierda de la pantalla, abriendo el panel fuera del viewport. Fix doble: `.user-badge` con `margin-left: auto` (ancla a la derecha cuando envuelve) y `@media (max-width: 600px)` con `position: fixed; left: 1rem; right: 1rem; top: 4.5rem; width: auto` (el panel se ancla al viewport: por construcción nunca puede desbordar horizontalmente).
 
 ### 2. Truncado con line-clamp en vez de nowrap + ellipsis (contenido esencial en móvil)
 
@@ -103,7 +104,7 @@ La revisión **no** altera decisiones documentadas anteriormente:
 
 | Archivo | Cambio |
 |---------|--------|
-| `css/styles.css` | `.toast` con `max-width: min(480px, calc(100vw - 2rem))` + `overflow-wrap: anywhere` (y `.toast--undo span` con `flex: 1` + `min-width: 0`), `.notif-row__text` y `.settings-row label:first-child` con `min-width: 0` + `overflow-wrap: anywhere`, `.stats-grid`/`.friends-list` con `minmax(min(Npx, 100%), 1fr)`, `.friend-card__name` clamp 2, `.global-search__item-title/meta` clamp 2 ≤ 600 px, `.profile-subtabs` con `flex-wrap: wrap` + compactación ≤ 480 px, header compacto ≤ 480 px (`.app-header__top`, `.app-title`, `.user-badge`) |
+| `css/styles.css` | `.toast` con `max-width: min(480px, calc(100vw - 2rem))` + `overflow-wrap: anywhere` (y `.toast--undo span` con `flex: 1` + `min-width: 0`), `.notif-row__text` y `.settings-row label:first-child` con `min-width: 0` + `overflow-wrap: anywhere`, `.stats-grid`/`.friends-list` con `minmax(min(Npx, 100%), 1fr)`, `.friend-card__name` clamp 2, `.global-search__item-title/meta` clamp 2 ≤ 600 px, `.profile-subtabs` con `flex-wrap: wrap` + compactación ≤ 480 px, header compacto ≤ 480 px (`.app-header__top`, `.app-title`, `.user-badge`), `.user-badge` con `margin-left: auto`, `.notif-dropdown` con `position: fixed` ≤ 600 px |
 | `ocio/ocio.css` | `.episode-row__name` con `min-width: 0` + `overflow-wrap: anywhere`, `.library-grid`/`.cover-picker` con `minmax(min(Npx, 100%), 1fr)`, `.search-slip input` con `min-width: 0`, `.modal-detail__header > div` con `min-width: 0` y `.modal-detail__title` con `overflow-wrap: anywhere`, `.activity-event__text` clamp 3, `.list-row__title` clamp 2, `.result-card__title` clamp 2, `.item-card__meta` clamp 2 ≤ 480 px (desktop conserva ellipsis + title del ADR-003); `.trailer-btn__label` nowrap intacto (ADR-017) |
 | `js/config.js` | `APP_VERSION` → `'20260805'` |
 | `index.html` | Refs versionadas `?v=20260805` (`css/styles.css`, `ocio/ocio.css`, `js/app.js`) |
