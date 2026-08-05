@@ -5,7 +5,7 @@
 // =============================================================
 
 import { addItem } from "./db.js";
-import { getMovieDetails, getTvExtraDetails, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
+import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
@@ -223,7 +223,15 @@ async function enrichSearchItem(item) {
   }
   if (item.type === "tv") {
     try {
-      return await getTvExtraDetails(item.externalId);
+      const details = await getTvExtraDetails(item.externalId);
+      // Las temporadas se piden aparte: si fallan, se devuelven los
+      // detalles sin seasonsMeta (la vista previa no se bloquea).
+      try {
+        details.seasonsMeta = await getTvSeasonsMeta(item.externalId);
+      } catch (err) {
+        // no bloqueamos la preview
+      }
+      return details;
     } catch (err) {
       return {};
     }

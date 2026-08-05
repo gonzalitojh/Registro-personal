@@ -211,6 +211,8 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
     ${editionsNote}
     <div id="preview-details">
       ${extraInfoHtml(item)}
+      ${previewPagesHtml(item)}
+      ${previewSeasonsHtml(item)}
       ${onEnrich ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     </div>
     ${isBook ? "" : `${communityRatingDisplay(item)}${trailerButtonHtml(item)}`}
@@ -258,7 +260,7 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
       Object.assign(item, details);
 
       // Solo se re-renderiza el bloque de detalles, no la estructura
-      previewDetailsEl.innerHTML = extraInfoHtml(item);
+      previewDetailsEl.innerHTML = extraInfoHtml(item) + previewPagesHtml(item) + previewSeasonsHtml(item);
 
       // Si llegaron rating de comunidad o tráiler nuevos, refrescar
       // esos bloques (pueden no existir: p. ej. libros)
@@ -645,6 +647,38 @@ function extraInfoHtml(item) {
   if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
   if (!lines.length) return "";
   return `<div class="extra-info">${lines.join("")}</div>`;
+}
+
+// Bloque de temporadas para la vista previa de una serie: lista de
+// solo lectura (nº de episodios y fecha de emisión por temporada)
+// más el total. Vacío si no hay datos (sin seasonsMeta o vacío).
+function previewSeasonsHtml(item) {
+  const seasons = item.seasonsMeta;
+  if (!seasons || !seasons.length) return "";
+  const rows = seasons.map((s) => {
+    const name = s.name || `Temporada ${s.seasonNumber}`;
+    const count = s.episodeCount || 0;
+    const episodes = `${count} episodio${count === 1 ? "" : "s"}`;
+    const airDate = s.airDate ? ` · ${formatDateEs(s.airDate)}` : "";
+    return `<li class="preview-seasons__row">${escapeHtml(name)} · ${episodes}${airDate}</li>`;
+  });
+  const totalEpisodes = seasons.reduce((sum, s) => sum + (s.episodeCount || 0), 0);
+  return `
+    <div class="preview-seasons">
+      <h4 class="preview-seasons__title">Temporadas</h4>
+      <ul class="preview-seasons__list">
+        ${rows.join("")}
+      </ul>
+      <p class="preview-seasons__total">${seasons.length} temporada${seasons.length === 1 ? "" : "s"} · ${totalEpisodes} episodio${totalEpisodes === 1 ? "" : "s"}</p>
+    </div>
+  `;
+}
+
+// Línea de páginas de un libro para la vista previa. item.pages llega
+// como número desde la API (pageCount || null); vacío si no existe.
+function previewPagesHtml(item) {
+  if (!item.pages) return "";
+  return `<p class="extra-info__line"><strong>Páginas:</strong> ${item.pages}</p>`;
 }
 
 function editButtonHtml() {

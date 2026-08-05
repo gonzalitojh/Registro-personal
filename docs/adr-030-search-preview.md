@@ -60,6 +60,15 @@ Si se pasa `onEnrich`, el modal pinta primero los datos del resultado de búsque
 - `.result-card:hover`: `box-shadow: var(--shadow-pop)` — elevación que indica clicabilidad.
 - `.result-card:focus-visible`: `outline: 2px solid var(--teal-reel)` — foco visible para navegación por teclado.
 
+### 6. Ampliación tras el feedback del usuario (temporadas y páginas)
+
+El usuario pidió más información en la vista previa: **temporadas y episodios en las series** y **número de páginas en los libros**.
+
+- **Series — bloque de temporadas** (`previewSeasonsHtml` en `js/ui.js`): cuando el enriquecimiento aporta `seasonsMeta` (array `{seasonNumber, name, episodeCount, airDate}`), se renderiza un bloque de solo lectura con una fila por temporada (nombre, nº de episodios con plural correcto y fecha de emisión si existe) y el total "N temporadas · M episodios". `seasonsMeta` se obtiene en `enrichSearchItem` vía `getTvSeasonsMeta` (TMDB) en un `try/catch` interno separado: si falla, la preview se muestra igualmente sin el bloque (degradación elegante, misma filosofía de no bloqueo).
+- **Libros — número de páginas** (`previewPagesHtml` en `js/ui.js`): línea "Páginas: N" en el bloque de detalles cuando el resultado de búsqueda trae `pages` (Google Books aporta `pageCount`; Open Library no).
+- Ambos bloques se renderizan tanto en el render inicial como en el re-render posterior al enriquecimiento, y devuelven cadena vacía cuando no aplican (libros sin páginas, series sin datos), sin tocar la estructura del modal ni el focus trap.
+- Los estilos `.preview-seasons*` son solo layout/tipografía con unidades relativas, `overflow-wrap: anywhere` y `min-width: 0`; con muchas temporadas el modal hace scroll vertical (`max-height: 88vh; overflow-y: auto`), nunca horizontal.
+
 ## Alternativas descartadas
 
 - **Reutilizar los modales de detalle de la colección (`openMovieModal`/`openTvModal`/`openBookModal`) tal cual**: descartado — incluyen edición, progreso y logs que no aplican a un ítem no añadido, y requieren callbacks de persistencia que no existen para un ítem que aún no está en la colección; además su apertura asume datos ya enriquecidos.
@@ -89,9 +98,9 @@ Si se pasa `onEnrich`, el modal pinta primero los datos del resultado de búsque
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/ui.js` | `renderSearchResults`: 6º parámetro `onPreview` (tarjeta con `role="button"`/`tabindex="0"`/`aria-label`, click respetando el botón Añadir habilitado, Enter/Space fuera de botones). Nueva `openSearchPreviewModal` (header, nota de ediciones, `#preview-details`, rating/tráiler para películas/series, footer Cerrar/Añadir con estado `added`, `_previousActiveElement` + `trapFocus`, enriquecimiento asíncrono con guardas `isConnected`/modal oculto y re-render parcial). `openBookConfirmModal`: cleanup del focus trap previo |
-| `js/search.js` | `handleAdd`/`doAddBook` devuelven booleano de éxito. Nuevas `enrichSearchItem` (nunca lanza; movie/tv/book Open Library) y `openSearchPreviewFromResults` (recalcula `added` mapeando type → `movies`/`tv`/`books`; `onAdd` cierra el modal si el alta fue exitosa). Los 6 call sites de `renderSearchResults` pasan el callback de preview |
-| `ocio/ocio.css` | `.result-card`: `cursor: pointer`; `.result-card:hover`: `box-shadow: var(--shadow-pop)`; `.result-card:focus-visible`: `outline: 2px solid var(--teal-reel)` |
+| `js/ui.js` | `renderSearchResults`: 6º parámetro `onPreview` (tarjeta con `role="button"`/`tabindex="0"`/`aria-label`, click respetando el botón Añadir habilitado, Enter/Space fuera de botones). Nueva `openSearchPreviewModal` (header, nota de ediciones, `#preview-details`, rating/tráiler para películas/series, footer Cerrar/Añadir con estado `added`, `_previousActiveElement` + `trapFocus`, enriquecimiento asíncrono con guardas `isConnected`/modal oculto y re-render parcial). `openBookConfirmModal`: cleanup del focus trap previo. Ampliación V2: `previewSeasonsHtml` (bloque de temporadas/episodios para series) y `previewPagesHtml` (páginas de libros), incluidas en render inicial y post-enrich |
+| `js/search.js` | `handleAdd`/`doAddBook` devuelven booleano de éxito. Nuevas `enrichSearchItem` (nunca lanza; movie/tv/book Open Library) y `openSearchPreviewFromResults` (recalcula `added` mapeando type → `movies`/`tv`/`books`; `onAdd` cierra el modal si el alta fue exitosa). Los 6 call sites de `renderSearchResults` pasan el callback de preview. Ampliación V2: `enrichSearchItem` (tv) añade `seasonsMeta` vía `getTvSeasonsMeta` en try/catch interno |
+| `ocio/ocio.css` | `.result-card`: `cursor: pointer`; `.result-card:hover`: `box-shadow: var(--shadow-pop)`; `.result-card:focus-visible`: `outline: 2px solid var(--teal-reel)`. Ampliación V2: estilos `.preview-seasons*` (título, lista, filas con `overflow-wrap: anywhere`/`min-width: 0`, total) |
 | `docs/adr-030-search-preview.md` | **Nuevo**: este documento |
 
 Related issue: #22 — https://github.com/gonzalitojh/Registro-personal/issues/22
