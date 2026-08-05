@@ -13,3 +13,12 @@ export function formatDateEs(iso) {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 }
+
+// Resta días a una fecha "YYYY-MM-DD" y devuelve otra fecha en el mismo
+// formato canónico. Se usa para calcular umbrales de actividad (p. ej.
+// "hace un año") comparables como texto.
+export function subtractDays(iso, days) {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
