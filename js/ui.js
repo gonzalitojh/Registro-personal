@@ -29,15 +29,24 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;");
 }
 
+// HTML para un distintivo de puntuación de la comunidad (TMDB).
+// Variante compacta (--sm) para filas de episodio (issue #45).
+function communityRatingValueHtml(value, label = "TMDB") {
+  const val = Number(value).toFixed(1);
+  return `<span class="community-rating community-rating--sm">
+    <span class="community-rating__label">${label}</span>
+    <span class="community-rating__value">${val}</span>
+  </span>`;
+}
+
 // HTML para la puntuación de la comunidad (TMDB) en tarjetas compactas.
 // Devuelve cadena vacía si no hay datos (no ocupa espacio en la cuadrícula).
 function communityRatingHtml(item) {
   if (item.communityRating == null) return "";
-  const val = Number(item.communityRating).toFixed(1);
-  return `<span class="community-rating">
-    <span class="community-rating__label">TMDB</span>
-    <span class="community-rating__value">${val}</span>
-  </span>`;
+  return communityRatingValueHtml(item.communityRating).replace(
+    "community-rating community-rating--sm",
+    "community-rating"
+  );
 }
 
 // Para modales: siempre muestra una línea, ya sea la nota real o
@@ -1285,6 +1294,12 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
       const rating = entry ? entry.rating : null;
       const checked = Boolean(date);
       const future = !manual && isUnreleasedDate(e.airDate);
+      // Badge de nota TMDB: solo en series automáticas y cuando el episodio
+      // tiene votos (episodeRating != null). Las series manuales no lo traen.
+      const communityBadge =
+        !manual && e.episodeRating != null
+          ? communityRatingValueHtml(e.episodeRating)
+          : "";
       return `
       <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}"
            data-air-date="${e.airDate || ""}">
@@ -1302,6 +1317,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
             }</em>`
           : ""
       }</span>
+          ${communityBadge}
           <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
         </div>
         <div class="episode-rating ${checked ? "" : "hidden"}">

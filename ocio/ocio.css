@@ -1419,6 +1419,21 @@
   font-size: 0.78rem;
 }
 
+/* Variante compacta para filas de episodio (issue #45) */
+.community-rating--sm {
+  gap: 0.25rem;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+.community-rating--sm .community-rating__label {
+  font-size: 0.5rem;
+  padding: 0.05rem 0.25rem;
+}
+.community-rating--sm .community-rating__value {
+  font-size: 0.7rem;
+}
+
 /* Versión «sin datos» en modales */
 .community-rating--empty {
   display: inline-block;

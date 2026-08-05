@@ -1,0 +1,29 @@
+{
+  "title": "Puntuación de la comunidad por episodios",
+  "description": "En las series, se debe mostrar la puntuación de la comunidad para cada episodio.",
+  "status": "documented",
+  "acceptance criteria": [
+    "En las series se muestra la puntuación de la comunidad para cada episodio",
+    "La puntuación se muestra en el contexto adecuado (detalle de serie / lista de episodios)",
+    "El estilo es consistente con el resto de la aplicación",
+    "La web se ve correctamente en móvil, tablet y ordenador sin scroll horizontal"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada",
+    "Validación superada (criterios de aceptación y edge cases)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado con 'Related issue: #45'",
+    "PR creado contra dev con 'Closes #45'",
+    "Issue #45 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 45,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/45",
+    "title": "Puntuación de la comunidad por episodios"
+  },
+  "plan": "Badge .community-rating--sm tras el nombre del episodio en renderEpisodeRows (js/ui.js), condición !manual && episodeRating != null; variante CSS compacta en ocio/ocio.css; helper communityRatingValueHtml extraído de communityRatingHtml; verificación 360/768/1280px.",
+  "qa_verdict": "APROBADO CON OBSERVACIONES (no bloqueantes): verificación visual 360/768/1280 pendiente de confirmación manual final; resto cumplido.",
+  "security": "CLEAN: 0 HIGH, 0 MEDIUM, 1 LOW informativo (.gitignore ausente, preexistente)",
+  "adr": "docs/adr-031-community-episode-rating.md (Related issue: #45)"
+}
