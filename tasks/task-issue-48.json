@@ -1,7 +1,7 @@
 {
   "title": "Cambio de estado de series automático (Standby por inactividad)",
   "description": "Issue #48: Pasar automáticamente a _Standby_ las series cuyo último episodio visto fue hace más de un año. Verificado: la funcionalidad NO está implementada actualmente (los cambios de estado son siempre manuales; daily-check.js solo refresca metadatos y avisa de estrenos).\n\nReglas de la issue:\n- Si la serie está esperando nuevos episodios para estrenar, NO se debe mover (aunque no tenga fecha de estreno todavía).\n- Si la serie ya ha estrenado nuevos episodios, pero estos se estrenaron hace menos de un año, NO se debe mover.\n- Criterio: coger la fecha más actual entre la fecha de estreno [del último episodio] y la fecha de última visualización para comprobar si hay actividad en el último año.\n\nDecisiones de diseño (documentar en ADR):\n- Solo aplica a series con status 'en_curso' (estados pendiente/completado/standby/abandonado no se tocan; 'standby' ya está pausado y 'en_curso' es el caso de uso: series que se empezaron y se dejaron de ver).\n- La evaluación se hace dentro de la comprobación diaria existente (daily-check.js), usando los datos frescos de TMDB de la pasada (nextEpisodeToAir / seasonAirDates frescos) para las series no manuales, y los datos guardados para las series manuales.\n- Fecha de referencia: max(airDate del próximo episodio ya emitido según getNextEpisodeAirInfo, lastWatchedAt). Si no hay ninguna fecha conocida, no mover (conservador).\n- Sin notificación extra: el cambio es visible en la lista (el filtro 'Viendo' lo oculta; el usuario lo ve al filtrar por Standby).",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Las series con status 'en_curso' sin episodios vistos en el último año pasan automáticamente a 'standby'.",
     "No se mueven series cuyo próximo episodio está sin estrenar (fecha futura o sin fecha): 'esperando nuevos episodios'.",
@@ -26,5 +26,9 @@
     "number": 48,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/48",
     "title": "Cambio de estado de series automático"
+  },
+  "pr": {
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/72",
+    "number": 72
   }
 }
