@@ -6,6 +6,8 @@ Implementado
 ## Fecha
 Agosto 2026
 
+**NOTA — SUPERADO EN LO RELATIVO AL ESQUEMA DE LABELS Y AL CIERRE**: el esquema `ai-*` descrito aquí queda reemplazado por el de ADR-034 (issue #74): estados compartidos `status: *`, label `ai` como marcador de agente, y cierre de issues al promover `dev` a `main` (workflow `issues-done-on-main.yml`), no al fusionar la PR. El resto se conserva como registro histórico.
+
 ## Contexto
 
 Hasta ahora, los agentes de IA del flujo SDD recibían sus tareas exclusivamente a través de archivos locales en `tasks/` (creados a mano por el usuario) o mediante peticiones directas en la conversación. Esto generaba varios problemas:

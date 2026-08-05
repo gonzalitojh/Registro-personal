@@ -1,0 +1,48 @@
+name: issues-done-on-main
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # prueba manual opcional
+
+permissions:
+  issues: write
+
+jobs:
+  mark-needs-review-done:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issues en 'status: needs-review' → 'status: done' y cerrarlas
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            // Todas las issues (abiertas y cerradas) con la label 'status: needs-review'.
+            const iterator = github.paginate.iterator(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all',
+              labels: 'status: needs-review', per_page: 100
+            });
+            let done = 0, skipped = 0;
+            for await (const { data: issues } of iterator) {
+              for (const issue of issues) {
+                if (issue.pull_request) continue; // salvaguarda anti-PR
+                const names = (issue.labels || []).map(l => l.name);
+                const toRemove = names.filter(l =>
+                  (l.startsWith('status: ') && l !== 'status: done') || l.startsWith('ai-'));
+                for (const label of toRemove) {
+                  await github.rest.issues.deleteLabel({ owner, repo, issue_number: issue.number, name: label });
+                  core.notice(`#${issue.number}: label '${label}' eliminada`);
+                }
+                if (!names.includes('status: done')) {
+                  await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['status: done'] });
+                }
+                if (issue.state === 'open') {
+                  await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+                  core.notice(`#${issue.number}: issue cerrada`);
+                }
+                core.info(`#${issue.number}: → status: done`);
+                done++;
+              }
+            }
+            core.info(`Procesadas ${done} issues con 'status: needs-review'`);

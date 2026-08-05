@@ -6,27 +6,33 @@
 #   - Consultar issues (pendientes, completadas, por tipo, en revisión...).
 #   - Obtener el detalle de una issue para construir el task local.
 #   - Sincronizar las labels de la issue con el estado de la tarea SDD
-#     (ai-todo, ai-in-progress, ai-needs-review, ai-blocked, ai-done).
+#     (status: todo, status: in-progress, status: needs-review, status:
+#     blocked, status: done).
 #   - Corregir la label de tipo si está mal clasificada
 #     (type: feature|bug|style|refactor|content).
 #
-# Regla de negocio: el agente SÓLO debe abordar issues con label "ai-..."
-# (normalmente "ai-todo"). Las issues sin esa label son de usuarios.
+# Regla de negocio: el agente SÓLO debe abordar issues con label "ai"
+# (normalmente con estado "status: todo"). Las issues sin esa label son de
+# usuarios.
 #
 # Uso:
 #   scripts/gh-issue.sh list [--all|--todo|--review|--blocked|--done|--type <tipo>]
 #   scripts/gh-issue.sh show <NUMERO>
-#   scripts/gh-issue.sh set-state <NUMERO> <ai-todo|ai-in-progress|ai-needs-review|ai-blocked|ai-done>
+#   scripts/gh-issue.sh set-state <NUMERO> "status: <todo|in-progress|needs-review|blocked|done>"
 #   scripts/gh-issue.sh set-type <NUMERO> <feature|bug|style|refactor|content>
 #   scripts/gh-issue.sh help
-#   - La transición a ai-done (y el cierre de la issue) al fusionar la PR la hace
-#     automáticamente el workflow .github/workflows/issue-done-on-merge.yml; este
-#     script queda como vía manual de respaldo.
+#   - set-state limpia automáticamente los residuales "ai-*" del esquema antiguo
+#     (vía API). La label "ai" (marcador de issues del agente) nunca se añade ni
+#     se elimina desde este script.
+#   - La transición a "status: done" (y el cierre de la issue) la aplica el
+#     workflow .github/workflows/issues-done-on-main.yml cuando el usuario
+#     promueve dev→main; este script queda como vía manual de respaldo.
 # =============================================================================
 set -euo pipefail
 
-# Listas blancas (no se tocan otras labels).
-AI_STATES=("ai-todo" "ai-in-progress" "ai-needs-review" "ai-blocked" "ai-done")
+# Listas blancas (no se tocan otras labels). OJO: los valores llevan espacio →
+# citar siempre ("$label", "${STATUS_STATES[@]}").
+STATUS_STATES=("status: todo" "status: in-progress" "status: needs-review" "status: blocked" "status: done")
 TYPES=("feature" "bug" "style" "refactor" "content")
 
 REPO="${GH_REPO:-}" # Si está vacío, gh usa el repo del directorio actual.
@@ -35,7 +41,7 @@ REPO="${GH_REPO:-}" # Si está vacío, gh usa el repo del directorio actual.
 # Utilidades
 # -----------------------------------------------------------------------------
 usage() {
-  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 }
 
@@ -78,7 +84,7 @@ gh_() {
 # list — consulta de issues
 # -----------------------------------------------------------------------------
 cmd_list() {
-  local filter="${1:-ai}" # por defecto: issues abiertas con label ai-*
+  local filter="${1:-ai}" # por defecto: issues abiertas con label ai
   local state="open"
   local label_filter=""
   local python_filter=""
@@ -91,17 +97,21 @@ cmd_list() {
       python_filter="all"
       ;;
     --todo)
-      label_filter="ai-todo"
+      label_filter="status: todo"
+      python_filter="ai"
       ;;
     --review)
-      label_filter="ai-needs-review"
+      label_filter="status: needs-review"
+      python_filter="ai"
       ;;
     --blocked)
-      label_filter="ai-blocked"
+      label_filter="status: blocked"
+      python_filter="ai"
       ;;
     --done)
       state="all"
-      label_filter="ai-done"
+      label_filter="status: done"
+      python_filter="ai"
       ;;
     --type)
       local t="${2:-}"
@@ -132,8 +142,8 @@ label_filter = sys.argv[3]
 
 def ai_status(labels):
     for l in labels:
-        if l["name"].startswith("ai-"):
-            return l["name"]
+        if l["name"].startswith("status: "):
+            return l["name"][len("status: "):]
     return None
 
 def type_label(labels):
@@ -143,24 +153,22 @@ def type_label(labels):
     return "-"
 
 rows = []
-counts = {"ai": 0, "user": 0, "none": 0}
+counts = {"ai": 0, "user": 0}
 for issue in data:
     names = [l["name"] for l in issue["labels"]]
     if label_filter and label_filter not in names:
         continue
-    if python_filter == "ai" and not any(n.startswith("ai-") for n in names):
+    if python_filter == "ai" and "ai" not in names:
         continue
     st = ai_status(issue["labels"]) or "-"
     ty = type_label(issue["labels"])
-    agent = any(n.startswith("ai-") for n in names)
-    user = any(n in ("todo", "in-progress", "done", "blocked") for n in names)
+    agent = "ai" in names
+    user = not agent
     if agent:
         counts["ai"] += 1
-    elif user:
-        counts["user"] += 1
     else:
-        counts["none"] += 1
-    flag = "AGENTE" if agent else ("USUARIO" if user else "-")
+        counts["user"] += 1
+    flag = "AGENTE" if agent else "USUARIO"
     state_marker = "" if issue["state"] == "OPEN" else " [CERRADA]"
     rows.append(f"#{issue['number']:<4} [{ty:<8}] {issue['title']}  (estado: {st})  {flag}{state_marker}")
 
@@ -170,7 +178,7 @@ if rows:
 else:
     print("(sin resultados para el filtro actual)")
 
-print(f"\nResumen: {counts['ai']} para agente, {counts['user']} de usuario, {counts['none']} sin estado.")
+print(f"\nResumen: {counts['ai']} para agente, {counts['user']} de usuario.")
 PYEOF
 }
 
@@ -190,13 +198,17 @@ import json, sys
 
 issue = json.loads(sys.argv[1])
 labels = [l["name"] for l in issue["labels"]]
-ai = [l for l in labels if l.startswith("ai-")]
+agent = [l for l in labels if l == "ai"]
+st = [l for l in labels if l.startswith("status: ")]
+residual = [l for l in labels if l.startswith("ai-")]
 ty = [l for l in labels if l.startswith("type: ")]
-other = [l for l in labels if not l.startswith("ai-") and not l.startswith("type: ")]
+other = [l for l in labels if l not in agent and not l.startswith("status: ") and not l.startswith("ai-") and not l.startswith("type: ")]
 
 print(f"# {issue['number']} — {issue['title']}")
 print(f"Estado: {issue['state']} | URL: {issue['url']}")
-print(f"Labels ai: {ai if ai else '(ninguna)'}")
+print(f"Label agente: {agent if agent else '(ninguna)'}")
+print(f"Estado: {st if st else '(sin estado)'}")
+print(f"Residuales ai-*: {residual if residual else '(ninguna)'}")
 print(f"Tipo: {ty if ty else '(sin tipo)'}")
 print(f"Otras labels: {other if other else '(ninguna)'}")
 print("---")
@@ -209,14 +221,14 @@ PYEOF
 }
 
 # -----------------------------------------------------------------------------
-# set-state — fija exactamente una label de estado ai-*
+# set-state — fija exactamente una label de estado status: *
 # -----------------------------------------------------------------------------
 cmd_set_state() {
   local n="${1:-}"
   local label="${2:-}"
   [[ "$n" =~ ^[0-9]+$ ]] || { echo "ERROR: número de issue inválido: '$n'" >&2; exit 2; }
-  if ! in_list "$label" "${AI_STATES[@]}"; then
-    echo "ERROR: estado inválido '$label'. Válidos: ${AI_STATES[*]}" >&2
+  if ! in_list "$label" "${STATUS_STATES[@]}"; then
+    echo "ERROR: estado inválido '$label'. Válidos: status: todo|in-progress|needs-review|blocked|done" >&2
     exit 2
   fi
   local is_pr
@@ -234,16 +246,47 @@ cmd_set_state() {
     exit 1
   }
   if [[ "$state" == "CLOSED" ]]; then
-    if [[ "$label" == "ai-done" ]]; then
-      echo "OK: issue #$n CERRADA → aplicando estado terminal 'ai-done'."
+    if [[ "$label" == "status: done" ]]; then
+      echo "OK: issue #$n CERRADA → aplicando estado terminal 'status: done'."
     else
-      echo "AVISO: la issue #$n está CERRADA; solo se permite la transición a 'ai-done'." >&2
+      echo "AVISO: la issue #$n está CERRADA; solo se permite la transición a 'status: done'." >&2
       exit 3
     fi
   fi
-  local remove
-  remove="$(excluding "$label" "${AI_STATES[@]}")"
-  gh_ issue edit "$n" --remove-label "$remove" --add-label "$label" >/dev/null
+  # Labels actuales de la issue (solo nombres; ojo: '.labels[].name').
+  local current
+  current="$(gh_ issue view "$n" --json labels --jq '.labels[].name' 2>/dev/null)" || {
+    echo "ERROR: no se pudo leer las labels de la issue #$n." >&2
+    exit 1
+  }
+  # La label objetivo nunca se remueve (gh 2.45 procesa remove-label antes que
+  # add-label; al excluirla por construcción, la transición es idempotente).
+  local remove_status=() remove_residual=() l
+  while IFS= read -r l; do
+    [[ -z "$l" ]] && continue
+    [[ "$l" == "$label" ]] && continue
+    if [[ "$l" == "status: "* ]]; then
+      remove_status+=("$l")
+    elif [[ "$l" == "ai-"* ]]; then
+      # Residuales del esquema antiguo (labels con prefijo "ai-"). La label
+      # exacta "ai" NO empieza por "ai-" → nunca se toca (intencionado).
+      remove_residual+=("$l")
+    fi
+  done <<< "$current"
+  # Remoción de otras status: * en un solo batch (labels existentes en el repo).
+  if [[ "${#remove_status[@]}" -gt 0 ]]; then
+    local remove_list
+    remove_list="$(IFS=,; echo "${remove_status[*]}")"
+    gh_ issue edit "$n" --remove-label "$remove_list" >/dev/null
+  fi
+  # Residuales ai-* vía API (gh 2.45 falla con --remove-label si la label ya no
+  # existe en el repo; la API DELETE tolera/no-op). Los nombres ai-* no llevan
+  # espacios → sin URL-encoding. El || true es necesario por el set -e.
+  for l in "${remove_residual[@]}"; do
+    gh_ api -X DELETE "repos/{owner}/{repo}/issues/$n/labels/$l" >/dev/null 2>&1 || true
+  done
+  # Add de la label objetivo (no-op si ya estaba: idempotente).
+  gh_ issue edit "$n" --add-label "$label" >/dev/null
   echo "OK: issue #$n → label '$label'"
 }
 

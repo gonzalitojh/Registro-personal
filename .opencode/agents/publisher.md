@@ -4,7 +4,7 @@ description: >-
   and creates a GitHub Pull Request with a description of recent implementation changes.
   If the task references a GitHub Issue, the PR body includes "Closes #NUMERO_ISSUE"
   so the issue closes automatically on merge, and the issue label is updated to
-  ai-needs-review after the PR is created.
+  status: needs-review after the PR is created.
   Reads task files, git diff, and ADRs to compose the PR body.
   Después de crear la PR, sube al repositorio la actualización del task file (status 'review' + bloque pr) con un segundo commit y push a la misma rama.
 mode: subagent
@@ -56,7 +56,7 @@ Format: `[task-type] Brief description` (e.g. `[feature] Add move history panel`
 ```
 Closes #18
 ```
-(GitHub recognizes "Closes #N" anywhere in the body and closes the issue automatically when the PR is merged.) Then continue with:
+(GitHub recognizes "Closes #N" anywhere in the body and closes the issue automatically when the PR is merged.) EXCEPCIÓN — si el task file contiene `"no_closes": true`, OMITE la línea 'Closes #N' del body (la issue no debe cerrarse con esta PR: el cierre lo hace el workflow de promoción dev→main `issues-done-on-main.yml`; aun así, tras crear la PR aplica `set-state <N> "status: needs-review"`). Then continue with:
 
 ## Summary
 <concise summary of changes>
@@ -82,10 +82,10 @@ Siempre se crea contra `dev` (rama de integración); el usuario promueve `dev` a
 
 ### 5. Update the issue status
 If the task references issue #N and the PR was created successfully, update the issue label to reflect that the work is waiting for review:
-- Run: `scripts/gh-issue.sh set-state <N> ai-needs-review` (best effort: if it fails, report it but do not fail the overall publishing).
+- Run: `scripts/gh-issue.sh set-state <N> "status: needs-review"` (best effort: if it fails, report it but do not fail the overall publishing).
 
 ### 6. Subir el task file (segundo commit)
-Tras crear la PR (y aplicar `set-state <N> ai-needs-review` si hay issue), sube al repositorio la actualización del task file:
+Tras crear la PR (y aplicar `set-state <N> "status: needs-review"` si hay issue), sube al repositorio la actualización del task file:
 
 - Actualiza `tasks/task-issue-<N>.json` con python3 (round-trip JSON preservando TODOS los campos existentes, incluidos desconocidos como `bump_pwa`):
   - `"status"` → `"review"`.

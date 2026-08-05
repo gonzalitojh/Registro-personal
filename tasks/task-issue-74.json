@@ -1,0 +1,31 @@
+{
+  "title": "Actualización del sistema de labels de issues (esquema status: * + label ai + cierre al promover dev→main)",
+  "description": "Al completar una PR, la issue asociada no está ni marcándose como ai-done ni cerrándose.\n\nAdemás, el usuario ha cambiado las etiquetas. Ahora en lugar de ai-todo, ai-blocked, ai-in-progress, ai-needs-review y ai-done, son todas status: todo, status: blocked, status: in-progress, status: needs-review y status: done y además, hay una etiqueta ai para marcar aquellas issues que debe abordar el agente.\n\nREQUISITO DEL USUARIO (ampliación): NO se debe cerrar la issue ni cambiarla a 'status: done' cuando se haga la PR. En su lugar, crear un workflow (GitHub Action) que se active ÚNICAMENTE cuando el usuario haga un merge de dev a main: buscará todas las Issues con la label 'status: needs-review', les cambiará la label a 'status: done' y las cerrará automáticamente. El workflow actual issue-done-on-merge.yml (que cierra al fusionar la PR en dev) debe ELIMINARSE.\n\nNota del master (análisis): el esquema antiguo (ai-*) se usa en scripts/gh-issue.sh, .github/workflows/issue-done-on-merge.yml, .opencode/agents/sdd-master.md, .opencode/agents/publisher.md, .opencode/agents/qa-reviewer.md y .opencode/command/issues.md. Las labels reales en el repo ya son: 'status: todo|in-progress|needs-review|blocked|done', 'ai' (marcador de issues del agente), 'type: *' y 'priority: *'. El manual de usuario no menciona issues (sin cambios allí).",
+  "status": "documented",
+  "no_closes": true,
+  "acceptance criteria": [
+    "Existe un workflow nuevo (.github/workflows/issues-done-on-main.yml) que se activa SOLO cuando hay un push/merge sobre main (promoción de dev a main) y opcionalmente por workflow_dispatch manual; NO se activa al fusionar PRs en dev",
+    "El workflow nuevo lista TODAS las issues con label 'status: needs-review', les elimina cualquier otra label 'status: *' (y residuales 'ai-*' si los hubiera), les añade 'status: done' y las cierra si están abiertas",
+    "El workflow viejo issue-done-on-merge.yml queda ELIMINADO (las PRs fusionadas en dev ya no cierran issues)",
+    "scripts/gh-issue.sh usa el nuevo esquema: estados 'status: todo|in-progress|needs-review|blocked|done' y el marcador de issues del agente es la label 'ai' (no ai-*)",
+    "El helper list funciona con los filtros --all/--todo/--review/--blocked/--done/--type usando las nuevas labels; la clasificación agente/usuario usa la label 'ai'",
+    "set-state acepta y gestiona las nuevas labels de estado, eliminando las demás del grupo 'status: *' y los residuales 'ai-*' (vía API, nunca toca la label 'ai')",
+    "Las guías de agentes (.opencode/agents/*.md) y el comando /issues (.opencode/command/issues.md) reflejan el nuevo esquema (regla AI-only = label 'ai'; mapeo de estados status: *; cierre SOLO vía promoción dev→main)",
+    "La PR de ESTA tarea NO incluye 'Closes #74' en su body y NO cierra la issue #74 ni la cambia a 'status: done': tras la PR la issue queda en 'status: needs-review' esperando la promoción dev→main",
+    "Se documenta el cambio en un ADR nuevo (Related issue: #74) y los ADR previos que describen el esquema ai-* / cierre al merge (adr-018, adr-029) quedan marcados como superados en lo relativo a labels"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada y commiteada",
+    "Validación QA superada (incluye prueba del script contra el repo real con gh)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado documentando el cambio de esquema de labels y el nuevo workflow de promoción (Related issue: #74)",
+    "PR creada contra dev SIN 'Closes #74' (la issue #74 queda en status: needs-review tras la PR; el cierre ocurrirá cuando el usuario promueva dev a main vía el workflow nuevo)",
+    "Issue #74 actualizada a su estado final (status: done + cerrada) automáticamente al promover dev a main, verificado tras la promoción"
+  ],
+  "issue": {
+    "number": 74,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/74",
+    "title": "Actualización issues"
+  }
+}
