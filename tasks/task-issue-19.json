@@ -1,0 +1,33 @@
+{
+  "title": "Reglas del agente",
+  "description": "Añadir reglas para el agente libre que tenga en cuenta siempre al hacer cualquier tarea. Habría que estudiar en qué agente incluirlo o si hacer una regla general. A continuación algunas especificaciones:\n\n- Siempre se debe tener en cuenta que la web sea responsiva. Se debe ver correctamente en ordenador, tablet y móvil (cualquier ancho), sin que haya desplazamientos horizontales, ni ningún texto salga de la pantalla.",
+  "status": "review",
+  "pr": {
+    "number": 40,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/40",
+    "title": "docs: reglas generales del agente en AGENTS.md (issue #19)"
+  },
+  "decision": "Regla general en AGENTS.md de la raíz del proyecto: opencode lo carga automáticamente para TODOS los agentes (libre, subagentes, build/plan). Alternativas descartadas: agente concreto (solo aplica cuando se invoca), config global ~/.config (no viaja con el repo), .opencode/AGENTS.md (depende de versión). Refuerzo en qa-reviewer.md para que valide la regla en tareas UI. Anchos de verificación: 360/768/1280 px. Sin referencia en README (basta ADR). Alcance estricto: solo responsividad.",
+  "issue": {
+    "number": 19,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/19",
+    "title": "Reglas del agente"
+  },
+  "acceptance criteria": [
+    "Existe una regla que el agente (libre o cualquier agente de opencode) debe tener en cuenta SIEMPRE al hacer cualquier tarea",
+    "La regla establece que la web debe ser responsiva: se debe ver correctamente en ordenador, tablet y móvil (cualquier ancho)",
+    "La regla establece que no debe haber desplazamientos horizontales en ningún ancho",
+    "La regla establece que ningún texto debe salirse de la pantalla",
+    "La regla está en un lugar que aplique de forma general (regla general) o al agente libre correspondiente, y queda documentada la decisión de dónde ubicarla"
+  ],
+  "definition of done": [
+    "Análisis de en qué agente incluir la regla o si hacerla general completado",
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación de la regla realizada (creación/edición de AGENTS.md o agente correspondiente)",
+    "Validación QA aprobada (criterios de aceptación cubiertos)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada (contexto, decisión y resultado)",
+    "PR creada con 'Closes #19' en la descripción",
+    "Issue #19 label actualizada a su estado final"
+  ]
+}
