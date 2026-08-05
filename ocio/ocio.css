@@ -87,6 +87,19 @@
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
+  /* La tarjeta es clicable (vista previa de información, issue #22);
+     inofensivo cuando el callback no está definido */
+  cursor: pointer;
+}
+
+/* Elevación al pasar por encima: indica que la tarjeta es clicable */
+.result-card:hover {
+  box-shadow: var(--shadow-pop);
+}
+
+.result-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: -2px;
 }
 
 .result-card__cover {
@@ -1325,6 +1338,40 @@
   line-height: 1.5;
   color: var(--ink-soft);
   margin: 0.3rem 0 0;
+}
+
+/* Temporadas en la vista previa de búsqueda (issue #22) */
+.preview-seasons {
+  margin: 0.7rem 0;
+}
+
+.preview-seasons__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+
+.preview-seasons__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.preview-seasons__row {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.preview-seasons__total {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  margin: 0.45rem 0 0;
 }
 
 .edit-info-btn {

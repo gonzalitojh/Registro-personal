@@ -1,0 +1,36 @@
+{
+  "title": "Mejora de cambios de estado de tareas",
+  "description": "Hay algunos problemas con los cambios de estado de las tareas.\n\n1) En el caso de los archivos JSON que creas (tasks/task-issue-*.json), una vez publicado, cambia el estado a published, pero esto no se sube al repositorio, ya que el commit es anterior. Debería haber otro commit y push más cuando te asegures de que se ha subido, para subir al repositorio este cambio (o como estime el agente que sea más profesional y óptimo).\n\n2) Las GitHub Issues se marcan con el estado ai-needs-review pero para que luego cambien a ai-done se debe hacer manualmente. Se pide estudiar si hay alguna forma de que, al mergear la PR, el estado cambie automáticamente a ai-done igual que se cierra la Issue añadiendo Closes #NUMERO_ISSUE.\n\n3) Al iterar sobre alguna Issue porque no se había resuelto del todo, cuando sí se ha resuelto, al resolver la PR no se ha cerrado la Issue en cuestión. El cierre de la Issue, así como el marcado de la etiqueta (si se puede), se debe incluir SIEMPRE, para minimizar el trabajo manual.",
+  "status": "review",
+  "issue": {
+    "number": 44,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/44",
+    "title": "Mejora de cambios de estado de tareas"
+  },
+  "acceptance criteria": [
+    "Tras crear la PR, la actualización del task file local (status 'review' + bloque pr con número/url/título/rama/commit/closes) se sube al repositorio con un commit y push adicional en la misma rama; la PR existente recoge el cambio automáticamente sin recrearla",
+    "Al fusionar una PR cuyo body contiene 'Closes #N', la issue #N pasa automáticamente a la label ai-done sin intervención manual (vía GitHub Actions), igual que GitHub la cierra sola con la keyword",
+    "El publisher incluye SIEMPRE 'Closes #N' como primera línea del body de la PR cuando el task file tiene bloque issue, incluidas las PRs de iteración/reapertura (nunca se omite)",
+    "En la reconciliación al inicio de sesión (Step 6 del master), al marcar una tarea como 'published' el cambio del task file se sube también al repositorio (commit + push), no se queda únicamente local",
+    "El cambio queda documentado en un ADR con 'Related issue: #44'"
+  ],
+  "definition of done": [
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación realizada (workflow de GitHub Actions para ai-done automático + publisher con segundo commit/push del task file + master con 'Closes #N' siempre y published con push)",
+    "Validación QA aprobada (criterios de aceptación verificados)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #44' en la descripción",
+    "Issue #44 label actualizada a su estado final",
+    "El propio task-issue-44.json queda subido al repositorio con su estado 'review' mediante el nuevo segundo commit del publisher (verificación en vivo del fix)"
+  ],
+  "adr": "docs/adr-029-issue-done-on-merge.md creado (Related issue: #44, numeración 029 sin colisión).",
+  "pr": {
+    "number": 58,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/58",
+    "title": "refactor: mejora de cambios de estado de tareas (issue #44)",
+    "branch": "refactor/issue-44-task-status-automation",
+    "commit": "5790632",
+    "closes": "#44"
+  }
+}
