@@ -1,7 +1,7 @@
 {
   "title": "Revisión responsividad",
   "description": "Hacer una revisión general de toda la web para que sea responsiva (visualización correcta en cualquier dispositivo).\n\nReglas del proyecto (AGENTS.md) aplicables: no scroll horizontal a nivel de página en ningún ancho (el scroll horizontal solo dentro de contenedores diseñados para ello, p.ej. tablas con overflow-x: auto); ningún texto fuera de pantalla (overflow-wrap: break-word, min-width: 0 en hijos de flex/grid, unidades relativas); unidades relativas (%, rem, em, fr, vw/vh, minmax()) evitando px fijos en contenedores de ancho completo; prohibido overflow-x: hidden en body/html como parche, corregir siempre la causa raíz.",
-  "status": "documented",
+  "status": "review",
   "issue": {
     "number": 41,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/41",
@@ -25,5 +25,16 @@
     "PR creada con 'Closes #41' en la descripción",
     "Issue #41 label actualizada a su estado final"
   ],
-  "plan": "Auditoría del arquitecto: fixes de causa raíz en CSS (toast, episode-row, grids con minmax(min()), search-slip, activity-event, list-row, friend-card, global-search móvil, result-card, notif-row, settings-row, header móvil, item-card__meta móvil, modal-detail header) + bump PWA a 20260805."
+  "plan": "Auditoría del arquitecto: fixes de causa raíz en CSS (toast, episode-row, grids con minmax(min()), search-slip, activity-event, list-row, friend-card, global-search móvil, result-card, notif-row, settings-row, header móvil, item-card__meta móvil, modal-detail header) + bump PWA a 20260805.",
+  "hotfix": {
+    "issue": "Dropdown de notificaciones se salía de pantalla en móvil (post-merge PR #51)",
+    "cause": ".user-badge (ancla del dropdown absolute right:0) quedaba a la izquierda al envolver el header en móvil",
+    "fix": ".user-badge margin-left:auto + .notif-dropdown position:fixed (left/right 1rem) en <=600px",
+    "pr": {
+      "number": 53,
+      "url": "https://github.com/gonzalitojh/Registro-personal/pull/53",
+      "title": "fix: dropdown de notificaciones anclado al viewport en móvil (issue #41)"
+    },
+    "qa": "VALIDADO (360/320/768/1280, sin regresiones)"
+  }
 }
