@@ -1,0 +1,30 @@
+{
+  "title": "Problemas al hacer scroll vertical",
+  "description": "En el modo de visualización de lista, se puede marcar un ítem como visto desplazándolo hacia un lado horizontalmente (swipe). El problema es que, en ese modo de visualización, al hacer scroll vertical para ver los ítems de la lista, es muy fácil desplazar las tarjetas horizontalmente, aunque no se llegue a marcarlas como vistas. Se pide mayor control para no desplazar horizontalmente las etiquetas/tarjetas cuando se está haciendo un desplazamiento vertical por la web.\n\nContexto técnico: el gesto de swipe está implementado en attachSwipe() en js/ui.js. Actualmente touchstart activa el drag incondicionalmente y touchmove aplica translateX al contenido basándose solo en deltaX, sin tener en cuenta el movimiento vertical del dedo. No existe axis lock: cualquier componente horizontal del movimiento (jitter natural del dedo al hacer scroll vertical) desplaza la tarjeta horizontalmente. El CSS ya define touch-action: pan-y en .list-row, por lo que el scroll vertical nativo funciona; falta el bloqueo de dirección en JS.",
+  "status": "documented",
+  "adr": "docs/adr-028-swipe-axis-lock.md creado (Related issue: #42, formato del repo, numeración 028 sin colisión).",
+  "security": "SIN HALLAZGOS (PASS): sin secretos, tokens ni credenciales; valores de transform clampados numéricamente sin interpolación de datos de usuario; sin artefactos no deseados. Único hallazgo LOW pre-existente (API keys de cliente en js/config.js, normalización EOL, no introducido por este cambio).",
+  "qa": "APROBADO por qa-reviewer: los 5 criterios de aceptación verificados con traces de coordenadas (scroll con jitter → lock vertical sin transform; swipe 71px+ dispara; reveal solo con lock horizontal; passive+pan-y intactos; lock inmutable). Sin regresiones ni scroll horizontal de página. Cambio aislado en js/ui.js (42+/7-).",
+  "plan": "Axis lock en attachSwipe (js/ui.js): capturar startY + identifier del dedo en touchstart (changedTouches); en touchmove calcular deltaX/deltaY, decidir dirección UNA vez al cruzar slop de 10px (empate gana 'vertical'), return temprano si lock vertical, comportamiento actual si horizontal, nada si aún en slop; en touchend reset completo y disparar onTrigger solo si lock != 'vertical' y |deltaX| > 70; añadir handler touchcancel con reset compartido. Listeners passive: true. Sin cambios en CSS (touch-action: pan-y ya existe) ni en renderList.",
+  "issue": {
+    "number": 42,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/42",
+    "title": "Problemas al hacer scroll vertical"
+  },
+  "acceptance criteria": [
+    "Al hacer scroll vertical por la lista, las tarjetas no se desplazan horizontalmente (ni un pixel) aunque el dedo tenga un pequeño movimiento horizontal durante el gesto",
+    "El gesto de swipe horizontal intencional sigue funcionando: deslizar una tarjeta hacia un lado y soltarla sigue disparando la acción rápida (marcar como visto/leído, siguiente episodio)",
+    "El revelado del fondo de swipe (clase swipe-reveal) no debe activarse durante el scroll vertical",
+    "El scroll vertical de la página/listado no se ve afectado (el listener sigue siendo passive y touch-action: pan-y se mantiene)",
+    "La decisión de dirección (vertical vs horizontal) se bloquea una vez tomada durante el gesto y no cambia a mitad de camino"
+  ],
+  "definition of done": [
+    "Plan de implementación revisado por el arquitecto (task-architect)",
+    "Implementación realizada (axis lock en attachSwipe de js/ui.js)",
+    "Validación QA aprobada (criterios de aceptación verificados, incluyendo prueba en móvil/anchos pequeños)",
+    "Escaneo de seguridad completado sin hallazgos de severidad alta",
+    "Documentación ADR del cambio completada",
+    "PR creada con 'Closes #42' en la descripción",
+    "Issue #42 label actualizada a su estado final"
+  ]
+}

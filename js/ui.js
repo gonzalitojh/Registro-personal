@@ -261,14 +261,21 @@ function renderGrid(gridEl, items, onOpen) {
 
 function attachSwipe(row, content, onTrigger) {
   let startX = 0;
+  let startY = 0;
   let deltaX = 0;
   let dragging = false;
+  let lock = null; // null | 'vertical' | 'horizontal'
+  let startTouchId = null;
+  const lockThreshold = 10; // slop de decisión de dirección
   const threshold = 70;
 
   row.addEventListener(
     "touchstart",
     (e) => {
-      startX = e.touches[0].clientX;
+      const touch = e.changedTouches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startTouchId = touch.identifier;
       dragging = true;
       row.classList.add("is-dragging");
     },
@@ -279,20 +286,48 @@ function attachSwipe(row, content, onTrigger) {
     "touchmove",
     (e) => {
       if (!dragging) return;
-      deltaX = e.touches[0].clientX - startX;
-      const clamped = Math.max(-120, Math.min(120, deltaX));
-      content.style.transform = `translateX(${clamped}px)`;
-      row.classList.toggle("swipe-reveal", Math.abs(clamped) > 24);
+      // Seguir al dedo original por identifier (fallback al primero)
+      const touch =
+        Array.from(e.touches).find((t) => t.identifier === startTouchId) ||
+        e.touches[0];
+      deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      // Axis lock: al cruzar el slop se decide el eje y no se vuelve atrás.
+      // El empate gana 'vertical' (el scroll siempre manda).
+      if (
+        lock === null &&
+        (Math.abs(deltaX) >= lockThreshold || Math.abs(deltaY) >= lockThreshold)
+      ) {
+        lock = Math.abs(deltaX) > Math.abs(deltaY) ? "horizontal" : "vertical";
+      }
+      if (lock === "vertical") return; // gesto de scroll: sin transform ni toggle
+      if (lock === "horizontal") {
+        const clamped = Math.max(-120, Math.min(120, deltaX));
+        content.style.transform = `translateX(${clamped}px)`;
+        row.classList.toggle("swipe-reveal", Math.abs(clamped) > 24);
+      }
     },
     { passive: true }
   );
 
-  row.addEventListener("touchend", () => {
+  const resetGesture = () => {
     dragging = false;
     row.classList.remove("is-dragging", "swipe-reveal");
     content.style.transform = "";
-    if (Math.abs(deltaX) > threshold) onTrigger();
+    lock = null;
+    startTouchId = null;
     deltaX = 0;
+  };
+
+  row.addEventListener("touchend", () => {
+    // Evaluar antes de resetGesture(): resetea lock y deltaX
+    const shouldTrigger = lock !== "vertical" && Math.abs(deltaX) > threshold;
+    resetGesture();
+    if (shouldTrigger) onTrigger();
+  });
+
+  row.addEventListener("touchcancel", () => {
+    resetGesture();
   });
 }
 
