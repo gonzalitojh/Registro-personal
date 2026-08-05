@@ -44,3 +44,21 @@ Verificación obligatoria cuando la tarea toque HTML, CSS o UI:
    (debe ser true).
 3. Probar con contenido largo realista: títulos largos, fechas, URLs o
    palabras sin espacios.
+
+### 3. Manual de usuario siempre actualizado
+
+Existe un manual de usuario en `docs/manual-de-usuario.md` que explica, en
+lenguaje no técnico y para cualquier usuario, todo lo que se puede hacer en
+la web (estados, acciones, ajustes, búsqueda, frecuencias de actualización,
+etc.).
+
+- **Cualquier cambio que afecte a lo que el usuario ve o hace** (nuevas
+  funciones, cambios de comportamiento, textos, estados, ajustes,
+  frecuencias de actualización de datos...) **debe reflejarse en el manual**
+  en la misma tarea que lo implementa: añadiendo, corrigiendo o eliminando
+  la sección/subsección pertinente.
+- Los cambios puramente internos (refactors, optimizaciones, seguridad)
+  que no alteren la experiencia del usuario no requieren tocar el manual.
+- El manual debe estar siempre al día con el comportamiento real de la web;
+  una PR que cambie algo visible para el usuario sin actualizarlo quedará
+  incompleta.
