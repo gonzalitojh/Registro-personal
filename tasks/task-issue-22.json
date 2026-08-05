@@ -1,0 +1,32 @@
+{
+  "title": "Visualización de información en la búsqueda (issue #22)",
+  "description": "Al buscar una nueva serie, película o libro para añadir, se debe permitir pulsar sobre el ítem en cuestión para ver su información. Como si estuviese ya añadida en la colección. Actualmente los resultados de búsqueda (renderSearchResults en ui.js) solo muestran portada, título, año y un botón \"Añadir\"; no hay forma de previsualizar la información del ítem (sinopsis, duración, reparto, valoración de comunidad, etc.) antes de añadirlo.",
+  "status": "review",
+  "pr": {
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/61",
+    "number": 61
+  },
+  "acceptance criteria": [
+    "Pulsar sobre un resultado de búsqueda (película, serie o libro) abre una vista previa con su información",
+    "La vista previa muestra: portada, título, año (y autor/páginas en libros), sinopsis, y los datos ampliados disponibles (duración, género, reparto, director/creadores, valoración de comunidad, tráiler)",
+    "La vista previa funciona con datos básicos inmediatamente y se enriquece con los detalles de TMDB cuando están disponibles (sin bloquear la UI)",
+    "Desde la vista previa se puede añadir el ítem al registro (mismo flujo que el botón Añadir) y cerrar",
+    "Si el ítem ya está añadido, la vista previa lo indica y el botón Añadir aparece deshabilitado",
+    "Funciona en móvil, tablet y escritorio sin scroll horizontal ni textos desbordados",
+    "No se rompe la funcionalidad existente (búsqueda, alta, modales)"
+  ],
+  "definition of done": [
+    "renderSearchResults soporta apertura de vista previa por resultado",
+    "Modal de vista previa implementado para los tres tipos (movie, tv, book) reutilizando los helpers existentes (extraInfoHtml, communityRatingDisplay, trailerButtonHtml)",
+    "Enriquecimiento con getMovieDetails/getTvExtraDetails/getOpenLibraryDescription sin bloquear",
+    "Botón Añadir dentro de la vista previa conectado al flujo de alta existente",
+    "CSS responsive añadido (sin scroll horizontal en la página)",
+    "Documentación ADR del cambio completada",
+    "Issue #22 label actualizada a su estado final y PR creado con \"Closes #22\" contra dev"
+  ],
+  "issue": {
+    "number": 22,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/22",
+    "title": "Visualización de información en la búsqueda"
+  }
+}

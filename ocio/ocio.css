@@ -87,6 +87,19 @@
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
+  /* La tarjeta es clicable (vista previa de información, issue #22);
+     inofensivo cuando el callback no está definido */
+  cursor: pointer;
+}
+
+/* Elevación al pasar por encima: indica que la tarjeta es clicable */
+.result-card:hover {
+  box-shadow: var(--shadow-pop);
+}
+
+.result-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: -2px;
 }
 
 .result-card__cover {
