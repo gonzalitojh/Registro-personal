@@ -525,6 +525,10 @@ button {
   align-items: center;
   gap: 0.6rem;
   position: relative;
+  /* Cuando el header envuelve en móvil, el user-badge (y con él el
+     ancla del dropdown de notificaciones) queda pegado a la derecha
+     en lugar de a la izquierda de la segunda línea */
+  margin-left: auto;
 }
 
 .user-badge__avatar {
@@ -808,6 +812,21 @@ button {
   box-shadow: var(--shadow-pop);
   padding: 0.8rem;
   z-index: 40;
+}
+
+/* En móvil el dropdown se ancla al viewport (no al botón): si el header
+   envuelve en dos filas, el ancla quedaría a la izquierda de la pantalla
+   y el panel desbordaría. Fixed con márgenes laterales garantiza que
+   nunca se sale del ancho visible. */
+@media (max-width: 600px) {
+  .notif-dropdown {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: 4.5rem;
+    width: auto;
+    max-width: none;
+  }
 }
 
 .notif-dropdown__header {
