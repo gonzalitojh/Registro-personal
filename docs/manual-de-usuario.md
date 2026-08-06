@@ -421,6 +421,11 @@ cerrarla.
 Puedes elegir qué tipos de avisos quieres (o desactivarlos todos) en
 **Ajustes → Notificaciones** ([sección 14](#14-ajustes)).
 
+Si además activas **«Notificaciones en el dispositivo»**, esos mismos
+avisos aparecen también como **notificación del sistema** (en la pantalla
+del teléfono o en el escritorio) cuando la web está abierta pero no la
+estás mirando.
+
 ## 13. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
@@ -489,6 +494,16 @@ Se llega desde el **⚙️ engranaje** de la cabecera o desde el
   - Nuevos episodios de series
   - Estrenos de series
   - Actividad de amigos
+  - **Notificaciones en el dispositivo**: si la activas, los avisos
+    anteriores también llegan como **notificaciones del sistema** (en la
+    pantalla del teléfono o en el escritorio) cuando la web está abierta
+    pero no la estás mirando. Al activarla, el navegador te pide permiso
+    la primera vez: si lo deniegas, la opción se desactiva sola (puedes
+    re-concederlo después en los ajustes del navegador). Al tocar la
+    notificación se abre la web. Para que funcione en el móvil, la web
+    debe estar instalada como app ([sección 17](#17-instalar-la-web-en-tu-teléfono))
+    y en iPhone hace falta **iOS 16.4 o superior**; en el ordenador
+    funciona con la pestaña abierta en segundo plano.
 - **Sincronización de datos → «Sincronizar ahora»**: fuerza la actualización
   de tus fichas con los datos más recientes (sinopsis, sagas, valoraciones,
   portadas, tráilers...). Solo puedes usarlo una vez cada **30 minutos**
@@ -559,6 +574,19 @@ acaba de entrar por primera vez, aparecerá automáticamente.
 Los datos de estreno vienen del catálogo (TMDB). Si crees que hay un
 error, puedes marcarlo como visto/leído igualmente: la web te preguntará
 antes y tú decides.
+
+**No me llegan notificaciones del sistema**
+Comprueba lo siguiente:
+
+- La web debe estar **abierta** (aunque sea en segundo plano): las
+  notificaciones del sistema solo se pueden mostrar mientras la web está
+  abierta. Si la cierras del todo, no pueden llegar.
+- El permiso de notificaciones debe estar **concedido** en los ajustes de
+  tu navegador o teléfono (y la opción **«Notificaciones en el
+  dispositivo»** activada en Ajustes → Notificaciones).
+- En **iPhone**, la web debe estar **instalada como app**
+  ([sección 17](#17-instalar-la-web-en-tu-teléfono)) y tener **iOS 16.4
+  o superior**.
 
 ---
 
