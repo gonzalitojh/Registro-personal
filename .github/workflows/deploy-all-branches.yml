@@ -8,10 +8,10 @@ name: deploy-all-branches
 # de cualquier rama.
 
 on:
-  push: []             # todas las ramas, sin filtro
-  workflow_dispatch: {}  # re-despliegue manual desde la UI
-  delete: {}             # al borrar una rama/tag, reconstruir el sitio
-                         # (el evento delete no admite filtros de branch)
+  push:              # todas las ramas, sin filtro
+  workflow_dispatch: # re-despliegue manual desde la UI
+  delete:            # al borrar una rama/tag, reconstruir el sitio
+                     # (el evento delete no admite filtros de branch)
 
 permissions:
   contents: read
