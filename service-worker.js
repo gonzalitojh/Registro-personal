@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260808',
-  './css/ocio.css?v=20260808',
-  './js/app.js?v=20260808',
+  './css/styles.css?v=20260809',
+  './css/ocio.css?v=20260809',
+  './js/app.js?v=20260809',
   './js/ui.js',
   './js/db.js',
   './js/firebase.js',
@@ -62,10 +62,11 @@ const STATIC_ASSETS = [
   './js/focus-utils.js',
   './js/global-search.js',
   './js/settings.js',
+  './js/push.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260808',
-  './ocio/peliculas.html?v=20260808',
-  './ocio/libros.html?v=20260808',
+  './ocio/series.html?v=20260809',
+  './ocio/peliculas.html?v=20260809',
+  './ocio/libros.html?v=20260809',
 ];
 
 // -------------------------------------------------------------
@@ -316,4 +317,39 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  // Notificación del sistema: la página (js/push.js) reenvía aquí
+  // las notificaciones internas de la campana cuando la app está en
+  // segundo plano y el usuario tiene activado el push de dispositivo.
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { id, message } = event.data || {};
+    if (!id || typeof message !== 'string' || !message) return;
+    event.waitUntil(
+      self.registration.showNotification('Mi Registro', {
+        body: message,
+        icon: resolved('./resources/icon.png'),
+        badge: resolved('./resources/icon.png'),
+        tag: 'notif-' + id,
+        data: { url: './index.html' },
+      }).catch((err) => console.warn('[SW] showNotification falló:', err))
+    );
+  }
+});
+
+// -------------------------------------------------------------
+// Clic en una notificación del sistema: llevar el foco a la ventana
+// existente de la app o abrirla si no hay ninguna.
+// -------------------------------------------------------------
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = resolved((event.notification.data && event.notification.data.url) || './index.html');
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const existing = clientList.find((client) => client.url.startsWith(scopePath));
+      if (existing) {
+        return existing.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
 });
