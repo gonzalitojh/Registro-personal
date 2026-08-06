@@ -5,54 +5,67 @@
 // escrituras y endpoints de autenticación.
 // =============================================================
 
-const CACHE_STATIC = 'mi-registro-v2-static';
-const CACHE_DYNAMIC = 'mi-registro-v2-dynamic';
+// -------------------------------------------------------------
+// Base dinámica: cada rama se despliega en su propio
+// subdirectorio (p. ej. …/<rama>/), así que
+// todas las rutas se resuelven RELATIVAS al scope del propio SW
+// (self.registration.scope). El mismo fichero sirve para la
+// raíz (main) y para cada preview de rama, sin nada hardcodeado.
+// -------------------------------------------------------------
+const scopeURL = new URL(self.registration.scope);
+const scopePath = scopeURL.pathname;
+const resolved = (p) => new URL(p, scopeURL).toString();
+
+const CACHE_STATIC = 'mi-registro-v3-static';
+const CACHE_DYNAMIC = 'mi-registro-v3-dynamic';
 const DYNAMIC_MAX_ENTRIES = 50;
 
 // -------------------------------------------------------------
-// Recursos precargados durante el evento "install"
+// Recursos precargados durante el evento "install".
+// Rutas relativas al scope: se resuelven con `resolved()` en el
+// install, así que valen igual en la raíz y en subdirectorios.
 // -------------------------------------------------------------
 const STATIC_ASSETS = [
-  '/Registro-personal/',
-  '/Registro-personal/index.html',
-  '/Registro-personal/manifest.json',
-  '/Registro-personal/css/styles.css?v=20260807',
-  '/Registro-personal/ocio/ocio.css?v=20260807',
-  '/Registro-personal/js/app.js?v=20260807',
-  '/Registro-personal/js/ui.js',
-  '/Registro-personal/js/db.js',
-  '/Registro-personal/js/firebase.js',
-  '/Registro-personal/js/config.js',
-  '/Registro-personal/js/constants.js',
-  '/Registro-personal/js/dates.js',
-  '/Registro-personal/js/http.js',
-  '/Registro-personal/js/release.js',
-  '/Registro-personal/js/modal-handlers.js',
-  '/Registro-personal/js/notifications-setup.js',
-  '/Registro-personal/js/profile.js',
-  '/Registro-personal/js/quick-actions.js',
-  '/Registro-personal/js/rating-modal.js',
-  '/Registro-personal/js/reading-log.js',
-  '/Registro-personal/js/search.js',
-  '/Registro-personal/js/sorting.js',
-  '/Registro-personal/js/tv-progress.js',
-  '/Registro-personal/js/watch-log.js',
-  '/Registro-personal/js/daily-check.js',
-  '/Registro-personal/js/undo-delete.js',
-  '/Registro-personal/js/allowed-emails.js',
-  '/Registro-personal/js/api-books.js',
-  '/Registro-personal/js/api-movies.js',
-  '/Registro-personal/js/sw-register.js',
-  '/Registro-personal/js/activity-feed.js',
-  '/Registro-personal/js/export-backup.js',
-  '/Registro-personal/js/export-ics.js',
-  '/Registro-personal/js/focus-utils.js',
-  '/Registro-personal/js/global-search.js',
-  '/Registro-personal/js/settings.js',
-  '/Registro-personal/resources/icon.png',
-  '/Registro-personal/ocio/series.html?v=20260807',
-  '/Registro-personal/ocio/peliculas.html?v=20260807',
-  '/Registro-personal/ocio/libros.html?v=20260807',
+  './',
+  './index.html',
+  './manifest.json',
+  './css/styles.css?v=20260808',
+  './css/ocio.css?v=20260808',
+  './js/app.js?v=20260808',
+  './js/ui.js',
+  './js/db.js',
+  './js/firebase.js',
+  './js/config.js',
+  './js/constants.js',
+  './js/dates.js',
+  './js/http.js',
+  './js/release.js',
+  './js/modal-handlers.js',
+  './js/notifications-setup.js',
+  './js/profile.js',
+  './js/quick-actions.js',
+  './js/rating-modal.js',
+  './js/reading-log.js',
+  './js/search.js',
+  './js/sorting.js',
+  './js/tv-progress.js',
+  './js/watch-log.js',
+  './js/daily-check.js',
+  './js/undo-delete.js',
+  './js/allowed-emails.js',
+  './js/api-books.js',
+  './js/api-movies.js',
+  './js/sw-register.js',
+  './js/activity-feed.js',
+  './js/export-backup.js',
+  './js/export-ics.js',
+  './js/focus-utils.js',
+  './js/global-search.js',
+  './js/settings.js',
+  './resources/icon.png',
+  './ocio/series.html?v=20260808',
+  './ocio/peliculas.html?v=20260808',
+  './ocio/libros.html?v=20260808',
 ];
 
 // -------------------------------------------------------------
@@ -64,11 +77,12 @@ self.addEventListener('install', (event) => {
       // Usamos cache.addAll pero con manejo de errores individual
       // para que un recurso que falle no bloquee el resto
       return Promise.allSettled(
-        STATIC_ASSETS.map((url) =>
-          cache.add(url).catch((err) => {
+        STATIC_ASSETS.map((path) => {
+          const url = resolved(path);
+          return cache.add(url).catch((err) => {
             console.warn('[SW] No se pudo precachear:', url, err);
-          })
-        )
+          });
+        })
       );
     }).then(() => self.skipWaiting())
   );
@@ -111,7 +125,7 @@ async function cacheFirst(request) {
   } catch (err) {
     // Fallback offline: para navegación, devolver el app shell
     if (request.mode === 'navigate') {
-      return caches.match('/Registro-personal/index.html');
+      return caches.match(resolved('./index.html'));
     }
     throw err;
   }
@@ -160,7 +174,7 @@ async function networkFirst(request, timeoutMs = null) {
     if (cached) return { response: cached, fromNetwork: false };
     // Fallback para navegación
     if (request.mode === 'navigate') {
-      return { response: await caches.match('/Registro-personal/index.html'), fromNetwork: false };
+      return { response: await caches.match(resolved('./index.html')), fromNetwork: false };
     }
     // Para APIs, devolver un 503 amigable
     return {
@@ -220,7 +234,7 @@ self.addEventListener('fetch', (event) => {
         if (fromNetwork && response && response.ok) {
           caches
             .open(CACHE_STATIC)
-            .then((cache) => cache.put('/Registro-personal/index.html', response.clone()))
+            .then((cache) => cache.put(resolved('./index.html'), response.clone()))
             .catch((err) =>
               console.warn('[SW] No se pudo refrescar el app shell en caché:', err)
             );
@@ -232,7 +246,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ---- Cache First: recursos estáticos propios ----
-  if (url.pathname.startsWith('/Registro-personal/')) {
+  if (url.pathname.startsWith(scopePath)) {
     event.respondWith(cacheFirst(event.request));
     return;
   }

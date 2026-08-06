@@ -1,0 +1,78 @@
+name: deploy-all-branches
+
+# Despliega GitHub Pages con TODAS las ramas del repositorio:
+#   - main          → raíz        (https://<user>.github.io/<repo>/)
+#   - cada rama     → /<rama>/    (web completa en su subdirectorio)
+# El workflow NO hace push (solo lee el repo y sube un artefacto a Pages),
+# así que no existe riesgo de bucle infinito pese a dispararse en cada push
+# de cualquier rama.
+
+on:
+  push:              # todas las ramas, sin filtro
+  workflow_dispatch: # re-despliegue manual desde la UI
+  delete:            # al borrar una rama/tag, reconstruir el sitio
+                     # (el evento delete no admite filtros de branch)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una sola ejecución a la vez para Pages; si llega otra, la cancelamos.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout con todas las ramas (fetch-depth: 0)"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Migrar el modo de Pages legacy ("Deploy from a branch") a GitHub
+      # Actions mediante la API. PUT actualiza; si devuelve 404 (sitio aún
+      # no creado) se intenta POST. Si ambos fallan, se avisa para hacerlo
+      # manualmente en Settings → Pages → Source: "GitHub Actions".
+      - name: Migrar Pages a GitHub Actions (intento automático)
+        run: |
+          set +e
+          gh api --method PUT "repos/${{ github.repository }}/pages" \
+            -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            gh api --method POST "repos/${{ github.repository }}/pages" \
+              -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
+            status=$?
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::No se pudo migrar Pages legacy a GitHub Actions automáticamente. Hazlo manual: Settings → Pages → Source: \"GitHub Actions\"."
+          else
+            echo "Pages configurado con build_type=workflow (GitHub Actions)."
+          fi
+          exit 0
+
+      - name: Construir _site con todas las ramas
+        run: bash scripts/build-pages-site.sh
+
+      - name: Subir artefacto de Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
