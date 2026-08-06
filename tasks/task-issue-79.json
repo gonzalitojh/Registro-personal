@@ -1,7 +1,7 @@
 {
   "title": "Ajuste de pestañas",
   "description": "Las pestañas (series, películas y libros) deben cambiar a la parte inferior para los móviles. En lugar de la visualización actual, debe ser una barra fija, con iconos sencillos para cada pestaña, además del nombre.\n\nEn el caso de dispositivos más anchos que móviles, incluir también el mismo icono y mantener las pestañas fijas. Es decir, el scroll debe causar efecto únicamente sobre la lista de series, películas y libros.\n\nEl color de cada pestaña debe ser diferente (actualmente películas y series son iguales y libros de otro color, deberían ser las tres diferentes). Este cambio debe aplicar a todos los tipos de dispositivos.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Las pestañas (series, películas, libros) se muestran en una barra fija en la parte inferior de la pantalla en móviles, con un icono sencillo más el nombre de cada pestaña",
     "En dispositivos más anchos que móviles, las pestañas permanecen fijas (no se desplazan con el scroll) e incluyen también el icono junto al nombre",
@@ -25,5 +25,13 @@
     "number": 79,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/79",
     "title": "Ajuste de pestañas"
+  },
+  "pr": {
+    "number": 93,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/93",
+    "title": "[style] Barra de pestañas inferior fija con iconos y colores diferenciados (issue #79)",
+    "branch": "style/issue-79-pestanas-barra-inferior",
+    "commit": "2847bf1",
+    "closes": "#79"
   }
 }
