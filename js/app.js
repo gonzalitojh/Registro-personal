@@ -39,6 +39,7 @@ import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch } from "./global-search.js";
+import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 
 // ---------- Estado ----------
 
@@ -310,6 +311,7 @@ async function init() {
       allItems.books = [];
       notifications = [];
       cleanupSettings();
+      resetDevicePush();
       ui.showAuthScreen();
       return;
     }
@@ -383,6 +385,9 @@ async function init() {
           notifications,
           { onDelete: (n) => deleteNotification(currentUser.uid, n.id) }
         );
+        // Reenviar al SO las notificaciones nuevas cuando la app está
+        // en segundo plano (campana → notificación del sistema).
+        handleNotificationsSnapshot(notifications);
       },
       () => {}
     );

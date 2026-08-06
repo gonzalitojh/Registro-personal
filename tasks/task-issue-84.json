@@ -1,0 +1,37 @@
+{
+  "title": "Notificaciones push-up",
+  "description": "Quiero que las notificaciones que se reciben internamente en la web también se envíen al móvil cuando la tengo instalada como app web.\n\nContexto técnico detectado:\n- Proyecto 100% estático (GitHub Pages + Firestore), sin backend/Cloud Functions.\n- Las notificaciones internas se crean SOLO en la sesión del cliente (daily-check.js) y se guardan en users/{uid}/notifications; la app los escucha con onSnapshot en app.js.\n- Ya existe service-worker.js con base dinámica relativa (multi-rama, issue #83) y sw-register.js.\n- Ajustes de notificación por tipo en settings.js (DEFAULT_SETTINGS.notifications) y toggles en index.html (notif-*).\n\nEnfoque elegido: notificaciones del sistema (Notifications API + Service Worker) cuando la app no está en primer plano. Sin servidor de push no hay forma de notificar con la app totalmente cerrada; como las notificaciones internas solo se generan con una sesión abierta, el push local del SW cubre el caso real. Push real (FCM/Cloud Functions) queda documentado como limitación y evolución futura.",
+  "status": "review",
+  "acceptance criteria": [
+    "Al generarse una notificación interna nueva (estreno, episodio, actividad) con la app abierta pero NO en primer plano (fondo, otra app, otra pestaña), se muestra una notificación del sistema en el dispositivo (móvil con la PWA instalada y escritorio).",
+    "Existe un ajuste propio 'Notificaciones en el dispositivo' en Ajustes que activa/desactiva el envío al sistema, independiente de los toggles de tipo.",
+    "Al activar el ajuste se solicita el permiso de notificaciones del navegador (Notification.requestPermission, en gesto de usuario); si se deniega, el toggle se revierte y se informa al usuario.",
+    "Si el navegador no soporta notificaciones, el ajuste aparece deshabilitado.",
+    "Al hacer clic en la notificación del sistema se abre o enfoca la app.",
+    "Al abrir la app no se disparan notificaciones del sistema por las notificaciones internas ya existentes (solo las nuevas, detectadas por id).",
+    "Funciona en la PWA instalada en móvil (Android; iOS 16.4+ si el navegador lo soporta) y en escritorio solo cuando la pestaña no tiene foco.",
+    "El manual de usuario refleja el nuevo comportamiento (regla 3 de AGENTS.md)."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (módulo push.js + service worker + ajustes + app.js).",
+    "Validación contra criterios de aceptación (incluida verificación responsiva de la sección de Ajustes si aplica).",
+    "Escaneo de seguridad sin hallazgos de severidad alta.",
+    "ADR creado con 'Related issue: #84' y manual de usuario actualizado.",
+    "PR creada contra la rama dev con 'Closes #84' como primera línea.",
+    "Issue #84 actualizada a su estado final (label status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 84,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/84",
+    "title": "Notificaciones push-up"
+  },
+  "pr": {
+    "number": 88,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/88",
+    "title": "Notificaciones del sistema cuando la app no está en primer plano (issue #84)",
+    "branch": "feature/issue-84-device-notifications",
+    "commit": "c92273a",
+    "closes": "#84"
+  }
+}
