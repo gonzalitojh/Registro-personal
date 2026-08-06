@@ -1,7 +1,7 @@
 {
   "title": "Ajuste de pestañas",
   "description": "Las pestañas (series, películas y libros) deben cambiar a la parte inferior para los móviles. En lugar de la visualización actual, debe ser una barra fija, con iconos sencillos para cada pestaña, además del nombre.\n\nEn el caso de dispositivos más anchos que móviles, incluir también el mismo icono y mantener las pestañas fijas. Es decir, el scroll debe causar efecto únicamente sobre la lista de series, películas y libros.\n\nEl color de cada pestaña debe ser diferente (actualmente películas y series son iguales y libros de otro color, deberían ser las tres diferentes). Este cambio debe aplicar a todos los tipos de dispositivos.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "La barra superior (cabecera fija) tiene el MISMO color de fondo que la barra de pestañas (--ink-raised), en ambos temas",
     "Iconos, texto y campo de búsqueda de la cabecera siguen siendo legibles sobre el nuevo fondo en ambos temas (dark: crema sobre negro; light: negro sobre blanco)",
@@ -33,8 +33,16 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/93",
     "title": "[style] Barra de pestañas fija con iconos y colores diferenciados y cabecera fija (issue #79)",
     "branch": "style/issue-79-pestanas-barra-inferior",
-    "commit": "0fdfcbf",
+    "commit": "83f1945",
     "closes": "#79"
   },
-  "iteration note": "Feedback del usuario (comentario en la issue, 2026-08-06): en moviles esta perfecto, pero para PC y Tablet las pestanas deben estar bajo la barra de busqueda superior (y el boton del menu lateral y el perfil), ocupando el mismo ancho que esta. Ademas, la barra superior de busqueda tambien debe ser fija (siempre visible al hacer scroll) en todos los dispositivos. | Iteracion 3 (feedback 2026-08-06 12:21): (a) el color de la barra superior debe ser el mismo que el de la barra de pestanas (--ink-raised); (b) en tablet/PC las pestanas tienen una altura algo superior a las pestanas en si: eliminar el margen para que la barra tenga exactamente la altura de las pestanas."
+  "iteration note": "Feedback del usuario (comentario en la issue, 2026-08-06): en moviles esta perfecto, pero para PC y Tablet las pestanas deben estar bajo la barra de busqueda superior (y el boton del menu lateral y el perfil), ocupando el mismo ancho que esta. Ademas, la barra superior de busqueda tambien debe ser fija (siempre visible al hacer scroll) en todos los dispositivos. | Iteracion 3 (feedback 2026-08-06 12:21): (a) el color de la barra superior debe ser el mismo que el de la barra de pestanas (--ink-raised); (b) en tablet/PC las pestanas tienen una altura algo superior a las pestanas en si: eliminar el margen para que la barra tenga exactamente la altura de las pestanas.",
+  "previousPr": {
+    "number": 93,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/93",
+    "title": "[style] Barra de pestañas fija con iconos y colores diferenciados y cabecera fija (issue #79)",
+    "branch": "style/issue-79-pestanas-barra-inferior",
+    "commit": "0fdfcbf",
+    "closes": "#79"
+  }
 }
