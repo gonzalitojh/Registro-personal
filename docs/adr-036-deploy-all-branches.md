@@ -1,5 +1,15 @@
 # ADR-036: Despliegue de todas las ramas mediante GitHub Actions (issue #83)
 
+> **Nota de deprecación parcial (ADR-041, issue #98)**: la política de
+> triggers documentada en este ADR — `on: push` a **todas las ramas** y la
+> migración Pages legacy → Actions vía `gh api` — fue **sustituida** por el
+> ADR-041 (revisión de triggers, issue #98): `push` limitado a `main`/`dev`,
+> guard `ref_type == 'branch'` en el evento `delete` y
+> `actions/configure-pages@v5` con `enablement: true` en lugar del hack
+> `gh api`. El resto de este ADR (multi-rama, rutas dinámicas, saneo de
+> nombres, `strip_sensitive()`, entorno `github-pages`) sigue vigente. Este
+> documento se conserva intacto como histórico.
+
 ## Estado
 Aceptado
 
