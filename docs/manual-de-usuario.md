@@ -65,14 +65,23 @@ elige **«Cerrar sesión»** en el menú que se despliega.
 
 Nada más entrar verás:
 
-- **Arriba, la cabecera**, con el nombre de la web y, a la derecha:
-  - 🔔 **Campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
-  - 🔍 **Lupa**: buscador global (más en [sección 7](#7-cómo-buscar)).
-  - ⚙️ **Engranaje**: te lleva directamente a los Ajustes.
-  - ☀️/🌙 **Sol o luna**: cambia entre modo claro y oscuro al instante.
-  - **Tu foto**: pulsándola se abre un menú con las cinco secciones de tu
-    perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
-    opción **«Cerrar sesión»**.
+- **Arriba, la cabecera**:
+  - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
+    deslizante a la izquierda). De momento tiene una única entrada,
+    **«Ocio»**, que te devuelve a las pestañas de Series, Películas y
+    Libros. Se cierra pulsando fuera, la ✕, la tecla **Esc** o la propia
+    entrada.
+  - **Barra de búsqueda** (en el centro): la búsqueda global
+    (más en [sección 7](#7-cómo-buscar)). Al entrar, la barra muestra
+    brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
+    segundos pasa a «Buscar películas, series, libros o amigos...».
+  - A la derecha:
+    - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
+    - ⚙️ **Engranaje**: te lleva directamente a los Ajustes.
+    - ☀️/🌙 **Sol o luna**: cambia entre modo claro y oscuro al instante.
+    - **Tu foto**: pulsándola se abre un menú con las cinco secciones de tu
+      perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
+      opción **«Cerrar sesión»**.
 - **Debajo, las tres pestañas**: **Series**, **Películas** y **Libros**.
   Cada una muestra tu lista de ese tipo, con su buscador y sus filtros.
 
@@ -285,13 +294,19 @@ nombre.
 
 ### 7.3 Búsqueda global (todo a la vez)
 
-Pulsa la **🔍 lupa** de la cabecera (o las teclas **Ctrl+K**, **Cmd+K**
-en Mac, o **/**) y escribe: busca a la vez en tus **películas, series,
-libros** (también por autor) y en tus **amigos** (por nombre o correo).
+Escribe en la **barra de búsqueda** de la cabecera (o pulsa las teclas
+**Ctrl+K**, **Cmd+K** en Mac, o **/**) y busca a la vez en tus
+**películas, series, libros** (también por autor) y en tus **amigos**
+(por nombre o correo).
 
-Los resultados se agrupan con iconos (🎬 películas, 📺 series, 📚 libros,
-👤 amigos). Pulsa un resultado para abrir su ficha; si pulsas un amigo,
-de momento verás el aviso de que pronto podrás ver su perfil.
+Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
+desplegable** bajo ella con los resultados. Los resultados se agrupan con
+iconos (🎬 películas, 📺 series, 📚 libros, 👤 amigos). Pulsa un resultado
+para abrir su ficha; si pulsas un amigo, de momento verás el aviso de que
+pronto podrás ver su perfil.
+
+El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
+la **✕** que aparece dentro de la barra (que además borra lo escrito).
 
 ### 7.4 Añadir manualmente
 
@@ -406,7 +421,7 @@ de que pase el tiempo, el borrado se cancela.)
 
 ## 12. Notificaciones
 
-La campana 🔔 de la cabecera te avisa (solo dentro de la web, una vez al
+El **icono de campana** de la cabecera te avisa (solo dentro de la web, una vez al
 día) de:
 
 - **Estrenos de películas**: ««Título» ya se ha estrenado (fecha).»
@@ -514,8 +529,8 @@ Se llega desde el **⚙️ engranaje** de la cabecera o desde el
 
 - **Una vez al día**, al abrir la web, se comprueba automáticamente si ha
   pasado algo: estrenos de tus películas y series pendientes, episodios
-  nuevos de las series que sigues... Si hay novedades, aparecen en la
-  campana 🔔.
+  nuevos de las series que sigues... Si hay novedades, aparecen en el
+  icono de campana.
 - Esa misma comprobación diaria **rellena la información que falte** en tus
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo

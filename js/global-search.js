@@ -1,11 +1,19 @@
 // =============================================================
 // Buscador Global — busca simultáneamente en películas, series,
-// libros y amigos. Se abre con Ctrl+K (Cmd+K en Mac) o "/".
+// libros y amigos. La barra de búsqueda vive en la cabecera
+// (#global-search-input dentro de .search-bar-wrap) y los resultados
+// se muestran en un dropdown anclado bajo ella (#global-search-results).
+// Se abre al hacer focus/click en el input, o con Ctrl+K / "/".
+//
+// NOTA (issue #46): el dropdown NO usa trapFocus. Sigue el patrón del
+// dropdown de notificaciones (cierre con Escape, clic fuera del
+// contenedor): atrapar el foco en un dropdown no modal rompería la
+// navegación normal con Tab dentro del documento, que es la metáfora
+// de una barra de búsqueda tipo Gmail.
 // =============================================================
 
 import { openItem } from "./modal-handlers.js";
 import * as ui from "./ui.js";
-import { trapFocus } from "./focus-utils.js";
 
 // ---- Estado interno ----
 
@@ -18,7 +26,7 @@ let searchCtx = null;
 
 // ---- Referencias DOM (se asignan en setup) ----
 
-let el, input, resultsEl, backdrop, closeBtn;
+let wrap, input, resultsEl, clearBtn;
 
 // ---- Utilidades ----
 
@@ -223,7 +231,7 @@ function navigateTo(result) {
     return;
   }
   closeGlobalSearch();
-  // Pequeño delay para que el cierre del modal no interfiera
+  // Pequeño delay para que el cierre del dropdown no interfiera
   setTimeout(() => {
     openItem(item, searchCtx);
   }, 150);
@@ -235,18 +243,31 @@ function openGlobalSearch() {
   if (isOpen) return;
   isOpen = true;
 
-  // Recordar qué elemento tenía el foco antes de abrir
-  el._previousActiveElement = document.activeElement;
+  // Si el drawer lateral está abierto, cerrarlo primero: su backdrop
+  // (z-index 55) taparía el dropdown de resultados (z-index 40).
+  // El click en el toggle dispara closeSidebar() de js/sidebar.js.
+  const sidebar = document.getElementById("app-sidebar");
+  if (sidebar && sidebar.classList.contains("is-open")) {
+    const toggle = document.getElementById("btn-sidebar-toggle");
+    if (toggle) toggle.click();
+  }
 
-  el.classList.remove("hidden");
-  input.value = "";
-  resultsEl.innerHTML = `<p class="global-search__hint">Escribe para buscar en tus películas, series, libros y amigos.</p>`;
-  flatResults = [];
-  highlightedIndex = -1;
-  setTimeout(() => input.focus(), 50);
+  resultsEl.classList.remove("hidden");
+  clearBtn.hidden = false;
 
-  // Atrapar foco dentro del panel de búsqueda
-  el._focusTrapCleanup = trapFocus(el.querySelector(".global-search__panel"));
+  const query = input.value.trim();
+  if (query.length < 2) {
+    resultsEl.innerHTML = `<p class="global-search__hint">Escribe para buscar...</p>`;
+    flatResults = [];
+    highlightedIndex = -1;
+  } else {
+    // Ya hay texto: repetir la búsqueda para mostrar resultados
+    performSearch(searchCtx);
+  }
+
+  // Al abrir con atajo de teclado (Ctrl+K, "/"), llevar el foco al
+  // input; si ya estaba enfocado, el focus event no se repite.
+  if (document.activeElement !== input) input.focus();
 
   // Cachear perfiles de amigos al abrir
   if (!cachedProfiles && searchCtx) {
@@ -262,27 +283,18 @@ function openGlobalSearch() {
   }
 }
 
-function closeGlobalSearch() {
+export function closeGlobalSearch() {
   if (!isOpen) return;
   isOpen = false;
-  el.classList.add("hidden");
-  input.value = "";
+
+  resultsEl.classList.add("hidden");
   resultsEl.innerHTML = "";
   flatResults = [];
   highlightedIndex = -1;
-  input.blur();
+  clearBtn.hidden = true;
 
-  // Limpiar focus trap
-  if (el._focusTrapCleanup) {
-    el._focusTrapCleanup();
-    el._focusTrapCleanup = null;
-  }
-
-  // Restaurar foco al elemento que abrió la búsqueda
-  if (el._previousActiveElement && typeof el._previousActiveElement.focus === 'function') {
-    el._previousActiveElement.focus();
-  }
-  el._previousActiveElement = null;
+  // No se limpia el texto del input ni se mueve el foco: el usuario
+  // puede volver a pulsar la barra y retomar donde estaba (Gmail).
 }
 
 // ---- Navegación por teclado ----
@@ -327,17 +339,17 @@ function activateHighlight() {
 // ---- Inicialización ----
 
 /**
- * Inicializa el buscador global.
+ * Inicializa el buscador global (dropdown anclado a la barra de la
+ * cabecera).
  * @param {Object} ctx - Contexto de la aplicación (con getAllItems, etc.)
  */
 export function setupGlobalSearch(ctx) {
-  el = document.getElementById("global-search");
+  wrap = document.querySelector(".search-bar-wrap");
   input = document.getElementById("global-search-input");
   resultsEl = document.getElementById("global-search-results");
-  backdrop = document.getElementById("global-search-backdrop");
-  closeBtn = document.getElementById("global-search-close");
+  clearBtn = document.getElementById("global-search-clear");
 
-  if (!el || !input || !resultsEl) {
+  if (!wrap || !input || !resultsEl || !clearBtn) {
     console.warn("global-search: elementos DOM no encontrados");
     return;
   }
@@ -346,6 +358,11 @@ export function setupGlobalSearch(ctx) {
   searchCtx = ctx;
 
   // ---- Eventos ----
+
+  // Abrir al hacer focus o click en el input (el click cubre el caso
+  // de volver a pulsar una barra ya enfocada)
+  input.addEventListener("focus", openGlobalSearch);
+  input.addEventListener("click", openGlobalSearch);
 
   // Input con debounce
   let debounceTimer = null;
@@ -358,7 +375,10 @@ export function setupGlobalSearch(ctx) {
   input.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
-      e.stopPropagation();
+      // Solo atrapamos el Escape si el dropdown está abierto: si está
+      // cerrado (p. ej. con un modal de ítem encima), debe propagar
+      // al handler global de modal-handlers.js.
+      if (isOpen) e.stopPropagation();
       closeGlobalSearch();
       return;
     }
@@ -380,17 +400,29 @@ export function setupGlobalSearch(ctx) {
     // Permitir Ctrl+A, Ctrl+C, etc. sin interferir
   });
 
-  // Cerrar con backdrop
-  backdrop.addEventListener("click", closeGlobalSearch);
+  // Botón de limpiar/cerrar de la barra
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    closeGlobalSearch();
+    input.focus();
+  });
 
-  // Cerrar con botón
-  closeBtn.addEventListener("click", closeGlobalSearch);
+  // Clic fuera del wrap → cerrar el dropdown
+  document.addEventListener("click", (e) => {
+    if (isOpen && !wrap.contains(e.target)) {
+      closeGlobalSearch();
+    }
+  });
 
-  // Botón de lupa en el header
-  const searchBtn = document.getElementById("btn-global-search");
-  if (searchBtn) {
-    searchBtn.addEventListener("click", openGlobalSearch);
-  }
+  // Escape con el foco fuera del input (p. ej. sobre un resultado):
+  // el keydown del input ya cierra con stopPropagation, así que esto
+  // solo actúa cuando el foco está en otra parte del documento.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen && document.activeElement !== input) {
+      e.preventDefault();
+      closeGlobalSearch();
+    }
+  });
 
   // ---- Atajos globales de teclado ----
   document.addEventListener("keydown", (e) => {

@@ -38,6 +38,7 @@ mi-registro/
 │   ├── quick-actions.js       acciones rápidas (marcar vista/siguiente)
 │   ├── daily-check.js         comprobación diaria de estrenos
 │   ├── notifications-setup.js wiring de notificaciones
+│   ├── sidebar.js            barra lateral de navegación (drawer)
 │   ├── profile.js             perfil, estadísticas y amigos
 │   └── app.js                 punto de entrada y orquestador
 ├── docs/
