@@ -1,0 +1,36 @@
+{
+  "title": "Ajustes en barra lateral",
+  "description": "En la parte de abajo de la barra lateral de navegación debe aparecer el acceso a los ajustes. Además, se debe eliminar el botón de la pantalla principal (ya que ahora se accedería desde la barra lateral) y también eliminar el botón para cambiar el modo claro u oscuro (se cambia solo desde ajustes).",
+  "status": "review",
+  "acceptance criteria": [
+    "La barra lateral de navegación muestra una entrada «Ajustes» en su parte inferior (separada visualmente de las entradas de navegación)",
+    "Pulsar «Ajustes» en la barra lateral cierra el drawer y abre el perfil en la sección Ajustes (misma ruta que el botón ⚙️ actual)",
+    "El botón ⚙️ de ajustes (#btn-settings) se elimina de la cabecera de la pantalla principal, junto con su handler en js/app.js y sus estilos (#btn-settings) en css/styles.css",
+    "El botón de modo claro/oscuro (#btn-theme-toggle) se elimina de la cabecera, junto con su handler en js/app.js y sus estilos (.theme-toggle) en css/styles.css",
+    "El tema sigue siendo configurable exclusivamente desde Ajustes (selector de tema funcional, persistencia localStorage, sin regresiones)",
+    "El layout de la cabecera y la barra lateral sigue siendo responsive: sin scroll horizontal en 360 px, 768 px y 1280 px",
+    "Manual de usuario actualizado: referencias al ⚙️ y al ☀️/🌙 de la cabecera sustituidas por el acceso desde la barra lateral y Ajustes"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada y commiteada",
+    "Validación QA superada (criterios de aceptación + responsividad 360/768/1280)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado documentando el cambio (Related issue: #75)",
+    "PR creada contra dev con «Closes #75» como primera línea del body",
+    "Issue #75 actualizada a su estado final (status: needs-review tras la PR; done al promover dev a main)"
+  ],
+  "issue": {
+    "number": 75,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/75",
+    "title": "Ajustes en barra lateral"
+  },
+  "pr": {
+    "number": 91,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/91",
+    "title": "[style] Ajustes en la barra lateral y eliminación de botones ⚙️/☀️🌙 de la cabecera (issue #75)",
+    "branch": "style/issue-75-ajustes-barra-lateral",
+    "commit": "5800c8c",
+    "closes": "#75"
+  }
+}
