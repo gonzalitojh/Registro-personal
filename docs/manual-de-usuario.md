@@ -67,18 +67,17 @@ Nada más entrar verás:
 
 - **Arriba, la cabecera**:
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
-    deslizante a la izquierda). De momento tiene una única entrada,
-    **«Ocio»**, que te devuelve a las pestañas de Series, Películas y
-    Libros. Se cierra pulsando fuera, la ✕, la tecla **Esc** o la propia
-    entrada.
+    deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
+    devuelve a las pestañas de Series, Películas y Libros, y, en la
+    parte de abajo, **«Ajustes»**, que abre la sección de ajustes de tu
+    perfil (más en [sección 14](#14-ajustes)). Se cierra pulsando fuera,
+    la ✕, la tecla **Esc** o la propia entrada.
   - **Barra de búsqueda** (en el centro): la búsqueda global
     (más en [sección 7](#7-cómo-buscar)). Al entrar, la barra muestra
     brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
     segundos pasa a «Buscar películas, series, libros o amigos...».
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
-    - ⚙️ **Engranaje**: te lleva directamente a los Ajustes.
-    - ☀️/🌙 **Sol o luna**: cambia entre modo claro y oscuro al instante.
     - **Tu foto**: pulsándola se abre un menú con las cinco secciones de tu
       perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
       opción **«Cerrar sesión»**.
@@ -499,11 +498,11 @@ Se explica completo en la [sección 14](#14-ajustes).
 
 ## 14. Ajustes
 
-Se llega desde el **⚙️ engranaje** de la cabecera o desde el
+Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
+(abre el menú con la ☰ de la cabecera) o desde el
 **menú de tu foto → Ajustes**.
 
-- **Apariencia → Tema**: elige **Oscuro** o **Claro** (el botón ☀️/🌙 de
-  la cabecera hace lo mismo al instante).
+- **Apariencia → Tema**: elige **Oscuro** o **Claro**.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series

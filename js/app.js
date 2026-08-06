@@ -37,7 +37,7 @@ import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
-import { setupSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
+import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
@@ -160,23 +160,9 @@ const STORAGE_KEY_THEME = "mi-registro-theme";
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(STORAGE_KEY_THEME, theme);
-  const toggle = document.getElementById("btn-theme-toggle");
-  const icon = document.getElementById("theme-toggle-icon");
-  if (!toggle || !icon) return;
-  if (theme === "light") {
-    icon.textContent = "🌙";
-    toggle.setAttribute("aria-label", "Cambiar a modo oscuro");
-    toggle.setAttribute("aria-checked", "true");
-    // Update theme-color meta tag
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = "#f5f0e8";
-  } else {
-    icon.textContent = "☀️";
-    toggle.setAttribute("aria-label", "Cambiar a modo claro");
-    toggle.setAttribute("aria-checked", "false");
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = "#171512";
-  }
+  // Update theme-color meta tag
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === "light" ? "#f5f0e8" : "#171512";
 }
 
 function getSavedTheme() {
@@ -235,20 +221,6 @@ async function init() {
     });
   });
 
-  // Tema (modo claro / oscuro)
-  document.getElementById("btn-theme-toggle").addEventListener("click", () => {
-    const current = document.documentElement.dataset.theme || "dark";
-    const next = current === "dark" ? "light" : "dark";
-    setTheme(next);
-    syncThemeSelect(next);
-    syncThemeToSettings(next);
-  });
-
-  // Botón de ajustes (abre perfil → sección Ajustes)
-  document.getElementById("btn-settings").addEventListener("click", () => {
-    profileApi.openProfileSection("settings", ctx);
-  });
-
   // Filtros, orden, búsqueda en lista, vista
   document.querySelectorAll(".filter-chips").forEach((group) => {
     const scope = group.dataset.scope;
@@ -293,9 +265,11 @@ async function init() {
   setupSearch(ctx);
   setupModalCloseListeners();
   setupNotifications(ctx);
-  setupSidebar();
   const profileApi = setupProfile(ctx);
   setupSettings(ctx);
+  setupSidebar({
+    onOpenSettings: () => profileApi.openProfileSection("settings", ctx),
+  });
   setupGlobalSearch(ctx);
 
   // Suscripciones en tiempo real
