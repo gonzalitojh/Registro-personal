@@ -58,8 +58,8 @@ invitados. Si tu correo no está en la lista, la web te lo dirá
 podrás entrar. Pídele a quien administre la web que te añada.
 
 La primera vez que entras se crea tu cuenta automáticamente, con tu nombre
-y tu foto de Google. Para salir, pulsa el botón **«Salir»** en la esquina
-superior derecha.
+y tu foto de Google. Para salir, pulsa tu foto (arriba a la derecha) y
+elige **«Cerrar sesión»** en el menú que se despliega.
 
 ## 3. La pantalla principal
 
@@ -70,8 +70,9 @@ Nada más entrar verás:
   - 🔍 **Lupa**: buscador global (más en [sección 7](#7-cómo-buscar)).
   - ⚙️ **Engranaje**: te lleva directamente a los Ajustes.
   - ☀️/🌙 **Sol o luna**: cambia entre modo claro y oscuro al instante.
-  - **Tu foto y tu nombre**: pulsando la foto se abre tu perfil.
-  - **«Salir»**: cierra tu sesión.
+  - **Tu foto**: pulsándola se abre un menú con las cinco secciones de tu
+    perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
+    opción **«Cerrar sesión»**.
 - **Debajo, las tres pestañas**: **Series**, **Películas** y **Libros**.
   Cada una muestra tu lista de ese tipo, con su buscador y sus filtros.
 
@@ -422,8 +423,10 @@ Puedes elegir qué tipos de avisos quieres (o desactivarlos todos) en
 
 ## 13. Tu perfil
 
-Pulsa **tu foto** (arriba a la derecha) para abrir tu perfil. Tiene cinco
-secciones:
+Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
+elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad,
+Datos o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
+Tu perfil tiene cinco secciones:
 
 ### 13.1 Estadísticas
 
@@ -476,8 +479,8 @@ Se explica completo en la [sección 14](#14-ajustes).
 
 ## 14. Ajustes
 
-Se llega desde el **⚙️ engranaje** de la cabecera o desde
-**Perfil → Ajustes**.
+Se llega desde el **⚙️ engranaje** de la cabecera o desde el
+**menú de tu foto → Ajustes**.
 
 - **Apariencia → Tema**: elige **Oscuro** o **Claro** (el botón ☀️/🌙 de
   la cabecera hace lo mismo al instante).

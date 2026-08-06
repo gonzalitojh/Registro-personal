@@ -550,7 +550,7 @@ button {
 }
 
 /* Cabecera compacta en móvil: la fila superior envuelve en dos líneas
-   sin desbordar, manteniendo siempre visible el botón "Salir" */
+   sin desbordar. El cierre de sesión vive en el menú del avatar. */
 @media (max-width: 480px) {
   .app-header__top {
     gap: 0.5rem;
@@ -561,10 +561,6 @@ button {
   }
   .user-badge {
     gap: 0.4rem;
-  }
-  .user-badge .btn--ghost {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.78rem;
   }
 }
 
@@ -919,6 +915,74 @@ button {
   border: none;
   padding: 0;
   line-height: 0;
+}
+
+.profile-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(240px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: 0.4rem;
+  z-index: 40;
+}
+
+.profile-dropdown__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.profile-dropdown__item:hover {
+  background: var(--paper-dim);
+}
+
+.profile-dropdown__separator {
+  height: 1px;
+  margin: 0.3rem 0.4rem;
+  background: var(--paper-line);
+  opacity: 0.5;
+}
+
+.profile-dropdown__item--logout {
+  color: var(--stamp-dark);
+}
+
+/* En móvil el menú de perfil se ancla al viewport (igual que el dropdown
+   de notificaciones): si el header envuelve en dos filas, el ancla quedaría
+   a la izquierda de la pantalla y el panel desbordaría. Fixed con márgenes
+   laterales garantiza que nunca se sale del ancho visible. */
+@media (max-width: 600px) {
+  .profile-dropdown {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: 4.5rem;
+    width: auto;
+    max-width: none;
+  }
+}
+
+.user-badge__avatar-btn:focus-visible,
+.profile-dropdown__item:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 

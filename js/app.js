@@ -37,7 +37,7 @@ import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
-import { setupSettings, renderSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
+import { setupSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch } from "./global-search.js";
 
 // ---------- Estado ----------
@@ -233,8 +233,6 @@ async function init() {
     });
   });
 
-  document.getElementById("btn-logout").addEventListener("click", () => logout());
-
   // Tema (modo claro / oscuro)
   document.getElementById("btn-theme-toggle").addEventListener("click", () => {
     const current = document.documentElement.dataset.theme || "dark";
@@ -246,24 +244,7 @@ async function init() {
 
   // Botón de ajustes (abre perfil → sección Ajustes)
   document.getElementById("btn-settings").addEventListener("click", () => {
-    document.getElementById("app").classList.add("hidden");
-    document.getElementById("profile-view").classList.remove("hidden");
-
-    const subtabs = document.querySelectorAll(".profile-subtab");
-    subtabs.forEach((b) => b.classList.remove("is-active"));
-    document.querySelector('.profile-subtab[data-section="settings"]').classList.add("is-active");
-
-    document.getElementById("profile-section-stats").classList.add("hidden");
-    document.getElementById("profile-section-friends").classList.add("hidden");
-    const activitySec = document.getElementById("profile-section-activity");
-    if (activitySec) activitySec.classList.add("hidden");
-    document.getElementById("profile-section-data").classList.add("hidden");
-    document.getElementById("profile-section-settings").classList.remove("hidden");
-
-    const statsPeriodWrap = document.querySelector(".stats-period");
-    if (statsPeriodWrap) statsPeriodWrap.classList.add("hidden");
-
-    renderSettings(ctx);
+    profileApi.openProfileSection("settings", ctx);
   });
 
   // Filtros, orden, búsqueda en lista, vista
@@ -310,7 +291,7 @@ async function init() {
   setupSearch(ctx);
   setupModalCloseListeners();
   setupNotifications(ctx);
-  setupProfile(ctx);
+  const profileApi = setupProfile(ctx);
   setupSettings(ctx);
   setupGlobalSearch(ctx);
 
