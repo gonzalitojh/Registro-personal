@@ -584,6 +584,17 @@ button {
   gap: 0.2rem;
 }
 
+/* Footer inferior del drawer (issue #75): entradas pinned como
+   «Ajustes», empujadas al borde inferior y separadas con una línea. */
+.app-sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--paper-line);
+}
+
 .app-sidebar__link {
   display: flex;
   align-items: center;
@@ -1006,16 +1017,6 @@ button {
   color: var(--ink-soft);
   font-style: italic;
   margin: 0.4rem 0 0;
-}
-
-.theme-toggle {
-  font-size: 1.1rem;
-  line-height: 1;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
-}
-.theme-toggle:hover {
-  opacity: 1;
 }
 
 .user-badge__avatar-btn {
@@ -1464,17 +1465,6 @@ button {
 .switch__input:focus-visible + .switch__slider {
   outline: 2px solid var(--paper);
   outline-offset: 3px;
-}
-
-/* Icono de ajustes en el header */
-#btn-settings {
-  font-size: 1.1rem;
-  line-height: 1;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
-}
-#btn-settings:hover {
-  opacity: 1;
 }
 
 /* =============================================================

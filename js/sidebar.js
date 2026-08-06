@@ -6,15 +6,19 @@
 // botón ✕ o al pulsar una entrada.
 // Las entradas viven en el array SECTIONS (exportado): para añadir
 // una sección futura solo hay que añadir una entrada, sin tocar el
-// resto del módulo.
+// resto del módulo. Las entradas con `pinned: true` se renderizan
+// en el footer inferior (#app-sidebar-footer), separadas del resto
+// (issue #75: «Ajustes» bajo «Ocio»).
 // =============================================================
 
 import { trapFocus } from "./focus-utils.js";
 import { closeGlobalSearch } from "./global-search.js";
 
-// Entradas de la barra lateral: { id, label, icon, onClick }.
+// Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
 // "Ocio" es la web actual (pestañas Series / Películas / Libros);
 // al pulsarla se cierra el drawer y se hace scroll suave al top.
+// "Ajustes" (pinned) abre el perfil en la sección Ajustes: el
+// callback lo inyecta app.js vía setupSidebar({ onOpenSettings }).
 export const SECTIONS = [
   {
     id: "ocio",
@@ -41,14 +45,33 @@ export const SECTIONS = [
       }
     },
   },
+  {
+    id: "settings",
+    label: "Ajustes",
+    pinned: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>`,
+    onClick: () => {
+      if (openSettings) openSettings();
+    },
+  },
 ];
 
-export function setupSidebar() {
+// Callback de módulo para «Ajustes»: lo inyecta app.js en setupSidebar.
+let openSettings = null;
+
+export function setupSidebar(opts) {
+  openSettings = opts?.onOpenSettings || null;
+
   const sidebar = document.getElementById("app-sidebar");
   const backdrop = document.getElementById("app-sidebar-backdrop");
   const toggle = document.getElementById("btn-sidebar-toggle");
   const closeBtn = document.getElementById("btn-sidebar-close");
   const nav = document.getElementById("app-sidebar-nav");
+  const footer = document.getElementById("app-sidebar-footer");
 
   if (!sidebar || !backdrop || !toggle || !closeBtn || !nav) {
     console.warn("sidebar: elementos DOM no encontrados");
@@ -59,13 +82,30 @@ export function setupSidebar() {
 
   // Render de las entradas a partir del array SECTIONS. Los ids son
   // literales controlados por este módulo (sin datos de usuario).
-  nav.innerHTML = SECTIONS.map(
-    (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
-             data-section="${s.id}">
-      <span aria-hidden="true">${s.icon}</span>
-      <span>${s.label}</span>
-    </button>`
-  ).join("");
+  nav.innerHTML = SECTIONS.filter((s) => !s.pinned)
+    .map(
+      (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
+               data-section="${s.id}">
+        <span aria-hidden="true">${s.icon}</span>
+        <span>${s.label}</span>
+      </button>`
+    )
+    .join("");
+
+  // Footer inferior: entradas pinned (p. ej. «Ajustes»), separadas
+  // visualmente del resto por una línea. Si el contenedor no existe
+  // (HTML antiguo), no hacemos nada: defensivo.
+  if (footer) {
+    footer.innerHTML = SECTIONS.filter((s) => s.pinned)
+      .map(
+        (s) => `<button type="button" class="app-sidebar__link"
+                 data-section="${s.id}">
+          <span aria-hidden="true">${s.icon}</span>
+          <span>${s.label}</span>
+        </button>`
+      )
+      .join("");
+  }
 
   function openSidebar() {
     sidebar.classList.add("is-open");
@@ -116,8 +156,10 @@ export function setupSidebar() {
     }
   });
 
-  // Pulsar una entrada: cerrar el drawer y ejecutar su acción
-  nav.addEventListener("click", (e) => {
+  // Pulsar una entrada (nav o footer): cerrar el drawer y ejecutar
+  // su acción. El botón ✕ usa #btn-sidebar-close con clase
+  // app-sidebar__close, no interfiere con este delegado.
+  sidebar.addEventListener("click", (e) => {
     const btn = e.target.closest(".app-sidebar__link");
     if (!btn) return;
     const section = SECTIONS.find((s) => s.id === btn.dataset.section);
