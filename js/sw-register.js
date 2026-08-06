@@ -3,8 +3,16 @@
 // Se importa desde index.html como módulo ES.
 // =============================================================
 
-const SW_PATH = '/Registro-personal/service-worker.js';
-const SW_SCOPE = '/Registro-personal/';
+// -------------------------------------------------------------
+// Base dinámica: este módulo vive en js/ y el service worker en
+// la raíz, así que subimos un nivel desde import.meta.url. Esto
+// hace que el registro funcione igual en la raíz (main) y en los
+// subdirectorios de cada rama (<rama>/), donde cada rama tiene
+// sus propios ficheros.
+// -------------------------------------------------------------
+const SITE_BASE = new URL('../', import.meta.url).href;
+const SW_PATH = new URL('service-worker.js', SITE_BASE).href;
+const SW_SCOPE = SITE_BASE;
 
 let swRegistration = null;
 

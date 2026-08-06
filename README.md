@@ -180,10 +180,24 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
 1. Crea un repositorio nuevo en GitHub (público, obligatorio en el plan
    gratuito) y sube todo el contenido de esta carpeta, incluido tu
    `resources/icon.png`.
-2. Settings → Pages → Source: "Deploy from a branch" → rama `main`,
-   carpeta `/ (root)` → Guardar.
-3. En un par de minutos tu web estará en
-   `https://tu-usuario.github.io/nombre-del-repo/`.
+2. Settings → Pages → Source: **"GitHub Actions"** → Guardar. Si tu web
+   ya estaba publicada con el modo antiguo ("Deploy from a branch"), el
+   primer despliegue con el workflow intenta migrarla automáticamente; si
+   la migración automática fallara, haz el cambio de Source manualmente y
+   guarda.
+3. El workflow `.github/workflows/deploy-all-branches.yml` despliega
+   **todas las ramas** en cada push:
+   - La rama `main` se sirve en la raíz:
+     `https://tu-usuario.github.io/nombre-del-repo/`.
+   - Cada rama se sirve en su propio subdirectorio con el nombre de la
+     rama (saneado y manteniendo jerarquías, p. ej. `feature/mi-cambio`):
+     `https://tu-usuario.github.io/nombre-del-repo/<rama>/`. Es un
+     preview completo y funcional: cada rama tiene su propia web con su
+     service worker, manifest y assets funcionando desde su base.
+4. Para **re-desplegar manualmente** (p. ej. después de cambiar el
+   workflow): pestaña Actions → `deploy-all-branches` → "Run workflow".
+5. Al **borrar una rama**, el sitio se reconstruye automáticamente y su
+   subdirectorio desaparece del despliegue.
 
 ## 7. Autorizar tu dominio en Firebase
 
