@@ -26,6 +26,20 @@
     "title": "Revisar el workflow deploy-all-branches"
   },
   "pr": {
+    "number": 100,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/100",
+    "title": "[fix] Reintentos automáticos del deploy de Pages (issue #98, iteración 2)",
+    "branch": "fix/issue-98-deploy-retry",
+    "commit": "a360515",
+    "closes": "#98"
+  },
+  "iterations": [
+    {
+      "note": "Iteración 2: el merge de la PR #99 a dev (run 31109152406, 14:06Z) usó ya el fix pero el deploy falló de nuevo con timeout: quedó atascado en 'deployment_in_progress' (no queued). Causa: problema intermitente de infraestructura de GitHub Pages (actions/deploy-pages#406). Mitigación: jobs de retry automático del deploy.",
+      "date": "2026-08-06"
+    }
+  ],
+  "previous_pr": {
     "number": 99,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/99",
     "title": "[fix] Revisar el workflow deploy-all-branches (issue #98)",
