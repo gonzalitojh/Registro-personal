@@ -1,7 +1,7 @@
 {
   "title": "Despliegue de ramas mediante GitHub Actions",
   "description": "Implementar una GitHub Action que despliegue todas las ramas del repositorio en GitHub Pages.\n\nEstructura de URL requerida (salvo la rama main, que se mantiene en la raíz sin el nombre de la rama):\n  https://gonzalitojh.github.io/Registro-personal/<Nombre de la rama>\n\nEl resto de navegación de la web (enrutamiento/assets) debe partir de esa base, de modo que cada rama tenga acceso a la web completa para probar cambios.\n\nEstado actual detectado en el código:\n- GitHub Pages sirve desde la rama main (build_type: legacy, source branch main, path /).\n- service-worker.js usa rutas absolutas hardcodeadas /Registro-personal/... en STATIC_ASSETS, fallbacks y el check url.pathname.startsWith('/Registro-personal/').\n- js/sw-register.js registra el SW con SW_PATH='/Registro-personal/service-worker.js' y SW_SCOPE='/Registro-personal/' (rutas absolutas hardcodeadas).\n- manifest.json tiene start_url y scope absolutos /Registro-personal/.\n- index.html y los parciales ocio/*.html usan rutas relativas (css/..., js/..., ocio/...) y fetch relativo, compatibles con subdirectorios.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Existe una GitHub Action que despliega todas las ramas del repositorio en GitHub Pages.",
     "La rama main se sirve en la raíz: https://gonzalitojh.github.io/Registro-personal/ (sin nombre de rama).",
@@ -24,5 +24,13 @@
     "number": 83,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/83",
     "title": "Despliegue de ramas mediante Github Actions"
+  },
+  "pr": {
+    "number": 86,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/86",
+    "title": "[feature] Despliegue de todas las ramas en GitHub Pages (issue #83)",
+    "branch": "feature/issue-83-deploy-branches",
+    "commit": "bb9fb72",
+    "closes": "#83"
   }
 }
