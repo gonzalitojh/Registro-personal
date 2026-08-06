@@ -4,14 +4,23 @@ name: deploy-all-branches
 #   - main          → raíz        (https://<user>.github.io/<repo>/)
 #   - cada rama     → /<rama>/    (web completa en su subdirectorio)
 # El workflow NO hace push (solo lee el repo y sube un artefacto a Pages),
-# así que no existe riesgo de bucle infinito pese a dispararse en cada push
-# de cualquier rama.
+# así que no existe riesgo de bucle infinito.
+#
+# Política de triggers (issue #98): cada push a main/dev reconstruye TODAS
+# las ramas. Antes el workflow se disparaba en cada push de cualquier rama y,
+# con picos de actividad, la cola de deployments de Pages se saturaba
+# (deployments en `deployment_queued`) y actions/deploy-pages abortaba a los
+# 10 minutos con 'Timeout reached, aborting!'. Ahora los merges a main/dev
+# refrescan el sitio completo y el preview de cada rama abierta; para forzar
+# un re-despliegue sin merge se usa workflow_dispatch ("Run workflow").
 
 on:
-  push:              # todas las ramas, sin filtro
+  push:
+    branches: [main, dev]
   workflow_dispatch: # re-despliegue manual desde la UI
   delete:            # al borrar una rama/tag, reconstruir el sitio
-                     # (el evento delete no admite filtros de branch)
+                     # (el evento delete no admite filtros; el guard está
+                     #  en el job build)
 
 permissions:
   contents: read
@@ -26,33 +35,20 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Guard para el evento delete: descartar borrados de tags y quedarse
+    # solo con borrados de ramas. En push/workflow_dispatch ref_type no
+    # existe → la condición se evalúa true y el job siempre se ejecuta.
+    if: github.event_name != 'delete' || github.event.ref_type == 'branch'
     steps:
       - name: "Checkout con todas las ramas (fetch-depth: 0)"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Migrar el modo de Pages legacy ("Deploy from a branch") a GitHub
-      # Actions mediante la API. PUT actualiza; si devuelve 404 (sitio aún
-      # no creado) se intenta POST. Si ambos fallan, se avisa para hacerlo
-      # manualmente en Settings → Pages → Source: "GitHub Actions".
-      - name: Migrar Pages a GitHub Actions (intento automático)
-        run: |
-          set +e
-          gh api --method PUT "repos/${{ github.repository }}/pages" \
-            -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            gh api --method POST "repos/${{ github.repository }}/pages" \
-              -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
-            status=$?
-          fi
-          if [ "$status" -ne 0 ]; then
-            echo "::warning::No se pudo migrar Pages legacy a GitHub Actions automáticamente. Hazlo manual: Settings → Pages → Source: \"GitHub Actions\"."
-          else
-            echo "Pages configurado con build_type=workflow (GitHub Actions)."
-          fi
-          exit 0
+      - name: Configurar GitHub Pages (prerequisito de deploy-pages)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true   # migra Pages legacy → Actions si procede (sustituye al hack gh api)
 
       - name: Construir _site con todas las ramas
         run: bash scripts/build-pages-site.sh
