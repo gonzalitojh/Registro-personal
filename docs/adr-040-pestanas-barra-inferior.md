@@ -8,15 +8,45 @@ Aceptado
 
 ## Contexto
 
-**Nota de iteración**: este ADR se revisó tras el feedback del usuario en
-la issue #79 (iteración 2, 2026-08-06). El diseño inicial que documentaba
-—barra de pestañas fija **inferior en todos los dispositivos** (versión
+**Nota de iteraciones 2 y 3**: este ADR se revisó dos veces tras el
+feedback del usuario en la issue #79 (iteración 2, 2026-08-06; iteración
+3, 2026-08-06 12:21). El diseño inicial que documentaba —barra de
+pestañas fija **inferior en todos los dispositivos** (versión
 `20260812`)— se descartó para PC y tablet: el usuario pidió que en esos
 anchos las pestañas queden **bajo la barra de búsqueda superior**,
-ocupando el mismo ancho que esta, y que la **barra superior (menú lateral,
-búsqueda, campana, perfil) también sea fija**, siempre visible al hacer
-scroll, en todos los dispositivos. La decisión final es la que documenta
-este ADR (versión `20260813`); la barra inferior se mantiene solo en móvil.
+ocupando el mismo ancho que esta, y que la **barra superior (menú
+lateral, búsqueda, campana, perfil) también sea fija**, siempre visible
+al hacer scroll, en todos los dispositivos. La decisión final es la que
+documenta este ADR (versión `20260814`); la barra inferior se mantiene
+solo en móvil.
+
+**Iteración 3** (2026-08-06 12:21): el usuario pidió dos ajustes sobre la
+decisión `20260813`:
+
+1. **El color de la cabecera debe ser igual al de la barra de
+   pestañas**: `.app-header` pasa de `background: var(--paper)` a
+   `background: var(--ink-raised)` —la misma superficie elevada de
+   `.tabs--bar`— con `border-bottom: 1px solid var(--paper-alpha-20)`
+   (el mismo borde que usa la barra). Se **elimina** el override
+   `.app-header .icon-btn { color: var(--ink) }`: los iconos vuelven al
+   `.icon-btn { color: var(--paper) }` base (crema sobre negro en el
+   tema papel, contraste ~13.9:1) + el `[data-theme="light"] .icon-btn {
+   color: var(--ink) }` existente (negro sobre blanco, ~14.6:1), ambos
+   muy por encima de AA. El campo de búsqueda ya era `--ink-raised` (se
+   integra sin cambios) y el nombre de usuario y el placeholder
+   (`--ink-soft`) mejoran su contraste sobre la nueva superficie (≈4.9:1
+   en oscuro / 5.9:1 en claro, AA).
+2. **Altura exacta de las pestañas en ≥768 px**: `--tabs-bar-h` pasa de
+   3rem a 2rem (solo como referencia del hueco del contenido: padding
+   superior de `.app` y `scroll-margin-top` = header-h + tabs-bar-h +
+   1rem = 6.5rem). La barra adopta `height: auto` en `.tabs`, con la
+   regla declarada **después** de la base `.tabs { height:
+   var(--tabs-bar-h) }` para que la cascada la aplique (misma
+   especificidad, gana la última) — corrección de cascada pedida por el
+   QA, que ya detectó un fallo por el mismo orden en la primera versión
+   del fix. Además, `.app-header { border-bottom: none; }` en ≥768 px:
+   la línea separadora la pone el `border-top` de la barra (ambas del
+   mismo color `--ink-raised`).
 
 Las pestañas **Series / Películas / Libros** vivían en la **cabecera**, bajo
 la barra de búsqueda, como un `nav.tabs` con estilo de **separadores de
@@ -66,18 +96,30 @@ huecos con `calc()`.
   **elimina** (iteración 1); el resto del header —menú lateral, búsqueda,
   campana, perfil— no cambia de marcado.
 - `css/styles.css`: `.app-header` pasa a `position: fixed; top: 0; left:
-  0; right: 0; z-index: 46; background: var(--paper); border-bottom: 1px
-  solid var(--paper-line)`. El fondo opaco `--paper` funciona en ambos
-  temas y tapa el contenido que pasa por debajo al hacer scroll.
+  0; right: 0; z-index: 46; background: var(--ink-raised); border-bottom:
+  1px solid var(--paper-alpha-20)` — la **misma superficie elevada que la
+  barra de pestañas** (iteración 3): el usuario pidió que el color de la
+  barra superior sea igual al de las pestañas. El fondo opaco funciona en
+  ambos temas y tapa el contenido que pasa por debajo al hacer scroll.
+  En ≥768 px el borde inferior se elimina (`border-bottom: none`): la
+  línea separadora la pone el `border-top` de la barra, ambas del mismo
+  color.
 - `.app-header__top`: `height: var(--header-h)` (3.5rem), `flex-wrap:
   nowrap` (una sola fila en todos los anchos), `max-width: 980px` centrado
   y `padding: 0 1.25rem` (alineado con `#app`); se elimina el
   `margin-bottom` que separaba el header del contenido (ahora el hueco lo
   da el padding de `.app`, punto 4).
-- **Iconos de cabecera en `--ink`**: `.app-header .icon-btn { color:
-  var(--ink) }` — `.icon-btn` usa `--paper` por defecto porque estaba
-  pensado para fondo oscuro, pero el header tiene fondo de papel en ambos
-  temas; los iconos (menú, campana, avatar) pasan a tinta.
+- **Iconos de cabecera con los colores base de `.icon-btn`** (sin
+  override): la iteración 2 había añadido `.app-header .icon-btn { color:
+  var(--ink) }`; la iteración 3 lo **elimina** — al unificar la superficie
+  del header con `--ink-raised`, los iconos (menú, campana, avatar)
+  vuelven al `.icon-btn { color: var(--paper) }` base (crema sobre negro
+  en el tema papel, ~13.9:1) y al `[data-theme="light"] .icon-btn {
+  color: var(--ink) }` existente (negro sobre blanco, ~14.6:1); ambos
+  pares superan AA sin estilos de cabecera duplicados. El campo de
+  búsqueda ya usaba `--ink-raised` y se integra sin cambios; el nombre de
+  usuario y el placeholder del buscador (`--ink-soft`) mejoran su
+  contraste sobre la nueva superficie (≈4.9:1 oscuro / 5.9:1 claro, AA).
 - **Nombre de usuario con ellipsis** (≥520 px): `white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; max-width: min(12rem, 30vw)`
   — salvaguarda para nombres largos: el header tiene altura fija y no debe
@@ -99,16 +141,23 @@ huecos con `calc()`.
 - **Móvil (≤768 px)**: barra fija en el borde inferior del viewport (como
   en la iteración 1), con el margen seguro del iPhone.
 - **PC/tablet (≥768 px)**: `top: var(--header-h); bottom: auto` — la barra
-  se pega **bajo la cabecera fija**; el borde superior existente actúa de
-  separador entre cabecera y pestañas.
+  se pega **bajo la cabecera fija**; su `border-top` actúa de separador
+  entre cabecera y pestañas (en la iteración 3 la cabecera pierde su
+  `border-bottom` en estos anchos: la línea la pone exclusivamente la
+  barra, ambas del mismo color). La altura de la barra se ajusta al
+  contenido (`height: auto` en `.tabs`), sin margen vertical sobrante.
 - **Alineación de ancho**: el contenedor interior `.tabs` se alinea con
   `#app` y con el header — `width: 100%; max-width: 980px; margin: 0 auto;
   padding: 0 1.25rem` — de modo que las pestañas ocupen exactamente el
   mismo ancho que la barra de búsqueda (en todos los dispositivos).
-- **`--tabs-bar-h`**: `3.75rem` en móvil (icono sobre nombre) y `3rem` en
-  PC/tablet, en `@media (min-width: 768px)`. Una sola variable define la
-  altura de la barra y los huecos de contenido (puntos 4 y 6), evitando
-  duplicar el valor.
+- **`--tabs-bar-h`**: `3.75rem` en móvil (icono sobre nombre) y `2rem` en
+  PC/tablet (iteración 3), en `@media (min-width: 768px)`. En PC/tablet
+  la variable **solo referencia el hueco del contenido** (puntos 4 y 6):
+  la barra misma adopta `height: auto` en `.tabs` (regla declarada
+  **después** de la base `.tabs { height: var(--tabs-bar-h) }` para que
+  la cascada la aplique — misma especificidad, gana la última; corrección
+  pedida por el QA tras un fallo con el mismo orden de cascada). Un único
+  punto de ajuste para los huecos, sin duplicar el valor.
 - **Icono + nombre**: cada pestaña lleva un **SVG inline** (trazo
   `currentColor`, `stroke-width: 1.8`, `aria-hidden="true"`) y un `<span>`
   con el nombre; en ≤768 px el icono va **sobre** el nombre (columna,
@@ -143,7 +192,8 @@ huecos con `calc()`.
   para la cabecera fija (3.5rem) + 1rem de aire.
 - `.app` **padding superior PC/tablet** (≥768 px): `calc(var(--header-h) +
   var(--tabs-bar-h) + 1rem)` — acumula cabecera (3.5rem) + barra de
-  pestañas (3rem) + 1rem de aire.
+  pestañas (2rem) + 1rem de aire = **6.5rem** (el hueco usa la variable;
+  la altura real de la barra es `auto`, se ajusta a las pestañas).
 - `.app` **padding inferior móvil**: `calc(var(--tabs-bar-h) +
   env(safe-area-inset-bottom, 0px) + 1.5rem)` — la última fila de la lista
   y el pie nunca quedan tapados por la barra inferior (igual que en la
@@ -158,18 +208,19 @@ huecos con `calc()`.
 ### 5. Breakpoint único a 768 px
 
 El layout de escritorio (pestañas bajo la cabecera, barra en fila con
-icono junto al nombre, `--tabs-bar-h: 3rem`, huecos acumulados, toast al
-margen inferior) aplica desde `min-width: 768px` — y no `769px` como en la
-iteración 1 — para que las **tablets portrait (iPad, 768 px)** vean las
-pestañas bajo la cabecera y no la barra inferior.
+icono junto al nombre, `--tabs-bar-h: 2rem` como referencia de hueco,
+huecos acumulados, toast al margen inferior) aplica desde `min-width:
+768px` — y no `769px` como en la iteración 1 — para que las **tablets
+portrait (iPad, 768 px)** vean las pestañas bajo la cabecera y no la
+barra inferior.
 
 ### 6. `scroll-margin-top` para el foco y el skip-link
 
 `#main-content` (destino del enlace «Saltar al contenido») y `.panel h2`
 (recibe el foco al cambiar de pestaña, `js/app.js`) con `scroll-margin-
 top: calc(var(--header-h) + 1rem)` en móvil (4.5rem) y `calc(var(--header-
-h) + var(--tabs-bar-h) + 1rem)` en ≥768 px (7.5rem): el foco y el ancla no
-quedan ocultos bajo la cabecera fija.
+h) + var(--tabs-bar-h) + 1rem)` en ≥768 px (6.5rem): el foco y el ancla
+no quedan ocultos bajo la cabecera fija.
 
 ### 7. Toast reposicionado según dispositivo
 
@@ -205,7 +256,7 @@ ADR-038 (60), que nunca quedan tapados.
 
 ### 9. `js/app.js` sin cambios (selectores preservados)
 
-El JS de pestañas **no se tocó** en ninguna de las dos iteraciones: la
+El JS de pestañas **no se tocó** en ninguna de las tres iteraciones: la
 delegación de clics existente sigue usando la clase `.tab`, `data-panel` y
 `.is-active` (y los ids `tab-tv`/`tab-movies`/`tab-books`), que se
 conservan **idénticos** en el nuevo marcado; solo cambió la ubicación del
@@ -215,12 +266,13 @@ lógica nueva ni refactors.
 ### 10. PWA y manual de usuario
 
 - `js/config.js`: `APP_VERSION` de `20260811` a **`20260812`** (iteración
-  1) y de ahí a **`20260813`** (decisión final, feedback del usuario).
-- `index.html`: `?v=20260813` en `css/styles.css`, `ocio/ocio.css` y
+  1), a **`20260813`** (iteración 2, feedback del usuario) y a
+  **`20260814`** (iteración 3, ajustes finales).
+- `index.html`: `?v=20260814` en `css/styles.css`, `ocio/ocio.css` y
   `js/app.js`.
-- `service-worker.js`: `STATIC_ASSETS` actualizado a `?v=20260813`
+- `service-worker.js`: `STATIC_ASSETS` actualizado a `?v=20260814`
   (estilos, app.js y `ocio/*.html`). Invalida las cachés previas
-  (`20260812` y anteriores).
+  (`20260813` y anteriores).
 - `docs/manual-de-usuario.md`: sección **3** (pantalla principal): la
   cabecera **permanece siempre visible** al hacer scroll, en ningún
   dispositivo; las pestañas están en una **barra fija inferior en el
@@ -269,6 +321,18 @@ lógica nueva ni refactors.
   duplicaría la altura de la cabecera/barra en otro sitio y rompería en
   iOS; `calc(var(--header-h) + var(--tabs-bar-h) + …)` mantiene un único
   punto de ajuste.
+- **Override de iconos de cabecera en tinta** (`.app-header .icon-btn {
+  color: var(--ink) }`, iteración 2): descartado en la iteración 3 — al
+  unificar la superficie de la cabecera con la de la barra
+  (`--ink-raised`), los colores base de `.icon-btn` (`--paper` en el
+  tema papel, `--ink` en el claro vía `[data-theme="light"]`) ya cumplen
+  AA con amplio margen (~13.9:1 y ~14.6:1); el override sobraba y
+  duplicaba estilos.
+- **`--tabs-bar-h` como altura real de la barra en PC/tablet** (`3rem`,
+  iteración 2): descartado en la iteración 3 — el usuario pidió altura
+  exacta de las pestañas; con `height: auto` en `.tabs` la barra se
+  ajusta a su contenido y `--tabs-bar-h: 2rem` queda solo como
+  referencia del hueco (padding de `.app` y `scroll-margin-top`).
 
 ## Consecuencias
 
@@ -289,6 +353,22 @@ lógica nueva ni refactors.
   `--tabs-bar-h`): cambiar la altura de la cabecera o de la barra
   recalcula automáticamente los padding de `.app`, el `scroll-margin-top`
   y el toast; un único punto de ajuste por variable.
+- **Cabecera y barra de pestañas visualmente continuas** (iteración 3):
+  ambas usan la superficie `--ink-raised` y el borde `--paper-alpha-20`
+  (en ≥768 px el `border-top` de la barra es la única línea separadora),
+  tal y como pidió el usuario; el campo de búsqueda ya era `--ink-raised`
+  y se integra sin cambios.
+- **Contraste AA en la cabecera sin overrides** (iteración 3): los iconos
+  usan los colores base de `.icon-btn` (crema `--paper` sobre
+  `--ink-raised`, ~13.9:1, tema papel; negro `--ink` sobre blanco,
+  ~14.6:1, tema claro) y el nombre de usuario y el placeholder
+  (`--ink-soft`) ganan contraste sobre la superficie elevada (≈4.9:1
+  oscuro / 5.9:1 claro); se eliminó el override de la iteración 2.
+- **Barra de pestañas con altura exacta en PC/tablet** (iteración 3,
+  `height: auto`): la barra se ajusta al contenido de las pestañas sin
+  margen vertical sobrante bajo la cabecera; `--tabs-bar-h: 2rem` queda
+  como única referencia para los huecos (`calc()` en `.app` y
+  `scroll-margin-top`).
 - **Sin cambios en JS**: `js/app.js` intacto (selectores `.tab`,
   `data-panel`, `.is-active` preservados), riesgo de regresión en la lógica
   de pestañas prácticamente nulo.
@@ -309,8 +389,9 @@ lógica nueva ni refactors.
 ### Negativas / Riesgos
 
 - **Menos área vertical de lectura**: cabecera fija (3.5rem) + barra de
-  pestañas (3.75rem en móvil, abajo; 3rem en PC/tablet, bajo la cabecera)
-  consumen viewport; se mitiga con alturas compactas y tipografía reducida
+  pestañas (3.75rem en móvil, abajo; en PC/tablet la barra se ajusta al
+  contenido con `height: auto` y el hueco reservado es de 2rem) consumen
+  viewport; se mitiga con alturas compactas y tipografía reducida
   (0.72rem móvil / 0.85rem PC/tablet).
 - **Dos escalones nuevos en la jerarquía z-index** (46 cabecera, 45 barra)
   entre 40 y 50: cualquier capa futura en ese rango deberá convivir con
@@ -322,9 +403,10 @@ lógica nueva ni refactors.
 
 ### Neutras
 
-- **PWA versionada a `20260813`**: `APP_VERSION`, `?v=` en `index.html` y
+- **PWA versionada a `20260814`**: `APP_VERSION`, `?v=` en `index.html` y
   `STATIC_ASSETS` del service worker invalidan las cachés previas
-  (incluida la intermedia `20260812` de la iteración 1).
+  (incluidas las intermedias `20260812` y `20260813` de las iteraciones
+  1 y 2).
 - **`docs/manual-de-usuario.md` actualizado** (obligación de AGENTS.md:
   cambios visibles al usuario): sección **3**.
 - **ADRs previos no superados**: ADR-032 y ADR-038 describían las pestañas
@@ -340,11 +422,11 @@ lógica nueva ni refactors.
 
 | Archivo | Cambio |
 |---------|--------|
-| `index.html` | `nav.tabs` (estilo separadores de fichero) **eliminado** de la cabecera; **nuevo** `nav.tabs--bar` a nivel de body (tras `</main>`): `div.tabs[role="tablist"]` con 3 botones `.tab--tv`/`.tab--movies`/`.tab--books` (SVG inline `aria-hidden` + `<span>` nombre, `aria-controls` añadido, `data-panel`/`.is-active`/ids conservados); versionado `?v=20260813` |
-| `css/styles.css` | `.app-header` fija (`position: fixed; top:0; left:0; right:0; z-index: 46; background: var(--paper); border-bottom: 1px solid var(--paper-line)`), iconos `.icon-btn` en `--ink`, `.app-header__top` con `height: var(--header-h)` (3.5rem), nowrap, `max-width: 980px` y `padding: 0 1.25rem`; nombre de usuario con ellipsis ≥520 px; `--header-h: 3.5rem` en `:root`; `.tabs--bar` fija (móvil `bottom: 0` / ≥768 px `top: var(--header-h); bottom: auto`, `z-index: 45`); `.tabs` con `padding: 0 1.25rem` (alineado con header y `#app`); breakpoint de escritorio unificado a `min-width: 768px` (también en `--tabs-bar-h` 3rem y `.tab` en fila); `.app` con padding superior `calc(var(--header-h) + 1rem)` móvil / `calc(var(--header-h) + var(--tabs-bar-h) + 1rem)` ≥768 px, padding inferior móvil `calc(var(--tabs-bar-h) + safe-area + 1.5rem)` y `4rem` ≥768 px; `scroll-margin-top` en `#main-content` y `.panel h2` (4.5rem móvil / 7.5rem ≥768 px); toast `bottom: 1.4rem` en ≥768 px; resto de la iteración 1 conservado (colores `--tab-accent`, safe-area, activa con franja) |
+| `index.html` | `nav.tabs` (estilo separadores de fichero) **eliminado** de la cabecera; **nuevo** `nav.tabs--bar` a nivel de body (tras `</main>`): `div.tabs[role="tablist"]` con 3 botones `.tab--tv`/`.tab--movies`/`.tab--books` (SVG inline `aria-hidden` + `<span>` nombre, `aria-controls` añadido, `data-panel`/`.is-active`/ids conservados); versionado `?v=20260814` |
+| `css/styles.css` | `.app-header` fija (`position: fixed; top:0; left:0; right:0; z-index: 46; background: var(--ink-raised); border-bottom: 1px solid var(--paper-alpha-20)`, `border-bottom: none` en ≥768 px), **sin** override `.app-header .icon-btn` (iconos con los colores base: `--paper` en oscuro / `--ink` en claro); `.app-header__top` con `height: var(--header-h)` (3.5rem), nowrap, `max-width: 980px` y `padding: 0 1.25rem`; nombre de usuario con ellipsis ≥520 px; `--header-h: 3.5rem` en `:root` y `--tabs-bar-h: 2rem` en ≥768 px (referencia del hueco; `.tabs` con `height: auto` en ≥768 px, regla declarada **después** de la base); `.tabs--bar` fija (móvil `bottom: 0` / ≥768 px `top: var(--header-h); bottom: auto`, `z-index: 45`); `.tabs` con `padding: 0 1.25rem` (alineado con header y `#app`); breakpoint de escritorio unificado a `min-width: 768px` (también en `.tab` en fila); `.app` con padding superior `calc(var(--header-h) + 1rem)` móvil / `calc(var(--header-h) + var(--tabs-bar-h) + 1rem)` (6.5rem) ≥768 px, padding inferior móvil `calc(var(--tabs-bar-h) + safe-area + 1.5rem)` y `4rem` ≥768 px; `scroll-margin-top` en `#main-content` y `.panel h2` (4.5rem móvil / 6.5rem ≥768 px); toast `bottom: 1.4rem` en ≥768 px; resto de iteraciones 1-2 conservado (colores `--tab-accent`, safe-area, activa con franja) |
 | `docs/manual-de-usuario.md` | Sección 3 (pantalla principal): cabecera siempre visible en todos los dispositivos; pestañas fijas por dispositivo (barra inferior en móvil, barra bajo la búsqueda en ordenador/tablet) con icono y color propio (Series verde, Películas rojo, Libros ocre), franja de color en la activa y scroll solo del contenido |
-| `js/config.js` | `APP_VERSION` de `20260811` a `20260812` (iteración 1) y finalmente a **`20260813`** |
-| `service-worker.js` | `STATIC_ASSETS` con `?v=20260813` (styles, ocio.css, app.js, `ocio/*.html`) |
-| `docs/adr-040-pestanas-barra-inferior.md` | **Actualizado**: este documento (decisión final tras el feedback del usuario en la issue) |
+| `js/config.js` | `APP_VERSION` de `20260811` a `20260812` (iteración 1), a `20260813` (iteración 2) y finalmente a **`20260814`** (iteración 3) |
+| `service-worker.js` | `STATIC_ASSETS` con `?v=20260814` (styles, ocio.css, app.js, `ocio/*.html`) |
+| `docs/adr-040-pestanas-barra-inferior.md` | **Actualizado**: este documento (decisión final tras el feedback del usuario en la issue, iteraciones 2 y 3) |
 
 Related issue: #79 — https://github.com/gonzalitojh/Registro-personal/issues/79

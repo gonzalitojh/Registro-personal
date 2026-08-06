@@ -479,26 +479,21 @@ button {
    ========================================================= */
 
 /* Cabecera fija en todos los dispositivos (issue #79): visible
-   siempre, aunque se haga scroll; opaca (--paper funciona en ambos
-   temas) para tapar el contenido que pasa por debajo. z-index 46:
-   un punto por encima de la barra de pestañas (45) para que los
-   dropdowns anclados a la cabecera (hijos suyos) se pinten siempre
-   completos y por debajo de modales, backdrop del drawer y drawer. */
+   siempre, aunque se haga scroll; usa la misma superficie elevada
+   que la barra de pestañas (--ink-raised) por petición del usuario
+   (el color de la barra superior debe ser igual al de las pestañas).
+   z-index 46: un punto por encima de la barra de pestañas (45) para
+   que los dropdowns anclados a la cabecera (hijos suyos) se pinten
+   siempre completos y por debajo de modales, backdrop del drawer y
+   drawer. */
 .app-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 46;
-  background: var(--paper);
-  border-bottom: 1px solid var(--paper-line);
-}
-
-/* Los iconos de la cabecera pasan a tinta: .icon-btn usa --paper
-   como color porque está pensado para el fondo oscuro de la app,
-   pero el header tiene fondo de papel claro en ambos temas. */
-.app-header .icon-btn {
-  color: var(--ink);
+  background: var(--ink-raised);
+  border-bottom: 1px solid var(--paper-alpha-20);
 }
 
 .app {
@@ -757,14 +752,16 @@ button {
    ========================================================= */
 
 /* Altura de la cabecera fija y de la barra: móvil con icono sobre
-   nombre (~3.75rem), escritorio con icono y nombre en línea (~3rem). */
+   nombre (~3.75rem). En escritorio la barra no fija altura: se
+   ajusta a la de las propias pestañas (--tabs-bar-h: 2rem es solo
+   la referencia para el hueco del contenido). */
 :root {
   --header-h: 3.5rem;
   --tabs-bar-h: 3.75rem;
 }
 @media (min-width: 768px) {
   :root {
-    --tabs-bar-h: 3rem;
+    --tabs-bar-h: 2rem;
   }
 }
 
@@ -783,9 +780,15 @@ button {
 }
 
 /* En escritorio (≥768px) la barra se pega bajo la cabecera fija:
-   bottom: auto y top: var(--header-h). El borde superior existente
-   actúa de separador entre cabecera y pestañas. */
+   bottom: auto y top: var(--header-h). Su altura se ajusta al
+   contenido (height auto en .tabs, ver regla tras la base .tabs):
+   sin margen vertical sobrante. La cabecera pierde su borde
+   inferior (la línea la pone el border-top de la barra, ambas del
+   mismo color --ink-raised). */
 @media (min-width: 768px) {
+  .app-header {
+    border-bottom: none;
+  }
   .tabs--bar {
     top: var(--header-h);
     bottom: auto;
@@ -803,6 +806,16 @@ button {
   padding: 0 1.25rem;
   margin: 0 auto;
   height: var(--tabs-bar-h);
+}
+
+/* Escritorio (≥768px): la barra adopta la altura exacta de las
+   pestañas (sin margen vertical sobrante). Va DESPUÉS de la regla
+   base .tabs para que la cascada la aplique (misma especificidad,
+   gana la última; issue #79, feedback iteración 3). */
+@media (min-width: 768px) {
+  .tabs {
+    height: auto;
+  }
 }
 
 .tab {
