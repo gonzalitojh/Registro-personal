@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260812" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260812" />
+  <link rel="stylesheet" href="css/styles.css?v=20260813" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260813" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -146,11 +146,12 @@
       </section>
     </main>
 
-    <!-- Barra de pestañas fija inferior (issue #79): Series,
-         Películas y Libros. Fija en la parte baja de la pantalla
-         en todos los dispositivos; el scroll solo mueve el
-         contenido de cada panel. Cada pestaña tiene su propio
-         color de acento. -->
+    <!-- Barra de pestañas fija (issue #79): Series, Películas y
+         Libros. En móvil (≤768px) fija en la parte baja de la
+         pantalla; en PC y tablet (≥768px) fija bajo la cabecera
+         superior. En ambos casos el scroll solo mueve el contenido
+         de cada panel. Cada pestaña tiene su propio color de
+         acento. -->
     <nav class="tabs--bar" aria-label="Secciones">
       <div class="tabs" role="tablist" aria-label="Secciones">
         <button class="tab tab--tv is-active" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv" aria-controls="panel-tv">
@@ -373,7 +374,7 @@
 
   <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
-  <script type="module" src="js/app.js?v=20260812"></script>
+  <script type="module" src="js/app.js?v=20260813"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

@@ -1,16 +1,16 @@
 {
   "title": "Ajuste de pestañas",
   "description": "Las pestañas (series, películas y libros) deben cambiar a la parte inferior para los móviles. En lugar de la visualización actual, debe ser una barra fija, con iconos sencillos para cada pestaña, además del nombre.\n\nEn el caso de dispositivos más anchos que móviles, incluir también el mismo icono y mantener las pestañas fijas. Es decir, el scroll debe causar efecto únicamente sobre la lista de series, películas y libros.\n\nEl color de cada pestaña debe ser diferente (actualmente películas y series son iguales y libros de otro color, deberían ser las tres diferentes). Este cambio debe aplicar a todos los tipos de dispositivos.",
-  "status": "review",
+  "status": "in-progress",
   "acceptance criteria": [
-    "Las pestañas (series, películas, libros) se muestran en una barra fija en la parte inferior de la pantalla en móviles, con un icono sencillo más el nombre de cada pestaña",
-    "En dispositivos más anchos que móviles, las pestañas permanecen fijas (no se desplazan con el scroll) e incluyen también el icono junto al nombre",
-    "El scroll solo desplaza la lista de series, películas y libros; la barra de pestañas permanece siempre visible",
-    "Cada pestaña tiene un color de acento diferente: series, películas y libros con tres colores distintos entre sí",
-    "Los colores diferenciados aplican en todos los tipos de dispositivos",
-    "Las pestañas siguen funcionando (cambio de sección activa, contenido correcto al pulsar cada una)",
+    "En móviles (≤768px) las pestañas (series, películas, libros) se muestran en una barra fija en la parte inferior de la pantalla, con icono sencillo más nombre",
+    "En PC y tablet (≥768px) las pestañas están en una barra fija bajo la barra de búsqueda superior (junto a los botones de menú lateral y perfil), ocupando el mismo ancho que esta (alineada con #app, max-width 980px), con icono junto al nombre",
+    "La barra superior (menú lateral, búsqueda, campana, perfil) es fija y siempre visible al hacer scroll en todos los dispositivos",
+    "El scroll solo desplaza la lista de series, películas y libros; cabecera y barra de pestañas permanecen siempre visibles",
+    "Cada pestaña tiene un color de acento diferente: series, películas y libros con tres colores distintos entre sí, en todos los dispositivos y en ambos temas",
+    "Las pestañas siguen funcionando (cambio de sección activa, contenido correcto al pulsar cada una, foco al h2 del panel sin quedar tapado por la cabecera)",
     "Responsividad sin regresiones: sin scroll horizontal en 360 px, 768 px y 1280 px; contenido no truncado en móvil",
-    "Manual de usuario actualizado si el cambio altera lo que el usuario ve u opera (nueva ubicación de pestañas, iconos)"
+    "Manual de usuario actualizado (nueva disposición de cabecera fija y pestañas por dispositivo)"
   ],
   "definition of done": [
     "Planificación realizada",
@@ -33,5 +33,6 @@
     "branch": "style/issue-79-pestanas-barra-inferior",
     "commit": "2847bf1",
     "closes": "#79"
-  }
+  },
+  "iteration note": "Feedback del usuario (comentario en la issue, 2026-08-06): en moviles esta perfecto, pero para PC y Tablet las pestanas deben estar bajo la barra de busqueda superior (y el boton del menu lateral y el perfil), ocupando el mismo ancho que esta. Ademas, la barra superior de busqueda tambien debe ser fija (siempre visible al hacer scroll) en todos los dispositivos."
 }

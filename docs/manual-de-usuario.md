@@ -81,14 +81,19 @@ Nada más entrar verás:
     - **Tu foto**: pulsándola se abre un menú con las cinco secciones de tu
       perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
       opción **«Cerrar sesión»**.
-- **Abajo, la barra de pestañas**: **Series**, **Películas** y **Libros**,
-  fija en la parte inferior de la pantalla — tanto en el móvil como en el
-  ordenador siempre está visible. Cada pestaña lleva un icono y tiene su
-  propio color: **Series en verde**, **Películas en rojo** y **Libros en
-  ocre**. La pestaña activa se marca con una franja de su color y un fondo
-  claro. Pulsa una pestaña para ver tu lista de ese tipo, con su buscador
-  y sus filtros. Al hacer scroll solo se mueve el contenido de la lista;
-  la barra de pestañas permanece siempre en su sitio.
+  - La cabecera **permanece siempre visible**: al hacer scroll por la
+    lista no se mueve, en ningún dispositivo.
+- **Las pestañas**: **Series**, **Películas** y **Libros**. En el
+  **móvil** están en una barra fija en la parte inferior de la
+  pantalla; en el **ordenador y la tablet**, en una barra fija justo
+  bajo la barra de búsqueda superior. En ambos casos permanecen
+  siempre visibles al hacer scroll. Cada pestaña lleva un icono y
+  tiene su propio color: **Series en verde**, **Películas en rojo** y
+  **Libros en ocre**. La pestaña activa se marca con una franja de su
+  color y un fondo claro. Pulsa una pestaña para ver tu lista de ese
+  tipo, con su buscador y sus filtros. Al hacer scroll solo se mueve
+  el contenido de la lista; las pestañas permanecen siempre en su
+  sitio.
 
 Al entrar por primera vez aterrizas en **Series**, con el filtro **«Viendo»**
 activo y en vista de lista — el uso más habitual.

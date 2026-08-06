@@ -478,22 +478,77 @@ button {
    Cabecera de la app
    ========================================================= */
 
+/* Cabecera fija en todos los dispositivos (issue #79): visible
+   siempre, aunque se haga scroll; opaca (--paper funciona en ambos
+   temas) para tapar el contenido que pasa por debajo. z-index 46:
+   un punto por encima de la barra de pestañas (45) para que los
+   dropdowns anclados a la cabecera (hijos suyos) se pinten siempre
+   completos y por debajo de modales, backdrop del drawer y drawer. */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 46;
+  background: var(--paper);
+  border-bottom: 1px solid var(--paper-line);
+}
+
+/* Los iconos de la cabecera pasan a tinta: .icon-btn usa --paper
+   como color porque está pensado para el fondo oscuro de la app,
+   pero el header tiene fondo de papel claro en ambos temas. */
+.app-header .icon-btn {
+  color: var(--ink);
+}
+
 .app {
   max-width: 980px;
   margin: 0 auto;
-  /* El padding inferior deja hueco para la barra de pestañas fija
-     (--tabs-bar-h + margen seguro) + 1.5rem: la última fila y el
-     pie nunca quedan tapados por la barra (issue #79). */
-  padding: 1.5rem 1.25rem calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  /* Padding superior: hueco para la cabecera fija (--header-h) +
+     1rem de aire. Padding inferior: hueco para la barra de pestañas
+     fija (--tabs-bar-h + margen seguro) + 1.5rem: la última fila y
+     el pie nunca quedan tapados por la barra (issue #79). */
+  padding: calc(var(--header-h) + 1rem) 1.25rem calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+/* En escritorio (≥768px) la barra de pestañas también es fija, bajo
+   la cabecera: el padding superior acumula ambos huecos y el inferior
+   vuelve al original de 4rem (ya no hay barra abajo). */
+@media (min-width: 768px) {
+  .app {
+    padding: calc(var(--header-h) + var(--tabs-bar-h) + 1rem) 1.25rem 4rem;
+  }
 }
 
 .app-header__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  /* Altura fija: el header no envuelve (nowrap) y el contenido queda
+     alineado con #app (max-width 980px + 1.25rem de margen lateral) */
+  height: var(--header-h);
+  flex-wrap: nowrap;
   gap: 1rem;
-  margin-bottom: 1.4rem;
+  margin-bottom: 0;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1.25rem;
+}
+
+/* Los h2 de cada panel (inyectados desde ocio/*.html) reciben el foco
+   al cambiar de pestaña (js/app.js), y #main-content es el destino
+   del enlace "Saltar al contenido": el scroll-margin-top evita que
+   el foco/ancla queden ocultos bajo la cabecera fija (issue #79). */
+#main-content,
+.panel h2 {
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+@media (min-width: 768px) {
+  #main-content,
+  .panel h2 {
+    scroll-margin-top: calc(var(--header-h) + var(--tabs-bar-h) + 1rem);
+  }
 }
 
 /* Barra de búsqueda global de la cabecera (issue #46): contenedor
@@ -639,9 +694,8 @@ button {
   align-items: center;
   gap: 0.6rem;
   position: relative;
-  /* Cuando el header envuelve en móvil, el user-badge (y con él el
-     ancla del dropdown de notificaciones) queda pegado a la derecha
-     en lugar de a la izquierda de la segunda línea */
+  /* margin-left: auto lo empuja a la derecha del header (de una sola
+     fila en todos los anchos) */
   margin-left: auto;
 }
 
@@ -660,6 +714,13 @@ button {
 @media (min-width: 520px) {
   .user-badge__name {
     display: inline;
+    /* Salvaguarda para nombres de usuario largos: el header tiene
+       altura fija y no debe envolver; el nombre se trunca con
+       ellipsis si no cabe. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: min(12rem, 30vw);
   }
 }
 
@@ -672,7 +733,6 @@ button {
 @media (max-width: 480px) {
   .app-header__top {
     gap: 0.5rem;
-    margin-bottom: 1rem;
     flex-wrap: nowrap;
   }
   .app-title {
@@ -688,27 +748,29 @@ button {
 }
 
 /* =========================================================
-   Barra de pestañas fija inferior (issue #79)
-   Series / Películas / Libros viven en una barra fija en la
-   parte baja de la pantalla (móvil y escritorio); el scroll
-   solo desplaza el contenido de .app. Cada pestaña define su
-   propio color de acento (--tab-accent) con la paleta base.
+   Barra de pestañas fija (issue #79)
+   Series / Películas / Libros viven en una barra fija: en la
+   parte baja de la pantalla en móvil (≤768px) y pegada bajo la
+   cabecera en escritorio (≥768px); el scroll solo desplaza el
+   contenido de .app. Cada pestaña define su propio color de
+   acento (--tab-accent) con la paleta base.
    ========================================================= */
 
-/* Altura de la barra: móvil con icono sobre nombre (~3.75rem),
-   escritorio con icono y nombre en línea (~3rem). */
+/* Altura de la cabecera fija y de la barra: móvil con icono sobre
+   nombre (~3.75rem), escritorio con icono y nombre en línea (~3rem). */
 :root {
+  --header-h: 3.5rem;
   --tabs-bar-h: 3.75rem;
 }
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   :root {
     --tabs-bar-h: 3rem;
   }
 }
 
-/* Cascarón fijo que abraza el borde inferior del viewport (con el
-   margen seguro del iPhone); el contenedor interior se alinea con
-   #app (max-width 980px, centrado). */
+/* Cascarón fijo que abraza el borde inferior del viewport en móvil
+   (con el margen seguro del iPhone); el contenedor interior se
+   alinea con #app (max-width 980px, centrado). */
 .tabs--bar {
   position: fixed;
   left: 0;
@@ -720,11 +782,25 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* En escritorio (≥768px) la barra se pega bajo la cabecera fija:
+   bottom: auto y top: var(--header-h). El borde superior existente
+   actúa de separador entre cabecera y pestañas. */
+@media (min-width: 768px) {
+  .tabs--bar {
+    top: var(--header-h);
+    bottom: auto;
+  }
+}
+
 .tabs {
   display: flex;
   gap: 0.4rem;
   width: 100%;
   max-width: 980px;
+  /* Padding lateral alineado con el header (.app-header__top) y con
+     el contenido de #app, de modo que las pestañas ocupen exactamente
+     el mismo ancho que la barra de búsqueda (issue #79). */
+  padding: 0 1.25rem;
   margin: 0 auto;
   height: var(--tabs-bar-h);
 }
@@ -772,7 +848,7 @@ button {
 }
 
 /* Escritorio (>768px): icono y nombre en la misma línea */
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .tab {
     flex-direction: row;
     gap: 0.45rem;
@@ -868,7 +944,8 @@ button {
 .toast {
   position: fixed;
   left: 50%;
-  /* Por encima de la barra de pestañas fija (issue #79) */
+  /* En móvil, por encima de la barra de pestañas fija inferior
+     (issue #79) */
   bottom: calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1rem);
   transform: translateX(-50%);
   background: var(--paper);
@@ -883,6 +960,14 @@ button {
      valoración, .modal--top con 70) para que los avisos siempre
      sean visibles */
   z-index: 80;
+}
+
+/* En escritorio (≥768px) la barra de pestañas está arriba: el toast
+   vuelve al margen inferior original. */
+@media (min-width: 768px) {
+  .toast {
+    bottom: 1.4rem;
+  }
 }
 
 /* Toast con botón de deshacer (undo delete) */
