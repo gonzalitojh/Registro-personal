@@ -1,0 +1,41 @@
+{
+  "title": "Menú desplegable de perfil con acceso a las pestañas del perfil y cerrar sesión (issue #76)",
+  "description": "Cuando se pulse en el perfil (avatar arriba a la derecha), se debe desplegar una ventana (dropdown/popover) que aparezca desde esa posición, no en mitad de la pantalla, desde el que se pueda acceder a las cinco pestañas del perfil (estadísticas, datos, amigos, actividad y ajustes) y cerrar sesión.\n\nEl botón para salir de la cuenta (junto al perfil, btn-logout) se debe eliminar de la propia pantalla principal.\n\nContexto del código: el header (index.html) tiene btn-open-profile (avatar) que abre la vista completa profile-view, y btn-logout junto al nombre de usuario. Ya existe el patrón del dropdown de notificaciones (.notif-wrap > .notif-dropdown) que se abre anclado a su botón y se cierra con Escape, clic fuera y focus trap (notifications-setup.js + focus-utils.js). El perfil tiene 5 subtabs (profile-subtab: stats, friends, activity, data, settings) gestionadas en js/profile.js setupProfile(); también hay un btn-settings en el header que abre el perfil directamente en la sección Ajustes.",
+  "status": "review",
+  "acceptance criteria": [
+    "Al pulsar el avatar/perfil en la pantalla principal se despliega un menú anclado bajo el avatar (position absolute/fixed relativa al botón), NO en mitad de la pantalla",
+    "El menú contiene enlaces/acciones a las cinco pestañas del perfil: Estadísticas, Datos, Amigos, Actividad y Ajustes",
+    "El menú contiene una acción de cerrar sesión",
+    "El botón 'Salir' (btn-logout) de la pantalla principal queda ELIMINADO del header",
+    "Cada opción de pestaña abre la vista de perfil en su sección correspondiente (mismo comportamiento que las profile-subtab y el botón de ajustes actual)",
+    "Cerrar sesión desde el menú funciona (logout() de firebase.js) y cierra el menú antes de ejecutarse",
+    "El menú se cierra al hacer clic fuera, al pulsar Escape y al seleccionar una opción",
+    "Accesibilidad: aria-expanded en el botón, roles/aria apropiados en el menú y las opciones, y gestión de foco (focus vuelve al avatar al cerrar)",
+    "Responsividad: el menú no provoca scroll horizontal en ~360px, ~768px y ~1280px (reglas del proyecto AGENTS.md)",
+    "El manual de usuario (docs/manual-de-usuario.md) se actualiza: el botón Salir desaparece del header y el acceso a las pestañas del perfil y a cerrar sesión pasa por el menú del avatar",
+    "Se crea un ADR documentando la decisión (Related issue: #76)"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada y commiteada",
+    "Validación QA superada (incluye verificación de responsividad y del comportamiento del menú)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado (Related issue: #76)",
+    "Manual de usuario actualizado en la misma tarea",
+    "PR creada contra dev con 'Closes #76' en la descripción",
+    "Issue #76 actualizada a su estado final tras la PR (status: needs-review; cierre automático al promover dev→main)"
+  ],
+  "issue": {
+    "number": 76,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/76",
+    "title": "Botón de salir en perfil"
+  },
+  "pr": {
+    "number": 85,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/85",
+    "title": "feat: menú desplegable de perfil con acceso a secciones del perfil y cerrar sesión (issue #76)",
+    "branch": "feature/issue-76-profile-dropdown",
+    "commit": "180db08",
+    "closes": "#76"
+  }
+}
