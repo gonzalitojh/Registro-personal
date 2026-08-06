@@ -4,6 +4,7 @@
 // =============================================================
 
 import { syncNow, isSyncRunning } from "./daily-check.js";
+import { isNotificationSupported, getPermission, requestDevicePushPermission } from "./push.js";
 
 const STORAGE_KEY = "mi-registro-settings";
 const DEBOUNCE_MS = 2000;
@@ -15,6 +16,7 @@ const DEFAULT_SETTINGS = {
     new_episode: true,
     series_premiere: true,
     friend_activity: true,
+    device_push: false,
   },
 };
 
@@ -102,12 +104,27 @@ export function renderSettings(ctx) {
     "notif-new-episode": "new_episode",
     "notif-series-premiere": "series_premiere",
     "notif-friend-activity": "friend_activity",
+    "notif-device": "device_push",
   };
 
   Object.entries(checkboxMap).forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (el) el.checked = settings.notifications[key] !== false;
   });
+
+  // El toggle de notificaciones en el dispositivo requiere soporte de
+  // la API y un permiso no denegado; si el permiso está denegado se
+  // muestra desmarcado y deshabilitado (la preferencia guardada se
+  // conserva: si el usuario re-permite en el navegador, el toggle
+  // vuelve a aparecer marcado al abrir Ajustes).
+  const devEl = document.getElementById("notif-device");
+  if (devEl) {
+    const permission = isNotificationSupported() ? getPermission() : "denied";
+    if (permission === "denied") {
+      devEl.checked = false;
+    }
+    devEl.disabled = permission === "denied";
+  }
 }
 
 // ---- Event Wiring ----
@@ -176,6 +193,29 @@ function wireNotificationToggles(ctx) {
       scheduleFirestoreSync(ctx);
     });
   });
+
+  // Toggle de notificaciones en el dispositivo: wiring propio (fuera
+  // del bucle genérico) porque al activarlo hay que pedir primero el
+  // permiso al navegador. La primera instrucción del handler es el
+  // requestPermission: así el gesto del usuario cuenta como
+  // "user gesture" para la API.
+  const devEl = document.getElementById("notif-device");
+  if (devEl) {
+    devEl.addEventListener("change", async () => {
+      if (devEl.checked) {
+        const result = await requestDevicePushPermission();
+        if (result !== "granted") {
+          devEl.checked = false;
+          ctx.showToast(result === "denied" ? "Permiso denegado. Actívalo en los ajustes del navegador." : "No se pudo activar: permiso no concedido.");
+          return;
+        }
+      }
+      const s = loadSettings();
+      s.notifications.device_push = devEl.checked;
+      saveSettings(s);
+      scheduleFirestoreSync(ctx);
+    });
+  }
 }
 
 // ---- Public API ----
