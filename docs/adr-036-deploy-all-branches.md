@@ -53,10 +53,13 @@ subdirectorio de cada rama.
 
 ### 1. Workflow `.github/workflows/deploy-all-branches.yml`
 
-- **Disparadores**: `on: push: []` (todas las ramas, sin filtro),
-  `workflow_dispatch: {}` (re-despliegue manual desde la UI) y
-  `delete: {}` (al borrar una rama o tag se reconstruye el sitio; el evento
-  `delete` no admite filtros de rama).
+- **Disparadores**: `on: push` (todas las ramas, sin filtro), `on:
+  workflow_dispatch` (re-despliegue manual desde la UI) y `on: delete` (al
+  borrar una rama o tag se reconstruye el sitio; el evento `delete` no
+  admite filtros de rama). Nota: la primera versión usó `push: []`, pero
+  GitHub rechaza el fichero con «A sequence was not expected» (el esquema
+  exige un mapa de filtros); la forma válida de «todas las ramas» es
+  `push:` sin valor.
 - **Sin bucle infinito**: el workflow **no hace push** — solo lee el
   repositorio y sube un artefacto a Pages. Pese a dispararse en cada push
   de cualquier rama, nada vuelve a escribir en el repo y por tanto no puede
@@ -72,12 +75,26 @@ subdirectorio de cada rama.
   2. **Migración automática de Pages legacy → Actions** vía API de GitHub:
      `gh api` con `PUT /repos/<repo>/pages` y `build_type=workflow`; si
      devuelve 404 (sitio aún no creado) se reintenta con `POST`. Si ambos
-     fallan se emite `::warning::` indicando hacerlo manualmente en
-     Settings → Pages → Source: «GitHub Actions» (el job no falla).
+fallan se emite `::warning::` indicando hacerlo manualmente en
+      Settings → Pages → Source: «GitHub Actions» (el job no falla).
+      **Advertencia**: el `GITHUB_TOKEN` no tiene permisos de
+      administración para esa API, así que el intento automático suele
+      fallar y la migración acaba haciéndose a mano la primera vez.
   3. `bash scripts/build-pages-site.sh` → genera `_site/`.
   4. `actions/upload-pages-artifact@v4` con `path: _site`.
 - **Job `deploy`**: `needs: build`, `environment: github-pages` (con `url`
   del artefacto) y `actions/deploy-pages@v4`.
+- **Requisito del entorno `github-pages`**: el entorno debe permitir
+  desplegar a **todas las ramas**. En el primer despliegue desde una rama
+  `feature/...`, el job `deploy` fallaba con «Branch ... is not allowed to
+  deploy to github-pages due to environment protection rules» porque el
+  entorno (heredado del modo legacy) solo tenía `main` como rama permitida.
+  Se resolvió añadiendo el patrón **`**/*`** en Settings → Environments →
+  `github-pages` → Deployment branches. Con la sintaxis `File.fnmatch` que
+  usa GitHub (flag `FNM_PATHNAME`) los comodines `*` y `**` **no cruzan
+  `/`**, por lo que `*` no matchea `feature/x`; el patrón `**/*` cubre
+  cualquier jerarquía. (La API REST rechaza poner `protected_branches` y
+  `custom_branch_policies` ambos a `false`, por eso se usa patrón comodín.)
 
 ### 2. Script `scripts/build-pages-site.sh`
 
@@ -211,6 +228,10 @@ antiguo), despliegue de todas las ramas (main en la raíz, resto en
 - **Migración automática no garantizada**: la conversión legacy → Actions
   depende de la API de GitHub (`gh api`); si la cuenta o el token lo
   impiden, requiere una intervención manual puntual (Settings → Pages).
+  Además, la **política de ramas del entorno `github-pages`** no se migra
+  automáticamente: si el entorno conserva la lista de ramas del modo legacy
+  (p. ej. solo `main`), los deploys desde otras ramas fallan hasta que se
+  añada el patrón `**/*` en Settings → Environments.
 - **Colisiones de ramas tras el saneo**: dos ramas cuyos nombres solo
   difieran en caracteres fuera de `[A-Za-z0-9._-]` (p. ej. `feat/a` y
   `feat/a#x`) colisionan y rompen el build hasta que se renombra la rama.
@@ -234,8 +255,9 @@ antiguo), despliegue de todas las ramas (main en la raíz, resto en
 
 ## Nota de implementación
 
-- El workflow usa `on: push: []` — lista vacía que GitHub interpreta como
-  «todas las ramas» (sin filtro de rama ni de paths).
+- El workflow usa `on: push` — sin valor, lo que GitHub interpreta como
+  «todas las ramas» (sin filtro de rama ni de paths). La forma `push: []`
+  es inválida y GitHub la rechaza al validar el fichero.
 - El job `build` depende de `fetch-depth: 0` para que el checkout traiga
   **todas** las ramas a `refs/remotes/origin/*`; el script las lista con
   `git for-each-ref` y extrae cada una con `git archive` (sin tocar el
@@ -252,15 +274,16 @@ antiguo), despliegue de todas las ramas (main en la raíz, resto en
 
 | Archivo | Cambio |
 |---------|--------|
-| `.github/workflows/deploy-all-branches.yml` | **Nuevo**: workflow de Pages con todas las ramas (`push: []` + `workflow_dispatch` + `delete`), migración legacy→Actions vía `gh api`, jobs `build`/`deploy`, `concurrency` con cancelación |
+| `.github/workflows/deploy-all-branches.yml` | **Nuevo**: workflow de Pages con todas las ramas (`on: push` + `workflow_dispatch` + `delete`), migración legacy→Actions vía `gh api`, jobs `build`/`deploy`, `concurrency` con cancelación |
 | `scripts/build-pages-site.sh` | **Nuevo**: construye `_site/` con todas las ramas (default en raíz, resto en subdirectorios saneados), `.nojekyll` por carpeta, checks de colisión, `strip_sensitive()` |
 | `service-worker.js` | Rutas absolutas `/Registro-personal/...` → base dinámica (`scopeURL`/`scopePath`/`resolved()`); `STATIC_ASSETS` relativos; fallbacks con `resolved('./index.html')`; check `startsWith(scopePath)`; cachés renombradas `v3`; `?v=20260808` |
 | `js/sw-register.js` | `SITE_BASE`/`SW_PATH`/`SW_SCOPE` derivados de `import.meta.url`; registro con scope explícito |
 | `manifest.json` | `start_url` y `scope` → `'./'` (relativos al manifest) |
 | `js/config.js` | `APP_VERSION` de `20260807` a `20260808` |
 | `index.html` | Versionado `?v=20260808` (sincronizado por `scripts/bump-version.sh`) |
-| `README.md` | Sección 6 reescrita: Source «GitHub Actions», despliegue de todas las ramas, previews, re-despliegue manual, borrado de rama |
+| `README.md` | Sección 6 reescrita: Source «GitHub Actions», despliegue de todas las ramas, previews, re-despliegue manual, borrado de rama. Añadido requisito del entorno `github-pages` (patrón `**/*`) |
 | `docs/adr-036-deploy-all-branches.md` | **Nuevo**: este documento |
 | `docs/manual-de-usuario.md` | **Sin cambios** (cambio interno de infraestructura, no visible para el usuario) |
+| Entorno `github-pages` (Settings) | Configuración manual de una sola vez: Deployment branches → patrón `**/*` (tras primera migración a GitHub Actions) |
 
 Related issue: #83 — https://github.com/gonzalitojh/Registro-personal/issues/83

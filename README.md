@@ -184,7 +184,11 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    ya estaba publicada con el modo antiguo ("Deploy from a branch"), el
    primer despliegue con el workflow intenta migrarla automáticamente; si
    la migración automática fallara, haz el cambio de Source manualmente y
-   guarda.
+   guarda. Además, el entorno `github-pages` debe permitir desplegar a
+   **todas las ramas** (Settings → Environments → `github-pages` →
+   "Deployment branches" → patrón `**/*`, que cubre cualquier jerarquía).
+   Sin ese patrón, los despliegues desde ramas como `feature/...` se
+   rechazan con un error de "environment protection rules".
 3. El workflow `.github/workflows/deploy-all-branches.yml` despliega
    **todas las ramas** en cada push:
    - La rama `main` se sirve en la raíz:
