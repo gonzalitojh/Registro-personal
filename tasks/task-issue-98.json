@@ -1,0 +1,36 @@
+{
+  "title": "Revisar el workflow deploy-all-branches",
+  "description": "El workflow .github/workflows/deploy-all-branches.yml (despliegue de todas las ramas en GitHub Pages) tarda mucho, parece entrar en bucle en el log y varios despliegues recientes han fallado con 'timeout reached'.\n\nDiagnóstico (master, 2026-08-06):\n- El workflow se dispara en cada push a CUALQUIER rama + workflow_dispatch + delete.\n- Cada ejecución crea un deployment de GitHub Pages. Pages procesa los deployments en cola (uno a uno). Con cola vacía un deploy tarda ~8-30 s (evidencia: run delete 13:40, build 11 s + deploy 8 s). Con picos de pushes (cada PR genera 2-3 pushes + merge + borrado de rama) la cola se satura: los deployments quedan en 'deployment_queued' y actions/deploy-pages aborta a los 10 min (timeout hard-capped a 600000 ms) con 'Timeout reached, aborting!' (evidencia: run 31103249570, workflow_dispatch, 10:31, fallo).\n- El 'bucle' percibido en el log es el poll de estado cada 5 s ('Current status: deployment_queued') repetido hasta el timeout.\n- Problema conocido de la infraestructura de GitHub Pages desde 2026-01-13 (actions/deploy-pages#406) que agrava el caso de forma intermitente.\n- El paso de migración Pages legacy → Actions vía 'gh api' falla en TODOS los runs (warning 'No se pudo migrar Pages legacy...'): el GITHUB_TOKEN no tiene permisos de administración para esa API. La vía oficial es actions/configure-pages@v5, que es además el prerequisito documentado de deploy-pages.\n\nFix propuesto:\n1. Limitar el trigger push a las ramas de integración main y dev (reducción drástica de deployments; el build incluye TODAS las ramas en cada ejecución, así que los previews se mantienen).\n2. Guard en el evento delete: reconstruir solo si el ref borrado es una rama (ref_type == 'branch'), no un tag.\n3. Sustituir el hack de migración gh api por actions/configure-pages@v5 (prerequisito oficial de deploy-pages; elimina el warning recurrente).\n4. Mantener concurrency (group: pages, cancel-in-progress), permisos y estructura build/deploy.\n5. Actualizar README sección 6 y crear ADR con 'Related issue: #98'.",
+  "status": "review",
+  "acceptance criteria": [
+    "El workflow deploy-all-branches ya no se dispara en cada push de cualquier rama: solo en push a main/dev, workflow_dispatch y delete de ramas.",
+    "El evento delete solo reconstruye el sitio cuando se borra una rama (ref_type == 'branch'), no tags.",
+    "El paso de migración gh api se sustituye por actions/configure-pages@v5 y desaparece el warning 'No se pudo migrar Pages legacy' de los logs.",
+    "Se mantiene la funcionalidad de ADR-036: main en la raíz, cada rama en /<rama>/, sin bucles infinitos, concurrency con cancelación.",
+    "README sección 6 actualizado con los nuevos triggers y comportamiento.",
+    "ADR creado con 'Related issue: #98'.",
+    "Con la frecuencia reducida de deployments, la cola de Pages drena y no se vuelve a producir 'timeout reached' en condiciones normales."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (workflow revisado).",
+    "Validación contra criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos de severidad alta.",
+    "ADR creado con 'Related issue: #98'.",
+    "PR creada contra la rama dev con 'Closes #98' como primera línea.",
+    "Issue #98 actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 98,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/98",
+    "title": "Revisar el workflow deploy-all-branches"
+  },
+  "pr": {
+    "number": 99,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/99",
+    "title": "[fix] Revisar el workflow deploy-all-branches (issue #98)",
+    "branch": "fix/issue-98-deploy-all-branches",
+    "commit": "95fa3c6",
+    "closes": "#98"
+  }
+}
