@@ -660,26 +660,27 @@ button {
   }
 }
 
-/* Cabecera compacta en móvil: en ≤480px la cabecera va en dos filas
-   — fila 1: hamburguesa + barra de búsqueda (flex:1); fila 2: iconos
-   y avatar alineados a la derecha. Verificado a 360px sin desborde
-   horizontal. */
+/* Cabecera compacta en móvil (comentario de la issue #75): en ≤480px
+   TODO va en una sola fila — hamburguesa + barra de búsqueda
+   (flex:1, min-width:0) + campana + avatar — para que los iconos no
+   queden por debajo de la barra de búsqueda. La barra de búsqueda se
+   estrecha y absorbe el ancho sobrante; verificado a 360px sin
+   desborde horizontal. */
 @media (max-width: 480px) {
   .app-header__top {
     gap: 0.5rem;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   .app-title {
     font-size: 1.45rem;
   }
   .user-badge {
     gap: 0.4rem;
-    /* Fila 2: los iconos pasan a su propia línea, alineados a la
-       derecha (justify-content: flex-end dentro del flex). */
-    flex-basis: 100%;
+    /* Permanece en la misma fila que la búsqueda (sin flex-basis:100%):
+       los iconos no saltan a una segunda línea. */
+    flex-shrink: 0;
     justify-content: flex-end;
-    margin-left: 0;
   }
 }
 

@@ -176,6 +176,22 @@ propiedad `pinned` a las entradas:
   `syncThemeToSettings()` en `js/settings.js` aún menciona «el toggle del
   header» eliminado; no afecta al comportamiento.
 
+### 7. Ajuste posterior (comentario del usuario en la issue): cabecera de una sola fila en móvil
+
+Tras la PR, el usuario señaló en la issue #75 que en la vista móvil la
+campana y la foto de perfil quedaban **por debajo** de la barra de
+búsqueda (segunda fila), y pidió que hamburguesa, barra de búsqueda,
+campana y avatar compartan una **única fila** (la búsqueda se estrecha).
+
+- `css/styles.css`: en el `@media (max-width: 480px)` de la cabecera,
+  `flex-wrap: nowrap` en `.app-header__top` y se elimina el
+  `flex-basis: 100%` de `.user-badge` (que forzaba la segunda fila);
+  se añade `flex-shrink: 0` para que los iconos no se compriman. La
+  barra de búsqueda conserva `flex: 1; min-width: 0` y absorbe el ancho
+  sobrante (el input se estrecha sin desborde; verificado a 360 px).
+- Sin cambios en HTML, JS ni manual (el manual describe los elementos,
+  no el número de filas).
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
@@ -184,7 +200,7 @@ propiedad `pinned` a las entradas:
 | `index.html` | Nuevo `#app-sidebar-footer` tras el `nav` del drawer (comentario del aside actualizado); **eliminados** `#btn-settings` (⚙️) y `#btn-theme-toggle`/`#theme-toggle-icon`; versionado `?v=20260811` |
 | `js/app.js` | Eliminados los handlers de `#btn-theme-toggle` y `#btn-settings` y el import de `syncThemeSelect`; `setTheme()` simplificado (data-theme + `mi-registro-theme` + meta theme-color); `init()` reordenado: `setupProfile`/`setupSettings` antes de `setupSidebar({ onOpenSettings: () => profileApi.openProfileSection("settings", ctx) })`; `syncThemeToSettings(getSavedTheme())` conservado |
 | `js/settings.js` | Eliminada la función exportada `syncThemeSelect` (código muerto); conservados `wireThemeSelect` (selector de tema de Ajustes) y `syncThemeToSettings` |
-| `css/styles.css` | Nuevo `.app-sidebar__footer` (`margin-top: auto`, `border-top: 1px solid var(--paper-line)`, `gap`, `padding-top`); **eliminados** los estilos `.theme-toggle` y `#btn-settings` |
+| `css/styles.css` | Nuevo `.app-sidebar__footer` (`margin-top: auto`, `border-top: 1px solid var(--paper-line)`, `gap`, `padding-top`); **eliminados** los estilos `.theme-toggle` y `#btn-settings`; cabecera móvil ≤480 px en **una sola fila** (`flex-wrap: nowrap`, `user-badge` sin `flex-basis: 100%`, `flex-shrink: 0`) |
 | `js/config.js` | `APP_VERSION` de `20260810` a `20260811` |
 | `service-worker.js` | `STATIC_ASSETS` con `?v=20260811` (styles, ocio.css, app.js, `ocio/*.html`) |
 | `docs/manual-de-usuario.md` | Secciones 3 y 14: eliminados ⚙️ y ☀️/🌙 de la cabecera; «Ajustes» en la parte inferior de la barra lateral como nueva vía de acceso; tema solo desde Ajustes |
