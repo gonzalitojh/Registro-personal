@@ -90,7 +90,25 @@ export const PLACEHOLDER_COVER =
 
 /* ---------- Pantallas ---------- */
 
+// Placeholder de la barra de búsqueda global (issue #46): al entrar
+// se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
+// defecto. El timer se limpia al cerrar sesión.
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros o amigos...";
+const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
+const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
+let searchPlaceholderTimer = null;
+
+function getGlobalSearchInput() {
+  return document.getElementById("global-search-input");
+}
+
 export function showAuthScreen() {
+  // Al salir: parar la secuencia de placeholder y restaurar el normal
+  clearTimeout(searchPlaceholderTimer);
+  searchPlaceholderTimer = null;
+  const searchInput = getGlobalSearchInput();
+  if (searchInput) searchInput.placeholder = DEFAULT_SEARCH_PLACEHOLDER;
+
   document.getElementById("auth-screen").classList.remove("hidden");
   document.getElementById("app").classList.add("hidden");
 }
@@ -100,6 +118,17 @@ export function showApp(user) {
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("user-name").textContent = user.displayName || user.email;
   document.getElementById("user-avatar").src = user.photoURL || PLACEHOLDER_COVER;
+
+  // Placeholder animado: "Mi Registro" → placeholder por defecto
+  const searchInput = getGlobalSearchInput();
+  if (searchInput) {
+    clearTimeout(searchPlaceholderTimer);
+    searchInput.placeholder = SEARCH_BRAND_PLACEHOLDER;
+    searchPlaceholderTimer = setTimeout(() => {
+      searchInput.placeholder = DEFAULT_SEARCH_PLACEHOLDER;
+      searchPlaceholderTimer = null;
+    }, SEARCH_PLACEHOLDER_SWITCH_MS);
+  }
 }
 
 export function setAuthError(message) {

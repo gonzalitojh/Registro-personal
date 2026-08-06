@@ -497,10 +497,12 @@ export function setupModalCloseListeners() {
     if (e.key === "Escape") {
       const ratingModal = document.getElementById("rating-modal");
       const modal = document.getElementById("item-modal");
-      const globalSearch = document.getElementById("global-search");
       const notifDropdown = document.getElementById("notif-dropdown");
 
-      // Prioridad: ventana de valoración > modal activo > búsqueda global (maneja su propio Escape) > notificaciones
+      // Prioridad: ventana de valoración > modal activo > notificaciones.
+      // (La búsqueda global ya no es un modal desde la issue #46: su
+      // dropdown de resultados gestiona su propio Escape con
+      // stopPropagation, así que nunca llega hasta aquí.)
       if (ratingModal && !ratingModal.classList.contains("hidden")) {
         e.preventDefault();
         closeRatingModal();
@@ -509,9 +511,6 @@ export function setupModalCloseListeners() {
       if (!modal.classList.contains("hidden")) {
         e.preventDefault();
         ui.closeModal();
-      } else if (!globalSearch.classList.contains("hidden")) {
-        // Global search already handles Escape internally
-        return;
       } else if (notifDropdown && !notifDropdown.classList.contains("hidden")) {
         e.preventDefault();
         notifDropdown.classList.add("hidden");

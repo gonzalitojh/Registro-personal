@@ -1,0 +1,41 @@
+{
+  "title": "Barra lateral de navegación",
+  "description": "Añadir una barra lateral de navegación similar a Gmail pensando en la futura ampliación de la web. De momento solo debe contener una sola entrada: \"Ocio\" (la web actual, con sus tres pestañas series/películas/libros). Barra superior estilo Gmail: botón hamburguesa a la izquierda que despliega la barra lateral, una sola barra de búsqueda, y a la derecha una campana de notificaciones y la foto de perfil. La barra de búsqueda debe sustituir al botón de búsqueda en la colección (el icono 🔍 del header que abría el buscador global) y se debe eliminar la búsqueda general en todas las colecciones (el modal de búsqueda global). La campana debe ser un icono sencillo y plano (SVG), no el emoji 🔔 (3D). El título \"Mi Registro\" debe quitarse de la pantalla principal y mostrarse como texto de la barra de búsqueda al acceder a la web, cambiando a los pocos segundos por el placeholder por defecto de la barra de búsqueda.\n\nContexto técnico: proyecto vanilla JS (index.html + css/styles.css + ocio/*.html + js/*.js). El buscador global vive en js/global-search.js (modal centrado con backdrop), su botón de entrada es #btn-global-search en .app-header__top y se abre con Ctrl+K / Cmd+K / \"/\" . La campana actual es <span>🔔</span> dentro de #btn-notifications (notifications-setup.js gestiona el dropdown). El título es <h1 class=\"app-title\">Mi Registro</h1> en la cabecera. La app carga partials ocio/*.html vía fetch. service-worker.js tiene STATIC_ASSETS (los nuevos módulos js deben añadirse). Versión de assets ?v= se gestiona con scripts/bump-version.sh. Criterios de responsividad en AGENTS.md (tres anchos 360/768/1280 sin scroll horizontal, unidades relativas, sin overflow-x:hidden en body). Cambios visibles al usuario deben reflejarse en docs/manual-de-usuario.md).",
+  "status": "review",
+  "acceptance criteria": [
+    "Existe una barra lateral de navegación que se despliega con un botón hamburguesa y contiene solo la sección \"Ocio\" (la web actual, con sus pestañas de series/películas/libros)",
+    "La estructura de la barra lateral permite añadir secciones futuras (series, películas, libros) sin reescribirla",
+    "La cabecera tiene una sola barra de búsqueda superior que sustituye al botón 🔍 del buscador global",
+    "La campana de notificaciones se ha movido a la barra superior y usa un icono plano SVG (no el emoji 3D)",
+    "El título \"Mi Registro\" ya no aparece en la pantalla principal; aparece como texto de la barra de búsqueda al acceder a la web y a los pocos segundos cambia por el placeholder por defecto",
+    "La búsqueda global en todas las colecciones (modal) desaparece; la nueva barra de búsqueda superior mantiene la función de búsqueda global (Ctrl+K / Cmd+K / \"/\" siguen funcionando)",
+    "El manual de usuario refleja el nuevo diseño (cabecera, barra lateral, búsqueda global)",
+    "La web se ve correctamente en móvil, tablet y ordenador sin scroll horizontal"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada",
+    "Validación superada (criterios de aceptación y edge cases)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado con 'Related issue: #46'",
+    "PR creado contra dev con 'Closes #46'",
+    "Issue #46 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 46,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/46",
+    "title": "Barra lateral de navegación"
+  },
+  "plan": "Drawer lateral fijo (min(300px,85vw)) con SECTIONS array en js/sidebar.js; cabecera Gmail: hamburguesa + .search-bar-wrap (input #global-search-input flex:1 min-width:0) + user-badge (campana SVG plana, ⚙️, tema, avatar). Eliminados h1 app-title, botón #btn-global-search y modal #global-search. global-search.js refactorizado a dropdown anclado (abre con focus/click, cierra Escape/clic fuera/✕, mantiene Ctrl+K, /, teclado y navigateTo). Placeholder animado \"Mi Registro\" -> por defecto (3.5s) en ui.showApp con limpieza en showAuthScreen. Escape global de modal-handlers sin referencia al modal. Bump version 20260810; js/sidebar.js añadido a STATIC_ASSETS. Layout ≤480px en 2 filas; dropdown fixed ≤600px (patrón notif-dropdown).",
+  "qa_verdict": "APROBADO CON OBSERVACIONES (sin bloqueantes): M1 stopPropagation condicional en Escape del input; M2 dropdown vs backdrop del drawer (cerrar dropdown al abrir drawer y cerrar drawer al abrir búsqueda); S1 prefers-reduced-motion en scroll de Ocio — M1/M2/S1 corregidos. Verificación visual 360/768/1280 pendiente de confirmación manual final.",
+  "security": "CLEAN: 0 HIGH, 0 MEDIUM, 2 LOW informativos preexistentes (statusLabel sin escapar en global-search.js:176, claves API en config.js documentadas como no secretas)",
+  "adr": "docs/adr-038-barralateral-navegacion.md (Related issue: #46 x2)",
+  "pr": {
+    "number": 90,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/90",
+    "title": "[feature] Barra lateral de navegación y cabecera estilo Gmail",
+    "branch": "feature/issue-46-sidebar-navigation",
+    "commit": "f3f7bbc",
+    "closes": "#46"
+  }
+}

@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260809',
-  './css/ocio.css?v=20260809',
-  './js/app.js?v=20260809',
+  './css/styles.css?v=20260810',
+  './css/ocio.css?v=20260810',
+  './js/app.js?v=20260810',
   './js/ui.js',
   './js/db.js',
   './js/firebase.js',
@@ -62,11 +62,12 @@ const STATIC_ASSETS = [
   './js/focus-utils.js',
   './js/global-search.js',
   './js/settings.js',
+  './js/sidebar.js',
   './js/push.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260809',
-  './ocio/peliculas.html?v=20260809',
-  './ocio/libros.html?v=20260809',
+  './ocio/series.html?v=20260810',
+  './ocio/peliculas.html?v=20260810',
+  './ocio/libros.html?v=20260810',
 ];
 
 // -------------------------------------------------------------

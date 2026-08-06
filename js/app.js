@@ -39,6 +39,7 @@ import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeSelect, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch } from "./global-search.js";
+import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 
 // ---------- Estado ----------
@@ -292,6 +293,7 @@ async function init() {
   setupSearch(ctx);
   setupModalCloseListeners();
   setupNotifications(ctx);
+  setupSidebar();
   const profileApi = setupProfile(ctx);
   setupSettings(ctx);
   setupGlobalSearch(ctx);
