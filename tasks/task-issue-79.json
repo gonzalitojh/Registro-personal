@@ -1,0 +1,48 @@
+{
+  "title": "Ajuste de pestañas",
+  "description": "Las pestañas (series, películas y libros) deben cambiar a la parte inferior para los móviles. En lugar de la visualización actual, debe ser una barra fija, con iconos sencillos para cada pestaña, además del nombre.\n\nEn el caso de dispositivos más anchos que móviles, incluir también el mismo icono y mantener las pestañas fijas. Es decir, el scroll debe causar efecto únicamente sobre la lista de series, películas y libros.\n\nEl color de cada pestaña debe ser diferente (actualmente películas y series son iguales y libros de otro color, deberían ser las tres diferentes). Este cambio debe aplicar a todos los tipos de dispositivos.",
+  "status": "review",
+  "acceptance criteria": [
+    "La cabecera y la barra de pestañas tienen el MISMO fondo que la web (--ink en tema papel / --paper-dim en claro), en todos los dispositivos y ambos temas",
+    "No existe ninguna línea separadora entre cabecera y barra de pestañas (ni border-top ni border-bottom), en ningún dispositivo",
+    "En PC y tablet (≥768px) la barra de pestañas tiene la MISMA altura que la barra de búsqueda/cabecera (3.5rem)",
+    "En iPad/tablets reales no aparece ningún espacio bajo las pestañas (el padding del margen seguro inferior se anula en ≥768px)",
+    "Los iconos, textos y campo de búsqueda de la cabecera son legibles sobre el nuevo fondo en ambos temas",
+    "En móviles (≤768px) las pestañas se mantienen en la barra fija inferior con icono + nombre y colores diferenciados",
+    "La cabecera es fija y siempre visible; el scroll solo desplaza la lista",
+    "Las pestañas siguen funcionando (cambio de sección, foco al h2 sin quedar tapado)",
+    "Responsividad sin regresiones: sin scroll horizontal en 360 px, 768 px y 1280 px; contenido no truncado en móvil",
+    "Manual de usuario coherente (no requiere cambios si no describe fondos/líneas/alturas de la barra)"
+  ],
+  "definition of done": [
+    "Planificación realizada",
+    "Implementación completada y commiteada",
+    "Validación QA superada (criterios de aceptación + responsividad 360/768/1280)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado documentando el cambio (Related issue: #79)",
+    "PR creada contra dev con «Closes #79» como primera línea del body",
+    "Issue #79 actualizada a su estado final (status: needs-review tras la PR; done al promover dev a main)"
+  ],
+  "issue": {
+    "number": 79,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/79",
+    "title": "Ajuste de pestañas"
+  },
+  "pr": {
+    "number": 101,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/101",
+    "title": "[style] Cabecera y pestañas integradas con el fondo de la web y altura unificada (issue #79)",
+    "branch": "style/issue-79-fondo-integrado",
+    "commit": "79f5e59",
+    "closes": "#79"
+  },
+  "iteration note": "Feedback del usuario (comentario en la issue, 2026-08-06): en moviles esta perfecto, pero para PC y Tablet las pestanas deben estar bajo la barra de busqueda superior (y el boton del menu lateral y el perfil), ocupando el mismo ancho que esta. Ademas, la barra superior de busqueda tambien debe ser fija (siempre visible al hacer scroll) en todos los dispositivos. | Iteracion 3 (feedback 2026-08-06 12:21): (a) el color de la barra superior debe ser el mismo que el de la barra de pestanas (--ink-raised); (b) en tablet/PC las pestanas tienen una altura algo superior a las pestanas en si: eliminar el margen para que la barra tenga exactamente la altura de las pestanas. | Iteracion 4 (feedback 2026-08-06 14:27): (a) el fondo de la barra de busqueda (cabecera) y de las pestanas debe ser el mismo que el fondo de la web, sin ninguna linea separadora; (b) la altura de las pestanas en PC/tablet debe ser la misma que la barra de busqueda (3.5rem); (c) en iPad aparece un espacio bajo las pestanas (margen seguro inferior de la barra): eliminar ese espacio para que se vea igual que en PC.",
+  "previousPr": {
+    "number": 93,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/93",
+    "title": "[style] Barra de pestañas fija con iconos y colores diferenciados y cabecera fija (issue #79)",
+    "branch": "style/issue-79-pestanas-barra-inferior",
+    "commit": "83f1945",
+    "closes": "#79"
+  }
+}

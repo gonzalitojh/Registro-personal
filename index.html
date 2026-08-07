@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260809" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260809" />
+  <link rel="stylesheet" href="css/styles.css?v=20260816" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260816" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -43,16 +43,61 @@
     </div>
   </section>
 
+  <!-- Barra lateral de navegación (issue #46): drawer fijo a la
+       izquierda que se abre con el botón hamburguesa de la cabecera.
+       Las entradas se renderizan desde el array SECTIONS de
+       js/sidebar.js para poder añadir secciones futuras; las marcadas
+       como `pinned` (p. ej. «Ajustes», issue #75) van al footer
+       inferior #app-sidebar-footer, que también rellena sidebar.js. -->
+  <aside id="app-sidebar" class="app-sidebar" aria-label="Menú de navegación" aria-hidden="true">
+    <div class="app-sidebar__header">
+      <span class="app-sidebar__title">Mi Registro</span>
+      <button type="button" class="app-sidebar__close" id="btn-sidebar-close" aria-label="Cerrar menú">✕</button>
+    </div>
+    <nav class="app-sidebar__nav" id="app-sidebar-nav" aria-label="Secciones"></nav>
+    <div class="app-sidebar__footer" id="app-sidebar-footer"></div>
+  </aside>
+  <div id="app-sidebar-backdrop" class="app-sidebar-backdrop hidden"></div>
+
   <!-- Aplicación -->
   <div id="app" class="app hidden">
 
     <header class="app-header">
       <div class="app-header__top">
-        <h1 class="app-title">Mi Registro</h1>
+        <button type="button" class="icon-btn" id="btn-sidebar-toggle"
+                aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="app-sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        <!-- Búsqueda global: input en la cabecera + dropdown de resultados
+             anclado bajo la barra (js/global-search.js) -->
+        <div class="search-bar-wrap">
+          <input
+            id="global-search-input"
+            type="search"
+            class="global-search__input"
+            placeholder="Buscar películas, series, libros o amigos..."
+            autocomplete="off"
+            aria-label="Buscar en todo tu registro"
+          />
+          <button type="button" class="global-search__clear" id="global-search-clear"
+                  aria-label="Limpiar y cerrar la búsqueda" hidden>✕</button>
+          <div id="global-search-results" class="global-search__results hidden"></div>
+        </div>
+
         <div class="user-badge">
           <div class="notif-wrap">
             <button type="button" class="icon-btn" id="btn-notifications" aria-label="Notificaciones">
-              <span aria-hidden="true">🔔</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
               <span class="notif-badge hidden" id="notif-badge"></span>
             </button>
             <div class="notif-dropdown hidden" id="notif-dropdown" role="dialog" aria-label="Notificaciones">
@@ -64,16 +109,6 @@
               <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
             </div>
           </div>
-          <button type="button" class="icon-btn" id="btn-global-search" aria-label="Buscar (Ctrl+K)">
-            <span aria-hidden="true">🔍</span>
-          </button>
-          <button type="button" class="icon-btn" id="btn-settings" aria-label="Ajustes">
-            <span aria-hidden="true">⚙️</span>
-          </button>
-          <button type="button" class="theme-toggle icon-btn" id="btn-theme-toggle"
-                  aria-label="Cambiar a modo claro" role="switch" aria-checked="false">
-            <span aria-hidden="true" id="theme-toggle-icon">☀️</span>
-          </button>
           <div class="profile-menu-wrap">
             <button type="button" class="user-badge__avatar-btn" id="btn-open-profile"
                     aria-label="Abrir menú de perfil" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-dropdown">
@@ -89,21 +124,9 @@
               <button type="button" class="profile-dropdown__item profile-dropdown__item--logout" id="btn-profile-logout" role="menuitem">Cerrar sesión</button>
             </div>
           </div>
-          <span id="user-name" class="user-badge__name"></span>
         </div>
       </div>
 
-      <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab tab--media is-active" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv">
-          Series
-        </button>
-        <button class="tab tab--media" id="tab-movies" role="tab" aria-selected="false" data-panel="panel-movies">
-          Películas
-        </button>
-        <button class="tab tab--books" id="tab-books" role="tab" aria-selected="false" data-panel="panel-books">
-          Libros
-        </button>
-      </nav>
     </header>
 
     <main id="main-content" tabindex="-1">
@@ -121,6 +144,40 @@
         <p class="empty-state">Cargando…</p>
       </section>
     </main>
+
+    <!-- Barra de pestañas fija (issue #79): Series, Películas y
+         Libros. En móvil (≤768px) fija en la parte baja de la
+         pantalla; en PC y tablet (≥768px) fija bajo la cabecera
+         superior. En ambos casos el scroll solo mueve el contenido
+         de cada panel. Cada pestaña tiene su propio color de
+         acento. -->
+    <nav class="tabs--bar" aria-label="Secciones">
+      <div class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab tab--tv is-active" id="tab-tv" role="tab" aria-selected="true" data-panel="panel-tv" aria-controls="panel-tv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+            <polyline points="17 2 12 7 7 2" />
+          </svg>
+          <span>Series</span>
+        </button>
+        <button class="tab tab--movies" id="tab-movies" role="tab" aria-selected="false" data-panel="panel-movies" aria-controls="panel-movies">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1-.3 2.1.3 2.4 1.3Z" />
+            <path d="m6.2 5.3 3.1 3.9" />
+            <path d="m12.4 3.4 3.1 4" />
+            <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+          </svg>
+          <span>Películas</span>
+        </button>
+        <button class="tab tab--books" id="tab-books" role="tab" aria-selected="false" data-panel="panel-books" aria-controls="panel-books">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 7v14" />
+            <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+          </svg>
+          <span>Libros</span>
+        </button>
+      </div>
+    </nav>
 
     <footer class="app-footer">
       Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books
@@ -310,33 +367,13 @@
     </div>
   </div>
 
-  <!-- Buscador Global -->
-  <div id="global-search" class="global-search hidden">
-    <div class="global-search__backdrop" id="global-search-backdrop"></div>
-    <div class="global-search__panel" role="dialog" aria-modal="true" aria-label="Buscador global">
-      <div class="global-search__header">
-        <span class="global-search__icon" aria-hidden="true">🔍</span>
-        <input
-          id="global-search-input"
-          type="search"
-          class="global-search__input"
-          placeholder="Buscar películas, series, libros o amigos..."
-          autocomplete="off"
-          aria-label="Buscar en todo tu registro"
-        />
-        <button type="button" class="global-search__close" id="global-search-close" aria-label="Cerrar">
-          <kbd>ESC</kbd>
-        </button>
-      </div>
-      <div class="global-search__results" id="global-search-results">
-        <p class="global-search__hint">Escribe para buscar en tus películas, series, libros y amigos.</p>
-      </div>
-    </div>
-  </div>
+  <!-- Buscador global: el input vive en la cabecera (search-bar-wrap) y
+       los resultados se muestran en el dropdown #global-search-results
+       anclado bajo la barra (js/global-search.js). -->
 
   <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
-  <script type="module" src="js/app.js?v=20260809"></script>
+  <script type="module" src="js/app.js?v=20260816"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

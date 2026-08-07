@@ -90,7 +90,25 @@ export const PLACEHOLDER_COVER =
 
 /* ---------- Pantallas ---------- */
 
+// Placeholder de la barra de búsqueda global (issue #46): al entrar
+// se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
+// defecto. El timer se limpia al cerrar sesión.
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros o amigos...";
+const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
+const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
+let searchPlaceholderTimer = null;
+
+function getGlobalSearchInput() {
+  return document.getElementById("global-search-input");
+}
+
 export function showAuthScreen() {
+  // Al salir: parar la secuencia de placeholder y restaurar el normal
+  clearTimeout(searchPlaceholderTimer);
+  searchPlaceholderTimer = null;
+  const searchInput = getGlobalSearchInput();
+  if (searchInput) searchInput.placeholder = DEFAULT_SEARCH_PLACEHOLDER;
+
   document.getElementById("auth-screen").classList.remove("hidden");
   document.getElementById("app").classList.add("hidden");
 }
@@ -98,8 +116,18 @@ export function showAuthScreen() {
 export function showApp(user) {
   document.getElementById("auth-screen").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
-  document.getElementById("user-name").textContent = user.displayName || user.email;
   document.getElementById("user-avatar").src = user.photoURL || PLACEHOLDER_COVER;
+
+  // Placeholder animado: "Mi Registro" → placeholder por defecto
+  const searchInput = getGlobalSearchInput();
+  if (searchInput) {
+    clearTimeout(searchPlaceholderTimer);
+    searchInput.placeholder = SEARCH_BRAND_PLACEHOLDER;
+    searchPlaceholderTimer = setTimeout(() => {
+      searchInput.placeholder = DEFAULT_SEARCH_PLACEHOLDER;
+      searchPlaceholderTimer = null;
+    }, SEARCH_PLACEHOLDER_SWITCH_MS);
+  }
 }
 
 export function setAuthError(message) {
@@ -111,81 +139,6 @@ export function setAuthError(message) {
   }
   el.textContent = message;
   el.classList.remove("hidden");
-}
-
-/* ---------- Resultados de búsqueda ---------- */
-
-// customCheck: función opcional (item) => boolean para detectar si
-// un libro ya está añadido por título+autor (cruce entre fuentes).
-// onPreview: función opcional (item, added) => void que abre la vista
-// previa de información al pulsar sobre la tarjeta (issue #22).
-export function renderSearchResults(container, results, existingIds, onAdd, customCheck, onPreview) {
-  if (!results.length) {
-    container.innerHTML = `<p class="empty-state" style="margin:0">Sin resultados.</p>`;
-    return;
-  }
-
-  container.innerHTML = results
-    .map((r, index) => {
-      const added = customCheck ? customCheck(r) : existingIds.has(r.externalId);
-      const metaLine =
-        r.type === "book" ? [r.author, r.year].filter(Boolean).join(" · ") : r.year;
-      const editionsBadge =
-        r.type === "book" && r.editionsCount > 1
-          ? `<span class="result-card__editions">${r.editionsCount} eds.</span>`
-          : "";
-      const cardAttrs = onPreview
-        ? `data-index="${index}" role="button" tabindex="0" aria-label="Ver información de ${escapeHtml(r.title)}"`
-        : "";
-      return `
-      <article class="result-card" ${cardAttrs}>
-        <img class="result-card__cover" loading="lazy"
-             src="${r.coverUrl || PLACEHOLDER_COVER}" alt="" />
-        <div class="result-card__body">
-          <div class="result-card__title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}${editionsBadge}</div>
-          <div class="result-card__meta" title="${escapeHtml(metaLine || "")}">${escapeHtml(metaLine || "")}</div>
-          <button class="btn ${
-            r.type === "book" ? "btn--accent-books" : "btn--accent-media"
-          }" data-index="${index}" ${added ? "disabled" : ""}>
-            ${added ? "Añadido" : "Añadir"}
-          </button>
-        </div>
-      </article>`;
-    })
-    .join("");
-
-  container.querySelectorAll("button[data-index]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const item = results[Number(btn.dataset.index)];
-      onAdd(item, btn);
-    });
-  });
-
-  if (onPreview) {
-    container.querySelectorAll(".result-card").forEach((card) => {
-      const openPreview = () => {
-        const item = results[Number(card.dataset.index)];
-        const added = customCheck ? customCheck(item) : existingIds.has(item.externalId);
-        onPreview(item, added);
-      };
-      card.addEventListener("click", (e) => {
-        // El botón Añadir (si está habilitado) gestiona su propio click;
-        // un botón deshabilitado sí deja pasar el click a la tarjeta.
-        const btn = e.target.closest("button");
-        if (btn && !btn.disabled) return;
-        openPreview();
-      });
-      card.addEventListener("keydown", (e) => {
-        // Si el foco está en el botón Añadir, el botón gestiona su
-        // propia tecla (Enter/Space dispara su click, no la preview)
-        if (e.target.closest("button")) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openPreview();
-        }
-      });
-    });
-  }
 }
 
 /* ---------- Vista previa de resultados de búsqueda (issue #22) ---------- */

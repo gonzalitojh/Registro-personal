@@ -38,6 +38,7 @@ mi-registro/
 │   ├── quick-actions.js       acciones rápidas (marcar vista/siguiente)
 │   ├── daily-check.js         comprobación diaria de estrenos
 │   ├── notifications-setup.js wiring de notificaciones
+│   ├── sidebar.js            barra lateral de navegación (drawer)
 │   ├── profile.js             perfil, estadísticas y amigos
 │   └── app.js                 punto de entrada y orquestador
 ├── docs/
@@ -190,18 +191,30 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    Sin ese patrón, los despliegues desde ramas como `feature/...` se
    rechazan con un error de "environment protection rules".
 3. El workflow `.github/workflows/deploy-all-branches.yml` despliega
-   **todas las ramas** en cada push:
+   **todas las ramas** en cada push a `main` o `dev`: cada merge reconstruye
+   el sitio con todas las ramas.
    - La rama `main` se sirve en la raíz:
      `https://tu-usuario.github.io/nombre-del-repo/`.
-   - Cada rama se sirve en su propio subdirectorio con el nombre de la
-     rama (saneado y manteniendo jerarquías, p. ej. `feature/mi-cambio`):
-     `https://tu-usuario.github.io/nombre-del-repo/<rama>/`. Es un
-     preview completo y funcional: cada rama tiene su propia web con su
-     service worker, manifest y assets funcionando desde su base.
+   - La ruta `/dev/` es el **hub de previews**: una página índice simple,
+     auto-generada en cada despliegue, con enlaces a todas las ramas
+     no-default (incluida `dev`) y a la raíz. Se regenera en cada build:
+     las ramas nuevas aparecen automáticamente y las borradas desaparecen.
+   - Cada rama no-default se sirve en su propio subdirectorio bajo el hub,
+     con el nombre de la rama (saneado y manteniendo jerarquías, p. ej.
+     `feature/mi-cambio`):
+     `https://tu-usuario.github.io/nombre-del-repo/dev/<rama>/`. La propia
+     rama `dev` se sirve en `/dev/dev/`. Es un preview completo y
+     funcional: cada rama tiene su propia web con su service worker,
+     manifest y assets funcionando desde su base.
+   Nota: los previews de las ramas abiertas se actualizan con cada merge a
+   `dev`/`main`, no con cada push de la propia rama; para forzar la
+   actualización de un preview sin merge, usa el paso 4.
 4. Para **re-desplegar manualmente** (p. ej. después de cambiar el
-   workflow): pestaña Actions → `deploy-all-branches` → "Run workflow".
+   workflow, o para forzar la actualización de un preview sin merge):
+   pestaña Actions → `deploy-all-branches` → "Run workflow".
 5. Al **borrar una rama**, el sitio se reconstruye automáticamente y su
-   subdirectorio desaparece del despliegue.
+   subdirectorio desaparece del despliegue (borrar un tag no reconstruye
+   el sitio).
 
 ## 7. Autorizar tu dominio en Firebase
 

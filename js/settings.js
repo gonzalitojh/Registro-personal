@@ -227,15 +227,6 @@ export function setupSettings(ctx) {
 }
 
 /**
- * Sincroniza el select de tema de ajustes cuando se cambia
- * el tema desde el toggle del header.
- */
-export function syncThemeSelect(theme) {
-  const select = document.getElementById("settings-theme-select");
-  if (select) select.value = theme;
-}
-
-/**
  * Sincroniza el tema en la clave de localStorage de ajustes
  * cuando se cambia desde el toggle del header, para mantener
  * ambas claves consistentes.
