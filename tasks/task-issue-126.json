@@ -1,0 +1,38 @@
+{
+  "title": "Action de resolución de issues: mejoras y correcciones (deploy, iteración, triggers y logs)",
+  "description": "Problemas detectados por el usuario (issue #126):\n\n1. Cuando la action auto-resolve-issues termina (y hace push), no se lanza la action deploy-all-branches. Sospecha del usuario: antes los push los hacía su usuario desde el servidor externo de OpenCode y ahora los hace la action (github-actions[bot] con GITHUB_TOKEN), y los eventos generados con GITHUB_TOKEN no disparan los triggers 'push' de otros workflows.\n\n2. Cuando se itera sobre una issue (comentario + relanzamiento de auto-resolve-issues), no se añade a la PR ningún comentario con lo nuevo que se ha aplicado.\n\n3. La action auto-resolve-issues no debe lanzarse cuando se haga una PR (trigger pull_request), para evitar la ejecución continua de la action (ciclo: PR mergeada en dev → resolver siguiente issue → nueva PR → ...).\n\n4. Se desea ver la ejecución de la sesión de OpenCode del workflow de forma más similar al cliente local: el log actual usa --format json (eventos JSON crudos, difíciles de leer).",
+  "status": "documented",
+  "plan": {
+    "archivo": ".github/workflows/auto-resolve-issues.yml",
+    "cambios": [
+      "C3: --format json → --format default (log legible)",
+      "C1: eliminar trigger pull_request de on:, if: y documentación",
+      "C2: añadir instrucción gh pr comment al MODO ITERACIÓN y paso 5a",
+      "C4: añadir actions: write y paso de dispatch gh workflow run deploy-all-branches.yml tras sesión exitosa (después de rollback, antes de resumen)"
+    ],
+    "adr": "docs/adr-050-auto-resolve-deploy-iteracion-triggers.md con Related issue: #126",
+    "opcional": "README sección 6 punto 6: reflejar que ya no se dispara con PRs y que tras sesión exitosa se relanza el deploy"
+  },
+  "acceptance criteria": [
+    "AC1: Al terminar una sesión exitosa de auto-resolve-issues (selected != NONE), se lanza deploy-all-branches (workflow_dispatch), de modo que el despliegue ocurra aunque los push los haga el bot con GITHUB_TOKEN.",
+    "AC2: En modo iteración (issue_comment o reanudación), el agente añade a la PR existente un comentario con lo nuevo aplicado (gh pr comment), y el prompt de la sesión lo exige explícitamente.",
+    "AC3: auto-resolve-issues ya NO se lanza con el evento pull_request (ni cerrada ni mergeada): se elimina el trigger de on: y sus referencias en if:/documentación del workflow.",
+    "AC4: La sesión de OpenCode se muestra con el formato por defecto (legible, similar al cliente local) en lugar de --format json.",
+    "AC5: Se añade el permiso actions: write al workflow auto-resolve-issues si el paso de dispatch lo requiere.",
+    "AC6: El manual de usuario no se ve afectado (cambios internos de CI)."
+  ],
+  "definition of done": [
+    "Planificación realizada y aprobada.",
+    "Implementación completada en los workflows (.github/workflows/auto-resolve-issues.yml y deploy-all-branches.yml si procede).",
+    "Validación con qa-reviewer superada (criterios de aceptación + DoD).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado en docs/ con 'Related issue: #126'.",
+    "PR creada contra dev con 'Closes #126' como primera línea del body.",
+    "Issue #126 label actualizada a su estado final (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 126,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/126",
+    "title": "Action de resolución de issues"
+  }
+}

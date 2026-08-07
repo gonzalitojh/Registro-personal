@@ -221,9 +221,14 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    max) que resuelve automáticamente la issue más prioritaria del backlog
    (issues con label `ai` en `status: todo`, prioridad → tipo → antigüedad;
    nunca issues `needs-info`/`blocked` ni bloqueadas por otra sin resolver).
-   Se dispara al fusionar una PR contra `dev`, al crear una issue nueva y
-   al comentar en una issue en curso (iteración). Si no quedan issues, el
-   workflow termina sin lanzar sesión ("servidor apagado"). Requiere que
+   Se dispara al crear una issue nueva, al comentar en una issue en curso
+   (iteración) o con un disparo manual desde la pestaña Actions —
+   **ya no se dispara al fusionar PRs**. Si no quedan issues, el
+   workflow termina sin lanzar sesión ("servidor apagado").
+   Tras cada sesión exitosa se relanza automáticamente el despliegue de
+   Pages (`deploy-all-branches`), de modo que las ramas nuevas quedan
+   publicadas aunque el push lo haga la action con el token del bot.
+   Requiere que
    el workflow esté en la rama por defecto (`main`): se activa en
    producción tras la promoción `dev` → `main`. Prueba manual desde la
    pestaña Actions → `auto-resolve-issues` → "Run workflow" (con
