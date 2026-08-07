@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260817" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260817" />
+  <link rel="stylesheet" href="css/styles.css?v=20260818" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260818" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -132,15 +132,15 @@
     <main id="main-content" tabindex="-1">
       <!-- El contenido de cada pestaña vive en ocio/*.html y lo inyecta
            app.js con fetch() dentro de estas tres secciones. -->
-      <section id="panel-tv" class="panel" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-tv" class="panel" role="tabpanel" aria-labelledby="tab-tv" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-movies" class="panel hidden" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-movies" class="panel hidden" role="tabpanel" aria-labelledby="tab-movies" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-books" class="panel hidden" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-books" class="panel hidden" role="tabpanel" aria-labelledby="tab-books" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
     </main>
@@ -402,7 +402,7 @@
 
   <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
-  <script type="module" src="js/app.js?v=20260817"></script>
+  <script type="module" src="js/app.js?v=20260818"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

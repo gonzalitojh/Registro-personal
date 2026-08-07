@@ -120,26 +120,15 @@ input, textarea, select { font-size: 16px; }
    Estantería / biblioteca personal
    ========================================================= */
 
-.library-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 2.2rem;
-  margin-bottom: 0.8rem;
-}
-
-.library-head h2 {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  margin: 0;
-}
-
 .filter-chips {
   display: flex;
   gap: 0.4rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .chip {
@@ -149,12 +138,18 @@ input, textarea, select { font-size: 16px; }
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
   font-size: 0.78rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .chip.is-active {
   background: var(--paper);
   color: var(--ink);
   border-color: var(--paper);
 }
+/* Filtros de la biblioteca: mismo tamaño y fuente que el select de
+   orden (issue #118). Scoped para no afectar al .chip del buscador
+   global (css/styles.css .global-search__item-status.chip). */
+.library-controls .chip { font-size: 1rem; }
 
 .library-grid {
   display: grid;
@@ -544,6 +539,15 @@ input, textarea, select { font-size: 16px; }
   align-items: center;
   gap: 0.7rem;
   flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+  max-width: 100%;
+}
+
+.library-controls__aux {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
 }
 
 .sort-select {
@@ -551,7 +555,7 @@ input, textarea, select { font-size: 16px; }
   color: var(--paper);
   border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
-  padding: 0.3rem 0.65rem;
+  padding: 0.3rem 0.75rem;
   font-size: 1rem;
   font-family: var(--font-body);
 }
@@ -1456,6 +1460,9 @@ input, textarea, select { font-size: 16px; }
   .episode-row input.episode-date,
   .sort-select {
     font-size: 16px;
+  }
+  .library-controls__aux {
+    flex-basis: 100%;
   }
 }
 
