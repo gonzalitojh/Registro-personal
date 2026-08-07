@@ -214,10 +214,6 @@
   border-color: var(--paper-line);
 }
 
-[data-theme="light"] .friend-detail__section h3 {
-  color: var(--ink);
-}
-
 [data-theme="light"] .global-search__input {
   color: var(--ink);
 }
@@ -534,17 +530,14 @@ button {
   padding: 0 1.25rem;
 }
 
-/* Los h2 de cada panel (inyectados desde ocio/*.html) reciben el foco
-   al cambiar de pestaña (js/app.js), y #main-content es el destino
-   del enlace "Saltar al contenido": el scroll-margin-top evita que
-   el foco/ancla queden ocultos bajo la cabecera fija (issue #79). */
-#main-content,
-.panel h2 {
+/* #main-content es el destino del enlace "Saltar al contenido" y del
+   foco al cambiar de pestaña (js/app.js): el scroll-margin-top evita
+   que el foco/ancla queden ocultos bajo la cabecera fija (issue #79). */
+#main-content {
   scroll-margin-top: calc(var(--header-h) + 1rem);
 }
 @media (min-width: 768px) {
-  #main-content,
-  .panel h2 {
+  #main-content {
     scroll-margin-top: calc(var(--header-h) + var(--tabs-bar-h) + 1rem);
   }
 }
@@ -1363,13 +1356,15 @@ button {
    Perfil: subpestañas Estadísticas / Amigos
    ========================================================= */
 
-.profile-subtabs {
+.profile-subtabs,
+.friend-subtabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.profile-subtab {
+.profile-subtab,
+.friend-subtab {
   background: var(--ink-raised);
   color: var(--ink-soft);
   border: 1px solid var(--paper-alpha-20);
@@ -1378,7 +1373,8 @@ button {
   font-size: 0.82rem;
   font-weight: 600;
 }
-.profile-subtab.is-active {
+.profile-subtab.is-active,
+.friend-subtab.is-active {
   background: var(--paper);
   color: var(--ink);
 }
@@ -1386,10 +1382,12 @@ button {
 /* Subpestañas del perfil en móvil: se compactan (sin ocultar ninguna)
    y envuelven en varias líneas para no desbordar el viewport */
 @media (max-width: 480px) {
-  .profile-subtabs {
+  .profile-subtabs,
+  .friend-subtabs {
     justify-content: center;
   }
-  .profile-subtab {
+  .profile-subtab,
+  .friend-subtab {
     padding: 0.3rem 0.6rem;
     font-size: 0.78rem;
   }
@@ -1447,19 +1445,29 @@ button {
   margin: 0.6rem 0 1.4rem;
 }
 
-.friend-detail__section {
-  margin-bottom: 2rem;
+.friend-tabpanel {
+  margin-top: 1.2rem;
 }
 
-.friend-detail__section h3 {
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  color: var(--paper);
-  margin: 0 0 0.8rem;
+.friend-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
 }
 
-.friend-detail__section .empty-state {
+.friend-chip {
+  background: transparent;
+  border: 1px solid var(--paper-alpha-30);
   color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+}
+.friend-chip.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
 }
 
 

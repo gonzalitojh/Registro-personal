@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Mi Registro — pelis, series y libros</title>
   <meta name="description" content="Registro personal de películas, series y libros." />
 
@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260816" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260816" />
+  <link rel="stylesheet" href="css/styles.css?v=20260818" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260818" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -132,15 +132,15 @@
     <main id="main-content" tabindex="-1">
       <!-- El contenido de cada pestaña vive en ocio/*.html y lo inyecta
            app.js con fetch() dentro de estas tres secciones. -->
-      <section id="panel-tv" class="panel" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-tv" class="panel" role="tabpanel" aria-labelledby="tab-tv" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-movies" class="panel hidden" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-movies" class="panel hidden" role="tabpanel" aria-labelledby="tab-movies" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
 
-      <section id="panel-books" class="panel hidden" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
+      <section id="panel-books" class="panel hidden" role="tabpanel" aria-labelledby="tab-books" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
     </main>
@@ -236,16 +236,45 @@
           <button type="button" class="btn-link" id="btn-back-to-friends">← Todos los amigos</button>
           <h2 id="friend-detail-name" class="friend-detail__name"></h2>
 
-          <div class="friend-detail__section">
-            <h3>Películas</h3>
+          <div class="friend-subtabs" role="tablist" aria-label="Registro del amigo">
+            <button type="button" class="friend-subtab is-active" role="tab" id="friend-tab-movies"
+                    aria-selected="true" aria-controls="friend-panel-movies" data-friend-tab="movies">Películas</button>
+            <button type="button" class="friend-subtab" role="tab" id="friend-tab-tv"
+                    aria-selected="false" aria-controls="friend-panel-tv" data-friend-tab="tv">Series</button>
+            <button type="button" class="friend-subtab" role="tab" id="friend-tab-books"
+                    aria-selected="false" aria-controls="friend-panel-books" data-friend-tab="books">Libros</button>
+          </div>
+
+          <div class="friend-tabpanel" id="friend-panel-movies" role="tabpanel" aria-labelledby="friend-tab-movies">
+            <div class="friend-filters" role="group" aria-label="Filtrar películas por estado" data-tab="movies">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Vista</button>
+            </div>
             <div id="friend-movies" class="library-grid"></div>
           </div>
-          <div class="friend-detail__section">
-            <h3>Series</h3>
-            <div id="friend-series" class="library-grid"></div>
+
+          <div class="friend-tabpanel hidden" id="friend-panel-tv" role="tabpanel" aria-labelledby="friend-tab-tv">
+            <div class="friend-filters" role="group" aria-label="Filtrar series por estado" data-tab="tv">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="en_curso" aria-pressed="false">Viendo</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Vista</button>
+              <button type="button" class="friend-chip" data-status="standby" aria-pressed="false">Standby</button>
+              <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonada</button>
+            </div>
+            <div id="friend-tv" class="library-grid"></div>
           </div>
-          <div class="friend-detail__section">
-            <h3>Libros</h3>
+
+          <div class="friend-tabpanel hidden" id="friend-panel-books" role="tabpanel" aria-labelledby="friend-tab-books">
+            <div class="friend-filters" role="group" aria-label="Filtrar libros por estado" data-tab="books">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="en_curso" aria-pressed="false">Leyendo</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Leído</button>
+              <button type="button" class="friend-chip" data-status="standby" aria-pressed="false">Standby</button>
+              <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
+            </div>
             <div id="friend-books" class="library-grid"></div>
           </div>
         </div>
@@ -373,7 +402,7 @@
 
   <div id="toast" class="toast hidden" role="alert" aria-live="assertive"></div>
 
-  <script type="module" src="js/app.js?v=20260816"></script>
+  <script type="module" src="js/app.js?v=20260818"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

@@ -95,6 +95,10 @@ Nada más entrar verás:
   el contenido de la lista; las pestañas permanecen siempre en su
   sitio.
 
+La pestaña activa indica siempre en qué colección estás, por eso cada
+colección no repite un título como «Mis series»: nada más entrar ves
+directamente su barra de herramientas.
+
 Al entrar por primera vez aterrizas en **Series**, con el filtro **«Viendo»**
 activo y en vista de lista — el uso más habitual.
 
@@ -366,6 +370,15 @@ En la barra de cada biblioteca tienes:
 - **Vista cuadrícula ▦ o lista ☰**: a tu gusto (cada sección recuerda la
   suya mientras estás en la web).
 
+Sobre la disposición de esta barra: los **chips de filtro** están todos
+en una sola línea y, si no caben (en el móvil), esa línea de filtros se
+**desliza en horizontal** sin ocupar más espacio (la barra de
+desplazamiento no se muestra, pero puedes deslizar con el dedo). El
+**selector de orden** y el de **vista** van siempre juntos: en la misma
+línea que los filtros en pantallas anchas y en una segunda línea en el
+móvil. El selector de orden tiene el mismo tamaño y la misma fuente que
+los chips de filtro.
+
 Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
 en rojo con el texto tachado.
@@ -492,8 +505,20 @@ Debajo hay dos gráficas:
 ### 13.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
-Pulsa en una para ver **su registro completo en modo solo lectura**:
-películas, series y libros con sus estados, valoraciones y progreso.
+Pulsa en una para ver **su registro en modo solo lectura**. Para que la
+lista no sea interminable, el registro se organiza **por pestañas**:
+**Películas, Series y Libros** (una a la vez, igual que en tu propio
+perfil).
+
+Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
+interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
+en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
+Así no tienes que hacer scroll largo.
+
+Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
+vuelves a la lista de amigos y entras de nuevo en un amigo, se
+**restablece** todo: pestaña **Películas** y filtro **Todos**.
 
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
 sus valoraciones episodio a episodio ni sus historiales completos.

@@ -2,14 +2,13 @@
   Contenido de la pestaña "Películas". Se inyecta dentro de
   <section id="panel-movies"> (ver ocio/series.html para la explicación).
 -->
-<div class="library-head">
-  <h2>Mis películas</h2>
-  <div class="library-controls">
-    <div class="filter-chips" data-scope="movies">
-      <button class="chip is-active" data-status="todos">Todos</button>
-      <button class="chip" data-status="pendiente">Pendiente</button>
-      <button class="chip" data-status="completado">Vista</button>
-    </div>
+<div class="library-controls">
+  <div class="filter-chips" data-scope="movies">
+    <button class="chip is-active" data-status="todos">Todos</button>
+    <button class="chip" data-status="pendiente">Pendiente</button>
+    <button class="chip" data-status="completado">Vista</button>
+  </div>
+  <div class="library-controls__aux">
     <select class="sort-select" data-scope="movies">
       <option value="añadido">Actividad reciente</option>
       <option value="fecha">Fecha de visionado</option>

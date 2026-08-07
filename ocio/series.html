@@ -4,17 +4,16 @@
   id, clases y data-type-group) vive en index.html; aquí solo va lo de
   dentro, para que se pueda mantener por separado.
 -->
-<div class="library-head">
-  <h2>Mis series</h2>
-  <div class="library-controls">
-    <div class="filter-chips" data-scope="tv">
-      <button class="chip" data-status="todos">Todos</button>
-      <button class="chip" data-status="pendiente">Pendiente</button>
-      <button class="chip is-active" data-status="en_curso">Viendo</button>
-      <button class="chip" data-status="completado">Vista</button>
-      <button class="chip" data-status="standby">Standby</button>
-      <button class="chip" data-status="abandonado">Abandonada</button>
-    </div>
+<div class="library-controls">
+  <div class="filter-chips" data-scope="tv">
+    <button class="chip" data-status="todos">Todos</button>
+    <button class="chip" data-status="pendiente">Pendiente</button>
+    <button class="chip is-active" data-status="en_curso">Viendo</button>
+    <button class="chip" data-status="completado">Vista</button>
+    <button class="chip" data-status="standby">Standby</button>
+    <button class="chip" data-status="abandonado">Abandonada</button>
+  </div>
+  <div class="library-controls__aux">
     <select class="sort-select" data-scope="tv">
       <option value="añadido">Actividad reciente</option>
       <option value="fecha">Fecha de visionado</option>
