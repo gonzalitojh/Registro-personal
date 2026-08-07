@@ -2,6 +2,11 @@
 // Búsqueda de películas, series y libros + alta desde resultados
 // + alta manual. Extraído de app.js para desacoplar toda la lógica
 // de búsqueda de la orquestación general.
+//
+// Desde la issue #82 este módulo es stateless: no toca el DOM ni
+// guarda resultados. La UI del dropdown (incluida la búsqueda en el
+// catálogo) vive en global-search.js, que importa de aquí las
+// funciones de alta, preview y llamadas a la API.
 // =============================================================
 
 import { addItem } from "./db.js";
@@ -10,17 +15,19 @@ import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 
-// Estado interno del módulo
-let lastMoviesResults = [];
-let lastTvResults = [];
-let lastBookResults = [];
-const searchState = {
-  movies: { query: "", page: 1, hasMore: false },
-  tv: { query: "", page: 1, hasMore: false },
-  books: { query: "", page: 1, hasMore: false, source: null },
-};
+// Búsqueda en el catálogo de un grupo (stateless: solo devuelve
+// datos, sin tocar el DOM). group: "movies" | "tv" | "books".
+// Devuelve { items, hasMore, source } (source solo para libros:
+// "googlebooks" | "openlibrary").
+export async function searchExternal(group, query, page = 1) {
+  if (group === "movies") return apiSearchMovies(query, page);
+  if (group === "tv") return apiSearchTv(query, page);
+  // Libros: siempre en español (la casilla "Solo en español" se
+  // eliminó en la issue #82).
+  return apiSearchBooks(query, page, null, true);
+}
 
-function existingIdsFor(group, ctx) {
+export function existingIdsFor(group, ctx) {
   return new Set(ctx.getItemsByGroup(group).map((i) => i.externalId));
 }
 
@@ -28,7 +35,7 @@ function existingIdsFor(group, ctx) {
 // título+autor (cruce entre fuentes: un libro añadido vía Open
 // Library con ID "/works/..." se detecta también en resultados de
 // Google Books y viceversa).
-function existingBookKeys(ctx) {
+export function existingBookKeys(ctx) {
   const books = ctx.getItemsByGroup("books");
   const keys = new Set();
   for (const b of books) {
@@ -38,49 +45,10 @@ function existingBookKeys(ctx) {
   return keys;
 }
 
-function isBookAlreadyAdded(item, idsSet, keysSet) {
+export function isBookAlreadyAdded(item, idsSet, keysSet) {
   if (idsSet.has(item.externalId)) return true;
   const key = `${(item.title || "").trim().toLowerCase()}|${(item.author || "").trim().toLowerCase()}`;
   return keysSet.has(key);
-}
-
-function toggleResultsToolbar(group, hasMore, hasResults) {
-  document.getElementById(`results-toolbar-${group}`).classList.toggle("hidden", !hasResults);
-  document.getElementById(`btn-load-more-${group}`).classList.toggle("hidden", !hasMore);
-}
-
-export function hideResults(group) {
-  document.getElementById(`search-${group}-results`).innerHTML = "";
-  document.getElementById(`results-toolbar-${group}`).classList.add("hidden");
-  if (group === "movies") lastMoviesResults = [];
-  if (group === "tv") lastTvResults = [];
-  if (group === "books") lastBookResults = [];
-}
-
-export function clearAllSearches() {
-  ["movies", "tv", "books"].forEach((group) => hideResults(group));
-  document.getElementById("search-movies-input").value = "";
-  document.getElementById("search-tv-input").value = "";
-  document.getElementById("search-books-input").value = "";
-  document.querySelectorAll(".search-clear-btn").forEach((b) => b.classList.add("hidden"));
-}
-
-export function refreshSearchAddButtons(ctx) {
-  const resultsMovies = document.getElementById("search-movies-results");
-  const resultsTv = document.getElementById("search-tv-results");
-  const resultsBooks = document.getElementById("search-books-results");
-  if (lastMoviesResults.length) {
-    ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), (item, btn) => handleAdd(item, btn, ctx), null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-  }
-  if (lastTvResults.length) {
-    ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), (item, btn) => handleAdd(item, btn, ctx), null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-  }
-  if (lastBookResults.length) {
-    const ids = existingIdsFor("books", ctx);
-    const keys = existingBookKeys(ctx);
-    const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
-    ui.renderSearchResults(resultsBooks, lastBookResults, ids, (item, btn) => handleAdd(item, btn, ctx), bookCheck, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-  }
 }
 
 /* ---------- Alta desde resultados ---------- */
@@ -127,7 +95,7 @@ async function doAddBook(item, btn, ctx, choices) {
   }
 }
 
-async function handleAdd(item, btn, ctx) {
+export async function handleAdd(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return;
 
   // Para libros con múltiples portadas o sinopsis, abrir modal de
@@ -213,7 +181,7 @@ async function handleAdd(item, btn, ctx) {
 // Carga los detalles ampliados de un resultado de búsqueda para la
 // vista previa. Devuelve {} si no hay nada que enriquecer o si falla
 // la llamada a la API (nunca lanza).
-async function enrichSearchItem(item) {
+export async function enrichSearchItem(item) {
   if (item.type === "movie") {
     try {
       return await getMovieDetails(item.externalId);
@@ -252,7 +220,7 @@ async function enrichSearchItem(item) {
 // con el estado actual del ctx como defensa frente a cambios entre el
 // render y el click (el grupo se mapea a plural porque ctx usa las
 // claves "movies"/"tv"/"books").
-function openSearchPreviewFromResults(item, added, ctx) {
+export function openSearchPreviewFromResults(item, added, ctx) {
   const currentAdded =
     item.type === "book"
       ? isBookAlreadyAdded(item, existingIdsFor("books", ctx), existingBookKeys(ctx))
@@ -276,7 +244,7 @@ function manualExternalId() {
   return "manual-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-async function handleManualAdd(type, data, ctx) {
+export async function handleManualAdd(type, data, ctx) {
   if (!ctx.getCurrentUser()) return;
   const draft = {
     externalId: manualExternalId(),
@@ -312,122 +280,4 @@ async function handleManualAdd(type, data, ctx) {
   } catch (err) {
     ui.showToast("No se pudo añadir: " + err.message);
   }
-}
-
-export function setupSearch(ctx) {
-  const resultsMovies = document.getElementById("search-movies-results");
-  const resultsTv = document.getElementById("search-tv-results");
-  const resultsBooks = document.getElementById("search-books-results");
-  const booksSpanishOnly = document.getElementById("books-spanish-only");
-
-  const onAdd = (item, btn) => handleAdd(item, btn, ctx);
-
-  async function runMovieSearch(query, page) {
-    try {
-      const result = await apiSearchMovies(query, page);
-      lastMoviesResults = page === 1 ? result.items : [...lastMoviesResults, ...result.items];
-      searchState.movies = { query, page, hasMore: result.hasMore };
-      ui.renderSearchResults(resultsMovies, lastMoviesResults, existingIdsFor("movies", ctx), onAdd, null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-      toggleResultsToolbar("movies", result.hasMore, lastMoviesResults.length > 0);
-    } catch (err) {
-      ui.showToast(err.message);
-    }
-  }
-
-  async function runTvSearch(query, page) {
-    try {
-      const result = await apiSearchTv(query, page);
-      lastTvResults = page === 1 ? result.items : [...lastTvResults, ...result.items];
-      searchState.tv = { query, page, hasMore: result.hasMore };
-      ui.renderSearchResults(resultsTv, lastTvResults, existingIdsFor("tv", ctx), onAdd, null, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-      toggleResultsToolbar("tv", result.hasMore, lastTvResults.length > 0);
-    } catch (err) {
-      ui.showToast(err.message);
-    }
-  }
-
-  async function runBookSearch(query, page, forceSource) {
-    try {
-      const result = await apiSearchBooks(query, page, forceSource || null, booksSpanishOnly.checked);
-      lastBookResults = page === 1 ? result.items : [...lastBookResults, ...result.items];
-      searchState.books = { query, page, hasMore: result.hasMore, source: result.source };
-      const ids = existingIdsFor("books", ctx);
-      const keys = existingBookKeys(ctx);
-      const bookCheck = (item) => isBookAlreadyAdded(item, ids, keys);
-      ui.renderSearchResults(resultsBooks, lastBookResults, ids, onAdd, bookCheck, (item, added) => openSearchPreviewFromResults(item, added, ctx));
-      toggleResultsToolbar("books", result.hasMore, lastBookResults.length > 0);
-    } catch (err) {
-      ui.showToast(err.message);
-    }
-  }
-
-  /* ---------- Búsqueda: películas ---------- */
-  document.getElementById("form-search-movies").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const query = document.getElementById("search-movies-input").value.trim();
-    if (!query) return;
-    runMovieSearch(query, 1);
-  });
-
-  document.getElementById("btn-load-more-movies").addEventListener("click", () => {
-    runMovieSearch(searchState.movies.query, searchState.movies.page + 1);
-  });
-
-  /* ---------- Búsqueda: series ---------- */
-  document.getElementById("form-search-tv").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const query = document.getElementById("search-tv-input").value.trim();
-    if (!query) return;
-    runTvSearch(query, 1);
-  });
-
-  document.getElementById("btn-load-more-tv").addEventListener("click", () => {
-    runTvSearch(searchState.tv.query, searchState.tv.page + 1);
-  });
-
-  /* ---------- Búsqueda: libros ---------- */
-  document.getElementById("form-search-books").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const query = document.getElementById("search-books-input").value.trim();
-    if (!query) return;
-    runBookSearch(query, 1, null);
-  });
-
-  booksSpanishOnly.addEventListener("change", () => {
-    if (searchState.books.query) runBookSearch(searchState.books.query, 1, null);
-  });
-
-  document.getElementById("btn-load-more-books").addEventListener("click", () => {
-    runBookSearch(searchState.books.query, searchState.books.page + 1, searchState.books.source);
-  });
-
-  /* ---------- Ocultar resultados ---------- */
-  ["movies", "tv", "books"].forEach((group) => {
-    document.getElementById(`btn-hide-results-${group}`).addEventListener("click", () => hideResults(group));
-  });
-
-  /* ---------- Botón de borrar búsqueda (X) ---------- */
-  document.querySelectorAll(".search-clear-btn").forEach((btn) => {
-    const scope = btn.dataset.scope;
-    const input = document.getElementById(`search-${scope}-input`);
-    input.addEventListener("input", () => {
-      btn.classList.toggle("hidden", !input.value);
-    });
-    btn.addEventListener("click", () => {
-      input.value = "";
-      btn.classList.add("hidden");
-      input.focus();
-    });
-  });
-
-  /* ---------- Alta manual ---------- */
-  document.getElementById("btn-manual-movie").addEventListener("click", () => {
-    ui.openManualAddModal("movie", (data) => handleManualAdd("movie", data, ctx));
-  });
-  document.getElementById("btn-manual-tv").addEventListener("click", () => {
-    ui.openManualAddModal("tv", (data) => handleManualAdd("tv", data, ctx));
-  });
-  document.getElementById("btn-manual-book").addEventListener("click", () => {
-    ui.openManualAddModal("book", (data) => handleManualAdd("book", data, ctx));
-  });
 }

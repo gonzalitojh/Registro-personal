@@ -1,0 +1,29 @@
+{
+  "title": "Unificar barras de búsqueda",
+  "description": "Unificar en la barra de búsqueda superior la búsqueda tanto de ítems en mi colección como de nuevos ítems para añadir.\n\nAl buscar un ítem en la barra superior, aparecerán los resultados que tenemos en nuestras colecciones (tal y como hace ahora) y, encima de estos resultados, quiero que haya botones para hacer la búsqueda en una pestaña concreta (serie, película o libro) y al presionar el botón elegido, se realizará la búsqueda a la API necesaria, como se haría en la barra de búsqueda para añadir ítems.\nLos resultados de esta búsqueda, se deben mostrar igual que se hace actualmente en la barra superior (en lista y dentro del recuadro), en lugar de como se hace actualmente (de forma horizontal). A la derecha, donde actualmente pone el estado del item, debe estar el botón para añadir, aunque también se debe poder ampliar la información del item pulsando sobre él como se hace actualmente.\nEl botón para añadir manualmente un ítem no encontrado, debe aparecer también en esta lista de resultados (al final) y eliminarse de donde se encuentra actualmente.\n\nEliminar tanto la barra de búsqueda en la colección como la búsqueda de nuevos ítems a añadir que hay actualmente.\n\n**Estudiar cómo hacer la distinción entre buscar en la colección o algo nuevo.**",
+  "status": "documented",
+  "acceptance criteria": [
+    "La barra de búsqueda superior muestra, al buscar, los resultados de la colección del usuario (comportamiento actual) seguidos de botones para buscar en serie, película o libro.",
+    "Al pulsar un botón de tipo (serie/película/libro), se ejecuta la búsqueda en la API correspondiente y los resultados se muestran en lista dentro del mismo recuadro desplegable de la barra superior (no horizontal).",
+    "Cada resultado de API muestra a la derecha (donde va el estado del ítem) un botón para añadir; pulsar sobre el ítem amplía su información como en la búsqueda actual.",
+    "El botón 'añadir manualmente un ítem no encontrado' aparece al final de la lista de resultados y se elimina de su ubicación actual.",
+    "Se eliminan la barra de búsqueda dentro de la colección y la búsqueda de nuevos ítems a añadir actuales.",
+    "La distinción entre buscar en la colección y buscar algo nuevo queda estudiada y documentada."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect)",
+    "Implementación realizada según el plan",
+    "Validación QA aprobada (aceptación + edge cases + responsividad)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR creado en docs/adr-045-unificacion-buscadores.md con 'Related issue: #82'",
+    "Manual de usuario actualizado si cambia algo visible para el usuario",
+    "PR creada contra dev con 'Closes #82' como primera línea",
+    "Issue #82 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 82,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/82",
+    "title": "Unificar barras de búsqueda"
+  },
+  "plan": "Task-architect: unificar búsquedas en la barra superior. Fila colección (estado+detalle) y fila catálogo (botón Añadir+preview). Botones de tipo Serie/Película/Libro encima de resultados. Cap 5/grupo, sin paginación, searchSeq anti-race. search.js conserva lógica (handleAdd, preview, manual add, searchExternal); se eliminan setupSearch, library-search, search-slip, btn-manual-*. BOOKS_SPANISH_ONLY=true."
+}

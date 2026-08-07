@@ -31,14 +31,13 @@ import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
 
 // Módulos extraídos
-import { setupSearch, refreshSearchAddButtons, clearAllSearches } from "./search.js";
 import { setupModalCloseListeners, openItem } from "./modal-handlers.js";
 import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.js";
-import { setupGlobalSearch } from "./global-search.js";
+import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 
@@ -53,7 +52,6 @@ let notifications = [];
 const activeFilters = { movies: "todos", tv: "en_curso", books: "todos" };
 const activeSort = { movies: "añadido", tv: "añadido", books: "añadido" };
 const viewMode = { movies: "grid", tv: "list", books: "grid" };
-const librarySearchText = { movies: "", tv: "", books: "" };
 
 let moviesReady = false;
 let tvReady = false;
@@ -110,9 +108,6 @@ const GRID_IDS = {
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
   let items = applyFilter(itemsByGroup(group), activeFilters[group]);
-  if (librarySearchText[group]) {
-    items = items.filter((i) => (i.title || "").toLowerCase().includes(librarySearchText[group]));
-  }
   items = applySort(items, activeSort[group]);
   const ctx = createCtx();
   ui.renderLibrary(document.getElementById(gridId), document.getElementById(emptyId), items, viewMode[group], {
@@ -206,8 +201,6 @@ async function init() {
         heading.setAttribute("tabindex", "-1");
         heading.focus();
       }
-
-      clearAllSearches();
     });
   });
 
@@ -241,14 +234,6 @@ async function init() {
     });
   });
 
-  document.querySelectorAll(".library-search-input").forEach((input) => {
-    const scope = input.dataset.scope;
-    input.addEventListener("input", () => {
-      librarySearchText[scope] = input.value.trim().toLowerCase();
-      renderLibraryFor(scope);
-    });
-  });
-
   document.querySelectorAll(".view-toggle").forEach((toggle) => {
     const scope = toggle.dataset.scope;
     toggle.querySelectorAll(".view-toggle__btn").forEach((btn) => {
@@ -262,7 +247,6 @@ async function init() {
   });
 
   // Módulos especializados
-  setupSearch(ctx);
   setupModalCloseListeners();
   setupNotifications(ctx);
   const profileApi = setupProfile(ctx);
@@ -318,7 +302,7 @@ async function init() {
         allItems.movies = items;
         moviesReady = true;
         renderLibraryFor("movies");
-        refreshSearchAddButtons(createCtx());
+        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       () => ui.showToast("No se pudieron cargar tus películas.")
@@ -331,7 +315,7 @@ async function init() {
         allItems.tv = items;
         tvReady = true;
         renderLibraryFor("tv");
-        refreshSearchAddButtons(createCtx());
+        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       () => ui.showToast("No se pudieron cargar tus series.")
@@ -344,7 +328,7 @@ async function init() {
         allItems.books = items;
         booksReady = true;
         renderLibraryFor("books");
-        refreshSearchAddButtons(createCtx());
+        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       () => ui.showToast("No se pudieron cargar tus libros.")
