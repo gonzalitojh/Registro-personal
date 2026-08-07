@@ -116,7 +116,6 @@ export function showAuthScreen() {
 export function showApp(user) {
   document.getElementById("auth-screen").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
-  document.getElementById("user-name").textContent = user.displayName || user.email;
   document.getElementById("user-avatar").src = user.photoURL || PLACEHOLDER_COVER;
 
   // Placeholder animado: "Mi Registro" → placeholder por defecto

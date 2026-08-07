@@ -58,8 +58,8 @@ invitados. Si tu correo no está en la lista, la web te lo dirá
 podrás entrar. Pídele a quien administre la web que te añada.
 
 La primera vez que entras se crea tu cuenta automáticamente, con tu nombre
-y tu foto de Google. Para salir, pulsa tu foto o tu nombre (arriba a la
-derecha) y elige **«Cerrar sesión»** en el menú que se despliega.
+y tu foto de Google. Para salir, pulsa tu foto (arriba a la derecha) y
+elige **«Cerrar sesión»** en el menú que se despliega.
 
 ## 3. La pantalla principal
 
@@ -78,9 +78,9 @@ Nada más entrar verás:
     segundos pasa a «Buscar películas, series, libros o amigos...».
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
-    - **Tu foto (y tu nombre, si se muestra)**: pulsándolos se abre un menú
-      con las cinco secciones de tu perfil (**Estadísticas, Amigos,
-      Actividad, Datos, Ajustes**) y la opción **«Cerrar sesión»**.
+    - **Tu foto**: pulsándola se abre un menú con las cinco secciones de
+      tu perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
+      opción **«Cerrar sesión»**.
   - La cabecera **permanece siempre visible**: al hacer scroll por la
     lista no se mueve, en ningún dispositivo.
 - **Las pestañas**: **Series**, **Películas** y **Libros**. En el
@@ -469,11 +469,11 @@ estás mirando.
 
 ## 13. Tu perfil
 
-Pulsa **tu foto o tu nombre** (arriba a la derecha) para abrir el menú de
-perfil y elige la sección a la que quieras ir: **Estadísticas, Amigos,
-Actividad, Datos o Ajustes**. Desde el mismo menú también puedes **cerrar
-sesión**. En móvil solo se ve la foto; en tablet y ordenador también
-aparece tu nombre, y ambas cosas forman parte del mismo botón.
+Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
+elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad,
+Datos o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
+El botón muestra únicamente tu foto, sin tu nombre, en cualquier
+dispositivo (móvil, tablet u ordenador).
 Tu perfil tiene cinco secciones:
 
 ### 13.1 Estadísticas
