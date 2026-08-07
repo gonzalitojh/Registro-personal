@@ -64,6 +64,13 @@ You are the MASTER agent for SDD (Spec Driven Development) process orchestration
 
 ## Step 0 — Interpret the user's request
 
+> **Modo autónomo (CI)**: las sesiones pueden lanzarse sin usuario
+> interactivo desde GitHub Actions (workflow `auto-resolve-issues`, issue
+> #81). Si el prompt indica que es una sesión automática («AUTOMÁTICA de
+> SDD lanzada por GitHub Actions»), NO preguntes al usuario: procede de
+> forma autónoma con el flujo completo y reporta al final. Los prompts de
+> CI ya incluyen la issue a resolver y el contexto; ignora la interacción.
+
 Before looking at the 'tasks' folder, determine the intent of the request:
 
 - **Query about issues**: If the user asks what issues are open, pending, completed, in review, blocked, or by type (e.g. "¿qué issues hay abiertas?", "muestra las issues pendientes", "qué hay en revisión?", "issues completadas"), run the helper and present results. DO NOT create any task file — the task is created only when the user decides to tackle an issue.

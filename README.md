@@ -215,6 +215,19 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
 5. Al **borrar una rama**, el sitio se reconstruye automáticamente y su
    subdirectorio desaparece del despliegue (borrar un tag no reconstruye
    el sitio).
+6. **(Opcional) Resolución automática de issues** — el workflow
+   `.github/workflows/auto-resolve-issues.yml` lanza una sesión de
+   OpenCode (agente `sdd-master`, modelo DeepSeek V4 Flash Free, variante
+   max) que resuelve automáticamente la issue más prioritaria del backlog
+   (issues con label `ai` en `status: todo`, prioridad → tipo → antigüedad;
+   nunca issues `needs-info`/`blocked` ni bloqueadas por otra sin resolver).
+   Se dispara al fusionar una PR contra `dev`, al crear una issue nueva y
+   al comentar en una issue en curso (iteración). Si no quedan issues, el
+   workflow termina sin lanzar sesión ("servidor apagado"). Requiere que
+   el workflow esté en la rama por defecto (`main`): se activa en
+   producción tras la promoción `dev` → `main`. Prueba manual desde la
+   pestaña Actions → `auto-resolve-issues` → "Run workflow" (con
+   `dry_run` para ver la selección sin lanzar la sesión).
 
 ## 7. Autorizar tu dominio en Firebase
 

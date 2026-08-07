@@ -1,0 +1,77 @@
+{
+  "title": "Resolución automática de Issues",
+  "description": "Implementar una GitHub Action (ejecutar todo internamente en GitHub Actions) que cuando se resuelva una PR contra dev (no contra main), automáticamente cree una sesión nueva en OpenCode con: Agente: Sdd-Master, Modelo: DeepSeek V4 Flash Free (New), Variante: Max. Esta nueva sesión debe resolver una nueva issue con los siguientes criterios:\n- Resolver únicamente las issues marcadas con la etiqueta 'ai'.\n- Resolver siempre la issue con la prioridad más alta (very high, high, medium, low, very low).\n- En caso de igualdad de prioridades elegir en base al tipo en este orden: bug, question, style, content, refactor, feature.\n- En caso de igualdad en prioridades y tipo, resolver primero la más antigua.\n- Nunca resolver una issue en estado needs-info o blocked, aunque esté marcada con la etiqueta 'ai'.\n- Nunca resolver una issue bloqueada por otra si no se ha resuelto dicha issue en primer lugar.\nSi se hace un comentario sobre una issue (todavía abierta) en la misma sesión en que se estaba ejecutando, debe volver analizarse dicho comentario (iteración). Si no queda ninguna issue por resolver, apagar el servidor de OpenCode. Además, si se crea una issue y el servidor de OpenCode está apagado, encenderlo y hacer todo el proceso.",
+  "status": "review",
+  "acceptance criteria": [
+    "Existe una GitHub Action que se dispara al fusionar una PR contra dev (no contra main) y al crear/editar issues, y que invoca OpenCode en modo headless dentro del runner.",
+    "La sesión de OpenCode se crea con el agente Sdd-Master, el modelo DeepSeek V4 Flash Free (New) y la variante Max.",
+    "La selección de la issue a resolver aplica los criterios: solo label 'ai'; prioridad más alta (very high > high > medium > low > very low); empate → tipo en orden bug, question, style, content, refactor, feature; empate → más antigua primero.",
+    "Nunca se selecciona una issue con label 'status: needs-info' o 'status: blocked' aunque tenga label 'ai'.",
+    "Una issue bloqueada por otra (dependencia explícita) solo se resuelve si la issue de la que depende ya está resuelta.",
+    "Si se comenta en una issue abierta mientras su sesión estaba en ejecución, el comentario se reanaliza (iteración sobre la misma issue).",
+    "Si no queda ninguna issue por resolver, el flujo apaga el servidor/runner de OpenCode.",
+    "Si se crea una issue nueva y el servidor de OpenCode está apagado, el flujo lo enciende y procesa la issue.",
+    "El flujo completo se ejecuta internamente en GitHub Actions (sin depender de la máquina local del usuario).",
+    "Los cambios visibles para el usuario se reflejan en docs/manual-de-usuario.md si aplica."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #81'.",
+    "PR creada contra dev con 'Closes #81' como primera línea del body.",
+    "Issue #81 label actualizada a su estado final.",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 81,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/81",
+    "title": "Resolución automática de Issues"
+  },
+  "plan": {
+    "architect": "task-architect",
+    "summary": "Un workflow multi-trigger (pull_request closed+merged+base=dev, issues opened, issue_comment created, workflow_dispatch) con concurrency group sdd-auto-resolver; script scripts/gh-select-issue.sh con criterios 1-6; sesión opencode run --agent sdd-master -m opencode/deepseek-v4-flash-free --variant max --auto --format json; iteración por comentario = nuevo run con prompt de reanudación (task file commiteado como estado durable); 'servidor apagado' = workflow termina sin sesión cuando no hay issues; activación real tras promoción dev→main."
+  },
+  "implemented_files": [
+    ".github/workflows/auto-resolve-issues.yml",
+    "scripts/gh-select-issue.sh",
+    "README.md",
+    ".opencode/agents/sdd-master.md"
+  ],
+  "validation": {
+    "qa": "APROBADO (verificaciones reales: sintaxis, ranking real con issues del repo, exclusiones blocked/needs-info, dependencias con issues de prueba #112/#113 creadas y cerradas tras validar, JSON parseable, YAML válido)",
+    "hallazgos_corregidos": [
+      "Interpolación del JSON del selector en comillas simples de bash → candidate.json + jq/cat",
+      "Comentario de usuario interpolado en bash → leído por API de gh",
+      "inputs.dry_run == true → == 'true' (los inputs boolean se serializan como string)",
+      "$? tras if ! devolvía 0 → captura OPENCODE_EXIT explícita",
+      "Rollback/Resumen con guarda de existencia de candidate.json"
+    ]
+  },
+  "security": {
+    "scan": "CLEAN (security-champion)",
+    "high": 0,
+    "medium": 1,
+    "medium_detail": "Prompt-injection vía --auto + GH_TOKEN (mitigado: runner efímero, token repo-scoped, instrucción anti-exfiltración añadida al prompt)",
+    "low": 2,
+    "low_detail": "curl|bash fallback sin pin (documentado en comentario), dry-run imprime bodies (equivalente a visibilidad del repo)",
+    "applied": [
+      "Instrucción SEGURIDAD en el prompt de sesión (nunca imprimir/transmitir GH_TOKEN/OPENCODE_API_KEY)",
+      "Comentario documentando el fallback curl|bash"
+    ]
+  },
+  "documentation": {
+    "adr": "docs/adr-047-auto-resolve-issues.md",
+    "related_issue": "#81",
+    "manual_usuario": "sin cambios (infraestructura interna, regla 3 AGENTS.md no aplica)"
+  },
+  "pr": {
+    "number": 114,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/114",
+    "title": "Resolución automática de Issues (issue #81)",
+    "branch": "refactor/issue-81-auto-resolve-issues",
+    "commit": "011e62b",
+    "closes": "Closes #81"
+  }
+}
