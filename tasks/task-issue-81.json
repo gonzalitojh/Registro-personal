@@ -1,7 +1,7 @@
 {
   "title": "Resolución automática de Issues",
   "description": "Implementar una GitHub Action (ejecutar todo internamente en GitHub Actions) que cuando se resuelva una PR contra dev (no contra main), automáticamente cree una sesión nueva en OpenCode con: Agente: Sdd-Master, Modelo: DeepSeek V4 Flash Free (New), Variante: Max. Esta nueva sesión debe resolver una nueva issue con los siguientes criterios:\n- Resolver únicamente las issues marcadas con la etiqueta 'ai'.\n- Resolver siempre la issue con la prioridad más alta (very high, high, medium, low, very low).\n- En caso de igualdad de prioridades elegir en base al tipo en este orden: bug, question, style, content, refactor, feature.\n- En caso de igualdad en prioridades y tipo, resolver primero la más antigua.\n- Nunca resolver una issue en estado needs-info o blocked, aunque esté marcada con la etiqueta 'ai'.\n- Nunca resolver una issue bloqueada por otra si no se ha resuelto dicha issue en primer lugar.\nSi se hace un comentario sobre una issue (todavía abierta) en la misma sesión en que se estaba ejecutando, debe volver analizarse dicho comentario (iteración). Si no queda ninguna issue por resolver, apagar el servidor de OpenCode. Además, si se crea una issue y el servidor de OpenCode está apagado, encenderlo y hacer todo el proceso.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Existe una GitHub Action que se dispara al fusionar una PR contra dev (no contra main) y al crear/editar issues, y que invoca OpenCode en modo headless dentro del runner.",
     "La sesión de OpenCode se crea con el agente Sdd-Master, el modelo DeepSeek V4 Flash Free (New) y la variante Max.",
@@ -65,5 +65,13 @@
     "adr": "docs/adr-047-auto-resolve-issues.md",
     "related_issue": "#81",
     "manual_usuario": "sin cambios (infraestructura interna, regla 3 AGENTS.md no aplica)"
+  },
+  "pr": {
+    "number": 114,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/114",
+    "title": "Resolución automática de Issues (issue #81)",
+    "branch": "refactor/issue-81-auto-resolve-issues",
+    "commit": "011e62b",
+    "closes": "Closes #81"
   }
 }
