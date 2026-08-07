@@ -1,7 +1,7 @@
 {
   "title": "Action de resolución de issues: mejoras y correcciones (deploy, iteración, triggers y logs)",
   "description": "Problemas detectados por el usuario (issue #126):\n\n1. Cuando la action auto-resolve-issues termina (y hace push), no se lanza la action deploy-all-branches. Sospecha del usuario: antes los push los hacía su usuario desde el servidor externo de OpenCode y ahora los hace la action (github-actions[bot] con GITHUB_TOKEN), y los eventos generados con GITHUB_TOKEN no disparan los triggers 'push' de otros workflows.\n\n2. Cuando se itera sobre una issue (comentario + relanzamiento de auto-resolve-issues), no se añade a la PR ningún comentario con lo nuevo que se ha aplicado.\n\n3. La action auto-resolve-issues no debe lanzarse cuando se haga una PR (trigger pull_request), para evitar la ejecución continua de la action (ciclo: PR mergeada en dev → resolver siguiente issue → nueva PR → ...).\n\n4. Se desea ver la ejecución de la sesión de OpenCode del workflow de forma más similar al cliente local: el log actual usa --format json (eventos JSON crudos, difíciles de leer).",
-  "status": "documented",
+  "status": "review",
   "plan": {
     "archivo": ".github/workflows/auto-resolve-issues.yml",
     "cambios": [
@@ -34,5 +34,13 @@
     "number": 126,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/126",
     "title": "Action de resolución de issues"
+  },
+  "pr": {
+    "number": 131,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/131",
+    "title": "[fix] Auto-resolve-issues: deploy tras sesión, comentario en PR de iteración, sin trigger pull_request y logs legibles (issue #126)",
+    "branch": "fix/issue-126-auto-resolve-deploy-iteracion-triggers",
+    "commit": "9f433b5",
+    "closes": "#126"
   }
 }
