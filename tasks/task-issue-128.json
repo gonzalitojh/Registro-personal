@@ -1,7 +1,7 @@
 {
   "title": "Pérdida de tokens en mitad de ejecución: guardar progreso WIP en rama de borrador antes de que el runner efímero se destruya",
   "description": "La GitHub Action auto-resolve-issues (issue #81) usa un modelo gratuito de OpenCode que puede quedarse sin tokens en mitad de una sesión y hacer fallar la ejecución (ejecución 10, issue #124). Como el servidor en el que se aloja OpenCode es efímero, todo lo que no se haya pusheado al repositorio se pierde.\n\nPropuesta de Gemini a analizar para comprobar si es correcta y aplicarla de la mejor forma posible:\n\n1. Guardar el progreso WIP si falla la sesión: nuevo paso tras 'Sesión OpenCode' con if: failure() && candidate seleccionada que crea/usa la rama wip/issue-N, hace git add . (o el equivalente con pathspec), commit y push --force a origin, ANTES de que GitHub destruya el runner.\n\n2. Restaurar el progreso WIP: nuevo paso antes de construir el prompt (o en la preparación del entorno) que comprueba si existe origin/wip/issue-N y, si existe, hace checkout de esa rama para continuar desde el estado guardado.\n\n3. Micro-commits: añadir al prompt de la sesión la instrucción de hacer commits incrementales en la rama local a medida que se completa cada subtarea del task file.\n\nSe debe analizar la corrección de la propuesta teniendo en cuenta el flujo SDD real del workflow (candidate.json, sdd_prompt.md, identidad de git, paso de reclamación, rollback existente, MODO ITERACIÓN, interacción con el publisher) y aplicarla de la mejor forma posible sin romper el flujo existente y sin exponer secretos.",
-  "status": "documented",
+  "status": "review",
   "plan": {
     "architect": "task-architect",
     "summary": "Añadir al workflow auto-resolve-issues: (1) paso wip-save con if: failure() que guarda el working tree + micro-commits locales en wip/issue-N (push --force, excluyendo candidate.json y sdd_prompt.md con pathspec) antes de que el runner efímero muera; (2) paso wip-restore antes de construir el prompt que detecta origin/wip/issue-N (ls-remote), fetch y checkout -B para continuar desde el estado guardado; (3) instrucción de micro-commits en el prompt + instrucción al publisher de derivar la rama de PR desde el estado actual si viene de WIP (no desde origin/dev) y nunca publicar la rama wip como PR; rollback y MODO ITERACIÓN siguen intactos; el wip-save corre también en iteración (claim_owner=issue_comment). Documentar en ADR-047 (sección 7-d)."
@@ -56,5 +56,12 @@
     "related_issue": "#128",
     "manual_usuario": "sin cambios (infraestructura interna de CI; regla 3 AGENTS.md no aplica)",
     "readme": "README.md sección 6 punto 6: nota sobre guardado/restauración WIP en fallos de la sesión"
+  },
+  "pr": {
+    "number": 129,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/129",
+    "title": "[fix] Protección de progreso WIP en auto-resolve ante fallos de tokens (issue #128)",
+    "branch": "fix/issue-128-wip-progresso",
+    "closes": "Closes #128"
   }
 }
