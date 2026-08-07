@@ -33,5 +33,6 @@
     "branch": "fix/issue-82-unificar-buscadores",
     "commit": "8279b4b",
     "closes": "#82"
-  }
+  },
+  "iteration": "Iteración comentario issue #82: opción B selección única — al pulsar otro botón de tipo se ocultan los resultados del catálogo anterior; solo se muestra la sección del grupo activo. Aprobado QA + security PASS."
 }

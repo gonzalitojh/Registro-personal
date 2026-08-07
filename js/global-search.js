@@ -270,13 +270,15 @@ function renderResults(results, query) {
   }
 
   // ¿Hay alguna sección externa (carga, error o caché válida) para la
-  // query actual? Decide si se muestra el mensaje de "sin resultados".
-  const hasExternalSection = GROUPS.some(
-    (g) =>
-      (inFlight[g.key] && externalQuery[g.key] === trimmed) ||
-      (externalError[g.key] && externalError[g.key].query === trimmed) ||
-      (externalCache[g.key] && externalCache[g.key].query === trimmed)
-  );
+  // query actual y el grupo activo? Decide si se muestra el mensaje de
+  // "sin resultados". (Comentario issue #82: selección única — solo el
+  // catálogo del grupo pulsado.)
+  const active = activeGroup;
+  const hasExternalSection = active
+    ? (inFlight[active] && externalQuery[active] === trimmed) ||
+      (externalError[active] && externalError[active].query === trimmed) ||
+      (externalCache[active] && externalCache[active].query === trimmed)
+    : false;
 
   if (!hasAny && !hasExternalSection) {
     resultsEl.innerHTML = renderTypeButtons() +
@@ -355,10 +357,14 @@ function renderResults(results, query) {
     }
   }
 
-  // Secciones externas (catálogo API): una por grupo con estado
-  // relevante para la query actual.
+  // Sección externa (catálogo API): SOLO la del grupo activo. Si se
+  // pulsa otro botón de tipo, los resultados del catálogo anterior se
+  // ocultan (comentario issue #82, opción selección única); la
+  // colección no se ve afectada. El estado (carga/error/caché) se
+  // conserva por grupo para poder volver sin re-buscar.
   flatResults = newFlat;
-  for (const g of GROUPS) {
+  if (activeGroup) {
+    const g = groupInfo(activeGroup);
     const group = g.key;
     if (inFlight[group] && externalQuery[group] === trimmed) {
       html += externalSectionLoadingHtml(g);
@@ -435,6 +441,14 @@ function handleTypeClick(group) {
       `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en el catálogo.</p>`;
     flatResults = [];
     highlightedIndex = -1;
+    return;
+  }
+  // Selección única: si el grupo pulsado ya tiene resultados cacheados
+  // para esta query, solo se muestra (sin re-llamar a la API); en caso
+  // contrario se busca.
+  const cache = externalCache[group];
+  if (cache && cache.query === query && !inFlight[group]) {
+    renderResults(collectionResults(query), query);
     return;
   }
   runExternalSearch(group, query);

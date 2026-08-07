@@ -299,8 +299,11 @@ para **buscar en el catálogo**:
   español.
 
 Los resultados del catálogo aparecen en una sección **«Catálogo ·
-Series/Películas/Libros»** bajo tus resultados de la colección. Para
-cada resultado:
+Series/Películas/Libros»** bajo tus resultados de la colección. Solo se
+muestra el catálogo del **último botón pulsado**: si pulsas «Película»
+después de «Serie», los resultados de series se ocultan y se muestran
+los de películas (tu colección siempre se ve igual). Para cada
+resultado:
 
 - Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
   «Añadido»).

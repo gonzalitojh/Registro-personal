@@ -116,9 +116,17 @@ muestra el hint de mínimo 2 caracteres sin llamar a la API.
 
 ### 4. Secciones de catálogo en lista dentro del dropdown
 
-Cada grupo pulsado renderiza una sección **«Catálogo · Series /
-Películas / Libros»** (`renderExternalSection`) bajo los resultados de la
-colección, con cuatro estados posibles — y en **todos** ellos la fila
+**Selección única** (comentario del usuario en la issue #82, opción B): al
+pulsar un botón de tipo se muestra **solo la sección «Catálogo · X» del
+grupo activo** (`activeGroup`); los resultados del catálogo previamente
+pulsado se **ocultan** inmediatamente. La colección del usuario (grupos
+Películas/Series/Libros/Amigos) se renderiza siempre y nunca se ve
+afectada por la selección de catálogo. El estado de cada grupo externo
+(carga `inFlight`, error `externalError` o caché `externalCache`) se
+**conserva en memoria** para poder volver al grupo anterior sin re-llamar
+a la API, pero solo se renderiza el del grupo activo.
+
+Cada sección tiene cuatro estados posibles — y en **todos** ellos la fila
 **«¿No la encuentras? Añadir manualmente…»** al final (`manualRowHtml`;
 en el estado «cargando» lo hace `externalSectionLoadingHtml`):
 
@@ -251,6 +259,15 @@ UI de esta issue al desplegarse junto con ellos.
 - **Mantener la casilla «Solo en español»**: descartado — la app es en
   español y la casilla estaba activada por defecto; eliminarla simplifica
   la UI de libros (ADR-002) sin perder capacidad de búsqueda.
+- **Multi-selección de catálogos (opción A del comentario de la issue
+  #82)**: mantener marcados varios botones de tipo a la vez y permitir
+  desmarcarlos para ocultar sus resultados — descartado en favor de la
+  **selección única** (opción B): el dropdown es un panel de acción rápida
+  y acumular varias secciones «Catálogo · X» lo alargaba y confundía (el
+  usuario reportó que al pulsar Películas tras Series se mantenían ambos
+  resultados); con un único catálogo activo el panel se mantiene legible,
+  y el estado de los demás grupos se conserva en caché para volver sin
+  re-consultar la API.
 - **Conservar la caché de catálogo al cerrar el dropdown** (reabrir y
   reutilizar): descartado — la caché se invalida en `closeGlobalSearch()`
   para que ninguna sección muestre resultados de otra sesión; el coste es
@@ -331,7 +348,7 @@ UI de esta issue al desplegarse junto con ellos.
 | Archivo | Cambio |
 |---------|--------|
 | `js/search.js` | **Refactor a stateless**: eliminados `setupSearch`, `clearAllSearches`, `refreshSearchAddButtons`, `hideResults`, `toggleResultsToolbar` y el estado de resultados; exporta `searchExternal(group, query, page=1)` (delega en api-movies/api-books; libros siempre `spanishOnly=true`), `existingIdsFor`, `existingBookKeys`, `isBookAlreadyAdded`, `handleAdd`, `handleManualAdd`, `openSearchPreviewFromResults`, `enrichSearchItem` (estos últimos sin cambios de comportamiento) |
-| `js/global-search.js` | **Dropdown unificado (issue #82)**: `flatResults` con `kind` `"collection"`/`"external"`/`"manual"`; botones de tipo SIEMPRE visibles (`renderTypeButtons`, `activeGroup`); secciones «Catálogo · X» en lista con botón Añadir/Añadido y fila manual al final (también en buscando/error/vacío: `manualRowHtml`, `externalSectionLoadingHtml`); click en fila external → preview sin cerrar el dropdown; anti-race `searchSeq` + caché por grupo `{ query, items, source }` + `inFlight` + `externalError`; `closeGlobalSearch()` invalida todo; sin paginación (página 1, cap 5); nueva `refreshExternalResults(ctx)` exportada; botón Añadir con `stopPropagation` y refresh a «Añadido» tras éxito |
+| `js/global-search.js` | **Dropdown unificado (issue #82)**: `flatResults` con `kind` `"collection"`/`"external"`/`"manual"`; botones de tipo SIEMPRE visibles (`renderTypeButtons`, `activeGroup`); **selección única**: solo la sección «Catálogo · X» del grupo activo (al pulsar otro tipo se ocultan los anteriores; caché conservada para volver sin re-llamar); secciones en lista con botón Añadir/Añadido y fila manual al final (también en buscando/error/vacío: `manualRowHtml`, `externalSectionLoadingHtml`); click en fila external → preview sin cerrar el dropdown; anti-race `searchSeq` + caché por grupo `{ query, items, source }` + `inFlight` + `externalError`; `closeGlobalSearch()` invalida todo; sin paginación (página 1, cap 5); nueva `refreshExternalResults(ctx)` exportada; botón Añadir con `stopPropagation` y refresh a «Añadido» tras éxito |
 | `js/app.js` | Importa `refreshExternalResults` (sustituye a `refreshSearchAddButtons`); la llama tras cada snapshot de `subscribeToItems` (movie/tv/book); eliminados `librarySearchText` y los listeners de `.library-search-input`; eliminado `clearAllSearches()` |
 | `js/ui.js` | Eliminado `renderSearchResults` (y el render de `.result-card` de la tira horizontal); se conservan `openSearchPreviewModal`, `openBookConfirmModal` y `openManualAddModal` |
 | `ocio/series.html`, `ocio/peliculas.html`, `ocio/libros.html` | Eliminados `.search-slip` (`#form-search-*`, `#search-*-input`, `.search-clear-btn`), `.results-strip` (`#search-*-results`), `.results-toolbar` (`#btn-load-more-*`, `#btn-hide-results-*`), `#btn-manual-movie/tv/book`, `#books-spanish-only` y `.library-search` («Buscar en mi lista…») |
