@@ -1,0 +1,42 @@
+{
+  "title": "Página índice de ramas en /dev y reestructuración del despliegue",
+  "description": "Issue #103: Actualmente se despliegan todas las ramas del proyecto cada una en la ruta /Registro-personal/<nombre de rama>. Se pide:\n\n1. Crear una página simple, desplegada en /Registro-personal/dev, que simplemente tenga enlaces al resto de ramas.\n2. La rama main seguirá desplegada en /Registro-personal (raíz, sin cambios).\n3. El resto de ramas se desplegarían en /Registro-personal/dev/<nombre de rama>, incluida la rama dev.\n\nImplicaciones técnicas:\n- scripts/build-pages-site.sh debe cambiar: todas las ramas no-default (incluida dev) se extraen bajo _site/dev/<ruta-saneada>/ en lugar de _site/<ruta>/.\n- La ruta /dev/ de _site pasa a ser un hub de previews: _site/dev/index.html es una página índice simple generada por el script con enlaces a todas las ramas no-default (incluida dev en /dev/dev/).\n- Los checks de colisión del script deben actualizarse a la nueva estructura (todas las ramas comparten el primer segmento 'dev'; comprobar que ninguna ruta saneada bajo dev sea 'index.html', que no exista conflicto archivo/directorio).\n- El workflow .github/workflows/deploy-all-branches.yml no requiere cambios de triggers (sigue llamando al script).\n- README sección 6 debe reflejar la nueva estructura de rutas.\n- ADR nuevo con 'Related issue: #103'.",
+  "status": "documented",
+  "acceptance criteria": [
+    "main se sigue desplegando en la raíz /Registro-personal/ sin cambios de comportamiento.",
+    "Cada rama no-default (incluida dev) se despliega en /Registro-personal/dev/<ruta-saneada-de-rama>/ (p. ej. feature/x → /dev/feature/x/, dev → /dev/dev/).",
+    "La ruta /Registro-personal/dev/ muestra una página índice simple y auto-generada con enlaces a todas las ramas no-default (incluida dev) y un enlace a la raíz (main).",
+    "El índice se regenera automáticamente en cada build: una rama nueva aparece, una rama borrada desaparece.",
+    "Los checks de colisión del script se adaptan a la nueva estructura y el build falla con mensaje claro si dos ramas colisionan bajo /dev/.",
+    "El script sigue sirviendo la web completa y funcional en cada preview de rama (CSS/JS relativos, .nojekyll, strip_sensitive).",
+    "README sección 6 actualizado con la nueva estructura de rutas.",
+    "ADR creado con 'Related issue: #103'."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (build-pages-site.sh reestructurado + README).",
+    "Validación contra criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos de severidad alta.",
+    "ADR creado con 'Related issue: #103'.",
+    "PR creada contra la rama dev con 'Closes #103' como primera línea.",
+    "Issue #103 actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 103,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/103",
+    "title": "Despliegue de desarrollo"
+  },
+  "plan": {
+    "resumen": "Convertir /dev/ en hub de previews: main en raíz (sin cambios), cada rama no-default en _site/dev/<ruta-saneada>/ (incluida dev → /dev/dev/), y _site/dev/index.html = índice auto-generado con enlaces a todas las ramas no-default + enlace a la raíz. Único archivo de código a modificar: scripts/build-pages-site.sh. Workflow sin cambios. README sección 6 actualizada. ADR-044 nuevo.",
+    "open_questions_resueltas": [
+      "Orden del índice: alfabético por nombre original (LC_ALL=C sort).",
+      "Sin extras (sin enlace a GitHub, sin timestamp) — página mínima, determinista.",
+      "Nota de deprecación parcial en ADR-036 (patrón ADR-041).",
+      "No se purgan ramas locales."
+    ]
+  },
+  "security": {
+    "veredicto": "APROBADO (0 HIGH)",
+    "nota": "Se añadió .gitignore con _site/ como mitigación del hallazgo MEDIUM (evitar que git add . commitee el build). Hallazgos MEDIUM/LOW restantes: pre-existentes (API keys de cliente en js/config.js, emails en allowed-emails.js) o falsos positivos documentales."
+  }
+}
