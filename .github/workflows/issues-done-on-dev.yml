@@ -1,8 +1,8 @@
-name: issues-done-on-main
+name: issues-done-on-dev
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   workflow_dispatch:  # prueba manual opcional
 
 permissions:
