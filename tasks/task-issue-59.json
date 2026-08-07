@@ -1,0 +1,38 @@
+{
+  "title": "Enrutamiento",
+  "description": "Añadir enrutamiento a la web. Todo lo que hay de ocio debería ser el endpoint /ocio y cada pestaña (series, películas y libros) debería ser respectivamente /ocio/#series, /ocio/#peliculas y /ocio/#libros.\n\nContexto: la app es una SPA estática (index.html + partials en ocio/) sin build ni frameworks, desplegada en GitHub Pages tanto en la raíz como en subdirectorios por rama (_site/dev/<rama>/). El desplegable requiere que el enrutamiento funcione con cualquier base de URL, por lo que el router debe basarse en hash (#/ocio, #/ocio/series, ...) y no en rutas de path reales.\n\nActualmente la navegación entre las tres pestañas (Series/Películas/Libros) se hace en js/app.js con listeners .tab que intercambian la clase hidden de los paneles, y el contenido de cada pestaña se inyecta desde ocio/*.html vía fetch. No existe soporte para URLs compartibles, recarga en una pestaña concreta ni botones de navegación del navegador.",
+  "status": "review",
+  "acceptance criteria": [
+    "La web tiene un router que da a la sección de ocio URLs con ruta base #/ocio dentro de cualquier base de despliegue.",
+    "/#/ocio/series, '/'peliculas y /#/ocio/libros cargan y activan la pestaña correspondiente (Series, Películas, Libros) al recargar la página directamente en esa URL.",
+    "Al pulsar una pestaña, la URL se actualiza al hash correspondiente (historial del navegador) sin romper el comportamiento de las 3 pestañas.",
+    "El navegador atrás/adelante (evento hashchange/popstate) cambia de pestaña correctamente.",
+    "Una ruta no reconocida o vacía cae a un estado por defecto saneado (p. ej. serie), sin errores en consola.",
+    "El enrutado no rompe las demás funcionalidades: búsqueda global, perfil, ajustes, amigos, notificaciones, modales.",
+    "El manual de usuario (docs/manual-de-usuario.md) se actualiza para reflejar las nuevas URLs.",
+    "Accessibility: al navegar por URL la pestaña activa mantiene aria-selected correcto y el foco no se pierde (la pestaña activa debe recibir atención de screen reader)."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect)",
+    "Implementación completada (issue marcada status: in-progress)",
+    "Validación aceptada por qa-reviewer (criterios de aceptación cumplidos)",
+    "Escáner de seguridad sin hallazgos HIGH",
+    "ADR documentado con 'Related issue: #59'",
+    "PR creada contra dev con 'Closes #59' en la primera línea",
+    "Issue #59 actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 59,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/59",
+    "title": "Enrutamiento"
+  },
+  "plan": "Router hash #/ocio con sub-rutas /series|/peliculas|/libros. Nuevo js/router.js, extracción activatePanel en app.js, bump PWA/SW, sidebar Ocio navega, manual actualizado, ADR-051.",
+  "pr": {
+    "number": 132,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/132",
+    "title": "[feature] Enrutamiento de la sección Ocio por hash (issue #59)",
+    "branch": "feature/issue-59-enrutamiento",
+    "commit": "1d16170",
+    "closes": "#59"
+  }
+}
