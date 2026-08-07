@@ -91,7 +91,7 @@ Nada más entrar verás:
   tiene su propio color: **Series en verde**, **Películas en rojo** y
   **Libros en ocre**. La pestaña activa se marca con una franja de su
   color y un fondo claro. Pulsa una pestaña para ver tu lista de ese
-  tipo, con su buscador y sus filtros. Al hacer scroll solo se mueve
+  tipo, con sus filtros y su orden. Al hacer scroll solo se mueve
   el contenido de la lista; las pestañas permanecen siempre en su
   sitio.
 
@@ -100,11 +100,14 @@ activo y en vista de lista — el uso más habitual.
 
 Cada pestaña se divide en dos zonas:
 
-- **Arriba**: el buscador para encontrar títulos nuevos y añadirlos
-  (más en [sección 7](#7-cómo-buscar)).
-- **Debajo**: tu biblioteca, con una barra de herramientas para
-  buscar en tu propia lista, filtrar por estado, ordenar y cambiar la
-  vista entre cuadrícula y lista (más en [sección 8](#8-organizar-y-ordenar-tu-registro)).
+- **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
+  por estado, ordenar y cambiar la vista entre cuadrícula y lista
+  (más en [sección 8](#8-organizar-y-ordenar-tu-registro)).
+- **Debajo**: la lista de tus títulos de ese tipo.
+
+Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
+todo se busca desde la **barra de búsqueda de la cabecera**
+(más en [sección 7](#7-cómo-buscar)).
 
 ## 4. Series
 
@@ -131,14 +134,16 @@ pierde nada.
 
 ### 4.2 Añadir una serie
 
-1. En la pestaña **Series**, escribe el título en el buscador y pulsa
-   **«Buscar»**.
-2. En los resultados, pulsa **«Añadir»** en la serie que quieras.
-3. Si quieres ver antes más información, pulsa sobre la tarjeta del
+1. En la **barra de búsqueda de la cabecera**, escribe el título
+   (mínimo 2 caracteres).
+2. Pulsa el botón **«Serie»** que aparece en la parte superior de los
+   resultados para buscar en el catálogo.
+3. En los resultados, pulsa **«Añadir»** en la serie que quieras.
+4. Si quieres ver antes más información, pulsa sobre la fila del
    resultado: se abrirá una vista previa con los detalles.
 
-¿No encuentras la serie? Usa **«Añadir manualmente»** (más abajo en
-[sección 7.4](#74-añadir-manualmente)).
+¿No encuentras la serie? Al final de los resultados de catálogo
+aparece **«Añadir manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -206,9 +211,11 @@ quieres hacerlo igualmente.
 
 ### 5.2 Añadir una película
 
-Igual que con las series: búscala en la pestaña **Películas** y pulsa
-**«Añadir»**, o usa la vista previa pulsando sobre el resultado. Si no la
-encuentras, usa **«Añadir manualmente»**.
+Igual que con las series: escribe el título en la **barra de búsqueda
+de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
+el resultado que quieras, o usa la vista previa pulsando sobre la fila.
+Si no la encuentras, al final de los resultados aparece **«Añadir
+manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -241,18 +248,16 @@ aparece «Vista el FECHA · ×2» (o el número que corresponda).
 
 ### 6.2 Añadir un libro
 
-En la pestaña **Libros**, busca por **título o autor**. Puedes activar o
-desactivar la casilla **«Solo en español»** (está activada por defecto):
-
-- **Activada**: se descartan las ediciones que Open Library confirma en
-  otro idioma (las que no tienen ese dato no se descartan, para no perder
-  resultados).
-- **Desactivada**: aparecen también otros idiomas, con las ediciones en
-  español primero.
+Escribe el **título o el autor** en la barra de búsqueda de la
+cabecera y pulsa el botón **«Libro»** para buscar en el catálogo.
+Los libros se buscan siempre **en español** (se descartan las
+ediciones que las fuentes confirman en otro idioma).
 
 Si el libro tiene varias ediciones, la web te deja **elegir portada y
-sinopsis** antes de añadirlo. Si no lo encuentras, usa **«Añadir
-manualmente»**.
+sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
+se muestra como «Añadido». Si no lo encuentras, al final de los
+resultados aparece **«Añadir manualmente»**
+(más en [sección 7.3](#73-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -278,36 +283,47 @@ lecturas adicionales.
 
 ## 7. Cómo buscar
 
-### 7.1 Buscar títulos nuevos (catálogo)
+### 7.1 Buscar en el catálogo
 
-En cada pestaña hay un buscador (por ejemplo, «Busca una serie… (ej.
-Severance)»). Escribe el título y pulsa **«Buscar»**.
+Todo se busca desde la **barra de búsqueda de la cabecera**
+(también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
+Al escribir el título (mínimo 2 caracteres) verás los resultados, y en
+la parte superior del panel hay tres botones, siempre visibles:
+**«Serie»**, **«Película»** y **«Libro»**. Pulsa el que corresponda
+para **buscar en el catálogo**:
 
 - Películas y series se buscan en **TMDB** (el mismo catálogo de
   The Movie Database).
 - Libros se buscan en **Google Books** con respaldo de **Open Library**
-  (y se agrupan las ediciones del mismo libro).
+  (y se agrupan las ediciones del mismo libro). Se buscan siempre en
+  español.
 
-Consejos:
+Los resultados del catálogo aparecen en una sección **«Catálogo ·
+Series/Películas/Libros»** bajo tus resultados de la colección. Solo se
+muestra el catálogo del **último botón pulsado**: si pulsas «Película»
+después de «Serie», los resultados de series se ocultan y se muestran
+los de películas (tu colección siempre se ve igual). Para cada
+resultado:
 
-- Si hay más resultados de los que se ven, pulsa **«Cargar más»**.
-- Pulsa **«Ocultar resultados»** para quitar los resultados de la pantalla.
-- Pulsa la **✕** del buscador para limpiar lo escrito.
-- Pulsa sobre un resultado (no sobre su botón «Añadir») para ver la
-  **vista previa** con sus detalles antes de añadirlo.
+- Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
+  «Añadido»).
+- Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
+  con sus detalles antes de añadirlo.
+- Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
+  no se puede pulsar.
+- Al final de cada sección de catálogo aparece
+  **«¿No la encuentras? Añadir manualmente…»**
+  (más en [sección 7.3](#73-añadir-manualmente)).
 
-### 7.2 Buscar en tu propia lista
+Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
+y te ofrece igualmente añadir el título manualmente.
 
-Cada biblioteca tiene su propio buscador (**«Buscar en mi lista…»**).
-Escribe y se filtran solo los títulos que ya tienes anotados, por su
-nombre.
+### 7.2 Buscar en tu registro
 
-### 7.3 Búsqueda global (todo a la vez)
-
-Escribe en la **barra de búsqueda** de la cabecera (o pulsa las teclas
-**Ctrl+K**, **Cmd+K** en Mac, o **/**) y busca a la vez en tus
-**películas, series, libros** (también por autor) y en tus **amigos**
-(por nombre o correo).
+La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
+**Cmd+K** en Mac, o **/**) también busca a la vez en lo que ya tienes
+anotado: **películas, series, libros** (también por autor) y en tus
+**amigos** (por nombre o correo).
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
 desplegable** bajo ella con los resultados. Los resultados se agrupan con
@@ -318,11 +334,11 @@ pronto podrás ver su perfil.
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
 
-### 7.4 Añadir manualmente
+### 7.3 Añadir manualmente
 
 Si un título no aparece en el catálogo, usa el enlace
-**«¿No la encuentras? Añadir manualmente»** (al pie de los resultados).
-Rellena:
+**«¿No la encuentras? Añadir manualmente»** que aparece al final de los
+resultados de catálogo del buscador. Rellena:
 
 - **Series**: título, año, portada (opcional) y **número de episodios**
   (se asume una sola temporada con ese número).

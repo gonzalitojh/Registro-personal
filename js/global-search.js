@@ -10,11 +10,25 @@
 // contenedor): atrapar el foco en un dropdown no modal rompería la
 // navegación normal con Tab dentro del documento, que es la metáfora
 // de una barra de búsqueda tipo Gmail.
+//
+// Issue #82: la búsqueda de nuevos títulos (catálogo de TMDB/Google
+// Books) se unifica en este dropdown. La parte alta del dropdown
+// tiene tres botones de tipo (Serie / Película / Libro); al pulsar
+// uno se busca en el catálogo y se muestra una sección "Catálogo · X"
+// con la fila «Añadir manualmente» al final.
 // =============================================================
 
 import { openItem } from "./modal-handlers.js";
 import * as ui from "./ui.js";
-
+import {
+  searchExternal,
+  handleAdd,
+  handleManualAdd,
+  openSearchPreviewFromResults,
+  existingIdsFor,
+  existingBookKeys,
+  isBookAlreadyAdded,
+} from "./search.js";
 // ---- Estado interno ----
 
 let isOpen = false;
@@ -23,6 +37,30 @@ let flatResults = [];
 let cachedProfiles = null;
 let profilePromise = null;
 let searchCtx = null;
+
+// Estado de la búsqueda externa (catálogo API), por grupo.
+// externalCache[group] = { query, items, source } | null (solo si la
+// última búsqueda de ese grupo terminó con éxito).
+// inFlight[group] = hay una búsqueda en curso.
+// externalError[group] = { query, message } | null (último fallo).
+// externalQuery[group] = query de la búsqueda en curso.
+// searchSeq: contador monotónico para descartar respuestas obsoletas
+// (cambia con cada búsqueda y al cerrar el dropdown).
+const externalCache = { movies: null, tv: null, books: null };
+const inFlight = { movies: false, tv: false, books: false };
+const externalError = { movies: null, tv: null, books: null };
+const externalQuery = { movies: "", tv: "", books: "" };
+let searchSeq = 0;
+
+// Grupo de tipo pulsado en los botones superiores (null = ninguno).
+let activeGroup = null;
+
+// Información de cada grupo para las secciones del catálogo.
+const GROUPS = [
+  { key: "tv", label: "Serie", icon: "📺", itemLabel: "serie", manualText: "¿No la encuentras? Añadir manualmente una serie", type: "tv", accent: "" },
+  { key: "movies", label: "Película", icon: "🎬", itemLabel: "película", manualText: "¿No la encuentras? Añadir manualmente una película", type: "movie", accent: "" },
+  { key: "books", label: "Libro", icon: "📚", itemLabel: "libro", manualText: "¿No lo encuentras? Añadir manualmente un libro", type: "book", accent: " global-search__item-add--books" },
+];
 
 // ---- Referencias DOM (se asignan en setup) ----
 
@@ -37,6 +75,30 @@ function escapeHtml(str) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+// Portada segura para el atributo src: solo se aceptan URLs https o
+// data:image/ (defensa en profundidad, mismo patrón que rating-modal.js).
+// Cualquier otro esquema (javascript:, data:text/html...) o URL inválida
+// cae al placeholder de ui.js.
+function safeCoverUrl(url) {
+  if (!url) return ui.PLACEHOLDER_COVER;
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (
+      parsed.protocol === "https:" ||
+      (parsed.protocol === "data:" && parsed.pathname.startsWith("image/"))
+    ) {
+      return url;
+    }
+  } catch {
+    // URL no parseable → placeholder
+  }
+  return ui.PLACEHOLDER_COVER;
+}
+
+function groupInfo(group) {
+  return GROUPS.find((g) => g.key === group) || GROUPS[0];
 }
 
 // ---- Búsqueda ----
@@ -80,6 +142,22 @@ function filterFriends(profiles, query) {
   });
 }
 
+// Resultados de la colección (películas/series/libros del usuario +
+// amigos cacheados), recortados al límite del dropdown. Síncrono:
+// lo usan performSearch, runExternalSearch y refreshExternalResults.
+function collectionResults(trimmed) {
+  if (!searchCtx) {
+    return { movies: [], tv: [], books: [], friends: [] };
+  }
+  const allItems = searchCtx.getAllItems();
+  return {
+    movies: filterItems(allItems.movies || [], trimmed).slice(0, 5),
+    tv: filterItems(allItems.tv || [], trimmed).slice(0, 5),
+    books: filterItems(allItems.books || [], trimmed).slice(0, 5),
+    friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 3),
+  };
+}
+
 // ---- Renderizado ----
 
 function statusClass(status) {
@@ -93,20 +171,118 @@ function statusClass(status) {
   return map[status] || "";
 }
 
+// Fila superior del dropdown con los botones de tipo (SIEMPRE visible).
+function renderTypeButtons() {
+  return `<div class="global-search__type-buttons">
+    ${GROUPS.map(
+      (g) => `<button type="button" class="global-search__type-btn${g.key === activeGroup ? " is-active" : ""}" data-group="${g.key}">${g.label}</button>`
+    ).join("")}
+  </div>`;
+}
+
+function hintHtml() {
+  return renderTypeButtons() +
+    `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros y amigos.</p>`;
+}
+
+function renderHint() {
+  resultsEl.innerHTML = hintHtml();
+  flatResults = [];
+  highlightedIndex = -1;
+}
+
+// Fila «Añadir manualmente» que cierra cada sección del catálogo.
+// Añade la fila a flatResults para que sea navegable con teclado.
+function manualRowHtml(group) {
+  const g = groupInfo(group);
+  const index = flatResults.length;
+  flatResults.push({ kind: "manual", type: g.type, group, item: null });
+  return `<button type="button" class="global-search__manual-add" data-global-idx="${index}">${g.manualText}</button>`;
+}
+
+// Sección del catálogo (fuente externa) para un grupo.
+// Estados: caché válida → resultados + fila manual; error → mensaje +
+// fila manual; vacía → mensaje + fila manual.
+function renderExternalSection(group, query) {
+  const g = groupInfo(group);
+  const cache = externalCache[group];
+  const err = externalError[group];
+  let html = `<div class="global-search__group-title">
+    <span>${g.icon}</span>
+    <span>Catálogo · ${g.label}s</span>
+  </div>`;
+
+  if (err && err.query === query) {
+    html += `<p class="global-search__status">No se pudo buscar: ${escapeHtml(err.message)}</p>`;
+    html += manualRowHtml(group);
+    return html;
+  }
+
+  if (!cache || cache.query !== query) {
+    html += `<p class="global-search__status">Buscando en el catálogo…</p>`;
+    html += manualRowHtml(group);
+    return html;
+  }
+
+  if (!cache.items.length) {
+    html += `<p class="global-search__status">No hay resultados de ${g.itemLabel} para "${escapeHtml(query)}".</p>`;
+    html += manualRowHtml(group);
+    return html;
+  }
+
+  const ids = existingIdsFor(group, searchCtx);
+  const bookKeys = group === "books" ? existingBookKeys(searchCtx) : null;
+
+  for (const item of cache.items) {
+    const added = group === "books" ? isBookAlreadyAdded(item, ids, bookKeys) : ids.has(item.externalId);
+    const metaParts = [];
+    if (item.year) metaParts.push(item.year);
+    if (group === "books" && item.author) metaParts.push(item.author);
+    const meta = metaParts.join(" · ");
+    const index = flatResults.length;
+
+    html += `<div class="global-search__item" data-global-idx="${index}" tabindex="0">
+      <img class="global-search__item-cover" src="${escapeHtml(safeCoverUrl(item.coverUrl))}" alt="" loading="lazy" />
+      <div class="global-search__item-info">
+        <div class="global-search__item-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+        <div class="global-search__item-meta" title="${escapeHtml(meta)}">${escapeHtml(meta)}</div>
+      </div>
+      <button type="button" class="global-search__item-add btn btn--small${g.accent}" data-add-index="${index}" ${added ? "disabled" : ""}>
+        ${added ? "Añadido" : "Añadir"}
+      </button>
+    </div>`;
+    flatResults.push({ kind: "external", type: item.type, item, group });
+  }
+
+  html += manualRowHtml(group);
+  return html;
+}
+
 function renderResults(results, query) {
   const { movies = [], tv = [], books = [], friends = [] } = results;
+  const trimmed = query.trim();
 
   const hasAny = movies.length || tv.length || books.length || friends.length;
 
-  if (!query.trim() || query.trim().length < 2) {
-    resultsEl.innerHTML = `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros y amigos.</p>`;
-    flatResults = [];
-    highlightedIndex = -1;
+  if (!trimmed || trimmed.length < 2) {
+    renderHint();
     return;
   }
 
-  if (!hasAny) {
-    resultsEl.innerHTML = `<p class="global-search__empty">No se encontraron resultados para "${escapeHtml(query.trim())}".</p>`;
+  // ¿Hay alguna sección externa (carga, error o caché válida) para la
+  // query actual y el grupo activo? Decide si se muestra el mensaje de
+  // "sin resultados". (Comentario issue #82: selección única — solo el
+  // catálogo del grupo pulsado.)
+  const active = activeGroup;
+  const hasExternalSection = active
+    ? (inFlight[active] && externalQuery[active] === trimmed) ||
+      (externalError[active] && externalError[active].query === trimmed) ||
+      (externalCache[active] && externalCache[active].query === trimmed)
+    : false;
+
+  if (!hasAny && !hasExternalSection) {
+    resultsEl.innerHTML = renderTypeButtons() +
+      `<p class="global-search__empty">No se encontraron resultados para "${escapeHtml(trimmed)}".</p>`;
     flatResults = [];
     highlightedIndex = -1;
     return;
@@ -127,7 +303,7 @@ function renderResults(results, query) {
   };
 
   const groupKeys = ["movies", "tv", "books", "friends"];
-  let html = "";
+  let html = renderTypeButtons();
   const newFlat = [];
   let globalIdx = 0;
 
@@ -154,7 +330,7 @@ function renderResults(results, query) {
             <div class="global-search__friend-email">${escapeHtml(email)}</div>
           </div>
         </div>`;
-        newFlat.push({ type: "friend", item: entry, group: key });
+        newFlat.push({ kind: "collection", type: "friend", item: entry, group: key });
       } else {
         // Resultado de item (movie/tv/book)
         const cover = entry.coverUrl || "";
@@ -175,14 +351,31 @@ function renderResults(results, query) {
           </div>
           <span class="global-search__item-status chip ${statusClass(status)}">${ui.statusLabel(status, entry.type)}</span>
         </div>`;
-        newFlat.push({ type: entry.type || key, item: entry, group: key });
+        newFlat.push({ kind: "collection", type: entry.type || key, item: entry, group: key });
       }
       globalIdx++;
     }
   }
 
-  resultsEl.innerHTML = html;
+  // Sección externa (catálogo API): SOLO la del grupo activo. Si se
+  // pulsa otro botón de tipo, los resultados del catálogo anterior se
+  // ocultan (comentario issue #82, opción selección única); la
+  // colección no se ve afectada. El estado (carga/error/caché) se
+  // conserva por grupo para poder volver sin re-buscar.
   flatResults = newFlat;
+  if (activeGroup) {
+    const g = groupInfo(activeGroup);
+    const group = g.key;
+    if (inFlight[group] && externalQuery[group] === trimmed) {
+      html += externalSectionLoadingHtml(g);
+    } else if (externalError[group] && externalError[group].query === trimmed) {
+      html += renderExternalSection(group, trimmed);
+    } else if (externalCache[group] && externalCache[group].query === trimmed) {
+      html += renderExternalSection(group, trimmed);
+    }
+  }
+
+  resultsEl.innerHTML = html;
   highlightedIndex = -1;
 
   // Conectar eventos de click y teclado en cada resultado
@@ -204,27 +397,135 @@ function renderResults(results, query) {
         }
       }
     });
+  });
 
-    // Mouseenter para seguimiento visual (sin cambiar highlightedIndex)
-    el.addEventListener("mouseenter", () => {
-      // Quitar highlight previo
-      resultsEl.querySelector(".global-search__item--highlighted")?.classList.remove("global-search__item--highlighted");
-      resultsEl.querySelector(".global-search__friend--highlighted")?.classList.remove("global-search__friend--highlighted");
-      // No lo marcamos para no interferir con teclado
+  // Botones «Añadir» de los resultados del catálogo
+  resultsEl.querySelectorAll(".global-search__item-add").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.addIndex, 10);
+      const entry = flatResults[idx];
+      if (!entry || entry.kind !== "external") return;
+      handleAdd(entry.item, btn, searchCtx).then((ok) => {
+        if (ok) {
+          btn.disabled = true;
+          btn.textContent = "Añadido";
+        }
+      });
     });
   });
+}
+
+// Sección del catálogo en estado "cargando": solo el título y el aviso,
+// más la fila de alta manual (disponible también durante la carga).
+function externalSectionLoadingHtml(g) {
+  const index = flatResults.length;
+  flatResults.push({ kind: "manual", type: g.type, group: g.key, item: null });
+  return `<div class="global-search__group-title">
+    <span>${g.icon}</span>
+    <span>Catálogo · ${g.label}s</span>
+  </div>
+  <p class="global-search__status">Buscando en el catálogo…</p>
+  <button type="button" class="global-search__manual-add" data-global-idx="${index}">${g.manualText}</button>`;
+}
+
+// ---- Botones de tipo (búsqueda en el catálogo) ----
+
+function handleTypeClick(group) {
+  activeGroup = group;
+  const query = input.value.trim();
+  if (query.length < 2) {
+    // Hint con los botones de tipo encima (renderTypeButtons ya marca
+    // el grupo pulsado como activo).
+    resultsEl.innerHTML = renderTypeButtons() +
+      `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en el catálogo.</p>`;
+    flatResults = [];
+    highlightedIndex = -1;
+    return;
+  }
+  // Selección única: si el grupo pulsado ya tiene resultados cacheados
+  // para esta query, solo se muestra (sin re-llamar a la API); en caso
+  // contrario se busca.
+  const cache = externalCache[group];
+  if (cache && cache.query === query && !inFlight[group]) {
+    renderResults(collectionResults(query), query);
+    return;
+  }
+  runExternalSearch(group, query);
+}
+
+// Busca en el catálogo un grupo y re-renderiza su sección. Captura el
+// seq actual y descarta el resultado si cambió (nueva búsqueda o cierre
+// del dropdown). Sin paginación: solo la primera página, cap de 5.
+async function runExternalSearch(group, query) {
+  const seq = ++searchSeq;
+  inFlight[group] = true;
+  externalQuery[group] = query;
+  externalError[group] = null;
+
+  renderResults(collectionResults(query), query);
+
+  let result;
+  try {
+    result = await searchExternal(group, query, 1);
+  } catch (err) {
+    if (seq !== searchSeq || !isOpen) {
+      inFlight[group] = false;
+      return;
+    }
+    inFlight[group] = false;
+    externalError[group] = { query, message: err.message };
+    renderResults(collectionResults(input.value.trim()), input.value.trim());
+    return;
+  }
+
+  if (seq !== searchSeq || !isOpen) {
+    inFlight[group] = false;
+    return;
+  }
+  inFlight[group] = false;
+  externalCache[group] = {
+    query,
+    items: (result.items || []).slice(0, 5),
+    source: result.source || null,
+  };
+  renderResults(collectionResults(input.value.trim()), input.value.trim());
+}
+
+// Re-renderiza las secciones externas desde la caché con el estado
+// actual de la colección (lo llama app.js tras cada snapshot de
+// Firestore para actualizar los botones «Añadir»/«Añadido»).
+export function refreshExternalResults(ctx) {
+  if (!isOpen) return;
+  const query = input.value.trim();
+  if (query.length < 2) return;
+  if (ctx) searchCtx = ctx;
+  renderResults(collectionResults(query), query);
 }
 
 // ---- Navegación ----
 
 function navigateTo(result) {
+  // Resultado del catálogo: vista previa sin cerrar el dropdown.
+  if (result.kind === "external") {
+    openSearchPreviewFromResults(result.item, false, searchCtx);
+    return;
+  }
+
+  // Fila «Añadir manualmente»: abre el formulario sin cerrar el dropdown.
+  if (result.kind === "manual") {
+    const type = result.type;
+    ui.openManualAddModal(type, (data) => handleManualAdd(type, data, searchCtx));
+    return;
+  }
+
   if (result.type === "friend") {
     ui.showToast(`Próximamente podrás ver el perfil de ${result.item.displayName || result.item.name || "tu amigo"}.`);
     closeGlobalSearch();
     return;
   }
 
-  // Es un item (movie/tv/book)
+  // Es un item de la colección (movie/tv/book)
   const item = result.item;
   if (!searchCtx) {
     ui.showToast("Error: contexto no disponible.");
@@ -257,7 +558,7 @@ function openGlobalSearch() {
 
   const query = input.value.trim();
   if (query.length < 2) {
-    resultsEl.innerHTML = `<p class="global-search__hint">Escribe para buscar...</p>`;
+    resultsEl.innerHTML = renderTypeButtons() + `<p class="global-search__hint">Escribe para buscar...</p>`;
     flatResults = [];
     highlightedIndex = -1;
   } else {
@@ -286,6 +587,22 @@ function openGlobalSearch() {
 export function closeGlobalSearch() {
   if (!isOpen) return;
   isOpen = false;
+
+  // Invalidar búsquedas externas en curso y limpiar su estado
+  searchSeq++;
+  activeGroup = null;
+  externalCache.movies = null;
+  externalCache.tv = null;
+  externalCache.books = null;
+  inFlight.movies = false;
+  inFlight.tv = false;
+  inFlight.books = false;
+  externalError.movies = null;
+  externalError.tv = null;
+  externalError.books = null;
+  externalQuery.movies = "";
+  externalQuery.tv = "";
+  externalQuery.books = "";
 
   resultsEl.classList.add("hidden");
   resultsEl.innerHTML = "";
@@ -320,7 +637,7 @@ function setHighlight(idx) {
   const target = resultsEl.querySelector(`[data-global-idx="${idx}"]`);
   if (!target) return;
 
-  if (flatResults[idx].type === "friend") {
+  if (flatResults[idx] && flatResults[idx].type === "friend") {
     target.classList.add("global-search__friend--highlighted");
   } else {
     target.classList.add("global-search__item--highlighted");
@@ -414,6 +731,17 @@ export function setupGlobalSearch(ctx) {
     }
   });
 
+  // Botones de tipo (Serie / Película / Libro): delegación en el
+  // contenedor del dropdown porque se re-renderiza en cada búsqueda
+  // (también en el hint con query corta).
+  resultsEl.addEventListener("click", (e) => {
+    const typeBtn = e.target.closest(".global-search__type-btn");
+    if (typeBtn) {
+      e.stopPropagation();
+      handleTypeClick(typeBtn.dataset.group);
+    }
+  });
+
   // Escape con el foco fuera del input (p. ej. sobre un resultado):
   // el keydown del input ya cierra con stopPropagation, así que esto
   // solo actúa cuando el foco está en otra parte del documento.
@@ -453,46 +781,30 @@ async function performSearch(ctx) {
   const trimmed = query.trim();
 
   if (!trimmed || trimmed.length < 2) {
-    resultsEl.innerHTML = `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros y amigos.</p>`;
-    flatResults = [];
-    highlightedIndex = -1;
+    renderHint();
     return;
   }
 
-  // Items desde el contexto
-  const allItems = ctx.getAllItems();
-  const movies = filterItems(allItems.movies || [], trimmed);
-  const tv = filterItems(allItems.tv || [], trimmed);
-  const books = filterItems(allItems.books || [], trimmed);
+  // Nueva búsqueda: invalidar búsquedas externas en curso
+  searchSeq++;
 
   // Amigos desde la caché
-  let friends = [];
-  if (cachedProfiles) {
-    friends = filterFriends(cachedProfiles, trimmed);
-  } else if (profilePromise) {
+  if (!cachedProfiles) {
+    if (!profilePromise) {
+      profilePromise = ctx.getAllUserProfiles().then((profiles) => {
+        cachedProfiles = profiles;
+        return profiles;
+      }).catch(() => {
+        cachedProfiles = [];
+        return [];
+      });
+    }
     try {
       cachedProfiles = await profilePromise;
-      friends = filterFriends(cachedProfiles, trimmed);
-    } catch {
-      cachedProfiles = [];
-    }
-  } else {
-    // Iniciar carga
-    try {
-      cachedProfiles = await ctx.getAllUserProfiles();
-      friends = filterFriends(cachedProfiles, trimmed);
     } catch {
       cachedProfiles = [];
     }
   }
 
-  renderResults(
-    {
-      movies: movies.slice(0, 5),
-      tv: tv.slice(0, 5),
-      books: books.slice(0, 5),
-      friends: friends.slice(0, 3),
-    },
-    trimmed
-  );
+  renderResults(collectionResults(trimmed), trimmed);
 }

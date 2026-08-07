@@ -33,135 +33,6 @@ input, textarea, select { font-size: 16px; }
 }
 
 /* =========================================================
-   Buscador ("ficha de solicitud")
-   ========================================================= */
-
-.search-slip {
-  display: flex;
-  gap: 0.6rem;
-  background: var(--paper);
-  padding: 0.9rem;
-  border-radius: var(--radius);
-  margin-top: 1.4rem;
-}
-
-.search-slip input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid var(--paper-line);
-  background: var(--white);
-  color: var(--ink);
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-family: var(--font-body);
-}
-.search-slip input:focus-visible {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 1px;
-}
-
-.results-strip {
-  display: flex;
-  gap: 0.9rem;
-  overflow-x: auto;
-  padding: 1rem 0.1rem 1rem;
-  scrollbar-width: thin;
-}
-.results-strip:empty {
-  padding: 0;
-}
-.results-strip::-webkit-scrollbar {
-  height: 6px;
-}
-.results-strip::-webkit-scrollbar-track {
-  background: transparent;
-}
-.results-strip::-webkit-scrollbar-thumb {
-  background: var(--paper-alpha-30);
-  border-radius: 999px;
-}
-
-.result-card {
-  flex: 0 0 140px;
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-card);
-  display: flex;
-  flex-direction: column;
-  /* La tarjeta es clicable (vista previa de información, issue #22);
-     inofensivo cuando el callback no está definido */
-  cursor: pointer;
-}
-
-/* Elevación al pasar por encima: indica que la tarjeta es clicable */
-.result-card:hover {
-  box-shadow: var(--shadow-pop);
-}
-
-.result-card:focus-visible {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: -2px;
-}
-
-.result-card__cover {
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
-  background: var(--paper-dim);
-}
-
-.result-card__body {
-  padding: 0.55rem 0.6rem 0.7rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.result-card__title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.result-card__meta {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.result-card .btn {
-  margin-top: auto;
-  width: 100%;
-  font-size: 0.78rem;
-  padding: 0.45rem 0.4rem;
-}
-
-/* Badge de ediciones agrupadas (Google Books) */
-.result-card__editions {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: var(--ochre-spine-dark);
-  background: var(--ochre-alpha-12);
-  border-radius: 999px;
-  padding: 0.08rem 0.4rem;
-  margin-left: 0.3rem;
-  vertical-align: middle;
-}
-
-/* =========================================================
    Modal de confirmación al añadir libro (cover picker +
    description selector)
    ========================================================= */
@@ -905,84 +776,6 @@ input, textarea, select { font-size: 16px; }
 
 
 /* =========================================================
-   Buscador: botón de borrar (X) dentro del campo
-   ========================================================= */
-
-.search-input-wrap {
-  position: relative;
-  flex: 1;
-  display: flex;
-  min-width: 0;
-}
-
-.search-input-wrap input {
-  width: 100%;
-  min-width: 0;
-}
-
-.search-clear-btn {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  color: var(--ink-soft);
-  font-size: 0.85rem;
-  padding: 0.2rem 0.4rem;
-  line-height: 1;
-}
-.search-clear-btn:hover {
-  color: var(--ink);
-}
-
-
-/* =========================================================
-   Barra de resultados: cargar más / ocultar
-   ========================================================= */
-
-.results-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 1.1rem;
-  margin: 0.3rem 0 0.9rem;
-  flex-wrap: wrap;
-}
-
-
-/* =========================================================
-   Buscador dentro de mi propia lista
-   ========================================================= */
-
-.library-search {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--ink-raised);
-  border: 1px solid var(--paper-alpha-20);
-  border-radius: 999px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.85rem;
-}
-.library-search-input {
-  background: transparent;
-  border: none;
-  color: var(--paper);
-  font-size: 1rem;
-  font-family: var(--font-body);
-  width: clamp(150px, 30vw, 200px);
-  max-width: 100%;
-}
-.library-search-input::placeholder {
-  color: var(--paper-alpha-40);
-}
-.library-search-input:focus-visible {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 2px;
-}
-
-
-/* =========================================================
    Modal selector de saga (checklist de películas)
    ========================================================= */
 
@@ -1640,24 +1433,6 @@ input, textarea, select { font-size: 16px; }
 }
 
 
-/* =========================================================
-   Casilla "Solo en español" (búsqueda de libros)
-   ========================================================= */
-
-.lang-filter-check {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  margin: 0.5rem 0 0.3rem;
-  cursor: pointer;
-}
-
-.lang-filter-check input {
-  accent-color: var(--ochre-spine);
-}
-
 .saga-count {
   font-size: 0.78rem;
   color: var(--ink-soft);
@@ -1672,8 +1447,6 @@ input, textarea, select { font-size: 16px; }
    ========================================================= */
 
 @media (max-width: 768px) {
-  .search-slip input,
-  .library-search-input,
   .field-group input,
   .field-group select,
   .field-group textarea,
@@ -1924,8 +1697,7 @@ input, textarea, select { font-size: 16px; }
    que usan --paper como color de texto o --ink como fondo.
    ========================================================= */
 
-[data-theme="light"] .sort-select,
-[data-theme="light"] .library-search-input {
+[data-theme="light"] .sort-select {
   color: var(--ink);
 }
 

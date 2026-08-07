@@ -1705,6 +1705,96 @@ button {
   font-style: italic;
 }
 
+/* Botones de tipo (Serie / Película / Libro): búsqueda en el catálogo */
+.global-search__type-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--paper-line);
+  flex-wrap: wrap;
+}
+
+.global-search__type-btn {
+  background: transparent;
+  border: 1px solid var(--paper-line);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+.global-search__type-btn:hover {
+  border-color: var(--teal-reel);
+  color: var(--ink);
+}
+.global-search__type-btn.is-active {
+  background: var(--teal-reel);
+  color: var(--paper);
+  border-color: var(--teal-reel);
+}
+
+/* Estado de las secciones del catálogo (buscando / error / vacío) */
+.global-search__status {
+  font-style: italic;
+  color: var(--ink-soft);
+  padding: 12px 16px;
+  text-align: left;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* Botón «Añadir» de los resultados del catálogo */
+.global-search__item-add {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--teal-reel);
+  color: var(--paper);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.global-search__item-add:hover {
+  background: var(--teal-reel-dark);
+}
+.global-search__item-add:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.global-search__item-add--books {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+.global-search__item-add--books:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--paper);
+}
+
+/* Fila «Añadir manualmente» al final de cada sección del catálogo */
+.global-search__manual-add {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: var(--teal-reel);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.global-search__manual-add:hover {
+  color: var(--teal-reel-dark);
+  background: var(--ink-alpha-06);
+}
+
 /* Grupo */
 .global-search__group-title {
   display: flex;
@@ -1846,6 +1936,10 @@ button {
     top: 4.5rem;
     width: auto;
     max-width: none;
+  }
+
+  .global-search__type-buttons {
+    flex-wrap: wrap;
   }
 
   /* En móvil los títulos/metadatos pueden envolverse a 2 líneas
