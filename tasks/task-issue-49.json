@@ -1,7 +1,7 @@
 {
   "title": "Visualización de amigos",
   "description": "Issue #49: En la pestaña de visualización de amigos se debe organizar diferente. En caso de que haya muchos ítems, va a ser un Scroll vertical muy largo actualmente. Debe verse de forma distinta, quizá por pestañas (más similar a la vista del propio perfil) y con filtros (no hace falta búsqueda, pero sí filtros de estados).\n\nReglas de la issue:\n- Reorganizar la vista de amigos para que no sea un scroll vertical interminable cuando hay muchos ítems.\n- La vista debe parecerse a la del propio perfil (organización por pestañas/secciones).\n- Incluir filtros de estados (NO se pide búsqueda).\n\nIteración 2 (comentario de gonzalitojh, 2026-08-07T11:19:33Z):\n- Para las películas, solo deben aparecer los filtros: _Todos_, _Pendiente_ y _Vista_, igual que en la vista personal (ocio/peliculas.html).\n\nNotas de exploración inicial:\n- La issue está etiquetada como 'type: style' (cambio de UI/organización visual).\n- Verificado en exploración: los amigos se listan en una única lista vertical (scroll largo con muchos ítems).\n- La vista del perfil propio usa pestañas/secciones; la de amigos debe alinearse con ese patrón.",
-  "status": "in-progress",
+  "status": "review",
   "acceptance criteria": [
     "La pestaña de visualización de amigos muestra los ítems organizados por pestañas o secciones (similar a la vista del perfil propio), de modo que el scroll vertical no sea interminable.",
     "Existen filtros por estado de los amigos (sin búsqueda), que permiten reducir el contenido mostrado.",
@@ -25,5 +25,13 @@
     "number": 49,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/49",
     "title": "Visualización de amigos"
+  },
+  "pr": {
+    "number": 119,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/119",
+    "title": "[style] Visualización de amigos por pestañas y filtros de estado",
+    "branch": "style/issue-49-friends-view-tabs-filters",
+    "commit": "a9ba8aa",
+    "closes": "#49"
   }
 }
