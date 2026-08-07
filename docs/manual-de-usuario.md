@@ -113,6 +113,24 @@ Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
 (más en [sección 7](#7-cómo-buscar)).
 
+### 3.1 Compartir direcciones y volver a las pestañas
+
+Cada pestaña tiene su propia dirección web, que termina en
+`#/ocio/series` (Series), `#/ocio/peliculas` (Películas) o
+`#/ocio/libros` (Libros). Puedes copiar esa dirección desde la
+barra de direcciones del navegador y compartirla, guardarla en
+favoritos o enviártela a ti mismo: al volver a abrirla, la web se
+abre directamente en esa pestaña, aunque hayas entrado desde otro
+dispositivo.
+
+Los botones **atrás** y **adelante** del navegador también cambian de
+pestaña, como si fueran parte de la misma página: si estás en
+Películas, pulsas Series y luego «atrás», vuelves a Películas.
+
+Si entras sin una dirección concreta, o con una que no corresponde a
+ninguna pestaña, la web te lleva siempre a **Series**, igual que
+hasta ahora.
+
 ## 4. Series
 
 ### 4.1 Los estados de una serie

@@ -16,7 +16,8 @@ import { closeGlobalSearch } from "./global-search.js";
 
 // Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
 // "Ocio" es la web actual (pestañas Series / Películas / Libros);
-// al pulsarla se cierra el drawer y se hace scroll suave al top.
+// al pulsarla se cierra el drawer, se hace scroll suave al top y se
+// vuelve a la primera pestaña sincronizando la URL (issue #59).
 // "Ajustes" (pinned) abre el perfil en la sección Ajustes: el
 // callback lo inyecta app.js vía setupSidebar({ onOpenSettings }).
 export const SECTIONS = [
@@ -43,6 +44,9 @@ export const SECTIONS = [
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
+      // Volver a la primera pestaña (Series) sincronizando la URL:
+      // el callback lo inyecta app.js vía setupSidebar({ onGoOcio }).
+      if (onGoOcio) onGoOcio();
     },
   },
   {
@@ -60,11 +64,14 @@ export const SECTIONS = [
   },
 ];
 
-// Callback de módulo para «Ajustes»: lo inyecta app.js en setupSidebar.
+// Callbacks de módulo inyectados por app.js en setupSidebar:
+// openSettings para «Ajustes» y onGoOcio para «Ocio» (router de hash).
 let openSettings = null;
+let onGoOcio = null;
 
 export function setupSidebar(opts) {
   openSettings = opts?.onOpenSettings || null;
+  onGoOcio = opts?.onGoOcio || null;
 
   const sidebar = document.getElementById("app-sidebar");
   const backdrop = document.getElementById("app-sidebar-backdrop");

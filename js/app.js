@@ -40,6 +40,7 @@ import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
+import { initRouter, keyForPanel, DEFAULT_KEY } from "./router.js";
 
 // ---------- Estado ----------
 
@@ -175,7 +176,13 @@ async function init() {
 
   const ctx = createCtx();
 
-  // Pestañas
+  // Pestañas de Ocio y enrutamiento (issue #59): cada pestaña tiene
+  // su propia URL (#/ocio/series, #/ocio/peliculas, #/ocio/libros)
+  // gestionada por el router de hash. El clic manual replica el
+  // comportamiento clásico (activar pestaña, mover foco al título)
+  // y además sincroniza la URL; las activaciones que vienen del
+  // router (carga directa, recarga, atrás/adelante) nunca roban
+  // el foco.
   const tabs = document.querySelectorAll(".tab");
   const panels = {
     "panel-movies": document.getElementById("panel-movies"),
@@ -183,24 +190,44 @@ async function init() {
     "panel-books": document.getElementById("panel-books"),
   };
 
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => {
-        t.classList.remove("is-active");
-        t.setAttribute("aria-selected", "false");
-      });
-      tab.classList.add("is-active");
-      tab.setAttribute("aria-selected", "true");
-      Object.values(panels).forEach((p) => p.classList.add("hidden"));
-      const activePanel = panels[tab.dataset.panel];
-      activePanel.classList.remove("hidden");
+  function activatePanel(panelId, { moveFocus = false } = {}) {
+    tabs.forEach((t) => {
+      t.classList.remove("is-active");
+      t.setAttribute("aria-selected", "false");
+    });
+    Object.values(panels).forEach((p) => p && p.classList.add("hidden"));
 
-      // Mover foco al título de la sección activa
-      const heading = activePanel.querySelector("h2");
+    // Defensivo: si el panel no existe (un data-panel desactualizado),
+    // se cae al estado por defecto (Series) en lugar de romper.
+    const targetId = panels[panelId] ? panelId : "panel-tv";
+    const activeTab = Array.from(tabs).find((t) => t.dataset.panel === targetId);
+    if (activeTab) {
+      activeTab.classList.add("is-active");
+      activeTab.setAttribute("aria-selected", "true");
+    }
+    panels[targetId].classList.remove("hidden");
+
+    if (moveFocus) {
+      // Mover foco al título de la sección activa (solo por clic manual).
+      const heading = panels[targetId].querySelector("h2");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
         heading.focus();
       }
+    }
+  }
+
+  // Router: en carga directa o recarga activa la pestaña indicada
+  // por la URL sin robar el foco (solo el clic manual lo mueve).
+  const router = initRouter({
+    onRoute: ({ panelId }) => activatePanel(panelId),
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const panelId = tab.dataset.panel;
+      activatePanel(panelId, { moveFocus: true });
+      router.navigate(keyForPanel(panelId));
     });
   });
 
@@ -253,6 +280,9 @@ async function init() {
   setupSettings(ctx);
   setupSidebar({
     onOpenSettings: () => profileApi.openProfileSection("settings", ctx),
+    // Entrada «Ocio»: además del scroll al top, vuelve a la primera
+    // pestaña (Series) y sincroniza la URL con el router.
+    onGoOcio: () => router.navigate(DEFAULT_KEY),
   });
   setupGlobalSearch(ctx);
 
