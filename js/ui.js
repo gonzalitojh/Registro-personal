@@ -1869,19 +1869,10 @@ export function renderFriendsList(container, profiles, myUid, onSelect) {
   });
 }
 
-export function renderFriendDetail(movies, series, books, onOpen) {
-  const movieGrid = document.getElementById("friend-movies");
-  const seriesGrid = document.getElementById("friend-series");
-  const bookGrid = document.getElementById("friend-books");
-
-  renderReadOnlyGrid(movieGrid, movies, onOpen);
-  renderReadOnlyGrid(seriesGrid, series, onOpen);
-  renderReadOnlyGrid(bookGrid, books, onOpen);
-}
-
-function renderReadOnlyGrid(gridEl, items, onOpen) {
+export function renderFriendTab(tabKey, items, onOpen, emptyMessage) {
+  const gridEl = document.getElementById("friend-" + tabKey);
   if (!items.length) {
-    gridEl.innerHTML = `<p class="empty-state">Nada por aquí todavía.</p>`;
+    gridEl.innerHTML = `<p class="empty-state">${escapeHtml(emptyMessage || "Nada por aquí todavía.")}</p>`;
     return;
   }
   renderGrid(gridEl, items, onOpen);

@@ -165,6 +165,13 @@ export function setupProfile(ctx) {
   const statsRangeStart = document.getElementById("stats-range-start");
   const statsRangeEnd = document.getElementById("stats-range-end");
 
+  // Estado de la vista de detalle de amigo (pestañas y filtros en memoria)
+  const friendData = { movies: [], tv: [], books: [] };
+  const friendFilters = { movies: "todos", tv: "todos", books: "todos" };
+  let friendActiveTab = "movies";
+  let currentFriendName = "";
+  let currentFriendUid = "";
+
   async function loadFriendsList() {
     friendsListEl.innerHTML = `<p class="empty-state">Cargando…</p>`;
     try {
@@ -175,23 +182,76 @@ export function setupProfile(ctx) {
     }
   }
 
+  function renderFriendTab(tabKey) {
+    const status = friendFilters[tabKey];
+    const filtered =
+      status === "todos" ? friendData[tabKey] : friendData[tabKey].filter((item) => item.status === status);
+    ui.renderFriendTab(
+      tabKey,
+      filtered,
+      (item) => ui.openReadOnlyModal(item, currentFriendName),
+      status === "todos" ? undefined : "No hay nada con ese estado."
+    );
+  }
+
+  function setFriendTab(tabKey) {
+    document.querySelectorAll(".friend-subtab").forEach((btn) => {
+      const isActive = btn.dataset.friendTab === tabKey;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-selected", String(isActive));
+    });
+    ["movies", "tv", "books"].forEach((key) => {
+      document.getElementById("friend-panel-" + key).classList.toggle("hidden", key !== tabKey);
+    });
+    friendActiveTab = tabKey;
+    renderFriendTab(tabKey);
+  }
+
+  function setFriendFilter(tabKey, status) {
+    friendFilters[tabKey] = status;
+    document.querySelectorAll(`#friend-panel-${tabKey} .friend-chip`).forEach((chip) => {
+      const isActive = chip.dataset.status === status;
+      chip.classList.toggle("is-active", isActive);
+      chip.setAttribute("aria-pressed", String(isActive));
+    });
+    renderFriendTab(tabKey);
+  }
+
   async function openFriend(profile) {
+    const requestedUid = profile.uid;
     friendsListEl.classList.add("hidden");
     friendDetailEl.classList.remove("hidden");
     friendDetailNameEl.textContent = profile.displayName || profile.email || "Amigo";
-    const friendName = profile.displayName || profile.email || "tu amigo";
+    currentFriendName = profile.displayName || profile.email || "tu amigo";
+    currentFriendUid = profile.uid;
+    // Reset de pestaña y filtros al abrir cualquier amigo
+    friendData.movies = [];
+    friendData.tv = [];
+    friendData.books = [];
+    friendFilters.movies = "todos";
+    friendFilters.tv = "todos";
+    friendFilters.books = "todos";
+    document.querySelectorAll(".friend-chip").forEach((chip) => {
+      const isAll = chip.dataset.status === "todos";
+      chip.classList.toggle("is-active", isAll);
+      chip.setAttribute("aria-pressed", String(isAll));
+    });
+    setFriendTab("movies");
     document.getElementById("friend-movies").innerHTML = `<p class="empty-state">Cargando…</p>`;
-    document.getElementById("friend-series").innerHTML = "";
-    document.getElementById("friend-books").innerHTML = "";
     try {
       const [movies, series, books] = await Promise.all([
         ctx.getItemsOnce(profile.uid, "movie"),
         ctx.getItemsOnce(profile.uid, "tv"),
         ctx.getItemsOnce(profile.uid, "book"),
       ]);
-      ui.renderFriendDetail(movies, series, books, (item) => ui.openReadOnlyModal(item, friendName));
+      if (requestedUid !== currentFriendUid) return;
+      friendData.movies = movies;
+      friendData.tv = series;
+      friendData.books = books;
+      renderFriendTab(friendActiveTab);
     } catch (err) {
-      document.getElementById("friend-movies").innerHTML = `<p class="empty-state">No se pudo cargar.</p>`;
+      if (requestedUid !== currentFriendUid) return;
+      document.getElementById("friend-" + friendActiveTab).innerHTML = `<p class="empty-state">No se pudo cargar.</p>`;
     }
   }
 
@@ -358,6 +418,20 @@ export function setupProfile(ctx) {
   document.getElementById("btn-back-to-friends").addEventListener("click", () => {
     friendDetailEl.classList.add("hidden");
     friendsListEl.classList.remove("hidden");
+  });
+
+  document.querySelectorAll(".friend-subtab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setFriendTab(btn.dataset.friendTab);
+    });
+  });
+
+  document.querySelectorAll(".friend-filters").forEach((group) => {
+    group.addEventListener("click", (e) => {
+      const chip = e.target.closest(".friend-chip");
+      if (!chip) return;
+      setFriendFilter(group.dataset.tab, chip.dataset.status);
+    });
   });
 
   return { openProfileSection };
