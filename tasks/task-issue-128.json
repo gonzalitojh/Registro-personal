@@ -1,0 +1,60 @@
+{
+  "title": "Pérdida de tokens en mitad de ejecución: guardar progreso WIP en rama de borrador antes de que el runner efímero se destruya",
+  "description": "La GitHub Action auto-resolve-issues (issue #81) usa un modelo gratuito de OpenCode que puede quedarse sin tokens en mitad de una sesión y hacer fallar la ejecución (ejecución 10, issue #124). Como el servidor en el que se aloja OpenCode es efímero, todo lo que no se haya pusheado al repositorio se pierde.\n\nPropuesta de Gemini a analizar para comprobar si es correcta y aplicarla de la mejor forma posible:\n\n1. Guardar el progreso WIP si falla la sesión: nuevo paso tras 'Sesión OpenCode' con if: failure() && candidate seleccionada que crea/usa la rama wip/issue-N, hace git add . (o el equivalente con pathspec), commit y push --force a origin, ANTES de que GitHub destruya el runner.\n\n2. Restaurar el progreso WIP: nuevo paso antes de construir el prompt (o en la preparación del entorno) que comprueba si existe origin/wip/issue-N y, si existe, hace checkout de esa rama para continuar desde el estado guardado.\n\n3. Micro-commits: añadir al prompt de la sesión la instrucción de hacer commits incrementales en la rama local a medida que se completa cada subtarea del task file.\n\nSe debe analizar la corrección de la propuesta teniendo en cuenta el flujo SDD real del workflow (candidate.json, sdd_prompt.md, identidad de git, paso de reclamación, rollback existente, MODO ITERACIÓN, interacción con el publisher) y aplicarla de la mejor forma posible sin romper el flujo existente y sin exponer secretos.",
+  "status": "documented",
+  "plan": {
+    "architect": "task-architect",
+    "summary": "Añadir al workflow auto-resolve-issues: (1) paso wip-save con if: failure() que guarda el working tree + micro-commits locales en wip/issue-N (push --force, excluyendo candidate.json y sdd_prompt.md con pathspec) antes de que el runner efímero muera; (2) paso wip-restore antes de construir el prompt que detecta origin/wip/issue-N (ls-remote), fetch y checkout -B para continuar desde el estado guardado; (3) instrucción de micro-commits en el prompt + instrucción al publisher de derivar la rama de PR desde el estado actual si viene de WIP (no desde origin/dev) y nunca publicar la rama wip como PR; rollback y MODO ITERACIÓN siguen intactos; el wip-save corre también en iteración (claim_owner=issue_comment). Documentar en ADR-047 (sección 7-d)."
+  },
+  "acceptance criteria": [
+    "El workflow auto-resolve-issues guarda el progreso no commiteado en una rama wip/issue-N (push a origin) cuando la sesión de OpenCode falla, antes de que el runner se destruya.",
+    "El workflow restaura la rama wip/issue-N existente antes de relanzar la sesión, para que OpenCode continúe desde el estado guardado.",
+    "El prompt de la sesión incluye la instrucción de micro-commits incrementales sobre la rama local.",
+    "El flujo existente (selección, reclamación, prompt, rollback, resumen) no se rompe: candidate.json y sdd_prompt.md siguen funcionando y no se suben accidentalmente al repo.",
+    "Ningún secreto (GH_TOKEN, OPENCODE_API_KEY) se imprime, commitea ni pushea en el proceso de guardado/restauración."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #128'.",
+    "PR creada contra dev con 'Closes #128' como primera línea del body.",
+    "Issue #128 label actualizada a su estado final (needs-review).",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 128,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/128",
+    "title": "Problema de pérdida de tokens en mitad de ejecución"
+  },
+  "implemented_files": [
+    ".github/workflows/auto-resolve-issues.yml",
+    "docs/adr-047-auto-resolve-issues.md",
+    "README.md"
+  ],
+  "validation": {
+    "qa": "APROBADO (yaml.safe_load OK, sin tabs, bash -n OK de scripts wip-restore/wip-save/prompt, simulación git de wip-save y wip-restore en repo temporal, pathspec exclude verificado, los 5 criterios de aceptación PASS, ADR 7-d presente con Related issue #128, sin secretos expuestos)",
+    "hallazgos_corregidos": [],
+    "sugerencias_low": [
+      "LOW: la rama wip/issue-N nunca se limpia tras sesión exitosa; considerar git push origin --delete wip/issue-N tras publicar o no restaurar si existe rama <tipo>/issue-N-* con PR abierta (no bloqueante).",
+      "LOW: si git add falla real (|| true) el dif cached salta a 'sin cambios'; comportamiento best-effort coherente (no bloqueante)."
+    ]
+  },
+  "security": {
+    "scan": "ACCEPTABLE (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "low_findings": [
+      "LOW: git add -A sin protección del .gitignore raíz (solo _site/); sugerido ampliar excludes (.env, *.pem, *.key, node_modules) o añadirlos al .gitignore raíz (defensa en profundidad, no bloqueante).",
+      "LOW: ADR declara que ningún secreto se imprime/commitea/pushea — verificado correcto (informativo)."
+    ]
+  },
+  "documentation": {
+    "adr": "docs/adr-047-auto-resolve-issues.md (sección 7-d)",
+    "related_issue": "#128",
+    "manual_usuario": "sin cambios (infraestructura interna de CI; regla 3 AGENTS.md no aplica)",
+    "readme": "README.md sección 6 punto 6: nota sobre guardado/restauración WIP en fallos de la sesión"
+  }
+}

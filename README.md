@@ -227,7 +227,10 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    el workflow esté en la rama por defecto (`main`): se activa en
    producción tras la promoción `dev` → `main`. Prueba manual desde la
    pestaña Actions → `auto-resolve-issues` → "Run workflow" (con
-   `dry_run` para ver la selección sin lanzar la sesión).
+   `dry_run` para ver la selección sin lanzar la sesión). Si una sesión
+   falla a mitad de ejecución (p. ej. por límite de tokens del modelo
+   free), el progreso se guarda automáticamente en una rama
+   `wip/issue-N` y se restaura en el siguiente intento.
 
 ## 7. Autorizar tu dominio en Firebase
 

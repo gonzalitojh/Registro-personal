@@ -222,6 +222,29 @@ jobs:
           fi
           echo "claim_owner=$EVENT" >> "$GITHUB_OUTPUT"
 
+      # =========================================================================
+      # Protección de progreso WIP (issue #128): si un intento previo falló por
+      # tokens del modelo free, la rama wip/issue-N guardada por wip-save se
+      # restaura aquí para que la sesión continúe desde el último estado.
+      # =========================================================================
+      - name: Restaurar rama WIP del issue (retomar trabajo previo)
+        id: wip-restore
+        if: steps.candidate.outputs.selected != 'NONE'
+        shell: bash
+        run: |
+          set -euo pipefail
+          N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
+          BRANCH_NAME="wip/issue-$N"
+          echo "restored=false" >> "$GITHUB_OUTPUT"
+          if ! git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+            echo "No existe rama WIP remota $BRANCH_NAME: se parte del estado actual."
+            exit 0
+          fi
+          echo "Rama WIP remota detectada ($BRANCH_NAME): restaurando el progreso guardado..."
+          git fetch origin "$BRANCH_NAME"
+          git checkout -B "$BRANCH_NAME" "origin/$BRANCH_NAME"
+          echo "restored=true" >> "$GITHUB_OUTPUT"
+
       - name: Construir prompt de la sesión
         id: prompt
         if: steps.candidate.outputs.selected != 'NONE'
@@ -253,11 +276,26 @@ jobs:
             echo "   escaneo de seguridad con security-champion (HIGH bloquea;"
             echo "   MEDIUM/LOW informan) → ADR en docs/ con \"Related issue: #$N\""
             echo "   (número siguiente libre)."
+            echo "4a. MICRO-COMMITS (Obligatorio): haz commits incrementales en la"
+            echo "    rama local a medida que completas cada subtarea del task file"
+            echo "    (plan → implementación → validación → security → ADR). NO"
+            echo "    esperes al final para el primer commit. Si la sesión cae por"
+            echo "    tokens (modelo free), el workflow guarda desde el último"
+            echo "    commit + working tree en wip/issue-$N."
             echo "5. PUBLICACIÓN (agente publisher): rama nueva desde origin/dev"
             echo "   (<tipo-prefix>/issue-$N-<slug>), commit, push, PR contra dev con"
             echo "   la PRIMERA línea del body: \"Closes #$N\". Después, actualiza el"
             echo "   task file a status \"review\" + bloque \"pr\" y súbelo con un"
             echo "   segundo commit a la misma rama."
+            echo "5a. Si estás sobre la rama 'wip/issue-$N' (progreso restaurado"
+            echo "    automáticamente tras un fallo previo), NO derivas la rama de"
+            echo "    trabajo desde origin/dev (perderías lo restaurado). En su"
+            echo "    lugar: si ya existe la rama <tipo>/issue-$N-* con PR abierta,"
+            echo "    actualízala (gh pr edit) incorporando este estado. Si no"
+            echo "    existe, crea tu rama de PR DESDE el estado actual:"
+            echo "    git checkout -b <tipo-prefix>/issue-$N-<slug>, commit, push y"
+            echo "    gh pr create --base dev --head <rama> con \"Closes #$N\" en la"
+            echo "    PRIMERA línea del body. Nunca publiques wip/issue-$N como PR."
             echo "6. Regla de negocio: NO toques archivos ajenos a la tarea; respeta"
             echo "   scripts/gh-issue.sh para cualquier cambio de labels; el cierre de"
             echo "   la issue NO lo haces tú (lo hace el workflow de promoción"
@@ -322,6 +360,11 @@ jobs:
               echo ""
               echo "Las PRs previas de esta issue no cierran nada: cada iteración lleva"
               echo "su propia PR con su propia keyword (o actualiza la existente)."
+              echo ""
+              echo "Si el run restaura la rama wip/issue-$N (progreso previo), crea"
+              echo "o actualiza la rama de PR desde ESE estado (nunca derive desde"
+              echo "origin/dev): git checkout -b <tipo>/issue-$N-<slug>, commit, push"
+              echo "y gh pr create/edit con \"Closes #$N\" en la PRIMERA línea."
             } >> sdd_prompt.md
           fi
 
@@ -352,6 +395,38 @@ jobs:
             echo "FALLO: la sesión automática de la issue #$N falló (exit $OPENCODE_EXIT)." >&2
             exit 1
           fi
+
+      # =========================================================================
+      # Protección de progreso WIP (issue #128): el runner es efímero; si la
+      # sesión falló (tokens del modelo free, timeout...), este paso guarda TODO
+      # el estado local (micro-commits + working tree) en wip/issue-N y lo
+      # pushea ANTES de que GitHub destruya el runner. El siguiente intento lo
+      # restaura con wip-restore. Best-effort: un fallo aquí solo avisa.
+      # =========================================================================
+      - name: Guardar progreso WIP en fallo de sesión (best-effort)
+        id: wip-save
+        if: failure() && steps.candidate.outputs.selected != 'NONE'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$GITHUB_WORKSPACE/candidate.json" ]] || { echo "AVISO: sin candidate.json; nada que guardar." >&2; exit 0; }
+          N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
+          BRANCH_NAME="wip/issue-$N"
+          echo "Guardando progreso WIP de la issue #$N en $BRANCH_NAME (runner efímero; antes de destruirlo)..."
+          # Excluir artefactos locales del run: NO deben mezclarse con el código del repo.
+          git add -A -- . \
+            ':(exclude)candidate.json' \
+            ':(exclude)sdd_prompt.md' 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar: no se crea la rama $BRANCH_NAME."
+            exit 0
+          fi
+          git checkout -B "$BRANCH_NAME"
+          git commit -m "wip: progreso guardado automáticamente ante fallo de la sesión (issue #$N)" >/dev/null 2>&1 || {
+            echo "AVISO: no se pudo crear el commit WIP." >&2
+            exit 0
+          }
+          git push origin "$BRANCH_NAME" --force 2>/dev/null || echo "AVISO: no se pudo pushear $BRANCH_NAME (best-effort)." >&2
 
       - name: Rollback en fallo de sesión (best-effort)
         if: failure() && steps.candidate.outputs.selected != 'NONE' && steps.claim.outputs.claim_owner != 'issue_comment'
