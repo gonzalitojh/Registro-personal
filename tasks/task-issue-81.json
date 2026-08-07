@@ -1,7 +1,7 @@
 {
   "title": "Resolución automática de Issues",
   "description": "Implementar una GitHub Action (ejecutar todo internamente en GitHub Actions) que cuando se resuelva una PR contra dev (no contra main), automáticamente cree una sesión nueva en OpenCode con: Agente: Sdd-Master, Modelo: DeepSeek V4 Flash Free (New), Variante: Max. Esta nueva sesión debe resolver una nueva issue con los siguientes criterios:\n- Resolver únicamente las issues marcadas con la etiqueta 'ai'.\n- Resolver siempre la issue con la prioridad más alta (very high, high, medium, low, very low).\n- En caso de igualdad de prioridades elegir en base al tipo en este orden: bug, question, style, content, refactor, feature.\n- En caso de igualdad en prioridades y tipo, resolver primero la más antigua.\n- Nunca resolver una issue en estado needs-info o blocked, aunque esté marcada con la etiqueta 'ai'.\n- Nunca resolver una issue bloqueada por otra si no se ha resuelto dicha issue en primer lugar.\nSi se hace un comentario sobre una issue (todavía abierta) en la misma sesión en que se estaba ejecutando, debe volver analizarse dicho comentario (iteración). Si no queda ninguna issue por resolver, apagar el servidor de OpenCode. Además, si se crea una issue y el servidor de OpenCode está apagado, encenderlo y hacer todo el proceso.",
-  "status": "review",
+  "status": "validated",
   "acceptance criteria": [
     "Existe una GitHub Action que se dispara al fusionar una PR contra dev (no contra main) y al crear/editar issues, y que invoca OpenCode en modo headless dentro del runner.",
     "La sesión de OpenCode se crea con el agente Sdd-Master, el modelo DeepSeek V4 Flash Free (New) y la variante Max.",
@@ -47,7 +47,8 @@
       "inputs.dry_run == true → == 'true' (los inputs boolean se serializan como string)",
       "$? tras if ! devolvía 0 → captura OPENCODE_EXIT explícita",
       "Rollback/Resumen con guarda de existencia de candidate.json"
-    ]
+    ],
+    "qa_iteration1": "APROBADO (verificaciones reales: git ls-files 100755 en ambos scripts, diff --cached solo modo 100644→100755 sin cambios de contenido, YAML parseado, bash -n OK, dry-run real excluye #81 in-progress y elige #49, grep confirma todas las invocaciones con 'bash ' prefijo, paso Sesión OpenCode intacto, solo 5 archivos tocados)"
   },
   "security": {
     "scan": "CLEAN (security-champion)",
@@ -59,7 +60,8 @@
     "applied": [
       "Instrucción SEGURIDAD en el prompt de sesión (nunca imprimir/transmitir GH_TOKEN/OPENCODE_API_KEY)",
       "Comentario documentando el fallback curl|bash"
-    ]
+    ],
+    "scan_iteration1": "CLEAN (security-champion) — 0 HIGH, 0 MEDIUM, 1 LOW informativo (email público del bot de GitHub Actions, sin acción)"
   },
   "documentation": {
     "adr": "docs/adr-047-auto-resolve-issues.md",
@@ -73,5 +75,15 @@
     "branch": "refactor/issue-81-auto-resolve-issues",
     "commit": "011e62b",
     "closes": "Closes #81"
+  },
+  "iteration": {
+    "number": 1,
+    "trigger": "issue_comment (gonzalitojh): 'He realizado la PR sobre dev y al ejecutarse el workflow ha fallado. Analízalo y resuelvelo.'",
+    "root_cause": "core.filemode=false (WSL) impidió trackear el chmod +x: scripts/gh-select-issue.sh y scripts/gh-issue.sh se commiteearon con modo 100644. En el runner Linux el checkout los crea sin bit de ejecución → 'Permission denied' (exit 126) en el paso 'Determinar issue candidata' (run 31166193184, PR #114 merge).",
+    "fix": [
+      "git update-index --chmod=+x scripts/gh-select-issue.sh scripts/gh-issue.sh → modo 100755 en git",
+      "Workflow: invocar los scripts con 'bash scripts/...' explícito en candidata/reclamar/rollback (inmune a futuros problemas de bit de ejecución)",
+      "Fix menor: jq -c en el JSON de iteración (JSON multilínea truncaría GITHUB_OUTPUT)"
+    ]
   }
 }

@@ -109,7 +109,7 @@ jobs:
 
           if [[ "$EVENT" == "workflow_dispatch" && -n "$DISPATCH_ISSUE" ]]; then
             echo "Forzando issue #$DISPATCH_ISSUE (workflow_dispatch)"
-            SELECTED="$(scripts/gh-select-issue.sh --issue "$DISPATCH_ISSUE")"
+            SELECTED="$(bash scripts/gh-select-issue.sh --issue "$DISPATCH_ISSUE")"
           elif [[ "$EVENT" == "issue_comment" ]]; then
             N="${{ github.event.issue.number }}"
             STATE="${{ github.event.issue.state }}"
@@ -136,9 +136,11 @@ jobs:
               exit 0
             fi
             echo "Iteración por comentario sobre la issue #$N (status: $ST)"
+            # jq -c: JSON compacto de una sola línea (un JSON multilínea
+            # truncaría GITHUB_OUTPUT al escribir selected=...).
             SELECTED="$(gh issue view "$N" --json number,title,body,labels,comments,createdAt,url -q . | jq -c '{number,title,body,labels:[.labels[].name],comments,createdAt,url}')"
           else
-            SELECTED="$(scripts/gh-select-issue.sh)"
+            SELECTED="$(bash scripts/gh-select-issue.sh)"
           fi
 
           if [[ "$SELECTED" == "NONE" || -z "$SELECTED" ]]; then
@@ -163,7 +165,7 @@ jobs:
           # En iteración por comentario ya está in-progress/needs-review: no se
           # cambia el estado. En el resto, se reclama pasándola a in-progress.
           if [[ "$EVENT" != "issue_comment" ]]; then
-            if ! scripts/gh-issue.sh set-state "$N" "status: in-progress"; then
+            if ! bash scripts/gh-issue.sh set-state "$N" "status: in-progress"; then
               echo "AVISO: no se pudo marcar #$N como in-progress (best-effort)." >&2
             fi
           fi
@@ -287,7 +289,7 @@ jobs:
           fi
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
           echo "Reintentando: se devuelve la issue #$N a la cola (status: todo) y se comenta el fallo."
-          scripts/gh-issue.sh set-state "$N" "status: todo" >/dev/null 2>&1 || true
+          bash scripts/gh-issue.sh set-state "$N" "status: todo" >/dev/null 2>&1 || true
           gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló. Se devuelve la issue a la cola (status: todo). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
 
       - name: Resumen
