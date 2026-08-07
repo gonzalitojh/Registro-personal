@@ -1,7 +1,7 @@
 {
   "title": "Página índice de ramas en /dev y reestructuración del despliegue",
   "description": "Issue #103: Actualmente se despliegan todas las ramas del proyecto cada una en la ruta /Registro-personal/<nombre de rama>. Se pide:\n\n1. Crear una página simple, desplegada en /Registro-personal/dev, que simplemente tenga enlaces al resto de ramas.\n2. La rama main seguirá desplegada en /Registro-personal (raíz, sin cambios).\n3. El resto de ramas se desplegarían en /Registro-personal/dev/<nombre de rama>, incluida la rama dev.\n\nImplicaciones técnicas:\n- scripts/build-pages-site.sh debe cambiar: todas las ramas no-default (incluida dev) se extraen bajo _site/dev/<ruta-saneada>/ en lugar de _site/<ruta>/.\n- La ruta /dev/ de _site pasa a ser un hub de previews: _site/dev/index.html es una página índice simple generada por el script con enlaces a todas las ramas no-default (incluida dev en /dev/dev/).\n- Los checks de colisión del script deben actualizarse a la nueva estructura (todas las ramas comparten el primer segmento 'dev'; comprobar que ninguna ruta saneada bajo dev sea 'index.html', que no exista conflicto archivo/directorio).\n- El workflow .github/workflows/deploy-all-branches.yml no requiere cambios de triggers (sigue llamando al script).\n- README sección 6 debe reflejar la nueva estructura de rutas.\n- ADR nuevo con 'Related issue: #103'.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "main se sigue desplegando en la raíz /Registro-personal/ sin cambios de comportamiento.",
     "Cada rama no-default (incluida dev) se despliega en /Registro-personal/dev/<ruta-saneada-de-rama>/ (p. ej. feature/x → /dev/feature/x/, dev → /dev/dev/).",
@@ -38,5 +38,13 @@
   "security": {
     "veredicto": "APROBADO (0 HIGH)",
     "nota": "Se añadió .gitignore con _site/ como mitigación del hallazgo MEDIUM (evitar que git add . commitee el build). Hallazgos MEDIUM/LOW restantes: pre-existentes (API keys de cliente en js/config.js, emails en allowed-emails.js) o falsos positivos documentales."
+  },
+  "pr": {
+    "number": 105,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/105",
+    "title": "[feature] Página índice de ramas en /dev y reestructuración del despliegue (issue #103)",
+    "branch": "fix/issue-103-dev-preview-hub",
+    "commit": "e879ad4",
+    "closes": "#103"
   }
 }
