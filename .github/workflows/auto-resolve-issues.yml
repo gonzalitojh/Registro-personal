@@ -9,8 +9,6 @@ name: auto-resolve-issues
 # criterios de la issue #81 (ver scripts/gh-select-issue.sh).
 #
 # Eventos que disparan el flujo:
-#   - pull_request cerrada y MERGED contra dev (no contra main) → el ciclo
-#     continúa: se resuelve la siguiente issue.
 #   - issues: opened → "se enciende el servidor": si hay issues ai en
 #     status: todo, se lanza la sesión (interpretación de "encender el
 #     servidor de OpenCode": cada run es un runner efímero; no existe un
@@ -31,17 +29,14 @@ name: auto-resolve-issues
 #
 # NOTA (activación, issue #120): GitHub Actions selecciona la versión del
 # workflow según el evento:
-#   - pull_request → usa el MERGE REF (base+head de la PR): por eso el flujo se
-#     activó al fusionar la PR #117 en dev incluso antes de la promoción.
 #   - issues / issue_comment → usan la RAMA POR DEFECTO (main): los comentarios
 #     y las issues abiertas NO activan el workflow hasta que la promoción
-#     dev → main publique el archivo. Hasta entonces, la reanudación manual se
-#     hace con workflow_dispatch + issue_number.
+#     dev → main publique el archivo (ya no existe el evento pull_request,
+#     que era el único que usaba el merge ref). Hasta entonces, el disparo o
+#     la reanudación manual se hace con workflow_dispatch + issue_number.
 # =============================================================================
 
 on:
-  pull_request:
-    types: [closed]
   issues:
     types: [opened]
   issue_comment:
@@ -62,6 +57,7 @@ permissions:
   contents: write      # commits/push del agente (flujo SDD: rama + PR)
   pull-requests: write # creación de la PR por el publisher
   issues: write        # labels (set-state) y comentarios
+  actions: write       # lanzar workflow_dispatch de deploy-all-branches tras sesión exitosa
 
 # Una sola sesión a la vez: si llega un evento mientras otra sesión corre,
 # el nuevo run espera (cancel-in-progress: false NUNCA mata una sesión activa).
@@ -74,9 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120  # los flujos SDD con variant max tardan minutos
     if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true
-                                             && github.event.pull_request.base.ref == 'dev')
-      || (github.event_name == 'issues' && !github.event.issue.pull_request)
+      (github.event_name == 'issues' && !github.event.issue.pull_request)
       || (github.event_name == 'issue_comment' && !github.event.issue.pull_request
                                                && github.actor != 'github-actions[bot]')
       || github.event_name == 'workflow_dispatch'
@@ -179,7 +173,7 @@ jobs:
             SELECTED="$(gh issue view "$N" --json number,title,body,labels,comments,createdAt,url -q . | jq -c '{number,title,body,labels:[.labels[].name],comments,createdAt,url}')"
             echo "resume=true" >> "$GITHUB_OUTPUT"
             echo "prev_status=$ST" >> "$GITHUB_OUTPUT"
-          # ---- Caso C: pull_request/issues → selección automática ----
+          # ---- Caso C: issues (opened) → selección automática ----
           else
             SELECTED="$(bash scripts/gh-select-issue.sh)"
             echo "resume=false" >> "$GITHUB_OUTPUT"
@@ -291,7 +285,8 @@ jobs:
             echo "    automáticamente tras un fallo previo), NO derivas la rama de"
             echo "    trabajo desde origin/dev (perderías lo restaurado). En su"
             echo "    lugar: si ya existe la rama <tipo>/issue-$N-* con PR abierta,"
-            echo "    actualízala (gh pr edit) incorporando este estado. Si no"
+            echo "    actualízala (gh pr edit) incorporando este estado; además,"
+            echo "    coméntala con gh pr comment resumiendo lo nuevo. Si no"
             echo "    existe, crea tu rama de PR DESDE el estado actual:"
             echo "    git checkout -b <tipo-prefix>/issue-$N-<slug>, commit, push y"
             echo "    gh pr create --base dev --head <rama> con \"Closes #$N\" en la"
@@ -352,6 +347,13 @@ jobs:
               echo "  gh pr edit <NUM> --title \"<nuevo título>\" --body-file <body>"
               echo "  (el body DEBE tener \"Closes #$N\" como PRIMERA línea). No crees"
               echo "  una PR duplicada para la misma rama."
+              echo "- COMENTARIO EN LA PR (obligatorio): tanto si actualizas una PR"
+              echo "  existente (tras gh pr edit) como si creas una PR NUEVA en esta"
+              echo "  iteración, añade un comentario con"
+              echo "  gh pr comment <NUM> --body \"...\" que resuma lo nuevo aplicado"
+              echo "  en la iteración: cambios, validaciones (aceptación + DoD),"
+              echo "  escaneo de seguridad y ADR. El contenido del comentario lo"
+              echo "  generas tú en la sesión, adaptado a lo hecho."
               echo "- Si la rama NO existe, crea <tipo-prefix>/issue-$N-<slug> desde"
               echo "  origin/dev, commit, push y gh pr create --base dev --head <rama>"
               echo "  con \"Closes #$N\" en la PRIMERA línea del body."
@@ -386,7 +388,7 @@ jobs:
               -m opencode/deepseek-v4-flash-free \
               --variant max \
               --auto \
-              --format json \
+              --format default \
               --title "auto: issue #$N" \
               "$(cat sdd_prompt.md)"
           OPENCODE_EXIT=$?
@@ -445,6 +447,15 @@ jobs:
           echo "Reintentando: se devuelve la issue #$N a la cola (status: $PREV_STATUS) y se comenta el fallo."
           bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
           gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló. Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+
+      - name: Disparar despliegue deploy-all-branches (workflow_dispatch)
+        if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Lanzando deploy-all-branches (dispatch) para reconstruir Pages con las nuevas ramas..."
+          gh workflow run deploy-all-branches.yml
+          echo "Dispatch enviado: revisa el run de deploy-all-branches en la pestaña Actions."
 
       - name: Resumen
         if: always()
