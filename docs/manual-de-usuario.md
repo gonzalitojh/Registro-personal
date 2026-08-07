@@ -95,6 +95,10 @@ Nada más entrar verás:
   el contenido de la lista; las pestañas permanecen siempre en su
   sitio.
 
+La pestaña activa indica siempre en qué colección estás, por eso cada
+colección no repite un título como «Mis series»: nada más entrar ves
+directamente su barra de herramientas.
+
 Al entrar por primera vez aterrizas en **Series**, con el filtro **«Viendo»**
 activo y en vista de lista — el uso más habitual.
 
@@ -365,6 +369,15 @@ En la barra de cada biblioteca tienes:
     libros, el selector se llama «Año de publicación»).
 - **Vista cuadrícula ▦ o lista ☰**: a tu gusto (cada sección recuerda la
   suya mientras estás en la web).
+
+Sobre la disposición de esta barra: los **chips de filtro** están todos
+en una sola línea y, si no caben (en el móvil), esa línea de filtros se
+**desliza en horizontal** sin ocupar más espacio (la barra de
+desplazamiento no se muestra, pero puedes deslizar con el dedo). El
+**selector de orden** y el de **vista** van siempre juntos: en la misma
+línea que los filtros en pantallas anchas y en una segunda línea en el
+móvil. El selector de orden tiene el mismo tamaño y la misma fuente que
+los chips de filtro.
 
 Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado

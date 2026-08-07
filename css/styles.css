@@ -530,17 +530,14 @@ button {
   padding: 0 1.25rem;
 }
 
-/* Los h2 de cada panel (inyectados desde ocio/*.html) reciben el foco
-   al cambiar de pestaña (js/app.js), y #main-content es el destino
-   del enlace "Saltar al contenido": el scroll-margin-top evita que
-   el foco/ancla queden ocultos bajo la cabecera fija (issue #79). */
-#main-content,
-.panel h2 {
+/* #main-content es el destino del enlace "Saltar al contenido" y del
+   foco al cambiar de pestaña (js/app.js): el scroll-margin-top evita
+   que el foco/ancla queden ocultos bajo la cabecera fija (issue #79). */
+#main-content {
   scroll-margin-top: calc(var(--header-h) + 1rem);
 }
 @media (min-width: 768px) {
-  #main-content,
-  .panel h2 {
+  #main-content {
     scroll-margin-top: calc(var(--header-h) + var(--tabs-bar-h) + 1rem);
   }
 }
