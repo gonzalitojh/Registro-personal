@@ -1,7 +1,7 @@
 {
   "title": "Botón del perfil",
   "description": "Para acceder al perfil se puede pulsar sobre la imagen del mismo. Sin embargo, si se accede a la web en un dispositivo más ancho que un móvil (tablet o PC) se muestra el nombre del usuario. El nombre en este caso también debe formar parte del botón, de tal forma que no solo sea presionar la foto, sino cualquier parte de la foto o el nombre.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "En dispositivos donde se muestra el nombre del usuario junto a la foto (tablet/PC), el área clicable para acceder al perfil debe abarcar la foto Y el nombre completos.",
     "En móvil (donde solo se muestra la foto), el comportamiento actual debe mantenerse: la foto sigue siendo clicable.",
@@ -20,5 +20,13 @@
     "number": 94,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/94",
     "title": "Botón del perfil"
+  },
+  "pr": {
+    "number": 104,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/104",
+    "title": "[fix] Botón del perfil: foto y nombre clicables (issue #94)",
+    "branch": "fix/issue-94-boton-perfil",
+    "commit": "8f8045b",
+    "closes": "#94"
   }
 }
