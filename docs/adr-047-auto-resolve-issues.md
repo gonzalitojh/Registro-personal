@@ -134,6 +134,36 @@ Lección para futuras iteraciones: **siempre fijar el bit de ejecución con `git
 
 **Flujo de reanudación tras esta corrección** (caso #49): el usuario ejecuta `workflow_dispatch` con `issue_number=49` → el workflow valida abierta + `ai`, desbloquea a `in-progress`, lanza la sesión en modo iteración → el agente detecta la rama `style/issue-49-friends-view-tabs-filters` y la PR #119 existente, la actualiza con `gh pr edit` (body con `Closes #49` y la información del agente) → el usuario la revisa y fusiona en `dev` → el merge dispara el ciclo para la siguiente issue.
 
+### 7-d. Protección de progreso en fallos por tokens del modelo free (issue #128)
+
+**Síntoma**: la sesión automática de la issue #124 cayó a mitad de ejecución por el límite de cuota/tokens del modelo free de OpenCode Zen (`opencode/deepseek-v4-flash-free`). Como el runner de GitHub Actions es efímero, todo el trabajo que la sesión dejó en el working tree local (archivos editados y commits locales no pusheados) se perdió al destruirse el runner: el fallo se revirtió a la cola sin conservar el progreso intermedio.
+
+**Causa raíz**: cualquier estado no pusheado del working tree del runner (commits locales, archivos modificados) se pierde al terminar el job. El flujo SDD solo hace durable el estado vía git (rama + PR), y eso solo ocurre al final de la sesión con el publisher; si la sesión muere antes (rate limit, timeout, fallo del modelo), nada de lo intermedio sobrevive.
+
+**Corrección aplicada** (3 partes de la propuesta de Gemini + ajustes):
+
+1. **Guardado WIP automático en fallo de sesión**: nuevo paso `wip-save` con `if: failure() && steps.candidate.outputs.selected != 'NONE'`, inmediatamente después del paso «Sesión OpenCode» y antes del rollback. Commitea el working tree completo (incluidos los micro-commits locales de la sesión) en la rama `wip/issue-N` y la pushea a `origin` con `--force` — ANTES de que GitHub destruya el runner. Excluye los artefactos locales del run (`candidate.json` y `sdd_prompt.md`) vía pathspec `:(exclude)`, para que no se mezclen con el código del repo; no crea la rama si no hay cambios (`git diff --cached --quiet`). Es best-effort: si el commit/push falla, solo avisa y se continúa con el rollback.
+2. **Restauración automática en el siguiente intento**: nuevo paso `wip-restore`, entre la reclamación de la issue y la construcción del prompt. Detecta `origin/wip/issue-N` con `git ls-remote --exit-code --heads` y, si existe, hace `git fetch` + `git checkout -B wip/issue-N origin/wip/issue-N` para que la nueva sesión de OpenCode continúe exactamente sobre el estado guardado.
+3. **Micro-commits obligatorios en el prompt + ajuste de publicación**: el prompt de la sesión instruye hacer commits incrementales en la rama local a medida que se completa cada subtarea del task file (plan → implementación → validación → security → ADR), sin esperar al final; y si la sesión viene de una restauración WIP (rama `wip/issue-N`), la rama de PR se crea DESDE el estado actual (nunca desde `origin/dev`, que perdería lo restaurado), actualizando la PR existente si la hay, y la rama `wip/issue-N` nunca se publica como PR. El MODO ITERACIÓN incluye el mismo recordatorio.
+
+**Decisiones clave**:
+
+- El `wip-save` corre también en iteración (comentario/workflow_dispatch), donde el rollback no aplica (`if` del rollback excluye `issue_comment`): un fallo en iteración también debe conservar el progreso.
+- Pathspec exclude (`:(exclude)candidate.json` / `:(exclude)sdd_prompt.md`) para no filtrar artefactos del run al repo.
+- `checkout -B` en la restauración: forzada y clara, sin ramas locales huérfanas.
+- Ningún secreto (GH_TOKEN, OPENCODE_API_KEY) se imprime, commitea ni pushea en el proceso de guardado/restauración.
+
+**Tabla de archivos modificados (iteración 3, issue #128)**:
+
+| Archivo | Cambio |
+|---------|--------|
+| `.github/workflows/auto-resolve-issues.yml` | **Modificado**: pasos `wip-restore` (entre «Reclamar» y «Construir prompt») y `wip-save` (entre «Sesión OpenCode» y «Rollback»); instrucciones de micro-commits (4a) y de publicación desde estado WIP (5a) en el prompt normal; recordatorio WIP al final del MODO ITERACIÓN |
+| `docs/adr-047-auto-resolve-issues.md` | **Modificado**: subsección 7-d |
+
+Lección: en runners efímeros, el working tree local NO es un estado durable — cualquier progreso intermedio debe persistirse en git (rama) antes de que el runner muera; el guardado WIP + micro-commits hacen que un fallo por tokens sea recuperable en el siguiente intento.
+
+Related issue: #128 — https://github.com/gonzalitojh/Registro-personal/issues/128
+
 ### 8. Documentación asociada
 
 - `README.md` sección 6, punto 6: «(Opcional) Resolución automática de issues» — describe el workflow, la semántica servidor apagado/encendido, que requiere la promoción `dev` → `main`, y el uso de `workflow_dispatch` con `dry_run` para probar la selección sin lanzar sesión.
@@ -184,5 +214,8 @@ Lección para futuras iteraciones: **siempre fijar el bit de ejecución con `git
 | `docs/adr-047-auto-resolve-issues.md` | **Modificado**: secciones 7-b (Permission denied, iteración 1) y 7-c (reanudación de issues bloqueadas, iteración 2) |
 | `tasks/task-issue-81.json` | Task file de la tarea (title/description, criterios de aceptación, DoD y bloque `issue` con la issue #81) |
 | `docs/manual-de-usuario.md` | **Sin cambios** (infraestructura interna; no aplica la regla 3 de AGENTS.md) |
+| `.github/workflows/auto-resolve-issues.yml` (iteración 3, issue #128) | **Modificado**: pasos `wip-restore` (entre «Reclamar» y «Construir prompt»; `git ls-remote` + fetch + `checkout -B` de `origin/wip/issue-N`) y `wip-save` (entre «Sesión OpenCode» y «Rollback»; `if: failure()`, commit del working tree + micro-commits en `wip/issue-N` con pathspec exclude de `candidate.json`/`sdd_prompt.md` y push `--force`, best-effort); instrucciones de micro-commits (4a) y de publicación desde estado WIP (5a) en el prompt normal; recordatorio WIP al final del MODO ITERACIÓN |
+| `docs/adr-047-auto-resolve-issues.md` | **Modificado**: subsección 7-d (protección de progreso en fallos por tokens del modelo free) |
+| `README.md` | **Modificado**: sección 6, punto 6 — nota sobre la protección WIP (si la sesión falla por tokens, el progreso se guarda en `wip/issue-N` y se restaura en el siguiente intento) |
 
 Related issue: #81 — https://github.com/gonzalitojh/Registro-personal/issues/81
