@@ -99,6 +99,20 @@ Se descarta `--continue`/`--session` de OpenCode: el runner efímero no conserva
 
 Los triggers `pull_request`/`issues`/`issue_comment` ejecutan la versión del workflow de la **rama por defecto** (`main`), por lo que el workflow se activa en producción **tras la promoción `dev` → `main`** que lo publique (coherente con ADR-034: el cierre de issues y la activación de la automatización ocurren en la promoción).
 
+### 7-b. Corrección (iteración 1): `Permission denied` al ejecutar los scripts
+
+**Síntoma**: al fusionar la PR #114 contra `dev` (run 31166193184), el workflow falló con `Permission denied` (exit 126) en el paso «Determinar issue candidata».
+
+**Causa raíz**: el repositorio está en WSL con `git config core.filemode=false`, por lo que el `chmod +x` local de `scripts/gh-select-issue.sh` y `scripts/gh-issue.sh` **nunca se trackeó**: ambos se commitearon con modo `100644`. En el runner Linux (checkout limpio) los scripts se crean sin bit de ejecución y al invocarlos directamente (`scripts/gh-select-issue.sh`) el shell falla con `Permission denied`.
+
+**Corrección aplicada (doble defensa)**:
+
+1. **Modo ejecutable en git**: `git update-index --chmod=+x scripts/gh-select-issue.sh scripts/gh-issue.sh` → los blobs quedan con modo `100755` (el chmod es efectivo en cualquier checkout Linux, independientemente de `core.filemode` local).
+2. **Hardening del workflow**: los scripts se invocan con `bash scripts/...` explícito en los pasos «Determinar issue candidata», «Reclamar» y «Rollback». Así el workflow no depende del bit de ejecución de los archivos.
+3. **Fix menor**: el JSON de iteración (`gh issue view ... -q . | jq -c ...`) se compacta a una línea — un JSON multilínea truncaría `GITHUB_OUTPUT` al escribir `selected=...` (el `jq -c` en el modo iteración ya existía, se aplica también a la rama de comentario vía pipe).
+
+Lección para futuras iteraciones: **siempre fijar el bit de ejecución con `git update-index --chmod=+x` (o `git add --chmod=+x`)**, nunca confiar en `chmod` local con `core.filemode=false`.
+
 ### 8. Documentación asociada
 
 - `README.md` sección 6, punto 6: «(Opcional) Resolución automática de issues» — describe el workflow, la semántica servidor apagado/encendido, que requiere la promoción `dev` → `main`, y el uso de `workflow_dispatch` con `dry_run` para probar la selección sin lanzar sesión.

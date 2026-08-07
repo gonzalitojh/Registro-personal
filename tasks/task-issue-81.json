@@ -47,7 +47,8 @@
       "inputs.dry_run == true → == 'true' (los inputs boolean se serializan como string)",
       "$? tras if ! devolvía 0 → captura OPENCODE_EXIT explícita",
       "Rollback/Resumen con guarda de existencia de candidate.json"
-    ]
+    ],
+    "qa_iteration1": "APROBADO (verificaciones reales: git ls-files 100755 en ambos scripts, diff --cached solo modo 100644→100755 sin cambios de contenido, YAML parseado, bash -n OK, dry-run real excluye #81 in-progress y elige #49, grep confirma todas las invocaciones con 'bash ' prefijo, paso Sesión OpenCode intacto, solo 5 archivos tocados)"
   },
   "security": {
     "scan": "CLEAN (security-champion)",
@@ -59,7 +60,8 @@
     "applied": [
       "Instrucción SEGURIDAD en el prompt de sesión (nunca imprimir/transmitir GH_TOKEN/OPENCODE_API_KEY)",
       "Comentario documentando el fallback curl|bash"
-    ]
+    ],
+    "scan_iteration1": "CLEAN (security-champion) — 0 HIGH, 0 MEDIUM, 1 LOW informativo (email público del bot de GitHub Actions, sin acción)"
   },
   "documentation": {
     "adr": "docs/adr-047-auto-resolve-issues.md",
@@ -67,6 +69,25 @@
     "manual_usuario": "sin cambios (infraestructura interna, regla 3 AGENTS.md no aplica)"
   },
   "pr": {
+    "number": 117,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/117",
+    "title": "Fix: permisos de ejecución de scripts en auto-resolve (issue #81)",
+    "branch": "fix/issue-81-workflow-permissions",
+    "commit": "8d39c3c",
+    "closes": "Closes #81",
+    "iteration": 1
+  },
+  "iteration": {
+    "number": 1,
+    "trigger": "issue_comment (gonzalitojh): 'He realizado la PR sobre dev y al ejecutarse el workflow ha fallado. Analízalo y resuelvelo.'",
+    "root_cause": "core.filemode=false (WSL) impidió trackear el chmod +x: scripts/gh-select-issue.sh y scripts/gh-issue.sh se commiteearon con modo 100644. En el runner Linux el checkout los crea sin bit de ejecución → 'Permission denied' (exit 126) en el paso 'Determinar issue candidata' (run 31166193184, PR #114 merge).",
+    "fix": [
+      "git update-index --chmod=+x scripts/gh-select-issue.sh scripts/gh-issue.sh → modo 100755 en git",
+      "Workflow: invocar los scripts con 'bash scripts/...' explícito en candidata/reclamar/rollback (inmune a futuros problemas de bit de ejecución)",
+      "Fix menor: jq -c en el JSON de iteración (JSON multilínea truncaría GITHUB_OUTPUT)"
+    ]
+  },
+  "previousPr": {
     "number": 114,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/114",
     "title": "Resolución automática de Issues (issue #81)",
