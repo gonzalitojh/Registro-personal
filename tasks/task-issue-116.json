@@ -1,0 +1,50 @@
+{
+  "title": "Arreglo en pestañas en móvil (iPhone): espacio bajo las pestañas para el home indicator",
+  "description": "En el móvil, la barra de inicio de iPhone (home indicator, mediante la cual se cambia de aplicaciones, etc) se monta sobre las pestañas (la barra fija inferior .tabs--bar). Habría que añadir un pequeño espacio bajo las pestañas para que no se monte por encima.\nEsto únicamente pasa en iPhone, no en Android, con lo que no debería afectar a dispositivos con ese Sistema Operativo.\n\nCausa raíz detectada en el análisis inicial: el meta viewport de index.html es 'width=device-width, initial-scale=1.0' SIN 'viewport-fit=cover'. Sin esa declaración, iOS Safari no extiende el layout viewport a las zonas inseguras y env(safe-area-inset-bottom) devuelve siempre 0 (que es lo que ya usan .tabs--bar, .app y .toast en css/styles.css). En Android env(safe-area-inset-bottom) vale 0, así que la corrección no debe afectar a ese SO.",
+  "status": "documented",
+  "validation": {
+    "qa": "APROBADO (qa-reviewer): 10 checks headless pasados — diff solo en index.html/js/config.js/service-worker.js; meta viewport con viewport-fit=cover sin user-scalable/maximum-scale (ADR-042 respetado); 3 usos de env(safe-area-inset-bottom, 0px) intactos en css/styles.css (509/765/938); coherencia de versión 20260817 en los 3 archivos con 0 restos de 20260816; HTML parseado sin errores; node --check OK en service-worker.js; sin cambios de lógica JS. Criterio 1 (iPhone real) requiere validación física (no reproducible headless).",
+    "hallazgos_corregidos": []
+  },
+  "security": {
+    "scan": "NO BLOQUEAR (security-champion): 0 HIGH; 1 MEDIUM informativo (API keys de cliente web pre-existentes en js/config.js, byte-idénticas a HEAD, no introducidas por el diff); 2 LOW (candidate.json y sdd_prompt.md — no commitear).",
+    "high": 0,
+    "medium": 1,
+    "low": 2
+  },
+  "documentation": {
+    "adr": "docs/adr-048-viewport-fit-home-indicator.md",
+    "related_issue": "#116",
+    "manual_usuario": "sin cambios (sección 3 ya describe la barra de pestañas; margen seguro es detalle de dispositivo — precedente ADR-040 iteración 4 / ADR-042)"
+  },
+  "implemented_files": [
+    "index.html",
+    "js/config.js",
+    "service-worker.js"
+  ],
+  "plan": {
+    "architect": "task-architect (ses_02424dd2dffelAw2K8Tm9VG4D6)",
+    "summary": "Cambio mínimo de 1 atributo: añadir viewport-fit=cover al meta viewport de index.html (causa raíz: sin él, env(safe-area-inset-bottom) siempre 0 en iOS y el home indicator se monta sobre .tabs--bar). CSS ya usa env() en .tabs--bar/.app/.toast con fallback 0px, así que Android no cambia. Bump de versión PWA 20260816 → 20260817 (index.html ?v=, js/config.js APP_VERSION, service-worker.js STATIC_ASSETS) + ADR-048."
+  },
+  "acceptance criteria": [
+    "En iPhone (con home indicator) la barra de inicio del sistema no se monta sobre las pestañas: hay un espacio bajo las pestañas igual al margen seguro inferior del dispositivo (env(safe-area-inset-bottom) activo).",
+    "En Android y en iPhones sin home indicator el aspecto no cambia: no se añade espacio extra bajo las pestañas (env(safe-area-inset-bottom) = 0 en esos dispositivos).",
+    "El cambio no rompe la responsividad: sin scroll horizontal a nivel de página a 360/768/1280 px y el contenido inferior (.app padding) y el toast siguen sin quedar tapados por la barra.",
+    "Solo se tocan los archivos necesarios para la corrección y la documentación; sin cambios de lógica JS."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #116'.",
+    "PR creada contra dev con 'Closes #116' como primera línea del body.",
+    "Issue #116 label actualizada a su estado final.",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 116,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/116",
+    "title": "Arreglo en pestañas en móvil"
+  }
+}
