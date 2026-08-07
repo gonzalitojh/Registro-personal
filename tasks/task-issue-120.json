@@ -1,0 +1,49 @@
+{
+  "title": "Auto-resolución: no se puede reanudar una issue en status: blocked ni iterar por comentario antes de la promoción a main",
+  "description": "El workflow auto-resolve-issues (issue #81) falla al reanudar sesiones bloqueadas:\n\n1. Iteración por comentario no acepta blocked: cuando una sesión automática deja una issue en 'status: blocked' (p. ej. por falta de permisos del bot para crear PRs), un comentario posterior del usuario debería reanudar la iteración (especificación de la issue #81), pero el paso 'Determinar issue candidata' solo itera sobre issues 'in-progress' o 'needs-review'; las 'blocked' se rechazan silenciosamente.\n\n2. workflow_dispatch con issue_number no puede forzar una issue bloqueada: scripts/gh-select-issue.sh --issue rechaza issues en 'status: blocked' (exit 2), por lo que no hay forma de reanudar manualmente una sesión bloqueada desde la UI de Actions.\n\n3. La PR existente de la rama no se detecta: si el usuario crea manualmente la PR de la rama de trabajo (body vacío), la iteración debería actualizarla con la información del agente (gh pr edit) en lugar de intentar crear una PR duplicada.\n\n4. Documentar el comportamiento de activación: los triggers issue_comment/issues solo ejecutan el workflow de la rama por defecto (main); hasta la promoción dev→main los comentarios no activan nada (se documenta en ADR-047).\n\nContexto real: issue #49 quedó bloqueada porque el bot no pudo crear la PR (permisos de GH Actions deshabilitados); el usuario los habilitó y comentó en la issue, pero el workflow no se relanzó (causas 1 y 4). El usuario creó la PR #119 manualmente con body vacío, que debería completarse con la información del agente.",
+  "status": "validated",
+  "acceptance criteria": [
+    "Un comentario en una issue abierta con label 'ai' y 'status: blocked' reanuda la iteración: la desbloquea (status: in-progress) y relanza la sesión sobre esa issue.",
+    "workflow_dispatch con issue_number puede forzar una issue aunque esté en 'status: blocked' (validando solo que esté abierta y tenga label 'ai').",
+    "El prompt de reanudación instruye al agente a detectar una PR existente de la rama de trabajo (gh pr list --head) y actualizarla con gh pr edit (título + body con 'Closes #N' en la primera línea) en lugar de crear una duplicada.",
+    "ADR-047 documenta: (a) la corrección del flujo de reanudación; (b) que issue_comment/issues solo se activan con el workflow en main."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #120'.",
+    "PR creada contra dev con 'Closes #120' como primera línea del body.",
+    "Issue #120 label actualizada a su estado final.",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 120,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/120",
+    "title": "Auto-resolución: no se puede reanudar una issue en status: blocked ni iterar por comentario antes de la promoción a main"
+  },
+  "implemented_files": [
+    ".github/workflows/auto-resolve-issues.yml",
+    "docs/adr-047-auto-resolve-issues.md"
+  ],
+  "plan": {
+    "architect": "sdd-master (flujo establecido de la issue #81)",
+    "summary": "Modificar el workflow auto-resolve-issues para: (1) aceptar issues 'blocked' en la iteración por comentario y desbloquearlas; (2) workflow_dispatch con issue_number como reanudación manual (candidato directo, no selector); (3) prompt MODO ITERACIÓN extendido con detección/actualización de PR existente de la rama; (4) rollback al estado previo; (5) documentar la activación según evento en ADR-047 y cabecera."
+  },
+  "validation": {
+    "qa": "APROBADO (verificaciones reales: YAML parseado, bash -n de los bloques candidata/reclamar/prompt/rollback, simulación de las 4 ramas de reclamación, jq -c una línea, prev_status/resume en GITHUB_OUTPUT, ADR 7-c presente, solo 3 archivos tocados)",
+    "hallazgos_corregidos": []
+  },
+  "security": {
+    "scan": "CLEAN (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "documentation": {
+    "adr": "docs/adr-047-auto-resolve-issues.md (sección 7-c)",
+    "related_issue": "#120",
+    "manual_usuario": "sin cambios (infraestructura interna de CI; regla 3 AGENTS.md no aplica)"
+  }
+}
