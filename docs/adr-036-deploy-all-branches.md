@@ -1,5 +1,17 @@
 # ADR-036: Despliegue de todas las ramas mediante GitHub Actions (issue #83)
 
+> **Nota de deprecación parcial (ADR-044, issue #103)**: la **estructura de
+> rutas** documentada en este ADR — main en la raíz y **cada rama no-default
+> en `/<ruta-saneada>/`** — fue **sustituida** por el ADR-044 (hub de
+> previews, issue #103): main sigue en la raíz (sin cambios), pero las ramas
+> no-default pasan a servirse en `/dev/<ruta-saneada>/` (incluida `dev` en
+> `/dev/dev/`), con `/dev/` como **hub de previews** con un índice
+> auto-generado que enlaza todas las ramas y la raíz. El resto de este ADR
+> (workflow multi-rama, saneo de nombres, checks de colisión,
+> `strip_sensitive()`, rutas dinámicas de SW/manifest, entorno
+> `github-pages`) sigue vigente. Este documento se conserva intacto como
+> histórico.
+
 > **Nota de deprecación parcial (ADR-041, issue #98)**: la política de
 > triggers documentada en este ADR — `on: push` a **todas las ramas** y la
 > migración Pages legacy → Actions vía `gh api` — fue **sustituida** por el

@@ -195,11 +195,17 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    el sitio con todas las ramas.
    - La rama `main` se sirve en la raíz:
      `https://tu-usuario.github.io/nombre-del-repo/`.
-   - Cada rama se sirve en su propio subdirectorio con el nombre de la
-     rama (saneado y manteniendo jerarquías, p. ej. `feature/mi-cambio`):
-     `https://tu-usuario.github.io/nombre-del-repo/<rama>/`. Es un
-     preview completo y funcional: cada rama tiene su propia web con su
-     service worker, manifest y assets funcionando desde su base.
+   - La ruta `/dev/` es el **hub de previews**: una página índice simple,
+     auto-generada en cada despliegue, con enlaces a todas las ramas
+     no-default (incluida `dev`) y a la raíz. Se regenera en cada build:
+     las ramas nuevas aparecen automáticamente y las borradas desaparecen.
+   - Cada rama no-default se sirve en su propio subdirectorio bajo el hub,
+     con el nombre de la rama (saneado y manteniendo jerarquías, p. ej.
+     `feature/mi-cambio`):
+     `https://tu-usuario.github.io/nombre-del-repo/dev/<rama>/`. La propia
+     rama `dev` se sirve en `/dev/dev/`. Es un preview completo y
+     funcional: cada rama tiene su propia web con su service worker,
+     manifest y assets funcionando desde su base.
    Nota: los previews de las ramas abiertas se actualizan con cada merge a
    `dev`/`main`, no con cada push de la propia rama; para forzar la
    actualización de un preview sin merge, usa el paso 4.
