@@ -1,7 +1,7 @@
 {
   "title": "Auto-resolución: no se puede reanudar una issue en status: blocked ni iterar por comentario antes de la promoción a main",
   "description": "El workflow auto-resolve-issues (issue #81) falla al reanudar sesiones bloqueadas:\n\n1. Iteración por comentario no acepta blocked: cuando una sesión automática deja una issue en 'status: blocked' (p. ej. por falta de permisos del bot para crear PRs), un comentario posterior del usuario debería reanudar la iteración (especificación de la issue #81), pero el paso 'Determinar issue candidata' solo itera sobre issues 'in-progress' o 'needs-review'; las 'blocked' se rechazan silenciosamente.\n\n2. workflow_dispatch con issue_number no puede forzar una issue bloqueada: scripts/gh-select-issue.sh --issue rechaza issues en 'status: blocked' (exit 2), por lo que no hay forma de reanudar manualmente una sesión bloqueada desde la UI de Actions.\n\n3. La PR existente de la rama no se detecta: si el usuario crea manualmente la PR de la rama de trabajo (body vacío), la iteración debería actualizarla con la información del agente (gh pr edit) en lugar de intentar crear una PR duplicada.\n\n4. Documentar el comportamiento de activación: los triggers issue_comment/issues solo ejecutan el workflow de la rama por defecto (main); hasta la promoción dev→main los comentarios no activan nada (se documenta en ADR-047).\n\nContexto real: issue #49 quedó bloqueada porque el bot no pudo crear la PR (permisos de GH Actions deshabilitados); el usuario los habilitó y comentó en la issue, pero el workflow no se relanzó (causas 1 y 4). El usuario creó la PR #119 manualmente con body vacío, que debería completarse con la información del agente.",
-  "status": "validated",
+  "status": "review",
   "acceptance criteria": [
     "Un comentario en una issue abierta con label 'ai' y 'status: blocked' reanuda la iteración: la desbloquea (status: in-progress) y relanza la sesión sobre esa issue.",
     "workflow_dispatch con issue_number puede forzar una issue aunque esté en 'status: blocked' (validando solo que esté abierta y tenga label 'ai').",
@@ -45,5 +45,12 @@
     "adr": "docs/adr-047-auto-resolve-issues.md (sección 7-c)",
     "related_issue": "#120",
     "manual_usuario": "sin cambios (infraestructura interna de CI; regla 3 AGENTS.md no aplica)"
+  },
+  "pr": {
+    "number": 121,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/121",
+    "title": "Reanudar issues bloqueadas en auto-resolve y reanudación manual vía dispatch (issue #120)",
+    "branch": "fix/issue-120-reanudar-issues-bloqueadas",
+    "closes": "Closes #120"
   }
 }
