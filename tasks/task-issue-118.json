@@ -27,11 +27,13 @@
     "title": "Filtros colecciones"
   },
   "validation": {
-    "qa": "APROBADO (qa-reviewer): 7/7 criterios de aceptación CUMPLE — diff solo en los 9 archivos esperados (ocio/*.html ×3, ocio/ocio.css, index.html, js/config.js, service-worker.js, css/styles.css, docs/manual-de-usuario.md); h2/.library-head eliminados por completo (precedente ADR-046); .filter-chips nowrap + overflow-x auto (scroll confinado); .library-controls__aux con flex-shrink:0 + flex-basis:100% ≤768px (orden+vista juntos, 2ª línea en móvil); .sort-select padding 0.3rem 0.75rem + chips scoped 1rem (mismo tamaño/fuente, ADR-042 respetado: select ≥16px); margin-top 2.2rem eliminado; ARIA role=tabpanel + aria-labelledby en paneles; bump PWA 20260818 coherente (3+1+6); .chip base 0.78rem intacto (buscador global); vista amigos y app.js intactos. Único ítem pendiente: ADR (se produce en el paso de documentación del flujo SDD, no en implementación).",
-    "hallazgos_corregidos": []
+    "qa": "APROBADO (qa-reviewer, iteración comentario usuario): el cambio de la iteración es solo ocio/ocio.css (.filter-chips scrollbar-width none + ::-webkit-scrollbar display none); verificado con Chromium headless en 320/360/768/1280px: scrollbar-width computed 'none' y ::-webkit-scrollbar display 'none' en todos los anchos, chipsScrollable true a 360px, noPageHScroll true en todos; overflow-x:hidden prohibido NO usado (0 matches); sin h2/Mis series en ningún archivo; aux flex-basis 100% ≤768px, misma línea ≥1280px; sort-select y chip 16px con mismo padding 4.8px 12px; gap superior 0; diff limitado a los 11 archivos esperados. Hallazgo informativo: candidate.json y sdd_prompt.md untracked no ignorados (no se commitearán).",
+    "hallazgos_corregidos": [
+      "Comentario usuario (2026-08-07): en móvil no debe aparecer la barra de desplazamiento horizontal → .filter-chips scrollbar-width: none + ::-webkit-scrollbar display none (scroll táctil intacto)"
+    ]
   },
   "security": {
-    "scan": "NO BLOQUEAR (security-champion): 0 HIGH; 1 MEDIUM informativo (API keys de cliente web pre-existentes en js/config.js, byte-idénticas a HEAD, no introducidas por el diff); 2 LOW (candidate.json y sdd_prompt.md — no commitear).",
+    "scan": "NO BLOQUEAR (security-champion, iteración): 0 HIGH; 1 MEDIUM informativo (API keys client-side pre-existentes en js/config.js, no introducidas por la rama); 2 LOW (candidate.json y sdd_prompt.md no ignorados en .gitignore — no commitear). Cambio de iteración 100% CSS puro, sin secretos.",
     "high": 0,
     "medium": 1,
     "low": 2
@@ -39,7 +41,7 @@
   "documentation": {
     "adr": "docs/adr-049-filtros-colecciones.md",
     "related_issue": "#118",
-    "manual_usuario": "actualizado (sección 3: la pestaña activa indica la colección, sin título repetido; sección 8: chips en una línea con desplazamiento horizontal en móvil, orden+vista juntos, mismo tamaño de fuente)"
+    "manual_usuario": "actualizado (sección 3: la pestaña activa indica la colección, sin título repetido; sección 8: chips en una línea con desplazamiento horizontal en móvil — sin barra de desplazamiento visible, se desliza con el dedo —, orden+vista juntos, mismo tamaño de fuente)"
   },
   "implemented_files": [
     "ocio/series.html",
@@ -59,6 +61,11 @@
     "title": "[style] Filtros colecciones",
     "branch": "style/issue-118-filtros-colecciones",
     "commit": "f1e9b52",
-    "closes": "Closes #118"
+    "closes": "Closes #118",
+    "iteraciones": [
+      "f1e9b52: implementación inicial",
+      "fa17fb7: task file a review",
+      "HEAD: iteración comentario usuario (scrollbar oculta en móvil) — commit 1: ocio/ocio.css + docs/manual-de-usuario.md + docs/adr-049-filtros-colecciones.md; commit 2: task file"
+    ]
   }
 }
