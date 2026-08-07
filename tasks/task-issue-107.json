@@ -1,0 +1,40 @@
+{
+  "title": "Eliminar nombre de usuario del botón de acceso al perfil",
+  "description": "Eliminar el nombre de usuario del botón de acceso al perfil. Actualmente solo se ve en PC y Tablet, no en móvil, pero no se quiere que se vea el nombre en ningún caso, únicamente la foto de perfil.",
+  "status": "review",
+  "plan": [
+    "1. index.html: eliminar el <span id=\"user-name\" class=\"user-badge__name\"> del botón #btn-open-profile (el botón queda solo con la foto).",
+    "2. js/ui.js: eliminar la asignación de user-name en showApp().",
+    "3. css/styles.css: eliminar las reglas .user-badge__name (base + media query ≥520px) y el comentario obsoleto; simplificar .user-badge__avatar-btn (quitar gap/min-width/max-width, ya sin texto).",
+    "4. docs/manual-de-usuario.md: secciones 2, 3 y 13 — el botón de perfil es solo la foto en cualquier dispositivo.",
+    "5. ADR nuevo (adr-044) con 'Related issue: #107', anotando que sustituye la parte de nombre de ADR-043.",
+    "6. PR contra dev con 'Closes #107'."
+  ],
+  "acceptance criteria": [
+    "El nombre de usuario ya no se muestra en el botón de acceso al perfil en ningún ancho de pantalla (PC, tablet y móvil).",
+    "La foto de perfil sigue mostrándose en el botón de acceso al perfil.",
+    "El botón sigue siendo accesible y funcional."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada.",
+    "Validación superada (criterios de aceptación y DoD).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #107'.",
+    "PR creada contra dev con 'Closes #107' en la descripción.",
+    "Issue #107 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 107,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/107",
+    "title": "Eliminar nombre de usuario"
+  },
+  "pr": {
+    "number": 108,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/108",
+    "title": "[fix] Eliminar nombre de usuario del botón de acceso al perfil (issue #107)",
+    "branch": "fix/issue-107-eliminar-nombre-usuario",
+    "commit": "178fe9e",
+    "closes": "#107"
+  }
+}

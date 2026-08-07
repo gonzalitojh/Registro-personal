@@ -353,9 +353,6 @@ button {
   outline-offset: 2px;
 }
 
-/* El user-badge__name en modo claro usa el --ink-soft ya definido
-   que proporciona contraste suficiente contra fondos oscuros */
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
@@ -705,26 +702,6 @@ button {
   height: 32px;
   border-radius: 50%;
   border: 1px solid var(--paper-alpha-40);
-}
-
-.user-badge__name {
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-  line-height: normal;
-  min-width: 0;
-  display: none;
-}
-@media (min-width: 520px) {
-  .user-badge__name {
-    display: inline;
-    /* Salvaguarda para nombres de usuario largos: el header tiene
-       altura fija y no debe envolver; el nombre se trunca con
-       ellipsis si no cabe. */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: min(12rem, 30vw);
-  }
 }
 
 /* Cabecera compacta en móvil (comentario de la issue #75): en ≤480px
@@ -1193,10 +1170,7 @@ button {
   padding: 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
   cursor: pointer;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .profile-menu-wrap {
