@@ -710,6 +710,8 @@ button {
 .user-badge__name {
   font-size: 0.85rem;
   color: var(--ink-soft);
+  line-height: normal;
+  min-width: 0;
   display: none;
 }
 @media (min-width: 520px) {
@@ -1189,7 +1191,12 @@ button {
   background: transparent;
   border: none;
   padding: 0;
-  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .profile-menu-wrap {
