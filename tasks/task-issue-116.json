@@ -1,7 +1,7 @@
 {
   "title": "Arreglo en pestañas en móvil (iPhone): espacio bajo las pestañas para el home indicator",
   "description": "En el móvil, la barra de inicio de iPhone (home indicator, mediante la cual se cambia de aplicaciones, etc) se monta sobre las pestañas (la barra fija inferior .tabs--bar). Habría que añadir un pequeño espacio bajo las pestañas para que no se monte por encima.\nEsto únicamente pasa en iPhone, no en Android, con lo que no debería afectar a dispositivos con ese Sistema Operativo.\n\nCausa raíz detectada en el análisis inicial: el meta viewport de index.html es 'width=device-width, initial-scale=1.0' SIN 'viewport-fit=cover'. Sin esa declaración, iOS Safari no extiende el layout viewport a las zonas inseguras y env(safe-area-inset-bottom) devuelve siempre 0 (que es lo que ya usan .tabs--bar, .app y .toast en css/styles.css). En Android env(safe-area-inset-bottom) vale 0, así que la corrección no debe afectar a ese SO.",
-  "status": "documented",
+  "status": "review",
   "validation": {
     "qa": "APROBADO (qa-reviewer): 10 checks headless pasados — diff solo en index.html/js/config.js/service-worker.js; meta viewport con viewport-fit=cover sin user-scalable/maximum-scale (ADR-042 respetado); 3 usos de env(safe-area-inset-bottom, 0px) intactos en css/styles.css (509/765/938); coherencia de versión 20260817 en los 3 archivos con 0 restos de 20260816; HTML parseado sin errores; node --check OK en service-worker.js; sin cambios de lógica JS. Criterio 1 (iPhone real) requiere validación física (no reproducible headless).",
     "hallazgos_corregidos": []
@@ -46,5 +46,12 @@
     "number": 116,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/116",
     "title": "Arreglo en pestañas en móvil"
+  },
+  "pr": {
+    "number": 122,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/122",
+    "title": "Espacio bajo las pestañas en iPhone (viewport-fit=cover) (issue #116)",
+    "branch": "style/issue-116-viewport-fit-home-indicator",
+    "closes": "Closes #116"
   }
 }
