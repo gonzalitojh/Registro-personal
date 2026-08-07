@@ -1,7 +1,7 @@
 # ADR-048: Visualización de amigos por pestañas y filtros de estado (issue #49)
 
 ## Estado
-Aceptado
+Aceptado (revisado en iteración 2: filtros de películas reducidos)
 
 ## Fecha
 2026-08-07
@@ -40,8 +40,15 @@ propio perfil:
 
 ### 2. Filtros por estado (chips, sin búsqueda)
 
-Bajo cada pestaña hay un grupo de **chips de filtro por estado**: Todos +
-pendiente + en_curso + completado + standby + abandonado.
+Bajo cada pestaña hay un grupo de **chips de filtro por estado**. El
+conjunto varía por scope y **en películas coincide con la vista personal**
+(`ocio/peliculas.html`, que solo ofrece Todos / Pendiente / Vista):
+
+- **Películas**: Todos + Pendiente + Vista (completado). Sin Viendo,
+  Standby ni Abandonada — igual que en la vista personal (requisito añadido
+  en la iteración 2, comentario de gonzalitojh del 2026-08-07).
+- **Series**: Todos + pendiente + en_curso + completado + standby + abandonado.
+- **Libros**: Todos + pendiente + en_curso + completado + standby + abandonado.
 
 - Etiquetas según el scope:
   - media (películas/series): Pendiente / Viendo / Vista / Standby / Abandonada.
@@ -112,6 +119,10 @@ pendiente + en_curso + completado + standby + abandonado.
 - Scroll vertical del detalle de amigo reducido a una categoría.
 - Filtros por estado con etiquetas adaptadas al scope (media/book) sin
   búsqueda, tal y como pide la issue.
+- En películas solo se ofrecen los filtros **Todos / Pendiente / Vista**,
+  igual que en la vista personal del usuario: un amigo no puede filtrar
+  películas por «Viendo», «Standby» ni «Abandonada», que son estados
+  inexistentes para películas en este producto.
 - Cero consultas extra a Firestore al cambiar pestaña/filtro (los datos se
   cargan una vez por amigo abierto).
 - Coherencia visual con el perfil propio (mismo estilo de pills) sin
@@ -143,17 +154,20 @@ pendiente + en_curso + completado + standby + abandonado.
 
 | Archivo | Cambio |
 |---------|--------|
-| `index.html` | **Modificado**: `#friend-detail` pasa de 3 secciones apiladas a subpestañas `role="tablist"` (`.friend-subtab` con `data-friend-tab`) + 3 paneles `role="tabpanel"` con chips de filtro por estado (`.friend-chip` con `data-status`) y su grid (`#friend-movies`, `#friend-tv` —antes `#friend-series`—, `#friend-books`) |
+| `index.html` | **Modificado**: `#friend-detail` pasa de 3 secciones apiladas a subpestañas `role="tablist"` (`.friend-subtab` con `data-friend-tab`) + 3 paneles `role="tabpanel"` con chips de filtro por estado (`.friend-chip` con `data-status`) y su grid (`#friend-movies`, `#friend-tv` —antes `#friend-series`—, `#friend-books`). **Iteración 2**: el panel de películas queda con 3 chips (Todos / Pendiente / Vista), alineado con `ocio/peliculas.html` |
 | `js/ui.js` | **Modificado**: se eliminan `renderFriendDetail` y `renderReadOnlyGrid` (privada, solo usada por la anterior); se añade `renderFriendTab(tabKey, items, onOpen, emptyMessage)` que renderiza un único grid (`#friend-{tabKey}`) con mensaje de vacío configurable |
 | `js/profile.js` | **Modificado**: estado en el closure (`friendData`, `friendFilters`, `friendActiveTab`, `currentFriendName`); `openFriend` resetea pestaña/filtros y carga los datos una vez; nuevas funciones privadas `renderFriendTab`, `setFriendTab`, `setFriendFilter`; listeners únicos en `.friend-subtab` y delegación en `.friend-filters` |
 | `css/styles.css` | **Modificado**: `.friend-subtabs`/`.friend-subtab` comparten estilo con `.profile-subtabs`/`.profile-subtab` (selectores en coma, incluida la media query 480px); nuevos `.friend-filters`/`.friend-chip`; eliminado CSS muerto `.friend-detail__section*` (y su variante light) |
-| `docs/manual-de-usuario.md` | **Modificado**: sección 13.2 Amigos — pestañas Películas/Series/Libros, filtros por estado por scope, conservación del filtro entre pestañas y restablecimiento al reentrar en un amigo |
+| `docs/manual-de-usuario.md` | **Modificado**: sección 13.2 Amigos — pestañas Películas/Series/Libros, filtros por estado por scope (películas: Todos/Pendiente/Vista en la iteración 2), conservación del filtro entre pestañas y restablecimiento al reentrar en un amigo |
 | `docs/adr-048-friends-view-tabs-filters.md` | **Nuevo**: este documento |
 
 ## Verificación
 
 - Code review manual + DevTools en tres anchos (~360, ~768, ~1280 px):
   `document.documentElement.scrollWidth <= window.innerWidth` debe ser `true`.
+- Iteración 2: en `#friend-panel-movies` solo existen 3 `.friend-chip`
+  (`todos`, `pendiente`, `completado`); el JS de filtrado es data-driven
+  sobre los chips presentes, por lo que no requiere cambios.
 - Greps de control: sin `renderFriendDetail`, `renderReadOnlyGrid`,
   `friend-series` ni `.friend-detail__section` en el código (`js/`,
   `index.html`, `css/`); la única mención restante de

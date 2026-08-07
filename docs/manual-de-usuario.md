@@ -498,9 +498,10 @@ lista no sea interminable, el registro se organiza **por pestañas**:
 perfil).
 
 Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
-interesa: en películas y series puedes elegir **Todos, Pendiente, Viendo,
-Vista, Standby o Abandonada**; en libros, **Todos, Pendiente, Leyendo,
-Leído, Standby o Abandonado**. Así no tienes que hacer scroll largo.
+interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
+en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
+Así no tienes que hacer scroll largo.
 
 Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
 vuelves a la lista de amigos y entras de nuevo en un amigo, se
