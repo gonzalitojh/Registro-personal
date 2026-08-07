@@ -479,21 +479,23 @@ button {
    ========================================================= */
 
 /* Cabecera fija en todos los dispositivos (issue #79): visible
-   siempre, aunque se haga scroll; usa la misma superficie elevada
-   que la barra de pestañas (--ink-raised) por petición del usuario
-   (el color de la barra superior debe ser igual al de las pestañas).
-   z-index 46: un punto por encima de la barra de pestañas (45) para
-   que los dropdowns anclados a la cabecera (hijos suyos) se pinten
-   siempre completos y por debajo de modales, backdrop del drawer y
-   drawer. */
+   siempre, aunque se haga scroll. Su fondo es el mismo que el de la
+   web (--ink en el tema papel / --paper-dim en claro) y no tiene
+   línea separadora (feedback iteración 4): cabecera y barra de
+   pestañas se integran con la página. z-index 46: un punto por
+   encima de la barra de pestañas (45) para que los dropdowns
+   anclados a la cabecera (hijos suyos) se pinten siempre completos
+   y por debajo de modales, backdrop del drawer y drawer. */
 .app-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 46;
-  background: var(--ink-raised);
-  border-bottom: 1px solid var(--paper-alpha-20);
+  background: var(--ink);
+}
+[data-theme="light"] .app-header {
+  background: var(--paper-dim);
 }
 
 .app {
@@ -752,46 +754,47 @@ button {
    ========================================================= */
 
 /* Altura de la cabecera fija y de la barra: móvil con icono sobre
-   nombre (~3.75rem). En escritorio la barra no fija altura: se
-   ajusta a la de las propias pestañas (--tabs-bar-h: 2rem es solo
-   la referencia para el hueco del contenido). */
+   nombre (~3.75rem). En PC y tablet la barra de pestañas tiene la
+   MISMA altura que la barra de búsqueda (--tabs-bar-h = --header-h
+   = 3.5rem; feedback iteración 4). */
 :root {
   --header-h: 3.5rem;
   --tabs-bar-h: 3.75rem;
 }
 @media (min-width: 768px) {
   :root {
-    --tabs-bar-h: 2rem;
+    --tabs-bar-h: 3.5rem;
   }
 }
 
 /* Cascarón fijo que abraza el borde inferior del viewport en móvil
    (con el margen seguro del iPhone); el contenedor interior se
-   alinea con #app (max-width 980px, centrado). */
+   alinea con #app (max-width 980px, centrado). Su fondo es el mismo
+   que el de la web y no tiene línea separadora (feedback iteración
+   4: cabecera y pestañas se integran con la página). */
 .tabs--bar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 45;
-  background: var(--ink-raised);
-  border-top: 1px solid var(--paper-alpha-20);
+  background: var(--ink);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+[data-theme="light"] .tabs--bar {
+  background: var(--paper-dim);
+}
 
-/* En escritorio (≥768px) la barra se pega bajo la cabecera fija:
-   bottom: auto y top: var(--header-h). Su altura se ajusta al
-   contenido (height auto en .tabs, ver regla tras la base .tabs):
-   sin margen vertical sobrante. La cabecera pierde su borde
-   inferior (la línea la pone el border-top de la barra, ambas del
-   mismo color --ink-raised). */
+/* En PC y tablet (≥768px) la barra se pega bajo la cabecera fija:
+   bottom: auto y top: var(--header-h), con la misma altura que la
+   cabecera (--tabs-bar-h 3.5rem). El padding del margen seguro
+   inferior se anula: en el iPad producía un espacio bajo las
+   pestañas que no existe en PC (feedback iteración 4). */
 @media (min-width: 768px) {
-  .app-header {
-    border-bottom: none;
-  }
   .tabs--bar {
     top: var(--header-h);
     bottom: auto;
+    padding-bottom: 0;
   }
 }
 
@@ -806,16 +809,6 @@ button {
   padding: 0 1.25rem;
   margin: 0 auto;
   height: var(--tabs-bar-h);
-}
-
-/* Escritorio (≥768px): la barra adopta la altura exacta de las
-   pestañas (sin margen vertical sobrante). Va DESPUÉS de la regla
-   base .tabs para que la cascada la aplique (misma especificidad,
-   gana la última; issue #79, feedback iteración 3). */
-@media (min-width: 768px) {
-  .tabs {
-    height: auto;
-  }
 }
 
 .tab {
