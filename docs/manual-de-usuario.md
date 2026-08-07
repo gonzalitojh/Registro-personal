@@ -492,8 +492,19 @@ Debajo hay dos gráficas:
 ### 13.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
-Pulsa en una para ver **su registro completo en modo solo lectura**:
-películas, series y libros con sus estados, valoraciones y progreso.
+Pulsa en una para ver **su registro en modo solo lectura**. Para que la
+lista no sea interminable, el registro se organiza **por pestañas**:
+**Películas, Series y Libros** (una a la vez, igual que en tu propio
+perfil).
+
+Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
+interesa: en películas y series puedes elegir **Todos, Pendiente, Viendo,
+Vista, Standby o Abandonada**; en libros, **Todos, Pendiente, Leyendo,
+Leído, Standby o Abandonado**. Así no tienes que hacer scroll largo.
+
+Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
+vuelves a la lista de amigos y entras de nuevo en un amigo, se
+**restablece** todo: pestaña **Películas** y filtro **Todos**.
 
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
 sus valoraciones episodio a episodio ni sus historiales completos.
