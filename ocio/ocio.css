@@ -7,6 +7,10 @@
    archivo, así que están disponibles aquí también.
    ========================================================= */
 
+/* Issue #92: nunca zoom automático al enfocar. iOS Safari y Android Chrome
+   hacen zoom si el font-size del campo es < 16px. Todos los campos >= 16px. */
+input, textarea, select { font-size: 16px; }
+
 /* =========================================================
    Botones con los colores de acento de ocio (pelis/series vs libros)
    ========================================================= */
@@ -49,7 +53,7 @@
   color: var(--ink);
   padding: 0.6rem 0.8rem;
   border-radius: var(--radius);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-family: var(--font-body);
 }
 .search-slip input:focus-visible {
@@ -468,7 +472,7 @@
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .field-group textarea {
@@ -677,7 +681,7 @@
   border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
   padding: 0.3rem 0.65rem;
-  font-size: 0.76rem;
+  font-size: 1rem;
   font-family: var(--font-body);
 }
 
@@ -716,7 +720,7 @@
   border: none;
   background: transparent;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 1rem;
   color: var(--ink);
   flex: 1 1 108px;
   min-width: 0;
@@ -748,7 +752,7 @@
   border-radius: var(--radius);
   padding: 0.4rem 0.5rem;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 1rem;
   background: var(--white);
   color: var(--ink);
   flex: 1 1 140px;
@@ -809,9 +813,9 @@
   background: var(--white);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 1rem;
   padding: 0.15rem 0.3rem;
-  width: min(128px, 100%);
+  width: min(150px, 100%);
 }
 .episode-row input.episode-date:disabled {
   opacity: 0.35;
@@ -896,7 +900,7 @@
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 
@@ -964,9 +968,9 @@
   background: transparent;
   border: none;
   color: var(--paper);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-family: var(--font-body);
-  width: 140px;
+  width: clamp(150px, 30vw, 200px);
   max-width: 100%;
 }
 .library-search-input::placeholder {

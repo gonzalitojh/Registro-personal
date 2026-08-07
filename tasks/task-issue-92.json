@@ -1,0 +1,43 @@
+{
+  "title": "Evitar zoom",
+  "description": "Nunca se debe hacer zoom al pulsar sobre cualquier barra de búsqueda o espacio para escribir. Se detecta tanto en la barra superior de búsqueda como al añadir un ítem manualmente, pero hay que revisar toda la web. Esta consideración se debe tener en cuenta siempre para toda la web: nunca se debe modificar el zoom al presionar en ningún botón o área de escritura, ya que arruina la experiencia de usuario en dispositivos móviles.",
+  "status": "review",
+  "plan": {
+    "approach": "Garantizar font-size >= 16px en todos los input/textarea/select de la web (iOS Safari y Android Chrome hacen zoom automático al enfocar campos con font-size < 16px). Doble capa: (1) regla global 'input, textarea, select { font-size: 16px }' como red de seguridad en styles.css y ocio/ocio.css; (2) subir a 1rem los 12 selectores con font-size menor de 16px. Eliminar el @media (max-width: 768px) parcial de styles.css L1382-1388. Bump de versión obligatorio por service worker. Sin cambios en HTML/JS/manual de usuario.",
+    "files": [
+      "css/styles.css",
+      "ocio/ocio.css",
+      "version bump via scripts/bump-version.sh"
+    ]
+  },
+  "acceptance criteria": [
+    "No se produce zoom automático al pulsar sobre la barra superior de búsqueda en móvil.",
+    "No se produce zoom automático al pulsar sobre los campos del formulario de añadir ítem manualmente en móvil.",
+    "No se produce zoom automático al pulsar sobre ningún otro input, textarea, botón o área de escritura de toda la web en móvil.",
+    "El zoom manual del usuario (pellizco) sigue funcionando: no se deshabilita el zoom en la página.",
+    "El texto dentro de los inputs sigue siendo legible (tamaño adecuado) en móvil.",
+    "Verificado en al menos tres anchos: ~360px (móvil), ~768px (tablet) y ~1280px (ordenador)."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada según el plan.",
+    "Validación contra criterios de aceptación y definición de done superada.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado con la decisión tomada (incluye 'Related issue: #92').",
+    "PR creada contra dev con 'Closes #92' en la primera línea de la descripción.",
+    "Issue #92 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 92,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/92",
+    "title": "Evitar zoom"
+  },
+  "pr": {
+    "number": 102,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/102",
+    "title": "[fix] Evitar zoom automático al enfocar campos de escritura en móvil (issue #92)",
+    "branch": "fix/issue-92-evitar-zoom",
+    "commit": "20d1980",
+    "closes": "#92"
+  }
+}

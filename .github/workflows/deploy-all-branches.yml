@@ -4,35 +4,14 @@ name: deploy-all-branches
 #   - main          → raíz        (https://<user>.github.io/<repo>/)
 #   - cada rama     → /<rama>/    (web completa en su subdirectorio)
 # El workflow NO hace push (solo lee el repo y sube un artefacto a Pages),
-# así que no existe riesgo de bucle infinito.
-#
-# Política de triggers (issue #98): cada push a main/dev reconstruye TODAS
-# las ramas. Antes el workflow se disparaba en cada push de cualquier rama y,
-# con picos de actividad, la cola de deployments de Pages se saturaba
-# (deployments en `deployment_queued`) y actions/deploy-pages abortaba a los
-# 10 minutos con 'Timeout reached, aborting!'. Ahora los merges a main/dev
-# refrescan el sitio completo y el preview de cada rama abierta; para forzar
-# un re-despliegue sin merge se usa workflow_dispatch ("Run workflow").
-#
-# Reintentos de deploy (issue #98, iteración 2): aunque los triggers estén
-# limitados, la infraestructura de GitHub Pages atasca deployments de forma
-# INTERMITENTE (problema conocido actions/deploy-pages#406): el deployment
-# se crea bien pero queda en `deployment_in_progress`/`deployment_queued`
-# hasta que el timeout de 10 min de deploy-pages lo aborta ('Timeout
-# reached, aborting!'). No es solucionable desde el repo, así que el paso
-# de deploy de los intentos 1 y 2 lleva continue-on-error (a nivel de
-# STEP) y los jobs `deploy-retry-*` reintentan con el mismo artefacto (los
-# deployments de Pages se procesan en cola: un deployment nuevo puede
-# completarse aunque el anterior quedara colgado). El resultado real de
-# cada intento se propaga por outputs de job con steps.<id>.outcome.
+# así que no existe riesgo de bucle infinito pese a dispararse en cada push
+# de cualquier rama.
 
 on:
-  push:
-    branches: [main, dev]
+  push:              # todas las ramas, sin filtro
   workflow_dispatch: # re-despliegue manual desde la UI
   delete:            # al borrar una rama/tag, reconstruir el sitio
-                     # (el evento delete no admite filtros; el guard está
-                     #  en el job build)
+                     # (el evento delete no admite filtros de branch)
 
 permissions:
   contents: read
@@ -47,20 +26,33 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Guard para el evento delete: descartar borrados de tags y quedarse
-    # solo con borrados de ramas. En push/workflow_dispatch ref_type no
-    # existe → la condición se evalúa true y el job siempre se ejecuta.
-    if: github.event_name != 'delete' || github.event.ref_type == 'branch'
     steps:
       - name: "Checkout con todas las ramas (fetch-depth: 0)"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configurar GitHub Pages (prerequisito de deploy-pages)
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true   # migra Pages legacy → Actions si procede (sustituye al hack gh api)
+      # Migrar el modo de Pages legacy ("Deploy from a branch") a GitHub
+      # Actions mediante la API. PUT actualiza; si devuelve 404 (sitio aún
+      # no creado) se intenta POST. Si ambos fallan, se avisa para hacerlo
+      # manualmente en Settings → Pages → Source: "GitHub Actions".
+      - name: Migrar Pages a GitHub Actions (intento automático)
+        run: |
+          set +e
+          gh api --method PUT "repos/${{ github.repository }}/pages" \
+            -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            gh api --method POST "repos/${{ github.repository }}/pages" \
+              -f build_type=workflow -f 'source[branch]=main' -f 'source[path]=/' >/dev/null 2>&1
+            status=$?
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::No se pudo migrar Pages legacy a GitHub Actions automáticamente. Hazlo manual: Settings → Pages → Source: \"GitHub Actions\"."
+          else
+            echo "Pages configurado con build_type=workflow (GitHub Actions)."
+          fi
+          exit 0
 
       - name: Construir _site con todas las ramas
         run: bash scripts/build-pages-site.sh
@@ -73,57 +65,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    # Propaga el outcome REAL del paso deploy (failure si el deployment se
-    # atascó y agotó el timeout) para que deploy-retry-1 decida si reintenta.
-    # OJO: no usar needs.<job>.result con continue-on-error a nivel de job:
-    # GitHub Actions lo reporta como 'success' aunque el job falle. Por eso
-    # continue-on-error va a nivel de STEP y el resultado se expone por
-    # outputs con steps.<id>.outcome (valor antes de aplicar COE).
-    outputs:
-      deploy_result: ${{ steps.deployment.outcome }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Desplegar en GitHub Pages (intento 1)
-        id: deployment
-        uses: actions/deploy-pages@v4
-        continue-on-error: true   # el fallo no tiñe el run: lo deciden los retries
-
-  deploy-retry-1:
-    needs: [build, deploy]
-    if: needs.deploy.outputs.deploy_result == 'failure' && !cancelled()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    outputs:
-      deploy_result: ${{ steps.deployment.outcome }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      # Pequeña espera antes de reintentar: da tiempo a la cola de Pages a
-      # procesar/drenar el deployment atascado.
-      - name: Esperar 60 s antes de reintentar
-        run: sleep 60
-      - name: Desplegar en GitHub Pages (intento 2)
-        id: deployment
-        uses: actions/deploy-pages@v4
-        continue-on-error: true   # el fallo no tiñe el run: queda el intento 3
-
-  deploy-retry-2:
-    needs: [build, deploy, deploy-retry-1]
-    if: needs.deploy-retry-1.outputs.deploy_result == 'failure' && !cancelled()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
       contents: read
       pages: write
@@ -132,10 +73,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Esperar 120 s antes de reintentar
-        run: sleep 120
-      - name: Desplegar en GitHub Pages (intento 3, último)
+      - name: Desplegar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        # Sin continue-on-error: si las 3 oportunidades fallan, el run falla
-        # (señal real; re-lanzar manualmente con workflow_dispatch).
