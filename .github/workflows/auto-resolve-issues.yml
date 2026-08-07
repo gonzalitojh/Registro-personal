@@ -19,14 +19,24 @@ name: auto-resolve-issues
 #     in-progress|needs-review → "iteración": la sesión se relanza sobre ESA
 #     issue reanalizando el comentario nuevo (el task file commiteado en el
 #     repo es el estado durable; el runner efímero no conserva sesiones).
-#   - workflow_dispatch → prueba manual (issue_number / dry_run).
+#     También reanuda issues en 'status: blocked' (issue #120): el comentario
+#     es la señal de que el bloqueo se resolvió; el workflow la desbloquea a
+#     in-progress y relanza la sesión.
+#   - workflow_dispatch → prueba manual o reanudación: con issue_number fuerza
+#     ESA issue aunque esté bloqueada (construye el candidato directamente, no
+#     vía selector que rechaza blocked), con dry_run solo muestra el prompt.
 #
 # "Apagar el servidor" = cuando el selector devuelve NONE (no quedan issues
 # elegibles), el workflow termina sin lanzar ninguna sesión.
 #
-# NOTA: los triggers pull_request/issues/issue_comment ejecutan la versión
-# del workflow de la RAMA POR DEFECTO (main). El workflow solo se activará
-# en producción tras la promoción dev → main que lo publique.
+# NOTA (activación, issue #120): GitHub Actions selecciona la versión del
+# workflow según el evento:
+#   - pull_request → usa el MERGE REF (base+head de la PR): por eso el flujo se
+#     activó al fusionar la PR #117 en dev incluso antes de la promoción.
+#   - issues / issue_comment → usan la RAMA POR DEFECTO (main): los comentarios
+#     y las issues abiertas NO activan el workflow hasta que la promoción
+#     dev → main publique el archivo. Hasta entonces, la reanudación manual se
+#     hace con workflow_dispatch + issue_number.
 # =============================================================================
 
 on:
@@ -107,14 +117,42 @@ jobs:
           EVENT="${{ github.event_name }}"
           DISPATCH_ISSUE="${{ inputs.issue_number }}"
 
+          # ---- Caso A: workflow_dispatch con issue_number → reanudación manual ----
+          # El usuario fuerza una issue concreta (debug o reanudación de una
+          # sesión bloqueada). Se valida solo que esté abierta y con label 'ai'
+          # (CUALQUIER status, incluido 'blocked'): el selector --issue rechaza
+          # las bloqueadas (exit 2), así que aquí el candidato se construye
+          # directamente.
           if [[ "$EVENT" == "workflow_dispatch" && -n "$DISPATCH_ISSUE" ]]; then
-            echo "Forzando issue #$DISPATCH_ISSUE (workflow_dispatch)"
-            SELECTED="$(bash scripts/gh-select-issue.sh --issue "$DISPATCH_ISSUE")"
+            N="$DISPATCH_ISSUE"
+            STATE="$(gh issue view "$N" --json state -q .state)"
+            LABELS="$(gh issue view "$N" --json labels --jq '.labels[].name')"
+            if [[ "$STATE" != "open" ]]; then
+              echo "La issue #$N está cerrada; no se reanuda." >&2
+              echo "selected=NONE" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if ! echo "$LABELS" | grep -qx "ai"; then
+              echo "La issue #$N no tiene label 'ai'; no se reanuda." >&2
+              echo "selected=NONE" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            ST=""
+            if echo "$LABELS" | grep -q "^status: "; then
+              ST="$(echo "$LABELS" | grep '^status: ' | sed 's/^status: //' | head -1)"
+            fi
+            echo "Reanudación manual de la issue #$N (workflow_dispatch, status: ${ST:-ninguno})"
+            SELECTED="$(gh issue view "$N" --json number,title,body,labels,comments,createdAt,url -q . | jq -c '{number,title,body,labels:[.labels[].name],comments,createdAt,url}')"
+            echo "resume=true" >> "$GITHUB_OUTPUT"
+            echo "prev_status=${ST:-todo}" >> "$GITHUB_OUTPUT"
+          # ---- Caso B: issue_comment → iteración ----
           elif [[ "$EVENT" == "issue_comment" ]]; then
             N="${{ github.event.issue.number }}"
             STATE="${{ github.event.issue.state }}"
             # Solo se itera sobre issues abiertas con label ai en curso
-            # (in-progress o needs-review): hay una sesión/PR activa.
+            # (in-progress o needs-review) O BLOQUEADAS (blocked): en el caso
+            # blocked, el comentario del usuario es la señal de que el bloqueo
+            # se ha resuelto y la sesión debe reanudarse (issue #120).
             LABELS="$(gh issue view "$N" --json labels --jq '.labels[].name')"
             if [[ "$STATE" != "open" ]]; then
               echo "La issue #$N está cerrada; no se itera." >&2
@@ -130,8 +168,8 @@ jobs:
             if echo "$LABELS" | grep -q "^status: "; then
               ST="$(echo "$LABELS" | grep '^status: ' | sed 's/^status: //' | head -1)"
             fi
-            if [[ "$ST" != "in-progress" && "$ST" != "needs-review" ]]; then
-              echo "La issue #$N no está en curso (status: ${ST:-ninguno}); no se itera." >&2
+            if [[ "$ST" != "in-progress" && "$ST" != "needs-review" && "$ST" != "blocked" ]]; then
+              echo "La issue #$N no está en curso ni bloqueada (status: ${ST:-ninguno}); no se itera." >&2
               echo "selected=NONE" >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -139,8 +177,13 @@ jobs:
             # jq -c: JSON compacto de una sola línea (un JSON multilínea
             # truncaría GITHUB_OUTPUT al escribir selected=...).
             SELECTED="$(gh issue view "$N" --json number,title,body,labels,comments,createdAt,url -q . | jq -c '{number,title,body,labels:[.labels[].name],comments,createdAt,url}')"
+            echo "resume=true" >> "$GITHUB_OUTPUT"
+            echo "prev_status=$ST" >> "$GITHUB_OUTPUT"
+          # ---- Caso C: pull_request/issues → selección automática ----
           else
             SELECTED="$(bash scripts/gh-select-issue.sh)"
+            echo "resume=false" >> "$GITHUB_OUTPUT"
+            echo "prev_status=todo" >> "$GITHUB_OUTPUT"
           fi
 
           if [[ "$SELECTED" == "NONE" || -z "$SELECTED" ]]; then
@@ -162,9 +205,17 @@ jobs:
           set -euo pipefail
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
           EVENT="${{ github.event_name }}"
-          # En iteración por comentario ya está in-progress/needs-review: no se
-          # cambia el estado. En el resto, se reclama pasándola a in-progress.
-          if [[ "$EVENT" != "issue_comment" ]]; then
+          # Reanudación (comentario o dispatch forzado): si la issue estaba
+          # 'blocked', el comentario/dispatch la desbloquea → in-progress.
+          # Si ya estaba in-progress/needs-review (iteración normal), no se
+          # cambia el estado. En selección automática, se reclama a in-progress.
+          PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
+          if [[ "$PREV_STATUS" == "blocked" ]]; then
+            echo "Desbloqueando #$N (blocked → in-progress) por reanudación."
+            if ! bash scripts/gh-issue.sh set-state "$N" "status: in-progress"; then
+              echo "AVISO: no se pudo desbloquear #$N (best-effort)." >&2
+            fi
+          elif [[ "$EVENT" != "issue_comment" ]]; then
             if ! bash scripts/gh-issue.sh set-state "$N" "status: in-progress"; then
               echo "AVISO: no se pudo marcar #$N como in-progress (best-effort)." >&2
             fi
@@ -223,30 +274,54 @@ jobs:
             echo "$SELECTED"
           } > sdd_prompt.md
 
-          if [[ "$EVENT" == "issue_comment" ]]; then
-            # El comentario se lee por API (evita interpolación frágil del
-            # contenido en bash: puede contener comillas/apóstrofes).
-            COMMENT_BODY="$(gh api "repos/{owner}/{repo}/issues/comments/${{ github.event.comment.id }}" --jq .body)"
-            COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
-            COMMENT_DATE="${{ github.event.comment.created_at }}"
+          # MODO ITERACIÓN: comentario del usuario (issue_comment) o reanudación
+          # manual forzada (workflow_dispatch con issue_number).
+          RESUME="${{ steps.candidate.outputs.resume }}"
+          if [[ "$EVENT" == "issue_comment" || "$RESUME" == "true" ]]; then
+            if [[ "$EVENT" == "issue_comment" ]]; then
+              # El comentario se lee por API (evita interpolación frágil del
+              # contenido en bash: puede contener comillas/apóstrofes).
+              COMMENT_BODY="$(gh api "repos/{owner}/{repo}/issues/comments/${{ github.event.comment.id }}" --jq .body)"
+              COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+              COMMENT_DATE="${{ github.event.comment.created_at }}"
+              COMMENT_HEADER="Un USUARIO ha añadido este comentario nuevo:"
+            else
+              COMMENT_BODY="(Reanudación manual: el usuario lanzó workflow_dispatch con issue_number=$N. Reanuda la sesión de esta issue y complétala.)"
+              COMMENT_AUTHOR="workflow_dispatch"
+              COMMENT_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              COMMENT_HEADER="Reanudación manual solicitada:"
+            fi
             {
               echo ""
               echo "## MODO ITERACIÓN (continuación)"
-              echo "Esta issue YA estaba en curso (tasks/task-issue-$N.json existe,"
-              echo "status \"in-progress\" o \"needs-review\"). REANUDE el task file tal"
-              echo "cual está y el estado de la issue. Un USUARIO ha añadido este"
-              echo "comentario nuevo:"
+              echo "Esta issue YA estaba en curso o bloqueada (tasks/task-issue-$N.json"
+              echo "puede existir y la rama de trabajo puede tener PR). REANUDE el task"
+              echo "file tal cual está y el estado de la issue. $COMMENT_HEADER"
               echo ""
               echo "--- COMENTARIO NUEVO (autor: $COMMENT_AUTHOR, fecha: $COMMENT_DATE) ---"
               echo "$COMMENT_BODY"
               echo "--------------------------------------"
               echo ""
-              echo "Reanaliza el comentario e itera: aplica los cambios necesarios,"
-              echo "re-valida (aceptación + DoD), re-ejecuta el escaneo de seguridad,"
-              echo "actualiza el ADR si procede y publica una PR NUEVA contra dev con"
-              echo "\"Closes #$N\" en la primera línea (las PRs previas de esta issue"
-              echo "no cierran nada: cada iteración lleva su propia PR con su propia"
-              echo "keyword)."
+              echo "Reanaliza e itera: aplica los cambios necesarios, re-valida"
+              echo "(aceptación + DoD), re-ejecuta el escaneo de seguridad y actualiza"
+              echo "el ADR si procede."
+              echo ""
+              echo "PUBLICACIÓN CON PR EXISTENTE (importante):"
+              echo "- Busca la rama de trabajo de esta issue en origin (patrón"
+              echo "  <tipo>/issue-$N-*): git fetch origin; git branch -r | grep issue-$N"
+              echo "- Si la rama existe y ya tiene una PR abierta (gh pr list --head"
+              echo "  <rama> --state open --json number,title), ACTUALÍZALA con:"
+              echo "  gh pr edit <NUM> --title \"<nuevo título>\" --body-file <body>"
+              echo "  (el body DEBE tener \"Closes #$N\" como PRIMERA línea). No crees"
+              echo "  una PR duplicada para la misma rama."
+              echo "- Si la rama NO existe, crea <tipo-prefix>/issue-$N-<slug> desde"
+              echo "  origin/dev, commit, push y gh pr create --base dev --head <rama>"
+              echo "  con \"Closes #$N\" en la PRIMERA línea del body."
+              echo "- Si la issue estaba en 'status: blocked', el workflow ya la ha"
+              echo "  desbloqueado a 'status: in-progress'; complétala y publícala."
+              echo ""
+              echo "Las PRs previas de esta issue no cierran nada: cada iteración lleva"
+              echo "su propia PR con su propia keyword (o actualiza la existente)."
             } >> sdd_prompt.md
           fi
 
@@ -288,9 +363,13 @@ jobs:
             exit 0
           fi
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
-          echo "Reintentando: se devuelve la issue #$N a la cola (status: todo) y se comenta el fallo."
-          bash scripts/gh-issue.sh set-state "$N" "status: todo" >/dev/null 2>&1 || true
-          gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló. Se devuelve la issue a la cola (status: todo). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+          # Se devuelve la issue al estado previo (todo por defecto; blocked si
+          # la reanudación de una issue bloqueada vuelve a fallar).
+          PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
+          [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" ]] || PREV_STATUS="todo"
+          echo "Reintentando: se devuelve la issue #$N a la cola (status: $PREV_STATUS) y se comenta el fallo."
+          bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
+          gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló. Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
 
       - name: Resumen
         if: always()
