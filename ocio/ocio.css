@@ -128,7 +128,13 @@ input, textarea, select { font-size: 16px; }
   flex: 1 1 auto;
   min-width: 0;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  /* Barra de desplazamiento oculta (issue #118): el scroll horizontal
+     sigue funcionando, pero no se muestra la barra (comentario del
+     usuario: en móvil no debe aparecer). */
+  scrollbar-width: none;
+}
+.filter-chips::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {

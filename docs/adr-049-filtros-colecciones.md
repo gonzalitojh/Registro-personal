@@ -82,9 +82,13 @@ Related issue: #118 — https://github.com/gonzalitojh/Registro-personal/issues/
 `ocio/ocio.css`, `.filter-chips`:
 
 - `flex-wrap: nowrap` (todos los chips en una línea).
-- `overflow-x: auto` + `-webkit-overflow-scrolling: touch` +
-  `scrollbar-width: thin` (si no caben, la línea se desliza en
-  horizontal).
+- `overflow-x: auto` + `-webkit-overflow-scrolling: touch` (si no
+  caben, la línea se desliza en horizontal).
+- `scrollbar-width: none` + `.filter-chips::-webkit-scrollbar {
+  display: none; }` — la barra de desplazamiento no se muestra
+  (comentario del usuario en la issue: «En el móvil, no debe aparecer
+  la barra de desplazamiento horizontal»), pero el deslizamiento
+  táctil sigue funcionando.
 - `flex: 1 1 auto` + `min-width: 0` (la línea de filtros ocupa el ancho
   disponible y puede encogerse).
 
@@ -158,10 +162,11 @@ para el usuario):
   cada colección no repite un título como «Mis series» y nada más entrar
   se ve directamente su barra de herramientas.
 - Sección 8: los chips de filtro están todos en una línea y, si no caben
-  (móvil), la línea se desliza en horizontal; el selector de orden y el
-  de vista van siempre juntos (misma línea que los filtros en pantallas
-  anchas, segunda línea en móvil); el selector de orden tiene el mismo
-  tamaño y la misma fuente que los chips.
+  (móvil), la línea se desliza en horizontal (sin barra de desplazamiento
+  visible; se desliza con el dedo); el selector de orden y el de vista
+  van siempre juntos (misma línea que los filtros en pantallas anchas,
+  segunda línea en móvil); el selector de orden tiene el mismo tamaño y
+  la misma fuente que los chips.
 
 ### 9. Bump de versión PWA
 
@@ -191,6 +196,11 @@ marcado.
   los chips: descartado — prohibido por la regla 2 de AGENTS.md
   (enmascara desbordamientos y puede cortar contenido). El scroll
   horizontal se confina a `.filter-chips`, contenedor diseñado para ello.
+- **Mantener `scrollbar-width: thin`** (barra visible): descartado tras
+  el comentario del usuario — en móvil no debe aparecer la barra de
+  desplazamiento horizontal. Se opta por ocultarla (`scrollbar-width:
+  none` + `::-webkit-scrollbar { display: none }`) conservando el
+  desplazamiento táctil.
 
 ## Consecuencias
 
@@ -201,7 +211,9 @@ marcado.
   redundante.
 - Los filtros se deslizan en horizontal en móvil sin ocupar más espacio
   ni desbordar la página (`document.documentElement.scrollWidth <=
-  window.innerWidth` verificado por QA en 360/768/1280 px).
+  window.innerWidth` verificado por QA en 360/768/1280 px), y sin
+  mostrar la barra de desplazamiento (comentario del usuario en la
+  issue).
 - Orden y vista quedan siempre juntos y comparten línea con los filtros
   en pantallas anchas; dos líneas en móvil, tal y como pide la issue.
 - Selector de orden y chips con el mismo padding y la misma fuente
@@ -242,7 +254,10 @@ marcado.
 - **Sin tests automatizados**: el cambio es CSS/HTML puro; la verificación
   se hace por análisis de cascada (specificity y orden de carga) y
   revisión manual en tres anchos (QA: 7/7 criterios de aceptación
-  cumplidos; seguridad: 0 hallazgos HIGH).
+  cumplidos; seguridad: 0 hallazgos HIGH). La iteración (barra de
+  desplazamiento oculta) se verificó con Chromium headless en
+  320/360/768/1280 px: `scrollbar-width: none`, scroll funcional a
+  360 px y sin scroll horizontal de página.
 - **`docs/manual-de-usuario.md` actualizado** (regla 3 de AGENTS.md):
   secciones 3 y 8 reflejan la nueva disposición de la barra de
   herramientas.
@@ -257,7 +272,7 @@ marcado.
 | `ocio/series.html` | **Modificado**: eliminado `<div class="library-head">` con `<h2>Mis series</h2>`; `.library-controls` pasa a ser el elemento raíz; el bloque `.sort-select` + `.view-toggle` se envuelve en `<div class="library-controls__aux">` |
 | `ocio/peliculas.html` | **Modificado**: eliminado `<div class="library-head">` con `<h2>Mis películas</h2>`; misma reestructuración que series (`.library-controls` raíz + `.library-controls__aux`) |
 | `ocio/libros.html` | **Modificado**: eliminado `<div class="library-head">` con `<h2>Mi biblioteca</h2>`; misma reestructuración que series (`.library-controls` raíz + `.library-controls__aux`) |
-| `ocio/ocio.css` | **Modificado**: eliminadas `.library-head`/`.library-head h2` (incluido `margin-top: 2.2rem`); `.filter-chips` → `flex-wrap: nowrap; overflow-x: auto; flex: 1 1 auto; min-width: 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin`; `.chip` → `flex: 0 0 auto; white-space: nowrap`; nueva regla scoped `.library-controls .chip { font-size: 1rem; }` con comentario; `.library-controls` conserva `margin-bottom: 0.8rem` y añade `max-width: 100%`; nueva `.library-controls__aux`; `.sort-select` padding → `0.3rem 0.75rem`; `@media (max-width: 768px)` añade `.library-controls__aux { flex-basis: 100%; }` |
+| `ocio/ocio.css` | **Modificado**: eliminadas `.library-head`/`.library-head h2` (incluido `margin-top: 2.2rem`); `.filter-chips` → `flex-wrap: nowrap; overflow-x: auto; flex: 1 1 auto; min-width: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none` + `.filter-chips::-webkit-scrollbar { display: none; }` (iteración: barra oculta en móvil); `.chip` → `flex: 0 0 auto; white-space: nowrap`; nueva regla scoped `.library-controls .chip { font-size: 1rem; }` con comentario; `.library-controls` conserva `margin-bottom: 0.8rem` y añade `max-width: 100%`; nueva `.library-controls__aux`; `.sort-select` padding → `0.3rem 0.75rem`; `@media (max-width: 768px)` añade `.library-controls__aux { flex-basis: 100%; }` |
 | `index.html` | **Modificado**: los 3 paneles (`#panel-tv`, `#panel-movies`, `#panel-books`) ganan `role="tabpanel"` + `aria-labelledby="tab-tv"/"tab-movies"/"tab-books"` (se conservan `aria-live`/`aria-atomic`); bump `?v=20260818` (×3: `css/styles.css`, `ocio/ocio.css`, `js/app.js`) |
 | `css/styles.css` | **Modificado**: eliminado `.panel h2` de las reglas `scroll-margin-top` (base y media query 768px; queda solo `#main-content`) y comentario actualizado |
 | `js/config.js` | **Modificado**: `APP_VERSION` `20260817` → `20260818` |

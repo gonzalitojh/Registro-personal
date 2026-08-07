@@ -372,10 +372,12 @@ En la barra de cada biblioteca tienes:
 
 Sobre la disposición de esta barra: los **chips de filtro** están todos
 en una sola línea y, si no caben (en el móvil), esa línea de filtros se
-**desliza en horizontal** sin ocupar más espacio. El **selector de orden**
-y el de **vista** van siempre juntos: en la misma línea que los filtros
-en pantallas anchas y en una segunda línea en el móvil. El selector de
-orden tiene el mismo tamaño y la misma fuente que los chips de filtro.
+**desliza en horizontal** sin ocupar más espacio (la barra de
+desplazamiento no se muestra, pero puedes deslizar con el dedo). El
+**selector de orden** y el de **vista** van siempre juntos: en la misma
+línea que los filtros en pantallas anchas y en una segunda línea en el
+móvil. El selector de orden tiene el mismo tamaño y la misma fuente que
+los chips de filtro.
 
 Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
