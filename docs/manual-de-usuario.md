@@ -131,6 +131,9 @@ Si entras sin una dirección concreta, o con una que no corresponde a
 ninguna pestaña, la web te lleva siempre a **Series**, igual que
 hasta ahora.
 
+Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
+[sección 13.0](#130-compartir-direcciones-de-tu-perfil).
+
 ## 4. Series
 
 ### 4.1 Los estados de una serie
@@ -506,6 +509,25 @@ Datos o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
 Tu perfil tiene cinco secciones:
+
+### 13.0 Compartir direcciones de tu perfil
+
+Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
+cada sección del perfil tiene su propia dirección web, que termina en
+`#/perfil/estadisticas` (Estadísticas), `#/perfil/amigos` (Amigos),
+`#/perfil/actividad` (Actividad), `#/perfil/datos` (Datos) o
+`#/perfil/ajustes` (Ajustes). Puedes copiarla desde la barra de
+direcciones, guardarla en favoritos o compartirla: al abrirla, la web
+te lleva directo a esa sección del perfil.
+
+Además, la ficha de un amigo tiene su propia dirección:
+`#/perfil/amigos/<identificador del amigo>`. Si la abres en cualquier
+momento, verás directamente el registro de ese amigo. Si el amigo ya
+no está disponible, la web te deja en la lista de amigos.
+
+Entrar con una dirección de perfil sin sesión iniciada abre primero la
+pantalla de entrada; al iniciar sesión, la web te lleva a la sección
+que pedías.
 
 ### 13.1 Estadísticas
 

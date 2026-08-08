@@ -1,92 +1,181 @@
 // =============================================================
-// Router por hash de la sección «Ocio» (issue #59).
-// Da a cada pestaña una URL propia y compartible
-// (#/ocio/series, #/ocio/peliculas, #/ocio/libros) que funciona
-// igual desplegado en la raíz que en subdirectorios por rama
+// Router por hash de la aplicación (issue #59).
+// Da a cada vista una URL propia y compartible que funciona igual
+// desplegado en la raíz que en subdirectorios por rama
 // (_site/dev/<rama>/), porque solo mira el fragmento
 // (location.hash) y nunca location.pathname.
+//
+// Dos grandes «secciones» de la web:
+//   - Ocio: las tres pestañas de la biblioteca
+//     (#/ocio/series, #/ocio/peliculas, #/ocio/libros).
+//   - Perfil: Estadísticas, Amigos (con id por amigo), Actividad,
+//     Datos y Ajustes (#/perfil/...).
+//
+// El resto de hashes (p. ej. #main-content del skip-link) se
+// considera ajeno al router y se ignora sin tocar el estado.
 // =============================================================
 
-// Mapa clave de ruta → id del panel en index.html. Es la única
-// fuente de verdad: añadir una pestaña futura solo requiere una
-// entrada aquí.
+// Mapa clave de ruta de Ocio → id del panel en index.html. Es la
+// única fuente de verdad: añadir una pestaña futura solo requiere
+// una entrada aquí.
 export const KEY_TO_PANEL = {
   series: "panel-tv",
   peliculas: "panel-movies",
   libros: "panel-books",
 };
 
-// Ruta por defecto: la primera pestaña (Series).
+// Ruta por defecto de Ocio: la primera pestaña (Series).
 export const DEFAULT_KEY = "series";
 
-// Prefijo de la sección de ocio. Todo lo que no empiece por él se
-// considera ajeno al router (p. ej. #main-content del skip-link).
+// Prefijos de las dos secciones de primer nivel. Todo lo que no
+// empiece por uno de ellos se considera ajeno al router.
 const ROUTE_PREFIX = "/ocio";
+const PROFILE_PREFIX = "/perfil";
 
-// Devuelve la clave de ruta para un id de panel, o null si no
-// existe ninguna (data-panel desconocido).
+// Mapa token de URL (castellano) → id interno de la sección del
+// perfil. El token público es humano y consistente con las claves
+// de Ocio; el id interno alimenta js/profile.js.
+const PROFILE_KEY_TO_SECTION = {
+  estadisticas: "stats",
+  amigos: "friends",
+  actividad: "activity",
+  datos: "data",
+  ajustes: "settings",
+};
+
+// Inverso del mapa anterior: id interno → token de URL.
+const PROFILE_SECTION_TO_KEY = Object.fromEntries(
+  Object.entries(PROFILE_KEY_TO_SECTION).map(([k, v]) => [v, k])
+);
+
+// Sección por defecto del perfil (Estadísticas) para sus aliases.
+const PROFILE_DEFAULT_KEY = "estadisticas";
+
+// Los uid de Firebase solo admiten [A-Za-z0-9._-] y acotan el
+// segmento de amigo en la URL (#/perfil/amigos/<uid>).
+const FIREBASE_UID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+
+// Devuelve la clave de ruta de Ocio para un id de panel, o null si
+// no existe ninguna (data-human desconocido).
 export function keyForPanel(panelId) {
   const entry = Object.entries(KEY_TO_PANEL).find(([, id]) => id === panelId);
   return entry ? entry[0] : null;
 }
 
-// Hash canónico para una clave: #/ocio/<clave>. Si la clave no es
-// válida, saneamos a la clave por defecto.
+// Hash canónico de Ocio para una clave: #/ocio/<clave>. Si la clave
+// no es válida, saneamos a la clave por defecto.
 export function hashForKey(key = DEFAULT_KEY) {
   return `#${ROUTE_PREFIX}/${KEY_TO_PANEL[key] ? key : DEFAULT_KEY}`;
 }
 
-// Hash canónico para un id de panel (p. ej. "panel-movies" → "#/ocio/peliculas").
+// Hash canónico de Ocio para un id de panel (p. ej. "panel-movies").
 export function hashForPanel(panelId) {
   return hashForKey(keyForPanel(panelId) || DEFAULT_KEY);
 }
 
-// Interpreta un fragmento (location.hash por defecto). Devuelve:
-// - { key } para rutas válidas #/ocio[/series|/peliculas|/libros]
-//   y los alias #/ocio y #/ocio/ (→ Series).
-// - { key, default: true } para hash vacío, "#" o "#/": estado por
-//   defecto cuya URL debe normalizarse a #/ocio/series.
-// - { key: null, invalid: true } para hashes dentro del prefijo
-//   #/ocio/ con segmento desconocido (también se normaliza).
-// - { key: null } para hashes fuera del prefijo (p. ej.
-//   #main-content del skip-link): no son rutas de ocio y se ignoran
-//   en runtime.
+// Hash canónico de Perfil para una sección (id interno) y, si es la
+// sección de amigos, opcionalmente el uid. Un id desconocido cae a
+// la sección por defecto (Estadísticas).
+export function profileHashKey(profileSection, uid) {
+  const token = PROFILE_SECTION_TO_KEY[profileSection] || PROFILE_DEFAULT_KEY;
+  if (token === "amigos" && uid) {
+    return `#${PROFILE_PREFIX}/amigos/${encodeURIComponent(uid)}`;
+  }
+  return `#${PROFILE_PREFIX}/${token}`;
+}
+
+// Interpreta un fragmento (location.hash por defecto). Contrato:
+// - Ocio  → { section:"ocio", key, panelId } (+ default/invalid).
+// - Perfil→ { section:"perfil", profileSection, uid? } (+default/invalid).
+// - Vacío → ruta por defecto global (Ocio Series).
+// - Ajeno → { section:null } (se ignora en runtime).
 export function parseHash(hash = location.hash) {
   const fragment = (hash || "").replace(/^#/, "");
 
-  // Sin hash, "#" o "#/": caer al estado por defecto (Series).
+  // Sin hash, "#" o "#/": caer al estado por defecto global.
   if (fragment === "" || fragment === "/") {
-    return { key: DEFAULT_KEY, default: true };
+    return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true };
   }
 
-  // Dividir el fragmento en segmentos, ignorando barras repetidas
-  // y la barra final (#/ocio/ → ["ocio"]).
   const segments = fragment.split("/").filter(Boolean);
+  const first = segments[0];
 
-  // Hashes ajenos al prefijo: no son rutas de la sección de ocio.
-  if (segments[0] !== "ocio") {
-    return { key: null };
+  // Hashes ajenos a las dos secciones: no son rutas de la web.
+  if (first !== "ocio" && first !== "perfil") {
+    return { section: null };
   }
 
+  // ---------- PERFIL ----------
+  if (first === "perfil") {
+    // #/perfil y #/perfil/ son aliases de Estadísticas.
+    if (segments.length === 1) {
+      return { section: "perfil", profileSection: "stats", default: true };
+    }
+    const profileSection = PROFILE_KEY_TO_SECTION[segments[1]];
+    // Token de sección desconocido → saneado a la sección por defecto.
+    if (!profileSection) {
+      return { section: "perfil", profileSection: "stats", default: true, invalid: true };
+    }
+    // #/perfil/amigos/<uid>: tercer segmento con el uid del amigo.
+    if (profileSection === "friends" && segments.length === 3) {
+      let uid = segments[2];
+      try {
+        uid = decodeURIComponent(uid);
+      } catch {
+        uid = "";
+      }
+      if (!FIREBASE_UID_RE.test(uid)) {
+        return { section: "perfil", profileSection: "friends", default: true, invalid: true };
+      }
+      return { section: "perfil", profileSection: "friends", uid };
+    }
+    // Demasiados segmentos (o amigos sin uid) → lista de amigos.
+    if (segments.length > 2) {
+      return { section: "perfil", profileSection, default: true, invalid: true };
+    }
+    return { section: "perfil", profileSection };
+  }
+
+  // ---------- OCIO ----------
   // #/ocio y #/ocio/ son alias de la primera pestaña.
   if (segments.length === 1) {
-    return { key: DEFAULT_KEY };
+    return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true };
   }
-
   // #/ocio/<clave>: solo valen las tres claves conocidas.
   if (segments.length === 2 && KEY_TO_PANEL[segments[1]]) {
-    return { key: segments[1] };
+    return { section: "ocio", key: segments[1], panelId: KEY_TO_PANEL[segments[1]] };
   }
-
   // Dentro del prefijo pero con segmento desconocido (o de más).
-  return { key: null, invalid: true };
+  return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
 }
 
-// Cambia al hash de una clave. Con replace: true se reemplaza la
-// entrada actual del historial en vez de añadir una nueva. Si el
+// Hash canónico para una ruta (ocio o perfil) según su forma.
+// Usada por navigate() para normalizar.
+function canonicalHashFor(route) {
+  if (route?.section === "perfil") {
+    return profileHashKey(route.profileSection, route.uid);
+  }
+  return hashForKey(route?.key || DEFAULT_KEY);
+}
+
+// Memoria de la última clave de Ocio de la sesión: «Volver» desde el
+// perfil y la entrada «Ocio» de la sidebar vuelven a esa pestaña.
+let lastOcioKey = DEFAULT_KEY;
+
+export function getLastOcioKey() {
+  return lastOcioKey || DEFAULT_KEY;
+}
+
+// Cambia al hash de un objetivo. target puede ser:
+//   - string: clave de Ocio (retrocompatibilidad, "series").
+//   - objeto { section:"perfil", profileSection, uid? } (o de Ocio).
+// Con replace:true se sustituye la entrada actual del historial
+// (normalización de URLs no canónicas) en vez de añadir una. Si el
 // hash ya es el objetivo, no hace nada (evita hashchange redundante).
-export function navigate(key, { replace = false } = {}) {
-  const target = hashForKey(key);
+export function navigate(routeOrKey, { replace = false } = {}) {
+  const target = canonicalHashFor(
+    typeof routeOrKey === "string" ? { key: routeOrKey } : routeOrKey
+  );
   if (location.hash === target) return;
   if (replace) {
     history.replaceState(null, "", target);
@@ -95,45 +184,52 @@ export function navigate(key, { replace = false } = {}) {
   }
 }
 
-// Arranca el router: aplica el hash de la carga inicial (carga
-// directa o recarga), registra el listener de hashchange para
-// atrás/adelante y cambios manuales, y devuelve la API del router.
+// Arranca el router: aplica el hash de la carga inicial, registra el
+// listener de hashchange (atrás/adelante y navegación) y devuelve la
+// API. onRoute recibe la ruta interpretada (ver parseHash).
 export function initRouter({ onRoute }) {
-  // Carga inicial: el hash decide la pestaña. Las URLs vacías o no
-  // canónicas dentro del prefijo se normalizan a #/ocio/series con
-  // replaceState (saneo sin ensuciar el historial). Los hashes
-  // ajenos (p. ej. #main-content del skip-link) también aterrizan
-  // en el estado por defecto, pero sin reescribir la URL.
-  const initial = parseHash();
-  if (initial.default || initial.invalid) {
-    history.replaceState(null, "", hashForKey(DEFAULT_KEY));
-  }
-  onRoute({
-    key: initial.key || DEFAULT_KEY,
-    panelId: KEY_TO_PANEL[initial.key || DEFAULT_KEY],
-  });
-
-  // Runtime: solo se reacciona a hashes de ocio. Los ajenos al
-  // prefijo se ignoran por completo, de modo que el skip-link
-  // (#main-content) sigue funcionando sin cambiar de pestaña.
-  const handleHashChange = () => {
-    const parsed = parseHash();
-    if (!parsed.key) return;
-    if (parsed.default || parsed.invalid) {
-      history.replaceState(null, "", hashForKey(DEFAULT_KEY));
+  // Aplica una ruta: normaliza con replaceState si no es canónica y
+  // notifica al consumidor (que decide cómo pintar). Sin argumentos
+  // re-lee location.hash (p. ej. tras el login, para retomar la ruta
+  // de perfil que pedía la recarga).
+  function applyRoute(route = parseHash()) {
+    if (!route?.section) return; // ajenos: no tocar el estado
+    if (route.section === "ocio") lastOcioKey = route.key || DEFAULT_KEY;
+    if (route.default || route.invalid) {
+      history.replaceState(null, "", canonicalHashFor(route));
     }
-    onRoute({ key: parsed.key, panelId: KEY_TO_PANEL[parsed.key] });
-  };
+    onRoute(route);
+  }
+
+  // Carga inicial: el hash de la URL decide el primer estado.
+  applyRoute(parseHash());
+
+  // Runtime: atrás/adelante y navegación manual del usuario.
+  const handleHashChange = () => applyRoute(parseHash());
 
   window.addEventListener("hashchange", handleHashChange);
 
   return {
-    // Clave de la ruta actual (o la por defecto si el hash es ajeno).
-    getCurrentKey: () => parseHash().key || DEFAULT_KEY,
+    // Clave de Ocio actual (o la por defecto si el hash es ajeno).
+    getCurrentKey: () => {
+      const s = parseHash();
+      return s.section === "ocio" || !s.section ? (s.key || lastOcioKey || DEFAULT_KEY) : lastOcioKey;
+    },
+    // Sección de primer nivel de la ruta actual: "ocio" | "perfil" |
+    // null (ajena / no aplicable). Los hashes ajenos devuelven null.
+    getCurrentSection: () => {
+      const s = parseHash();
+      return s.section === null ? null : s.section;
+    },
+    // Re-sincroniza el estado con el hash de la URL (p. ej. tras el
+    // login, para abrir la ruta de perfil que pedía la recarga).
+    applyRoute,
     parseHash,
     hashForKey,
     hashForPanel,
     keyForPanel,
+    profileHashKey,
+    getLastOcioKey,
     navigate,
     destroy: () => window.removeEventListener("hashchange", handleHashChange),
   };

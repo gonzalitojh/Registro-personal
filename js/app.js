@@ -40,7 +40,7 @@ import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
-import { initRouter, keyForPanel, DEFAULT_KEY } from "./router.js";
+import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
 
 // ---------- Estado ----------
 
@@ -217,10 +217,34 @@ async function init() {
     }
   }
 
-  // Router: en carga directa o recarga activa la pestaña indicada
-  // por la URL sin robar el foco (solo el clic manual lo mueve).
+  // Router (issue #59): en carga directa o recarga activa la vista
+  // indicada por la URL (pestaña de Ocio o sección del perfil) sin
+  // robar el foco (solo el clic manual lo mueve).
+  const profileView = document.getElementById("profile-view");
+  // Declarado antes de crear el router: el onRoute se ejecuta durante
+  // initRouter() con la ruta de la carga inicial, y profileApi todavía
+  // no existe (la sesión tampoco). El guard permite ignorarla: tras el
+  // login, watchAuthState llama a router.applyRoute() para retomarla.
+  let profileApi = null;
   const router = initRouter({
-    onRoute: ({ panelId }) => activatePanel(panelId),
+    onRoute: (route) => {
+      if (route.section === "perfil") {
+        // Ruta de perfil: abre la sección pedida (profile.js decide
+        // el render y, si viene con uid, el detalle del amigo).
+        if (profileApi) {
+          profileApi.openProfileSection(route.profileSection, ctx, {
+            fromRouter: true,
+            friendUid: route.uid || null,
+          });
+        }
+      } else if (route.section === "ocio") {
+        // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
+        // la pestaña (lastOcioKey lo actualiza el router internamente).
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        activatePanel(route.panelId);
+      }
+    },
   });
 
   tabs.forEach((tab) => {
@@ -273,16 +297,19 @@ async function init() {
     });
   });
 
-  // Módulos especializados
+  // Módulos especializados. profileApi (declarado antes del router
+  // para su uso en onRoute) se asigna aquí.
   setupModalCloseListeners();
   setupNotifications(ctx);
-  const profileApi = setupProfile(ctx);
+  profileApi = setupProfile(ctx);
   setupSettings(ctx);
   setupSidebar({
-    onOpenSettings: () => profileApi.openProfileSection("settings", ctx),
-    // Entrada «Ocio»: además del scroll al top, vuelve a la primera
-    // pestaña (Series) y sincroniza la URL con el router.
-    onGoOcio: () => router.navigate(DEFAULT_KEY),
+    // Entrada «Ajustes»: navega a la ruta del perfil para que la URL
+    // se sincronice (el router abre la sección).
+    onOpenSettings: () => router.navigate({ section: "perfil", profileSection: "settings" }),
+    // Entrada «Ocio»: además del scroll al top, vuelve a la última
+    // pestaña de Ocio activa y sincroniza la URL con el router.
+    onGoOcio: () => router.navigate(getLastOcioKey()),
   });
   setupGlobalSearch(ctx);
 
@@ -314,6 +341,13 @@ async function init() {
 
     currentUser = user;
     ui.showApp(user);
+
+    // Si la carga inicial pedía una ruta de perfil (#/perfil/...) sin
+    // sesión, el onRoute la ignoró (profileApi no existía aún). Al
+    // entrar, la retomamos para abrir la sección que se solicitó.
+    if (router.getCurrentSection() === "perfil") {
+      router.applyRoute();
+    }
 
     try {
       await upsertUserProfile(user.uid, {

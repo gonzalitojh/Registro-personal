@@ -1,10 +1,10 @@
-# ADR-051: Enrutamiento por hash de la sección Ocio — URLs compartibles por pestaña (issue #59)
+# ADR-051: Enrutamiento por hash — URLs compartibles por pestaña y por sección de perfil (issue #59)
 
 ## Estado
 Aceptado
 
 ## Fecha
-2026-08-07
+2026-08-07 (ampliado 2026-08-08)
 
 ## Contexto
 
@@ -107,12 +107,16 @@ El manejo de pestañas pasa de un listener inline repetido a una función
 ### 4. Sidebar (js/sidebar.js): «Ocio» sincroniza con el router
 
 La entrada «Ocio» de la barra lateral, además de cerrar el drawer y
-hacer scroll suave al top, vuelve a la **primera pestaña (Series)** y
-**sincroniza la URL** con `router.navigate(DEFAULT_KEY)`. El callback
-`onGoOcio` lo inyecta `app.js` vía
-`setupSidebar({ onGoOcio: () => router.navigate(DEFAULT_KEY) })`, el
-mismo patrón de inyección de `onOpenSettings` (ADR-035/ADR-039), así
-que `sidebar.js` no importa el router.
+hacer scroll suave al top, vuelve a la **última pestaña de Ocio** que
+estuviera activa en la sesión y **sincroniza la URL** con
+`router.navigate(getLastOcioKey())`. Desde la ampliación del perfil
+(sección 6), este es también el destino del botón «← Volver» del
+perfil: `getLastOcioKey()` recuerda la última pestaña de Ocio, de modo
+que la vuelta desde el perfil aterriza donde el usuario estaba. El
+callback `onGoOcio` lo inyecta `app.js` vía
+`setupSidebar({ onGoOcio: () => router.navigate(getLastOcioKey()) })`,
+el mismo patrón de inyección de `onOpenSettings` (ADR-035/ADR-039),
+así que `sidebar.js` no importa el router.
 
 ### 5. PWA: bump de versión e inclusión del módulo nuevo
 
@@ -128,6 +132,54 @@ assets, cf. ADR-049):
 - **`index.html`**: `?v=20260821` en las 3 referencias a CSS/JS
   (`css/styles.css`, `ocio/ocio.css`, `js/app.js`).
 
+### 6. Ampliación (comentario del usuario): rutas de Perfil
+
+Tras la primera entrega, el usuario pidió el mismo enrutado para el
+resto de la web (comentario en la issue #59): las **cinco secciones del
+perfil** y el **detalle de un amigo** deben tener URL propia. Se amplía
+el router sobre el mismo diseño (dos secciones de primer nivel bajo
+prefijos propios):
+
+- **`PROFILE_PREFIX = "/perfil"`** y mapa token (castellano) → sección
+  interna en `js/profile.js`:
+  `#/perfil/estadisticas` → `stats`, `#/perfil/amigos` → `friends`,
+  `#/perfil/actividad` → `activity`, `#/perfil/datos` → `data` y
+  `#/perfil/ajustes` → `settings`.
+- **`#/perfil/amigos/<uid>`**: la ficha de un amigo tiene su propia
+  URL. El uid se valida con `FIREBASE_UID_RE` (`[A-Za-z0-9._-]{1,128}`)
+  tras `decodeURIComponent`; si no es válido o el amigo ya no existe,
+  la URL se normaliza a la lista (`#/perfil/amigos`) y se muestra la
+  lista.
+- **Aliases**: `#/perfil` y `#/perfil/` son aliases de Estadísticas
+  (`default: true`, se normalizan con `replaceState`). Los tokens
+  desconocidos y los segmentos de más también se normalizan (mismo
+  patrón de Ocio: `default: true, invalid: true`).
+- **`navigate()` acepta ahora dos formas**: string (clave de Ocio,
+  retrocompatibilidad) u objeto `{ section: "perfil", profileSection,
+  uid? }` (y de Ocio). `canonicalHashFor()` produce el hash canónico de
+  ambas secciones; el no-op si el hash ya es el objetivo se mantiene.
+- **`onRoute` en `app.js`** despacha por sección: perfil →
+  `profileApi.openProfileSection(section, ctx, { fromRouter: true,
+  friendUid })`; ocio → cerrar perfil y activar pestaña.
+  `profileApi` se declara antes de `initRouter` (la carga inicial puede
+  pedir una ruta de perfil sin sesión: el `onRoute` la ignora y, tras el
+  login, `router.applyRoute()` la retoma — guard en
+  `watchAuthState`).
+- **`js/profile.js`**: la UI ya no abre secciones directamente; **solo
+  navega** (`navigate({ section: "perfil", profileSection, uid? })`) y
+  el router hace el render vía `openProfileSection` con `fromRouter`,
+  evitando dobles fetchs (p. ej. el clic en una tarjeta de amigo navega
+  a `#/perfil/amigos/<uid>` y `openFriendByUid` reutiliza la carga de
+  la lista). El botón «Volver» del perfil cierra la vista y navega a la
+  última pestaña de Ocio activa (`getLastOcioKey()`).
+- **`getCurrentSection()`** devuelve `"ocio" | "perfil" | null` (null =
+  hash ajeno) y **`getLastOcioKey()`** recuerda la última pestaña de
+  Ocio de la sesión para las vueltas desde el perfil.
+- **PWA**: la ampliación toca `js/router.js` y `js/profile.js`
+  (módulos, sin `?v=`), así que solo se sube `APP_VERSION` de
+  `20260821` a `20260823` en `config.js`, `index.html` (×3) y
+  `service-worker.js` (×6).
+
 ## Alternativas descartadas
 
 - **History API con `location.pathname` (`#/ocio` → `/ocio`)**: descartado
@@ -139,10 +191,13 @@ assets, cf. ADR-049):
   parseo del hash, la normalización de URL y el listener de `hashchange`
   son lógica de infraestructura que merece un módulo sin dependencias
   (patrón del resto de `js/`).
-- **Saneado con `location.hash = ...`** en cada iteración de normalización:
-  descartado — añade una entrada al historial por cada recarga no
-  canónica. Se usa `history.replaceState`, que reescribe la URL sin
-  crear entradas de más.
+- **Router en el switch del click sin módulo aparte**: descartado — el
+  parseo del hash, la normalización de URL y el listener de `hashchange`
+  son lógica de infraestructura que merece un módulo sin dependencias
+  (patrón del resto de `js/`).
+- **Rutas de perfil por sección sin uid en la URL**: descartado — el
+  detalle de un amigo es un estado navegable; sin su uid en la URL no
+  se podría compartir ni volver con atrás/adelante a una ficha concreta.
 - **Normalizar también los hashes ajenos (`#main-content`)**: descartado
   — el skip-link requiere que el fragmento `#main-content` aterrice en
   el elemento `id="main-content"`; reescribir la URL o cambiar la pestaña
@@ -174,8 +229,9 @@ assets, cf. ADR-049):
   y las activaciones por URL nunca roban el foco (solo el clic manual
   lo mueve, replicando el comportamiento previo).
 - **Bono de orquestación**: la lógica de clic de pestañas se extrae a
-  `activatePanel` (reutilizable y defensivo) y la sidebar «Ocio» vuelve
-  a Series y sincroniza la URL con un callback inyectado.
+  `activatePanel` (reutilizable y defensivo) y la sidebar «Ocio» y el
+  «← Volver» del perfil vuelven a la última pestaña de Ocio activa
+  (`getLastOcioKey()`) sincronizando la URL con un callback inyectado.
 
 ### Negativas / Riesgos
 
@@ -193,27 +249,28 @@ assets, cf. ADR-049):
 ### Neutras
 
 - **Manual de usuario actualizado** (regla 3 de AGENTS.md — cambio
-  visible para el usuario): nueva subsección 3.1 «Compartir direcciones
-  y volver a las pestañas» (direcciones `#/ocio/...`, compartir/
-  favoritos, atrás/adelante, y caída al estado por defecto).
-- **Carga inicial y recarga**: el hash decide la pestaña en ambos casos
-  (la pestaña se reabre al cargar o recargar).
+  visible para el usuario): subsección 3.1 «Compartir direcciones
+  y volver a las pestañas» (direcciones `#/ocio/...`) y subsección
+  13.0 con las direcciones del perfil (`#/perfil/...`).
+- **Carga inicial y recarga**: el hash decide la pestaña/sección en
+  ambos casos (la vista se reabre al cargar o recargar).
 - **Sin cambios en API/DB/styles**: la PR no afecta a datos ni a la
-  maquetación; solo `index.html` (bump `?v=`), `app.js`, `sidebar.js`,
-  `config.js`, `service-worker.js` y el módulo nuevo.
+  maquetación; solo `index.html` (bump `?v=`), `app.js`, `profile.js`,
+  `sidebar.js`, `config.js`, `service-worker.js` y el módulo nuevo.
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/router.js` | **Nuevo**: módulo de enrutado por hash sin dependencias (`KEY_TO_PANEL`, `DEFAULT_KEY`, `ROUTE_PREFIX`, `parseHash`, `hashForKey`/`hashForPanel`/`keyForPanel`, `navigate`, `initRouter` con `onRoute`/`destroy`). Solo `location.hash`, nunca `location.pathname`; normalización con `history.replaceState`; los hashes ajenos al prefijo se ignoran en runtime |
-| `js/app.js` | **Modificado**: import de `initRouter`/`keyForPanel`/`DEFAULT_KEY`; extracción de `activatePanel(panelId, { moveFocus = false })` (quita `is-active` y degrada `aria-selected` de todas, oculta paneles, muestra el objetivo con defensa cayendo a `panel-tv`, foco al `h2` solo si `moveFocus`); clic de pestaña → `activatePanel(moveFocus: true)` + `router.navigate`; `initRouter({ onRoute })` activa sin foco; `setupSidebar` recibe `onGoOcio` |
+| `js/router.js` | **Nuevo**: módulo de enrutado por hash sin dependencias (`KEY_TO_PANEL`, `DEFAULT_KEY`, `ROUTE_PREFIX`, `PROFILE_PREFIX`, mapas `PROFILE_KEY_TO_SECTION`/`PROFILE_SECTION_TO_KEY`, `FIREBASE_UID_RE`, `parseHash`, `hashForKey`/`hashForPanel`/`keyForPanel`/`profileHashKey`, `navigate`, `initRouter` con `onRoute`/`destroy`, `getCurrentSection`/`getLastOcioKey`). Solo `location.hash`, nunca `location.pathname`; normalización con `history.replaceState`; los hashes ajenos al prefijo se ignoran en runtime |
+| `js/app.js` | **Modificado**: import de `initRouter`/`keyForPanel`/`getLastOcioKey`; extracción de `activatePanel(panelId, { moveFocus = false })` (quita `is-active` y degrada `aria-selected` de todas, oculta paneles, muestra el objetivo con defensa cayendo a `panel-tv`, foco al `h2` solo si `moveFocus`); clic de pestaña → `activatePanel(moveFocus: true)` + `router.navigate`; `initRouter({ onRoute })` despacha Ocio/Perfil (`profileApi.openProfileSection(section, ctx, { fromRouter: true, friendUid })`; `let profileApi = null` antes del router y re-aplicación de la ruta tras el login); `setupSidebar` recibe `onOpenSettings` (→ `#/perfil/ajustes`) y `onGoOcio` (→ última pestaña de Ocio) |
+| `js/profile.js` | **Modificado**: la UI navega por router (subtabs, dropdown `[data-section]`, tarjetas de amigo, «← Volver» del perfil → `navigate(getLastOcioKey())`, «← Volver a amigos» → `#/perfil/amigos`); `openProfileSection(section, ctx, { fromRouter, friendUid })` respeta el render solo vía router; `openFriendCard` → `navigate({ section: "perfil", profileSection: "friends", uid })`; `openFriendByUid` reutiliza la lista y cae a la lista si el uid no existe |
 | `js/sidebar.js` | **Modificado**: entrada «Ocio» añade, tras el scroll suave al top, `if (onGoOcio) onGoOcio()`; variable de módulo `onGoOcio = null` que `setupSidebar` inyecta desde `opts.onGoOcio` (mismo patrón que `onOpenSettings`) |
-| `js/config.js` | **Modificado**: `APP_VERSION` `20260818` → `20260821` |
-| `service-worker.js` | **Modificado**: `STATIC_ASSETS` — inclusión de `./js/router.js` y bump `?v=` `20260818` → `20260821` en las 6 URLs de CSS/JS/HTML tocadas |
-| `index.html` | **Modificado**: bump `?v=20260821` (×3: `css/styles.css`, `ocio/ocio.css`, `js/app.js`) |
-| `docs/manual-de-usuario.md` | **Modificado**: nueva subsección 3.1 («Compartir y volver a las pestañas») |
+| `js/config.js` | **Modificado**: `APP_VERSION` `20260818` → `20260821` (iteración 1) y `20260823` (ampliación Perfil) |
+| `service-worker.js` | **Modificado**: `STATIC_ASSETS` — inclusión de `./js/router.js` y bump `?v=` `20260818` → `20260821` en las 6 URLs de CSS/JS/HTML tocadas; ampliación: bump a `20260823` |
+| `index.html` | **Modificado**: bump `?v=20260821` (×3) e iteración 2: `?v=20260823` (×3) |
+| `docs/manual-de-usuario.md` | **Modificado**: subsección 3.1 («Compartir y volver a las pestañas») y, con la ampliación, subsección 13.0 «Compartir direcciones de tu perfil» |
 | `tasks/task-issue-59.json` | Task file de la tarea (title/description, plan de cambios, criterios de aceptación y bloque `issue` con la issue #59) |
-| `docs/adr-051-enrutamiento-hash.md` | **Nuevo**: este documento |
+| `docs/adr-051-enrutamiento-hash.md` | **Nuevo**: este documento (sección 6 con la ampliación a Perfil) |
 
 Related issue: #59 — https://github.com/gonzalitojh/Registro-personal/issues/59
