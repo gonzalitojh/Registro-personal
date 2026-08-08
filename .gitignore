@@ -1,2 +1,8 @@
 # Build de GitHub Pages (scripts/build-pages-site.sh) — no debe ir a git
 _site/
+
+# Artefactos de la sesión SDD en CI (scripts/run-sdd-session.sh, issue #145):
+# el log crudo y el motivo de fallo se generan en cada run y ya se excluyen
+# del commit wip-save; aquí quedan además protegidos de un git add -A manual.
+opencode-session.log
+session-failure.txt

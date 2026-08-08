@@ -68,7 +68,7 @@ concurrency:
 jobs:
   resolve:
     runs-on: ubuntu-latest
-    timeout-minutes: 120  # los flujos SDD con variant max tardan minutos
+    timeout-minutes: 90   # el watchdog de run-sdd-session.sh acota la sesión (issue #145)
     if: |
       (github.event_name == 'issues' && !github.event.issue.pull_request)
       || (github.event_name == 'issue_comment' && !github.event.issue.pull_request
@@ -376,27 +376,16 @@ jobs:
           echo "=== DRY RUN: prompt de la sesión ==="
           cat sdd_prompt.md
 
-      - name: Sesión OpenCode (agente sdd-master, modelo free, variante max)
+      - name: Sesión OpenCode (agente sdd-master, watchdog + transcripción)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
-        timeout-minutes: 90
+        timeout-minutes: 60
         run: |
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
-          echo "Lanzando sesión automática para la issue #$N ..."
-          set +e
-          timeout 3600 opencode run \
-              --agent sdd-master \
-              -m opencode/deepseek-v4-flash-free \
-              --variant max \
-              --auto \
-              --format default \
-              --title "auto: issue #$N" \
-              "$(cat sdd_prompt.md)"
-          OPENCODE_EXIT=$?
-          set -e
-          if [[ "$OPENCODE_EXIT" -ne 0 ]]; then
-            echo "FALLO: la sesión automática de la issue #$N falló (exit $OPENCODE_EXIT)." >&2
-            exit 1
-          fi
+          echo "Lanzando sesión automática para la issue #$N (watchdog: estancamiento 10 min, total 45 min)..."
+          # run-sdd-session.sh gestiona el watchdog (estancamiento/límite total),
+          # la transcripción con logs de subagentes y el motivo de fallo; su
+          # exit code NO nulo hace fallar el paso (issue #145).
+          bash scripts/run-sdd-session.sh "sdd_prompt.md" "auto: issue #$N"
 
       # =========================================================================
       # Protección de progreso WIP (issue #128): el runner es efímero; si la
@@ -404,6 +393,8 @@ jobs:
       # el estado local (micro-commits + working tree) en wip/issue-N y lo
       # pushea ANTES de que GitHub destruya el runner. El siguiente intento lo
       # restaura con wip-restore. Best-effort: un fallo aquí solo avisa.
+      # El watchdog de run-sdd-session.sh (issue #145) corta la sesión estancada
+      # (10 min sin salida) o que supera el límite total (45 min) con motivo claro.
       # =========================================================================
       - name: Guardar progreso WIP en fallo de sesión (best-effort)
         id: wip-save
@@ -418,7 +409,9 @@ jobs:
           # Excluir artefactos locales del run: NO deben mezclarse con el código del repo.
           git add -A -- . \
             ':(exclude)candidate.json' \
-            ':(exclude)sdd_prompt.md' 2>/dev/null || true
+            ':(exclude)sdd_prompt.md' \
+            ':(exclude)opencode-session.log' \
+            ':(exclude)session-failure.txt' 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar: no se crea la rama $BRANCH_NAME."
             exit 0
@@ -446,7 +439,11 @@ jobs:
           [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" ]] || PREV_STATUS="todo"
           echo "Reintentando: se devuelve la issue #$N a la cola (status: $PREV_STATUS) y se comenta el fallo."
           bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
-          gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló. Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+          FAIL_REASON=""
+          if [[ -f "$GITHUB_WORKSPACE/session-failure.txt" ]]; then
+            FAIL_REASON=" Motivo: $(head -c 4000 "$GITHUB_WORKSPACE/session-failure.txt")"
+          fi
+          gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
 
       - name: Disparar despliegue deploy-all-branches (workflow_dispatch)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
