@@ -13,15 +13,16 @@ import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
-import { openRatingModal, closeRatingModal } from "./rating-modal.js";
+import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { addItem } from "./db.js";
 
 // Abre la ventana de valoración tras marcar como vista/leída una
 // película o un libro (issue #21). Nunca lanza: si algo falla, se
 // registra en consola y el marcado ya persistido sigue intacto.
-async function maybeOpenItemRatingWindow(item, ctx, type) {
+// Devuelve true si el usuario deshizo el marcado (issue #136).
+async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
   try {
-    await openRatingModal({
+    const result = await openRatingModal({
       type,
       title: item.title,
       coverUrl: item.coverUrl,
@@ -32,10 +33,14 @@ async function maybeOpenItemRatingWindow(item, ctx, type) {
         await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
         item.rating = rating;
       },
+      onUndo: opts.onUndo,
+      undoLabel: opts.undoLabel,
     });
+    return result === RATING_MODAL_UNDONE;
   } catch (err) {
     console.error("No se pudo abrir la valoración:", err);
   }
+  return false;
 }
 
 function confirmDelete(item, kind, ctx) {
@@ -125,8 +130,26 @@ async function openMovieItem(item, ctx) {
 
   ui.openMovieModal(item, {
     onAddWatch: async (date) => {
+      const prevLog = item.watchLog;
+      const prevAwaitingRelease = item.awaitingRelease;
+      const prevStatus = item.status;
       await persist(addWatch(item.watchLog, date));
-      await maybeOpenItemRatingWindow(item, ctx, "movie");
+      // Deshacer (issue #136): restaura el watchLog y el status previos
+      // sin pasar por persist(), que fuerza awaitingRelease:false. El
+      // status se restaura LITERAL al capturado (no al recomputado del
+      // log) por si el usuario lo tenía en un estado manual.
+      await maybeOpenItemRatingWindow(item, ctx, "movie", {
+        onUndo: async () => {
+          await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
+            watchLog: prevLog,
+            status: prevStatus,
+            awaitingRelease: prevAwaitingRelease,
+          });
+          item.watchLog = prevLog;
+          item.status = prevStatus;
+          item.awaitingRelease = prevAwaitingRelease;
+        },
+      });
     },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
@@ -288,8 +311,22 @@ function openBookItem(item, ctx) {
   ui.openBookModal(item, {
     onStartReading: (date) => persist(startReading(item.readLog, date)),
     onFinishReading: async (date) => {
+      const prevLog = item.readLog;
+      const prevStatus = item.status;
       await persist(finishReading(item.readLog, date));
-      await maybeOpenItemRatingWindow(item, ctx, "book");
+      // Deshacer (issue #136): restaura el readLog y el status previos.
+      // El status se restaura LITERAL al capturado (no al recomputado
+      // del log) por si el usuario lo tenía en un estado manual.
+      await maybeOpenItemRatingWindow(item, ctx, "book", {
+        onUndo: async () => {
+          await ctx.updateItem(ctx.getCurrentUser().uid, "book", item.id, {
+            readLog: prevLog,
+            status: prevStatus,
+          });
+          item.readLog = prevLog;
+          item.status = prevStatus;
+        },
+      });
     },
     onUpdateEntry: (index, changes) => persist(updateReadEntry(item.readLog, index, changes)),
     onRemoveEntry: (index) => persist(removeReadEntry(item.readLog, index)),
@@ -371,7 +408,8 @@ async function openTvItem(item, ctx) {
   // (issue #21). Muestra la nota de comunidad DEL EPISODIO (TMDB),
   // no la de la serie. Nunca lanza: el marcado ya persistido queda
   // intacto aunque falle la consulta de metadatos o el guardado.
-  async function maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber) {
+  // Devuelve true si el usuario deshizo el marcado (issue #136).
+  async function maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, opts = {}) {
     try {
       let meta = null;
       if (!item.manual && item.externalId) {
@@ -381,7 +419,7 @@ async function openTvItem(item, ctx) {
       const entry = normalizeEntry(
         (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
       ) || {};
-      await openRatingModal({
+      const result = await openRatingModal({
         type: "tv",
         title: item.title,
         coverUrl: item.coverUrl,
@@ -392,10 +430,14 @@ async function openTvItem(item, ctx) {
         onSave: async (rating) => {
           await persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating));
         },
+        onUndo: opts.onUndo,
+        undoLabel: opts.undoLabel,
       });
+      return result === RATING_MODAL_UNDONE;
     } catch (err) {
       console.error("No se pudo abrir la valoración del episodio:", err);
     }
+    return false;
   }
 
   // --- Cargar recomendaciones (similares) ---
@@ -428,11 +470,31 @@ async function openTvItem(item, ctx) {
         (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
       );
       const wasWatched = Boolean(prevEntry && prevEntry.date);
+      const prevAwaitingRelease = item.awaitingRelease;
+      const prevStatus = item.status;
       const newProgress = await persistWatched(
         setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)
       );
       if (!wasWatched && dateOrNull) {
-        await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber);
+        // Deshacer (issue #136): si se deshace el marcado recién hecho,
+        // se vuelve al progreso previo para que la UI de debajo pinte
+        // la casilla/estrellas/fecha correctamente (item ya mutado).
+        const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
+          onUndo: async () => {
+            await persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, null));
+            // persistWatched fuerza awaitingRelease:false y el status
+            // recomputado; el segundo update restaura el flag/estado
+            // previo. Ventana transitoria en DB auto-reparable
+            // (idempotente, issue #136).
+            if (prevAwaitingRelease) {
+              await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awaitingRelease: true });
+              item.awaitingRelease = true;
+            }
+            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { status: prevStatus });
+            item.status = prevStatus;
+          },
+        });
+        if (undone) return computeProgress(seasonsMeta, item.watched); // progreso REVERTIDO
       }
       return newProgress;
     },
