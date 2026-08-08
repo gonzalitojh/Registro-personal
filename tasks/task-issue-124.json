@@ -1,7 +1,7 @@
 {
   "title": "Etiqueta status: needs-review eliminada del repositorio por la action issues-done-on-dev",
   "description": "Constantemente se está eliminando la etiqueta `status: needs-review`. No se refiere a que se quita de las issues, sino que se elimina la etiqueta del repositorio, lo cual lleva en ocasiones a errores en la action _issues-done-on-dev_.\n\nCausa raíz: en `.github/workflows/issues-done-on-dev.yml` se usa `github.rest.issues.deleteLabel`, que llama a `DELETE /repos/{owner}/{repo}/labels/{name}` y elimina la etiqueta del REPOSITORIO completo (afectando a todas las issues que la usan). La llamada correcta para retirar la etiqueta solo de una issue es `github.rest.issues.removeLabel` (`DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`).\n\nNota de proceso: un intento previo (sesión automática de GitHub Actions, rama `fix/issue-124-etiqueta-needs-review`, commit `91d80ba`) realizó este fix, ADR y task file, pero el runner era efímero y el trabajo se perdió sin publicarse (el bot no tenía permiso `workflows`). El usuario ya concedió los permisos; se reimplementa siguiendo la misma especificación documentada en los comentarios de la issue.",
-  "status": "documented",
+  "status": "review",
   "plan": {
     "archivo": ".github/workflows/issues-done-on-dev.yml",
     "cambios": [
@@ -31,5 +31,13 @@
     "number": 124,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/124",
     "title": "Etiqueta status: needs-review eliminada"
+  },
+  "pr": {
+    "number": 142,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/142",
+    "title": "fix: no eliminar etiquetas del repositorio en issues-done-on-dev (issue #124)",
+    "branch": "fix/issue-124-etiqueta-needs-review",
+    "commit": "63c73f5",
+    "closes": "#124"
   }
 }
