@@ -121,7 +121,7 @@ jobs:
             N="$DISPATCH_ISSUE"
             STATE="$(gh issue view "$N" --json state -q .state)"
             LABELS="$(gh issue view "$N" --json labels --jq '.labels[].name')"
-            if [[ "$STATE" != "open" ]]; then
+            if [[ "$STATE" != "OPEN" ]]; then
               echo "La issue #$N está cerrada; no se reanuda." >&2
               echo "selected=NONE" >> "$GITHUB_OUTPUT"
               exit 0
@@ -148,7 +148,7 @@ jobs:
             # blocked, el comentario del usuario es la señal de que el bloqueo
             # se ha resuelto y la sesión debe reanudarse (issue #120).
             LABELS="$(gh issue view "$N" --json labels --jq '.labels[].name')"
-            if [[ "$STATE" != "open" ]]; then
+            if [[ "$STATE" != "OPEN" ]]; then
               echo "La issue #$N está cerrada; no se itera." >&2
               echo "selected=NONE" >> "$GITHUB_OUTPUT"
               exit 0
