@@ -58,7 +58,6 @@ permissions:
   pull-requests: write # creación de la PR por el publisher
   issues: write        # labels (set-state) y comentarios
   actions: write       # lanzar workflow_dispatch de deploy-all-branches tras sesión exitosa
-  workflows: write     # el agente puede modificar .github/workflows/*.yml (issue #141)
 
 # Una sola sesión a la vez: si llega un evento mientras otra sesión corre,
 # el nuevo run espera (cancel-in-progress: false NUNCA mata una sesión activa).
@@ -76,7 +75,7 @@ jobs:
                                                && github.actor != 'github-actions[bot]')
       || github.event_name == 'workflow_dispatch'
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.WORKFLOW_GIT_TOKEN }}
       # Opcional: solo si el usuario configura el secret; el modelo free de
       # OpenCode Zen funciona sin API key.
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -452,7 +451,7 @@ jobs:
       - name: Disparar despliegue deploy-all-branches (workflow_dispatch)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_GIT_TOKEN }}
         run: |
           echo "Lanzando deploy-all-branches (dispatch) para reconstruir Pages con las nuevas ramas..."
           gh workflow run deploy-all-branches.yml
