@@ -1,0 +1,67 @@
+{
+  "title": "Deshacer visualización desde la ventana de valoración",
+  "description": "Cuando se marca un ítem como visto/leído (película, libro o episodio de serie), se despliega la ventana de valoración emergente (issue #21). La issue #136 pide dar la posibilidad de DESHACER la visualización desde esa misma ventana: el usuario que marcó por error un ítem como visto/leído debe poder revertir ese marcado sin salir de la ventana emergente.\n\nComportamiento esperado:\n- La ventana de valoración muestra un botón «Deshacer» que revierte el marcado recién hecho (película: quita el visionado añadido; libro: deshace el «terminado»; episodio: desmarca el episodio).\n- El deshacer persiste el estado previo (watchLog/readLog/watched, status y awaitingRelease cuando aplique) y refleja la vista (modal de detalle o lista) sin recargar.\n- Un undo exitoso resuelve la promesa de openRatingModal con un valor especial para que los llamadores de acciones rápidas eviten el toast de «marcada como visto» y muestren el toast de «Marcado deshecho».\n- La ventana se cierra tras deshacer; el modal de detalle subyacente queda coherente con el estado revertido.\n\nPunto de partida (ADR-022): js/rating-modal.js (openRatingModal, Promise<number|null>), js/modal-handlers.js (maybeOpenItemRatingWindow, maybeOpenEpisodeRatingWindow), js/quick-actions.js (maybeQuickItemRating, maybeQuickEpisodeRating), delete js/tv-progress.js setEpisodeDate(null para desmarcar), watch-log.js removeWatch, reading-log.js removeReadEntry/updateReadEntry.",
+  "status": "review",
+  "acceptance criteria": [
+    "La ventana de valoración que se abre al marcar como visto/leído una película, un libro o un episodio ofrece un botón «Deshacer».",
+    "Deshacer en una película: revierte el visionado añadido (watchLog previo y status previo restaurados; awaitingRelease restaurado si procede).",
+    "Deshacer en un libro: revierte el «Terminado» (readLog previo y status previo restaurados).",
+    "Deshacer en un episodio de serie: desmarca el episodio (se elimina la fecha, la valoración puesta en la ventana no se conserva en un episodio ya desmarcado).",
+    "Tras una el estado de la UI queda coherente: el modal de detalle (o la ficha) refleja el estado revertido sin recargar la página; en TV, la fila del episodio/banner y la barra de progreso se repintan.",
+    "Los toasts de acciones relacionadas con el modal quedan coherentes: si se desa, no se muestra «marcada como visto» sino un aviso de que se deshizo.",
+    "Los cierres externos (✕, backdrop, Escape) siguen descartando sin guardar (sin deshacer).",
+    "El manual de usuario (docs/manual-de-usuario.md) se actualiza para explicar el botón «Deshacer» de la ventana de valoración (regla 3 de AGENTS.md).",
+    "ADR documentado con 'Related issue: #136'."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #136'.",
+    "PR creada contra dev con 'Closes #136' como primera línea del body.",
+    "Issue #136 label actualizada a su estado final (needs-review).",
+    "Task file actualizado y subido al repositorio (status review + bloque pr)."
+  ],
+  "issue": {
+    "number": 136,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/136",
+    "title": "Deshacer visualización"
+  },
+  "plan": {
+    "architect": "task-architect",
+    "summary": "Botón «Deshacer» en la ventana de valoración (issue #136): rating-modal.js acepta opts.onUndo/undoLabel y resuelve la promesa con RATING_MODAL_UNDONE ('undone'); snapshot del estado previo en los 4 callers (modal-handlers y quick-actions); TV: onSetEpisodeDate recompute el progreso revertido y ui.js deriva la fila de item.watched; persistencia extra para awaitingRelease (TV) y nextEpisodeAirDate (quick); guarda undoInProgress en close(); flex-wrap en .rating-modal__actions (ocio.css); toasts condicionales en quick-actions; manual de usuario + ADR-052 con Related issue #136."
+  },
+  "validation": {
+    "qa": "APROBADO en 2 iteraciones (qa-reviewer): criterios 1-7 PASS. Fixes LOW aplicados: restauración de status previo literal en los 4 flujos (película/libro/TV en modal y quick), comentario no-atomicidad undo TV, toasts robustos con String(err?.message || err). node --check OK en 4 JS. Sin regresiones.",
+    "hallazgos_corregidos": [
+      "Restaurar status previo capturado (no recomputado) en onUndo de los 4 flujos (modal-handlers onAddWatch/onFinishReading/onSetEpisodeDate; quick-actions quickMarkMovie/quickMarkBook/quickMarkTv) para estados manuales standby/abandonado",
+      "Toast robusto: String(err && err.message ? err.message : err) en catches de rm-save y rm-undo",
+      "Comentario de no-atomicidad del undo TV (segundo/tercer updateItem restaura flag previo)"
+    ],
+    "sugerencias_low": []
+  },
+  "security": {
+    "scan": "ACCEPTABLE (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "low_findings": [
+      "LOW: en modal-handlers onSetEpisodeDate el undo ejecuta 3 updateItem secuenciales (desmarcado → awaitingRelease:true → status previo); ventana transitoria en Firestore con estado intermedio visible para amigos (sección Amigos). Solo cosmética de datos propios, auto-reparable e idempotente, ya documentada en comentario del código. No bloquea."
+    ]
+  },
+  "documentation": {
+    "adr": "docs/adr-052-undo-rating-window.md",
+    "related_issue": "#136",
+    "manual_usuario": "docs/manual-de-usuario.md actualizado: secciones 4.3, 5.3, 6.3, 10, 11 y 18 (bottom «Deshacer», toasts «Marcado deshecho.»/«Desmarcado.»)",
+    "readme": "sin cambios (no se ha revisado necesidad; feature de UI ya documentada en manual)"
+  },
+  "pr": {
+    "number": 140,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/140",
+    "title": "[feat] Botón «Deshacer» en la ventana de valoración (issue #136)",
+    "branch": "feature/issue-136-undo-rating-window",
+    "commit": "d93bb44",
+    "closes": "#136"
+  }
+}
