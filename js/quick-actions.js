@@ -9,7 +9,7 @@ import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry } fro
 import { todayISO } from "./dates.js";
 import { unreleasedConfirmMessage, episodeUnreleasedMessage } from "./release.js";
 import { getNextEpisodeAirInfo } from "./sorting.js";
-import { openRatingModal } from "./rating-modal.js";
+import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 
 // Meta de temporadas: para series manuales devuelve una sola
 // temporada con el nº de episodios indicado; para el resto, pide
@@ -24,9 +24,10 @@ export async function getSeasonsMetaFor(item, ctx) {
 // Abre la ventana de valoración tras marcar como vista/leída una
 // película o un libro desde una acción rápida (issue #21). Nunca
 // lanza: si algo falla, el marcado ya persistido queda intacto.
-async function maybeQuickItemRating(item, ctx, type) {
+// Devuelve true si el usuario deshizo el marcado (issue #136).
+async function maybeQuickItemRating(item, ctx, type, opts = {}) {
   try {
-    await openRatingModal({
+    const result = await openRatingModal({
       type,
       title: item.title,
       coverUrl: item.coverUrl,
@@ -37,15 +38,22 @@ async function maybeQuickItemRating(item, ctx, type) {
         await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
         item.rating = rating;
       },
+      onUndo: opts.onUndo,
+      undoLabel: opts.undoLabel,
     });
+    return result === RATING_MODAL_UNDONE;
   } catch (err) {
     console.error("No se pudo abrir la valoración:", err);
   }
+  return false;
 }
 
 async function quickMarkMovie(item, ctx) {
   const confirmMsg = unreleasedConfirmMessage(item);
   if (confirmMsg && !window.confirm(confirmMsg)) return;
+  const prevLog = item.watchLog;
+  const prevAwaitingRelease = item.awaitingRelease;
+  const prevStatus = item.status;
   const newLog = addWatch(item.watchLog, todayISO());
   const status = statusFromWatchLog(newLog);
   // awaitingRelease se limpia al marcar como vista (idempotente, igual
@@ -53,18 +61,50 @@ async function quickMarkMovie(item, ctx) {
   // "sin estrenar".
   await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status, awaitingRelease: false });
   item.awaitingRelease = false;
-  await maybeQuickItemRating(item, ctx, "movie");
-  ctx.showToast(`«${item.title}» marcada como vista.`);
+  // Deshacer (issue #136): restaura el watchLog/status/awaitingRelease
+  // previos sin forzar awaitingRelease:false. El status se restaura
+  // LITERAL al capturado (no al recomputado del log).
+  const undone = await maybeQuickItemRating(item, ctx, "movie", {
+    onUndo: async () => {
+      await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
+        watchLog: prevLog,
+        status: prevStatus,
+        awaitingRelease: prevAwaitingRelease,
+      });
+      item.watchLog = prevLog;
+      item.status = prevStatus;
+      item.awaitingRelease = prevAwaitingRelease;
+    },
+  });
+  ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);
 }
 
 async function quickMarkBook(item, ctx) {
   const isReading = item.readLog && item.readLog.length && !item.readLog[item.readLog.length - 1].finishedAt;
   const newLog = isReading ? finishReading(item.readLog, todayISO()) : startReading(item.readLog, todayISO());
   const status = statusFromReadLog(newLog);
+  const prevReadLog = isReading ? item.readLog : null;
+  const prevStatus = isReading ? item.status : null;
   await ctx.updateItem(ctx.getCurrentUser().uid, "book", item.id, { readLog: newLog, status });
   // La ventana de valoración solo se ofrece al terminar de leer
-  if (isReading) await maybeQuickItemRating(item, ctx, "book");
-  ctx.showToast(isReading ? `«${item.title}» terminado.` : `Has empezado «${item.title}».`);
+  if (isReading) {
+    // Deshacer (issue #136): restaura el readLog y el status previos.
+    // El status se restaura LITERAL al capturado (no al recomputado
+    // del log) por si el usuario lo tenía en un estado manual.
+    const undone = await maybeQuickItemRating(item, ctx, "book", {
+      onUndo: async () => {
+        await ctx.updateItem(ctx.getCurrentUser().uid, "book", item.id, {
+          readLog: prevReadLog,
+          status: prevStatus,
+        });
+        item.readLog = prevReadLog;
+        item.status = prevStatus;
+      },
+    });
+    ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» terminado.`);
+  } else {
+    ctx.showToast(`Has empezado «${item.title}».`);
+  }
 }
 
 // Persiste el progreso de una serie (marcado o valoración de un
@@ -106,9 +146,10 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
 // Abre la ventana de valoración del episodio recién marcado desde
 // una acción rápida (issue #21). meta puede ser null (serie manual
 // o episodio sin datos): entonces no se muestra nota de comunidad.
-async function maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta) {
+// Devuelve true si el usuario deshizo el marcado (issue #136).
+async function maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta, opts = {}) {
   try {
-    await openRatingModal({
+    const result = await openRatingModal({
       type: "tv",
       title: item.title,
       coverUrl: item.coverUrl,
@@ -124,10 +165,14 @@ async function maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, 
           setEpisodeRating(item.watched, season, episode, rating)
         );
       },
+      onUndo: opts.onUndo,
+      undoLabel: opts.undoLabel,
     });
+    return result === RATING_MODAL_UNDONE;
   } catch (err) {
     console.error("No se pudo abrir la valoración del episodio:", err);
   }
+  return false;
 }
 
 async function quickMarkTv(item, ctx) {
@@ -194,6 +239,10 @@ async function quickMarkTv(item, ctx) {
       };
     }
   }
+  const prevWatched = item.watched;
+  const prevAwaitingRelease = item.awaitingRelease;
+  const prevStatus = item.status;
+  const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
   await saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate);
   // Valoración del episodio: con datos TMDB se muestra la nota de
   // comunidad del episodio; en series manuales meta es null, así que
@@ -211,8 +260,33 @@ async function quickMarkTv(item, ctx) {
       console.error("No se pudo obtener el episodio para valorarlo:", err);
     }
   }
-  await maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta);
-  ctx.showToast(`T${season}E${episode} marcado como visto.`);
+  // Deshacer (issue #136): restaura el progreso previo de la serie
+  // (watched, status literal del capturado, nextEpisode, fechas y
+  // awaitingRelease; saveTvProgress recalcula el status y este payload
+  // lo sobreescribe con el previo por si era un estado manual).
+  const undone = await maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta, {
+    onUndo: async () => {
+      const prevProgress = computeProgress(seasonsMeta, prevWatched);
+      const payload = {
+        watched: prevWatched,
+        status: prevStatus,
+        nextEpisode: prevProgress.nextEpisode,
+        firstWatchedAt: prevProgress.firstWatchedAt,
+        lastWatchedAt: prevProgress.lastWatchedAt,
+        awaitingRelease: prevAwaitingRelease,
+        nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+      };
+      await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
+      item.watched = prevWatched;
+      item.status = payload.status;
+      item.nextEpisode = payload.nextEpisode;
+      item.firstWatchedAt = payload.firstWatchedAt;
+      item.lastWatchedAt = payload.lastWatchedAt;
+      item.awaitingRelease = prevAwaitingRelease;
+      item.nextEpisodeAirDate = payload.nextEpisodeAirDate;
+    },
+  });
+  ctx.showToast(undone ? "Desmarcado." : `T${season}E${episode} marcado como visto.`);
 }
 
 export async function quickAction(item, btn, ctx) {

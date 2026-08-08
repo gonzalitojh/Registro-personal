@@ -1428,25 +1428,24 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         const newDate = checkbox.checked ? todayISO() : null;
         try {
           const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
-          row.classList.toggle("is-watched", checkbox.checked);
-          dateInput.disabled = !checkbox.checked;
-          dateInput.value = newDate || "";
-          ratingWrap.classList.toggle("hidden", !checkbox.checked);
-          if (!checkbox.checked) {
-            ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
-          } else {
-            // Reflejar la valoración que pudo dejarse en la ventana
-            // emergente tras marcar el episodio (issue #21)
-            const entry = normalizeEntry(
-              (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
-            );
-            const rating = entry ? entry.rating : null;
-            ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
-              s.classList.toggle("is-active", Number(s.dataset.value) <= (rating || 0))
-            );
-          }
-          const watchedCountInSeason = block.querySelectorAll(".episode-row.is-watched").length;
-          updateSeasonCount(seasonNumber, watchedCountInSeason, episodeCount);
+          // Pintado DERIVADO de item.watched (no del checkbox pulsado):
+          // refleja también un posible «Deshacer» desde la ventana de
+          // valoración emergente (issue #136).
+          const entry2 = normalizeEntry(
+            (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+          );
+          const isWatched = Boolean(entry2 && entry2.date);
+          checkbox.checked = isWatched;
+          row.classList.toggle("is-watched", isWatched);
+          dateInput.disabled = !isWatched;
+          dateInput.value = isWatched ? entry2.date : "";
+          ratingWrap.classList.toggle("hidden", !isWatched);
+          const rating2 = entry2 ? entry2.rating : null;
+          ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
+            s.classList.toggle("is-active", Number(s.dataset.value) <= (rating2 || 0))
+          );
+          const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
+          updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
           updateBanner(newProgress);
         } catch (err) {
           checkbox.checked = !checkbox.checked;

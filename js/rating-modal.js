@@ -7,13 +7,19 @@
 // picker de estrellas de ui.js.
 //
 // La promesa que devuelve openRatingModal() se resuelve con el
-// rating guardado (1-5) o con null si se descartó. Nunca rechaza:
-// los errores de guardado se notifican con un toast y la ventana
-// permanece abierta.
+// rating guardado (1-5), con RATING_MODAL_UNDONE si se deshizo el
+// marcado, o con null si se descartó. Nunca rechaza: los errores de
+// guardado/deshacer se notifican con un toast y la ventana permanece
+// abierta.
 // =============================================================
 
 import { ratingPickerHtml, wireRatingAndGetValue, showToast, PLACEHOLDER_COVER } from "./ui.js";
 import { trapFocus } from "./focus-utils.js";
+
+// Valor especial con el que se resuelve la promesa cuando el usuario
+// pulsa «Deshacer»: el marcado recién hecho se anuló y la UI de debajo
+// debe volver a su estado previo (issue #136).
+export const RATING_MODAL_UNDONE = "undone";
 
 function escapeHtml(str) {
   if (!str) return "";
@@ -49,6 +55,10 @@ function safeCoverUrl(url) {
 // lo usa para cerrar la ventana desde fuera (p. ej. la tecla Escape,
 // que prioriza el handler global de modal-handlers.js).
 let currentClose = null;
+// Mientras el deshacer está en curso, los cierres externos (✕,
+// backdrop, Escape, «Ahora no») se ignoran: no deben resolver la
+// promesa con null a mitad de la restauración (issue #136).
+let undoInProgress = false;
 
 /**
  * Cierra la ventana de valoración sin guardar (si está abierta).
@@ -77,9 +87,12 @@ document.getElementById("rating-modal-backdrop").addEventListener("click", () =>
  * @param {string} opts.communityLabel  - "TMDB" o "TMDB · episodio"
  * @param {number|null} opts.initialRating - Valoración previa del usuario (1-5)
  * @param {Function} opts.onSave        - async (rating) => {}, persiste la valoración
- * @returns {Promise<number|null>} Rating 1-5 guardado, o null si se descartó.
+ * @param {Function} [opts.onUndo]      - async () => {}, anula el marcado recién hecho
+ * @param {string} [opts.undoLabel]     - Texto del botón «Deshacer» (por defecto "Deshacer")
+ * @returns {Promise<number|string|null>} Rating 1-5 guardado, RATING_MODAL_UNDONE si se
+ *          deshizo el marcado, o null si se descartó.
  */
-export function openRatingModal({ type, title, coverUrl, episodeLabel, communityRating, communityLabel, initialRating, onSave }) {
+export function openRatingModal({ type, title, coverUrl, episodeLabel, communityRating, communityLabel, initialRating, onSave, onUndo, undoLabel = "Deshacer" }) {
   return new Promise((resolve) => {
     const modal = document.getElementById("rating-modal");
     const content = document.getElementById("rating-modal-content");
@@ -108,6 +121,7 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
         ${ratingPickerHtml(initialRating || 0, "rm-rating")}
       </div>
       <div class="rating-modal__actions">
+        ${onUndo ? `<button type="button" class="btn btn--outline" id="rm-undo">${escapeHtml(undoLabel)}</button>` : ""}
         <button type="button" class="btn btn--outline" id="rm-save-later">Ahora no</button>
         <button type="button" class="btn btn--primary" id="rm-save">Guardar valoración</button>
       </div>
@@ -121,6 +135,7 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
 
     let settled = false;
     const close = (result) => {
+      if (undoInProgress) return; // el deshacer en curso decide el cierre (issue #136)
       if (settled) return; // idempotente: cerrar dos veces no resuelve dos veces
       settled = true;
       currentClose = null;
@@ -158,10 +173,45 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
         await onSave(rating);
         close(rating);
       } catch (err) {
-        showToast("No se pudo guardar la valoración: " + err.message);
+        // Robustez frente a errores que no son instancia de Error
+        // (p. ej. throw de strings/valores): el toast nunca muestra
+        // "undefined".
+        showToast("No se pudo guardar la valoración: " + String(err && err.message ? err.message : err));
         saveBtn.disabled = false;
       }
     });
+
+    // Deshacer: anula el marcado recién hecho y cierra con
+    // RATING_MODAL_UNDONE; si falla, toast y la ventana se queda
+    // abierta. Ambos botones (deshacer y guardar) se deshabilitan
+    // durante la operación para evitar carreras, y los cierres
+    // externos se ignoran mientras corre (issue #136).
+    if (onUndo) {
+      content.querySelector("#rm-undo").addEventListener("click", async () => {
+        const undoBtn = content.querySelector("#rm-undo");
+        const saveBtn = content.querySelector("#rm-save");
+        undoBtn.disabled = true;
+        saveBtn.disabled = true;
+        undoInProgress = true;
+        try {
+          await onUndo();
+          // Liberar la guarda ANTES de cerrar: el close() con
+          // RATING_MODAL_UNDONE debe pasar (la guarda solo bloquea
+          // los cierres externos con null mientras el undo corre).
+          undoInProgress = false;
+          close(RATING_MODAL_UNDONE);
+        } catch (err) {
+          // Robustez frente a errores que no son instancia de Error
+          // (p. ej. throw de strings/valores): el toast nunca muestra
+          // "undefined".
+          showToast("No se pudo deshacer: " + String(err && err.message ? err.message : err));
+          undoBtn.disabled = false;
+          saveBtn.disabled = false;
+        } finally {
+          undoInProgress = false;
+        }
+      });
+    }
 
     // Record previous focus and trap
     modal._previousActiveElement = document.activeElement;

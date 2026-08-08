@@ -179,6 +179,8 @@ Para cada episodio puedes:
 
 - **Marcarlo como visto** con la casilla. Si el episodio aún no se ha
   estrenado, la web te preguntará antes si quieres marcarlo igualmente.
+  Si lo marcas por equivocación, la ventana de valoración ofrece
+  **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
 - **Valorarlo** con estrellas, una vez visto (más en [sección 10](#10-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
@@ -247,7 +249,8 @@ manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
 En tu lista, cada película tiene un botón **«Vista»**. Al pulsarlo se
 registra el visionado con la fecha de hoy y se abre la ventana de
 **valoración** para que la puntúes de 1 a 5 estrellas (puedes pulsar
-**«Ahora no»**).
+**«Ahora no»**). Si te arrepientes del marcado, pulsa **«Deshacer»** en
+esa ventana: el visionado se anula y no se añade al historial.
 
 Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 **«Añadir otro visionado»** — la web guarda ambos en el historial.
@@ -293,7 +296,9 @@ En la ficha del libro:
 
 - **«Empezar a leer»**: registra el inicio con la fecha de hoy.
 - **«Terminar de leer»**: cierra la lectura con la fecha de hoy y abre la
-  ventana de valoración.
+  ventana de valoración. Si pulsas **«Deshacer»** en esa ventana, el
+  libro vuelve a quedar como estaba: si estabas leyendo, vuelve a
+  «Leyendo», y la lectura terminada no se registra.
 - **«Página actual»**: anota por qué página vas. Se guarda en la ficha del
   libro y la ven tus amigos en el feed de actividad.
 - **En pausa / Abandonar / Retomar**: como en las series, sin perder tu
@@ -447,6 +452,11 @@ tarde, o elegir estrellas y pulsar **«Guardar valoración»**. Si pulsas
 guardar sin elegir, la web te lo recuerda. Pulsando otra vez sobre la
 misma estrella quitas la valoración.
 
+También puedes pulsar **«Deshacer»**: anula el marcado recién hecho
+(el visionado de la película, el fin de la lectura o el episodio
+marcado) y te deja como estabas. En episodios, el deshacer se ofrece
+solo mientras la ventana está abierta.
+
 En tu lista, cada título muestra tus estrellas (★) y la nota de la
 comunidad.
 
@@ -468,8 +478,11 @@ En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
 haciendo scroll normalmente.
 
-La acción se confirma con un aviso flotante. En series en pausa o
-abandonadas no funciona: la web te avisa de que la abras para retomarla.
+La acción se confirma con un aviso flotante (por ejemplo, «marcada como
+vista»). Si en la ventana de valoración pulsas **«Deshacer»**, ese aviso
+cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
+series en pausa o abandonadas no funciona: la web te avisa de que la
+abras para retomarla.
 
 ### 11.3 Deshacer un borrado
 
@@ -671,7 +684,9 @@ Es un fallo puntual del servidor de libros, no tuyo: la web reintenta
 sola. Si persiste, espera unos segundos y vuelve a intentarlo.
 
 **He marcado algo por error**
-Tranquilo: puedes desmarcar episodios, quitar visionados del historial y
+Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
+valoración que se abre al marcar y todo vuelve a estar como antes.
+También puedes desmarcar episodios, quitar visionados del historial y
 «Deshacer» cualquier borrado en los segundos posteriores.
 
 **No veo a un amigo nuevo**
