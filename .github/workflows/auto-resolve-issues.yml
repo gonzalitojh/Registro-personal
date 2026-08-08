@@ -58,6 +58,7 @@ permissions:
   pull-requests: write # creación de la PR por el publisher
   issues: write        # labels (set-state) y comentarios
   actions: write       # lanzar workflow_dispatch de deploy-all-branches tras sesión exitosa
+  workflows: write     # el agente puede modificar .github/workflows/*.yml (issue #141)
 
 # Una sola sesión a la vez: si llega un evento mientras otra sesión corre,
 # el nuevo run espera (cancel-in-progress: false NUNCA mata una sesión activa).

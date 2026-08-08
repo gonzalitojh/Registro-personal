@@ -1,0 +1,34 @@
+{
+  "title": "GitHub Actions no puede modificar workflows",
+  "description": "La resolución de la issue #124 por parte del workflow auto-resolve-issues ha fallado y, si no me equivoco, ha sido porque carece de ciertos permisos para ello. Creía que los había concedido pero es posible que no.\n\nConceder los permisos necesarios para que no falle y se pueda hacer. En caso de que no tengas permisos para hacerlo, explicar paso a paso cómo se hace.\n\nCausa raíz (verificada en logs del run 31248694436 y en task-issue-124.json): el workflow auto-resolve-issues.yml declara permisos contents/pull-requests/issues/actions pero NO `workflows`. GitHub exige el scope `workflows: write` para que un token (GITHUB_TOKEN) pueda pushear cambios en archivos .github/workflows/*.yml. Por eso la sesión que resolvía la #124 editó issues-done-on-dev.yml, hizo el commit y el push fue rechazado (run colgado ~56 min hasta timeout, exit 1). El permiso workflows NO se puede conceder desde la UI de Settings (solo desde el YAML del workflow o un PAT con ese scope); el GITHUB_TOKEN hereda los permisos declarados en permissions: del workflow.",
+  "status": "documented",
+  "plan": {
+    "archivo": ".github/workflows/auto-resolve-issues.yml",
+    "cambios": [
+      "C1: añadir `workflows: write` al bloque permissions: del workflow auto-resolve-issues.yml (junto a contents, pull-requests, issues, actions)"
+    ],
+    "adr": "docs/adr-053-workflows-permission-github-actions.md con Related issue: #141",
+    "opcional": "El manual de usuario no se ve afectado (cambio interno de CI)"
+  },
+  "acceptance criteria": [
+    "AC1: El workflow auto-resolve-issues.yml declara el permiso `workflows: write` en su bloque permissions.",
+    "AC2: El token de GitHub Actions usado en la sesión puede pushear cambios en archivos .github/workflows/*.yml (sin error 'refusing to allow a GitHub App or bot to create or update workflow').",
+    "AC3: El resto de permisos existentes (contents, pull-requests, issues, actions) se mantienen intactos.",
+    "AC4: El resto del comportamiento del workflow se mantiene (selección de issue, claim, WIP, rollback, deploy dispatch).",
+    "AC5: El manual de usuario no se ve afectado (cambio interno de CI)."
+  ],
+  "definition of done": [
+    "Planificación realizada y aprobada.",
+    "Implementación completada en .github/workflows/auto-resolve-issues.yml.",
+    "Validación con qa-reviewer superada (criterios de aceptación + DoD).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado en docs/ con 'Related issue: #141'.",
+    "PR creada contra dev con 'Closes #141' como primera línea del body.",
+    "Issue #141 label actualizada a su estado final (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 141,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/141",
+    "title": "GitHub Actions no puede modificar workflows"
+  }
+}
