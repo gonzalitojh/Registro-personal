@@ -1,7 +1,7 @@
 {
   "title": "Mejoras de auto-resolve-issues (issue #145)",
   "description": "La action auto-resolve-issues guarda los cambios ante fallos (issue #128), pero cuando la sesión falla (subagente, tokens gratuitos agotados, push rechazado, etc.) el workflow sigue activo hasta agotar ~1 hora de ejecución (timeout 3600) sin hacer nada, quemando minutos gratuitos de GitHub Actions. Además, en el log de la action solo se ve el inicio/fin de cada subagente, no sus logs.\n\nSolicitudes de la issue:\n1. Que cuando falle por cualquier motivo (aunque sea en un subagente) se detenga la ejecución y se proporcione un output adecuado.\n2. Un límite de tiempo para evitar que el modelo se quede estancado en un único paso hasta agotar la hora (sugerencia: ~10 minutos, ajustado a otras ejecuciones).\n3. Ver en el log de la action también los logs de los subagentes (actualmente solo se muestra '• ... subagent' de inicio y '✓ ...' de fin).",
-  "status": "in-progress",
+  "status": "implemented",
   "acceptance_criteria": [
     "AC1: La sesión de opencode se ejecuta bajo un watchdog que detecta estancamiento: si no hay salida nueva durante N segundos (default 600 = 10 min, configurable vía env), mata la sesión y el paso falla con un mensaje de error claro (::error:: con el motivo).",
     "AC2: Existe un límite total de duración de la sesión (default 2700 s = 45 min, configurable vía env, calibrado con las ejecuciones observadas: exitosas de 7-25 min; la fallida quemó 60 min) que mata la sesión si se supera, en lugar del antiguo timeout fijo de 3600 s.",
