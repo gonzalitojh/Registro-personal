@@ -26,13 +26,21 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/59",
     "title": "Enrutamiento"
   },
-  "plan": "Router hash #/ocio con sub-rutas /series|/peliculas|/libros. Nuevo js/router.js, extracción activatePanel en app.js, bump PWA/SW, sidebar Ocio navega, manual actualizado, ADR-051.",
+  "plan": "Iteración 1: Router hash #/ocio con sub-rutas /series|/peliculas|/libros; nuevo js/router.js; extracción activatePanel en app.js; bump PWA/SW; sidebar Ocio navega; manual actualizado; ADR-051. Iteración 2 (comentario del usuario): ampliación al Perfil — #/perfil/estadisticas|amigos|actividad|datos|ajustes y #/perfil/amigos/<uid>; parseHash con mapas PROFILE_KEY_TO_SECTION/SECTION_TO_KEY, FIREBASE_UID_RE, navigate(string|objeto), getLastOcioKey, applyRoute(parseHash()) retoma tras login; profile.js: la UI navega y el router renderiza (openFriendCard, openFriendByUid, opts en openProfileSection); docs ADR-051 sección 6; manual 13.0; bump PWA 20260823; QA validada (2 rondas); seguridad aprobada.",
   "pr": {
     "number": 132,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/132",
-    "title": "[feature] Enrutamiento de la sección Ocio por hash (issue #59)",
+    "title": "[feature] Enrutamiento por hash: Ocio, Perfil y ficha de amigo (issue #59)",
     "branch": "feature/issue-59-enrutamiento",
-    "commit": "1d16170",
+    "commit": "f14ab28",
+    "closes": "#59"
+  },
+  "previousPr": {
+    "number": 132,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/132",
+    "title": "[feature] Enrutamiento por hash: Ocio, Perfil y ficha de amigo (issue #59)",
+    "branch": "feature/issue-59-enrutamiento",
+    "commit": "pending",
     "closes": "#59"
   }
 }
