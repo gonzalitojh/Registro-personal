@@ -1,0 +1,35 @@
+{
+  "title": "Etiqueta status: needs-review eliminada del repositorio por la action issues-done-on-dev",
+  "description": "Constantemente se está eliminando la etiqueta `status: needs-review`. No se refiere a que se quita de las issues, sino que se elimina la etiqueta del repositorio, lo cual lleva en ocasiones a errores en la action _issues-done-on-dev_.\n\nCausa raíz: en `.github/workflows/issues-done-on-dev.yml` se usa `github.rest.issues.deleteLabel`, que llama a `DELETE /repos/{owner}/{repo}/labels/{name}` y elimina la etiqueta del REPOSITORIO completo (afectando a todas las issues que la usan). La llamada correcta para retirar la etiqueta solo de una issue es `github.rest.issues.removeLabel` (`DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}`).\n\nNota de proceso: un intento previo (sesión automática de GitHub Actions, rama `fix/issue-124-etiqueta-needs-review`, commit `91d80ba`) realizó este fix, ADR y task file, pero el runner era efímero y el trabajo se perdió sin publicarse (el bot no tenía permiso `workflows`). El usuario ya concedió los permisos; se reimplementa siguiendo la misma especificación documentada en los comentarios de la issue.",
+  "status": "documented",
+  "plan": {
+    "archivo": ".github/workflows/issues-done-on-dev.yml",
+    "cambios": [
+      "C1: sustituir `github.rest.issues.deleteLabel` por `github.rest.issues.removeLabel` en el bucle que retira labels 'status: *' y 'ai-*' de cada issue",
+      "C2: añadir try/catch defensivo alrededor de removeLabel (si la label ya no está en la issue, no romper el bucle)"
+    ],
+    "adr": "docs/adr-052-remove-label-vs-delete-label.md con Related issue: #124",
+    "opcional": "El manual de usuario no se ve afectado (cambio interno de CI)"
+  },
+  "acceptance criteria": [
+    "AC1: La action issues-done-on-dev ya no elimina etiquetas del repositorio: usa `removeLabel` (retira la labelsolo de la issue) en lugar de `deleteLabel` (elimina la etiqueta del repo).",
+    "AC2: El bucle de limpieza sigue retirando de cada issue las labels 'status: *' (excepto 'status: done') y 'ai-*' sin romper el proceso si alguna label no está presente (try/catch defensivo).",
+    "AC3: La etiqueta 'status: needs-review' permanece disponible en el repositorio tras ejecutar la action.",
+    "AC4: El resto del comportamiento de la action se mantiene (añadir 'status: done', cerrar issues abiertas, salvaguarda anti-PR).",
+    "AC5: El manual de usuario no se ve afectado (cambio interno de CI)."
+  ],
+  "definition of done": [
+    "Planificación realizada y aprobada.",
+    "Implementación completada en .github/workflows/issues-done-on-dev.yml.",
+    "Validación con qa-reviewer superada (criterios de aceptación + DoD).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado en docs/ con 'Related issue: #124'.",
+    "PR creada contra dev con 'Closes #124' como primera línea del body.",
+    "Issue #124 label actualizada a su estado final (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 124,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/124",
+    "title": "Etiqueta status: needs-review eliminada"
+  }
+}
