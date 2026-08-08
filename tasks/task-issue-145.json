@@ -1,0 +1,29 @@
+{
+  "title": "Mejoras de auto-resolve-issues (issue #145)",
+  "description": "La action auto-resolve-issues guarda los cambios ante fallos (issue #128), pero cuando la sesión falla (subagente, tokens gratuitos agotados, push rechazado, etc.) el workflow sigue activo hasta agotar ~1 hora de ejecución (timeout 3600) sin hacer nada, quemando minutos gratuitos de GitHub Actions. Además, en el log de la action solo se ve el inicio/fin de cada subagente, no sus logs.\n\nSolicitudes de la issue:\n1. Que cuando falle por cualquier motivo (aunque sea en un subagente) se detenga la ejecución y se proporcione un output adecuado.\n2. Un límite de tiempo para evitar que el modelo se quede estancado en un único paso hasta agotar la hora (sugerencia: ~10 minutos, ajustado a otras ejecuciones).\n3. Ver en el log de la action también los logs de los subagentes (actualmente solo se muestra '• ... subagent' de inicio y '✓ ...' de fin).",
+  "status": "in-progress",
+  "acceptance_criteria": [
+    "AC1: La sesión de opencode se ejecuta bajo un watchdog que detecta estancamiento: si no hay salida nueva durante N segundos (default 600 = 10 min, configurable vía env), mata la sesión y el paso falla con un mensaje de error claro (::error:: con el motivo).",
+    "AC2: Existe un límite total de duración de la sesión (default 2700 s = 45 min, configurable vía env, calibrado con las ejecuciones observadas: exitosas de 7-25 min; la fallida quemó 60 min) que mata la sesión si se supera, en lugar del antiguo timeout fijo de 3600 s.",
+    "AC3: Al finalizar la sesión (éxito o fallo) se imprime en el log de la action una transcripción completa de la sesión que INCLUYE los mensajes de texto de los subagentes (extraída de la base de datos local de opencode: sesión primaria + sesiones hijas por parent_id), con cabeceras que identifican agente y momento.",
+    "AC4: Si opencode termina con error (exit != 0), se imprime el motivo y las últimas líneas de la salida cruda; el paso falla con exit != 0 para que sigan funcionando wip-save y rollback (issue #128).",
+    "AC5: El comentario de rollback en la issue incluye el motivo del fallo (estancamiento / tiempo total / exit code) leído de un archivo temporal del workspace.",
+    "AC6: Los artefactos temporales de la sesión (opencode-session.log, session-failure.txt) se excluyen del commit de wip-save y no se commitean en la PR.",
+    "AC7: El comportamiento del flujo SDD (micro-commits, rama de PR contra dev, publisher) no se altera."
+  ],
+  "definition_of_done": [
+    "Planificación realizada (agente de planificación).",
+    "Implementación completa: scripts/run-sdd-session.sh (watchdog), scripts/dump-session-transcript.py (transcripción con logs de subagentes), actualización de .github/workflows/auto-resolve-issues.yml (paso de sesión, exclusions en wip-save, rollback con motivo).",
+    "Validación con qa-reviewer superada (AC + DoD + casos borde).",
+    "Escaneo de seguridad superado (sin HIGH; MEDIUM/LOW informativos).",
+    "ADR en docs/ con 'Related issue: #145' (número siguiente libre).",
+    "PR creada contra dev con 'Closes #145' como PRIMERA línea del body.",
+    "Task file actualizado a status 'review' con bloque 'pr' y subido al repo.",
+    "Labels de la issue sincronizadas (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 145,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/145",
+    "title": "Mejoras de auto-resolve-issues"
+  }
+}
