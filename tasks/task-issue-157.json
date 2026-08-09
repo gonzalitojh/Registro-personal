@@ -1,0 +1,33 @@
+{
+  "title": "Cambiar botón de volver",
+  "description": "Issue #157: Cambiar el botón de volver por una flecha hacia la izquierda simplemente, sin recuadro ni palabra «volver».\n\nEl botón afectado es #btn-close-profile, en la cabecera de la vista de perfil (index.html):\n<button type=\"button\" class=\"btn btn--ghost\" id=\"btn-close-profile\">← Volver</button>\n\nTiene recuadro (clase btn btn--ghost, con borde redondeado) y la palabra «Volver». Debe quedarse solo una flecha hacia la izquierda, sin recuadro ni texto.\n\nEl botón #btn-back-to-friends («← Todos los amigos», class btn-link) NO dice «volver» y ya carece de recuadro: fuera del alcance de esta issue.\n\nContexto de código:\n- index.html línea 204: botón #btn-close-profile dentro de .profile-view__header.\n- css/styles.css: .icon-btn (botón de icono transparente sin recuadro, con svg de 1.15rem, focus-visible con outline teal) ya usado en la cabecera (hamburguesa #btn-sidebar-toggle y campana #btn-notifications); [data-theme=\"light\"] .icon-btn color var(--ink).\n- js/profile.js línea ~402-410: listener de clic de #btn-close-profile (cierra la vista de perfil y navega a la última pestaña de Ocio). No cambia la lógica, solo el aspecto.\n- docs/manual-de-usuario.md sección 13: describe el perfil; el botón de volver no está documentado explícitamente hoy.\n- Regla AGENTS.md: cualquier cambio visible para el usuario debe reflejarse en docs/manual-de-usuario.md.",
+  "status": "implemented",
+  "acceptance criteria": [
+    "1. El botón de volver del perfil (#btn-close-profile) muestra únicamente una flecha hacia la izquierda.",
+    "2. Sin recuadro: sin borde ni fondo de botón (clase btn/btn--ghost eliminada).",
+    "3. Sin la palabra «volver» visible.",
+    "4. Accesibilidad: el botón conserva un nombre accesible (aria-label) para lectores de pantalla.",
+    "5. Consistencia visual con los iconos existentes (SVG trazo currentColor, stroke-width 1.8, ~1.15rem como .icon-btn).",
+    "6. La lógica del clic se mantiene: cierra el perfil y vuelve a la última pestaña de Ocio.",
+    "7. Responsividad sin scroll horizontal en 360/768/1280 px y foco visible (reglas AGENTS.md).",
+    "8. docs/manual-de-usuario.md actualizado si procede (cambio visible para el usuario)."
+  ],
+  "definition of done": [
+    "Plan aprobado (planning).",
+    "Implementación realizada (HTML+CSS) y manual de usuario actualizado.",
+    "Validación QA aprobada contra criterios de aceptación y DoD.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado siguiendo el formato habitual con 'Related issue: #157'.",
+    "PR creada contra dev SIN keyword de cierre (la issue se cierra al fusionar vía issues-done-on-dev.yml).",
+    "Task file con status 'review' + bloque pr subido al repo y label de la issue en 'status: needs-review'.",
+    "Issue #157 label updated to its final state"
+  ],
+  "issue": {
+    "number": 157,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/157",
+    "title": "Cambiar botón de volver"
+  },
+  "notes": {
+    "plan": "Aprobado por task-architect: sustituir clase btn btn--ghost + texto por .icon-btn + SVG arrow-left (feather) con aria-label=\"Volver\"; eliminar 3 reglas .btn--ghost (código muerto, ADR-046); sin cambios en js/profile.js (listener por id); bump PWA 20260834 vía scripts/bump-version.sh; manual §13 una frase; ADR-061."
+  }
+}

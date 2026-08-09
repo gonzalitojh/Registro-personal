@@ -552,6 +552,7 @@ o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
 también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
+En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas o Libros) que tenías abierta.
 Tu perfil tiene cuatro secciones:
 
 ### 13.0 Compartir direcciones de tu perfil
