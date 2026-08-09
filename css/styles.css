@@ -85,7 +85,7 @@
    fondo y las superficies en #000 para que las pantallas
    OLED apaguen esos píxeles (ahorro de consumo) y el modo
    se vea más profundo.
-   Constaste: --paper #f1ead9 sobre #000 ≈ 17.4:1 (AAA);
+   Contraste: --paper #f1ead9 sobre #000 ≈ 17.5:1 (AAA);
    --ink-soft #948a76 sobre #000 ≈ 6.2:1 (AA).
    ========================================================= */
 [data-theme="black"] {
@@ -305,6 +305,12 @@
 [data-theme="light"] .activity-event__text,
 [data-theme="white"] .activity-event__text {
   color: var(--ink);
+}
+
+/* En blanco puro el dropdown es blanco y su hover usa --paper-dim
+   (#ffffff), que lo haría invisible: se usa un tinte de tinta */
+[data-theme="white"] .profile-dropdown__item:hover {
+  background: var(--ink-alpha-06);
 }
 
 [data-theme="light"] .switch__input:focus-visible + .switch__slider,
