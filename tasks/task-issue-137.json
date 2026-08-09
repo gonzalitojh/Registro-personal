@@ -32,7 +32,7 @@
     "implementacion": "Módulo js/auto-hide-nav.js (ES module, initAutoHideNav) + CSS en css/styles.css (body.is-nav-hidden: header translateY(-100%), tabs +100% móvil / calc(-100% - var(--header-h)) en >=768px, transiciones 0.25s con visibility retardada) + botón .back-to-top (fixed, centrado arriba, z-index 44, solo con nav oculta y filtros fuera de vista) + bump PWA 20260833 (index.html, js/config.js, service-worker.js).",
     "guards": "No se oculta con foco en búsqueda, dropdowns abiertos (notif/perfil/búsqueda), modal, sidebar abierta, perfil/ajustes o pantalla de acceso. Respeta prefers-reduced-motion.",
     "manual": "docs/manual-de-usuario.md sección 3.2 nueva.",
-    "qa": "Aprobado en 2ª iteración (fix: delta calculado en el listener de scroll; updateBackToTop incondicional en evaluate; conservar estado con |delta|<=8).",
+    "qa": "Aprobado en 2ª iteración (fix: delta calculado en el listener de scroll; updateBackToTop incondicional en evaluate; conservar estado con |delta|<=8). Re-validado en revisión de PR #158: 9/9 PASS (listeners de clic/foco envueltos en () => evaluate() para no pasar el Event como delta).",
     "seguridad": "Sin hallazgos (PASS).",
     "adr": "docs/adr-060-ocultar-navegacion-al-desplazar.md"
   },
@@ -41,7 +41,7 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/158",
     "title": "[style] Ocultar navegación al desplazar y botón flotante Volver arriba",
     "branch": "feat/issue-137-auto-hide-nav",
-    "commit": "9f7900c",
+    "commit": "c206c13",
     "closes": "#137"
   }
 }
