@@ -101,11 +101,14 @@ function updateBackToTop() {
 }
 
 // Decide el estado de la navegación según la dirección del scroll
-// y las interacciones en curso. El delta se calcula contra la
-// última posición registrada por el listener de scroll.
-function evaluate() {
-  const delta = window.scrollY - lastY;
-  let hidden = false;
+// y las interacciones en curso. El delta lo calcula el listener de
+// scroll (ver initAutoHideNav): en el rAF window.scrollY ya coincide
+// con lastY y el delta sería siempre 0 (issue #137, revisión QA).
+// Si el delta no supera el umbral se conserva el estado anterior,
+// para que la inercia o un trackpad lento no hagan parpadear la
+// navegación.
+function evaluate(delta = 0) {
+  let hidden = navHidden;
   if (isInteracting() || window.scrollY < CONFIG.hideThreshold) {
     hidden = false;
   } else if (delta > CONFIG.deltaThreshold) {
@@ -114,23 +117,32 @@ function evaluate() {
     hidden = false;
   }
   setNavHidden(hidden);
+  // El botón "Volver arriba" se reevalúa en cada frame de scroll:
+  // depende de la posición de los filtros, que cambia en el mismo
+  // descenso en el que la navegación se oculta (no solo cuando el
+  // estado de la navegación cambia o en resize).
+  updateBackToTop();
 }
 
 export function initAutoHideNav() {
   const body = document.body;
 
-  // Scroll: registrar la última posición y reevaluar una vez por
-  // frame (throttle con rAF) para no hacer trabajo por evento.
+  // Scroll: calcular el delta AQUÍ, en el listener, y reevaluar una
+  // vez por frame (throttle con rAF). El delta no puede calcularse
+  // dentro del rAF: el evento scroll se despacha antes que el rAF
+  // del mismo frame, así que allí window.scrollY ya coincide con
+  // lastY y el delta sería siempre 0 (revisión QA, issue #137).
   let scrollTicking = false;
   window.addEventListener(
     "scroll",
     () => {
+      const delta = window.scrollY - lastY;
       lastY = window.scrollY;
       if (scrollTicking) return;
       scrollTicking = true;
       requestAnimationFrame(() => {
         scrollTicking = false;
-        evaluate();
+        evaluate(delta);
       });
     },
     { passive: true }
@@ -173,10 +185,9 @@ export function initAutoHideNav() {
 
   // Cambios de tamaño del viewport (rotación, zoom, barra del
   // navegador): la posición de los filtros cambia, hay que
-  // redecidir el botón flotante.
+  // redecidir navegación y botón flotante.
   window.addEventListener("resize", () => {
     evaluate();
-    updateBackToTop();
   });
 
   // "Volver arriba": mostrar la navegación y subir al principio de
