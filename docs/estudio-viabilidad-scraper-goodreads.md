@@ -286,7 +286,7 @@ Rutas relevantes para el caso de uso de la app:
 | `/api` | API oficial (extinta; ver 4.4 y 7.a) | PROHIBIDA | `Disallow: /api` |
 | `/book/reviews/` | Reseñas de un libro | PROHIBIDA | `Disallow: /book/reviews/` |
 | `/review/show` | Reseña individual | PROHIBIDA | `Disallow: /review/show` |
-| `/review/list*` | Listados de reseñas | PROHIBIDA | `Disallow: /review/list` `/Disallow: /review/list_rss` |
+| `/review/list*` | Listados de reseñas | PROHIBIDA | `Disallow: /review/list`, `Disallow: /review/list_rss` |
 | `/shelf/user_shelves` | Estanterías de un usuario | PROHIBIDA | `Disallow: /shelf/user_shelves` |
 | `/user/year_in_books` | Resumen anual de usuario | PROHIBIDA | `Disallow: /user/year_in_books` |
 | `/ebooks`, `/videos/`, `/tooltips`, `/track`, `/admin` | Otras zonas | PROHIBIDA | `Disallow: /ebooks` etc. |
