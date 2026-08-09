@@ -1,0 +1,33 @@
+{
+  "title": "Ampliación modos claro y oscuro (negro puro y blanco puro)",
+  "description": "La issue #43 pide añadir dos modos de visualización nuevos sin eliminar los existentes: (1) un modo oscuro de negro puro (#000000) para aprovechar el ahorro de consumo de las pantallas OLED y que se vea más profundo, y (2) un modo claro de blanco completo (#ffffff), en contraposición al negro puro. En el selector de tema (Ajustes → Apariencia) los nuevos modos se llamarán \"Negro puro\" y \"Blanco puro\"; los actuales pasan a llamarse \"Oscuro\" (dark) y \"Claro\" (light), que ya es su nombre actual. El sistema de temas está basado en variables CSS con atributo [data-theme] en <html> (ADR-009): :root define el tema oscuro, [data-theme=light] redefine la paleta clara y hay overrides por elemento para el modo claro. Se debe extender este sistema con dos bloques nuevos [data-theme=black] y [data-theme=white], extendiendo los overrides por elemento existentes, actualizando el select de Ajustes, el setTheme() de js/app.js (theme-color del meta), el manual de usuario y el ADR correspondiente.",
+  "status": "implemented",
+  "acceptance criteria": [
+    "Existen cuatro modos seleccionables en Ajustes → Apariencia → Tema: Oscuro (dark), Negro puro (black), Claro (light) y Blanco puro (white), sin eliminar ninguno de los actuales.",
+    "El modo Negro puro tiene fondo puro negro (#000000) y mantiene la legibilidad del modo oscuro (texto/tarjetas en pergamino), con contraste WCAG AA.",
+    "El modo Blanco puro tiene fondo blanco completo (#ffffff) y texto/tarjetas con tinta pura negra (#000000), con contraste WCAG AA.",
+    "El modo Oscuro (dark) existente no sufre regresiones: paleta idéntica a la actual.",
+    "El modo Claro (light) existente no sufre regresiones: paleta idéntica a la actual.",
+    "La preferencia se persiste en localStorage (clave mi-registro-theme) y se restaura al recargar; el select de Ajustes refleja el modo activo.",
+    "El <meta name=theme-color> se actualiza correctamente con el color de fondo de cada modo (#171512, #000000, #f5f0e8, #ffffff).",
+    "Los overrides por elemento del modo claro (header, tabs, auth-screen, profile-view, selects, inputs, buscador global, etc.) se aplican también al modo blanco puro.",
+    "El manual de usuario (docs/manual-de-usuario.md) explica los cuatro modos.",
+    "Se documenta la decisión en un ADR con referencia a la issue #43.",
+    "La web sigue sin scroll horizontal y sin texto desbordado en 360/768/1280 px con los cuatro modos."
+  ],
+  "definition of done": [
+    "Planning completado (task-architect).",
+    "Implementación: bloques [data-theme=black] y [data-theme=white] en css/styles.css; overrides por elemento extendidos a blanco; ocio/ocio.css actualizado; select con 4 opciones en index.html; setTheme() con mapa de colores theme-color en js/app.js; guard de valores válidos en js/settings.js.",
+    "Validación QA (qa-reviewer) contra criterios de aceptación y DoD, incluyendo contraste y ausencia de regresiones en los modos existentes.",
+    "Escaneo de seguridad (security-champion) sin hallazgos HIGH.",
+    "Manual de usuario actualizado.",
+    "ADR creado documentando la ampliación de modos (con 'Related issue: #43').",
+    "Publisher: PR contra dev sin keyword de cierre; task file a 'review' con bloque pr; issue #43 a status: needs-review.",
+    "Issue #43 label updated to its final state."
+  ],
+  "issue": {
+    "number": 43,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/43",
+    "title": "Ampliación modos claro y oscuro"
+  }
+}
