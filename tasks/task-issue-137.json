@@ -1,0 +1,47 @@
+{
+  "title": "Ocultar navegación en desplazamiento",
+  "description": "Issue #137: Al desplazar hacia abajo en la lista de series, películas o libros (o cualquier posible pestaña futura) ocultar las pestañas y la barra de búsqueda superior. En cuanto se vuelva a desplazar hacia arriba mostrar ambos. Ocultar y mostrar con una sencilla animación como si surgiesen del borde de la pantalla. Como añadido, tan pronto como se baje más de los filtros (queden ya ocultos), mostrar un botón arriba en el centro para volver arriba del todo. Este botón no debe ocupar una línea entera, sino ser flotante sobre la lista de ítems.\n\nHistorial: dos sesiones SDD automáticas previas fallaron (timeout y exit code 1) antes de persistir nada; no existe rama ni PR previos. El task file se crea en esta sesión de reanudación.\n\nEstructura relevante del código:\n- index.html: .app-header (fija arriba, contiene la búsqueda global #global-search-input y los botones) y .tabs--bar (fija: abajo en móvil ≤768px, bajo la cabecera en ≥768px). El contenido vive en #main-content dentro de .app con padding superior que reserva --header-h y --tabs-bar-h.\n- css/styles.css: cabecera (.app-header position:fixed z-index 46, fondo --ink/--paper-dim), barra de pestañas (.tabs--bar position:fixed z-index 45, bottom:0 en móvil / top:var(--header-h) en ≥768px), dropdowns anclados a la cabecera (notif-dropdown, profile-dropdown, global-search__results; en móvil se vuelven position:fixed). Ya existe @media (prefers-reduced-motion: reduce) que anula animaciones/transiciones.\n- ocio/*.html: los filtros de cada pestaña viven en .library-controls (chip filters + select orden + view toggle) dentro de .panel (panel-tv/panel-movies/panel-books).\n- js/app.js: carga los parciales de ocio, gestiona pestañas y el router (initRouter); los módulos se importan como ES modules.\n- js/sidebar.js: la entrada Ocio hace scroll suave al top al volver.\n- Regla AGENTS.md: cualquier cambio visible para el usuario debe reflejarse en docs/manual-de-usuario.md.",
+  "status": "review",
+  "acceptance criteria": [
+    "1. Al desplazar hacia abajo en una lista de ocio (series/películas/libros), las pestañas (barra inferior en móvil, bajo cabecera en escritorio) y la barra de búsqueda superior se ocultan.",
+    "2. Al desplazar hacia arriba, ambos reaparecen.",
+    "3. Ocultar y mostrar con una animación sencilla tipo 'surgir del borde de la pantalla' (header sale por el borde superior; pestañas por su borde correspondiente).",
+    "4. Tan pronto como los filtros de la lista quedan fuera de vista (scroll superado), aparece un botón flotante arriba en el centro para volver arriba del todo; no ocupa una línea entera y flota sobre la lista de ítems.",
+    "5. Al pulsar el botón, se vuelve al principio de la lista.",
+    "6. El comportamiento respeta prefers-reduced-motion (sin animaciones).",
+    "7. La navegación no se oculta si el usuario está interactuando (input de búsqueda con foco, dropdown abierto, modal abierto).",
+    "8. Responsividad: sin scroll horizontal en 360/768/1280 px (reglas AGENTS.md).",
+    "9. docs/manual-de-usuario.md actualizado con el nuevo comportamiento."
+  ],
+  "definition of done": [
+    "Plan aprobado (planning).",
+    "Implementación realizada (HTML+CSS+JS) y manual de usuario actualizado.",
+    "Validación QA aprobada contra criterios de aceptación y DoD.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado siguiendo el formato habitual con 'Related issue: #137'.",
+    "PR creada contra dev SIN keyword de cierre (la issue se cierra al fusionar vía issues-done-on-dev.yml).",
+    "Task file con status 'review' + bloque pr subido al repo y label de la issue en 'status: needs-review'.",
+    "Issue #137 label updated to its final state"
+  ],
+  "issue": {
+    "number": 137,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/137",
+    "title": "Ocultar navegación en desplazamiento"
+  },
+  "notes": {
+    "implementacion": "Módulo js/auto-hide-nav.js (ES module, initAutoHideNav) + CSS en css/styles.css (body.is-nav-hidden: header translateY(-100%), tabs +100% móvil / calc(-100% - var(--header-h)) en >=768px, transiciones 0.25s con visibility retardada) + botón .back-to-top (fixed, centrado arriba, z-index 44, solo con nav oculta y filtros fuera de vista) + bump PWA 20260833 (index.html, js/config.js, service-worker.js).",
+    "guards": "No se oculta con foco en búsqueda, dropdowns abiertos (notif/perfil/búsqueda), modal, sidebar abierta, perfil/ajustes o pantalla de acceso. Respeta prefers-reduced-motion.",
+    "manual": "docs/manual-de-usuario.md sección 3.2 nueva.",
+    "qa": "Aprobado en 2ª iteración (fix: delta calculado en el listener de scroll; updateBackToTop incondicional en evaluate; conservar estado con |delta|<=8).",
+    "seguridad": "Sin hallazgos (PASS).",
+    "adr": "docs/adr-060-ocultar-navegacion-al-desplazar.md"
+  },
+  "pr": {
+    "number": 158,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/158",
+    "title": "[style] Ocultar navegación al desplazar y botón flotante Volver arriba",
+    "branch": "feat/issue-137-auto-hide-nav",
+    "commit": "9f7900c",
+    "closes": "#137"
+  }
+}
