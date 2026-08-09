@@ -57,6 +57,8 @@ const STATIC_ASSETS = [
   './js/allowed-emails.js',
   './js/api-books.js',
   './js/api-movies.js',
+  './js/api-games.js',
+  './js/game-log.js',
   './js/sw-register.js',
   './js/activity-feed.js',
   './js/export-backup.js',
@@ -71,6 +73,7 @@ const STATIC_ASSETS = [
   './ocio/series.html?v=20260837',
   './ocio/peliculas.html?v=20260837',
   './ocio/libros.html?v=20260837',
+  './ocio/videojuegos.html?v=20260838',
 ];
 
 // -------------------------------------------------------------
@@ -292,11 +295,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ---- Network First: APIs externas (TMDB, Google Books, Open Library) ----
+  // ---- Cache First: imágenes de RAWG (portadas) ----
+  if (url.hostname === 'media.rawg.io') {
+    event.respondWith(cacheFirst(event.request));
+    return;
+  }
+
+  // ---- Network First: APIs externas (TMDB, Google Books, Open Library, RAWG) ----
   if (
     url.hostname === 'api.themoviedb.org' ||
     url.hostname === 'www.googleapis.com' ||
-    url.hostname === 'openlibrary.org'
+    url.hostname === 'openlibrary.org' ||
+    url.hostname === 'api.rawg.io'
   ) {
     event.respondWith(networkFirst(event.request).then(({ response }) => response));
     return;
