@@ -36,3 +36,7 @@ export const TMDB_API_KEY = "f23a198de513705e5970b196de181edb";
 // Si la usas, restríngela por referrer HTTP a tu dominio de GitHub Pages
 // desde Google Cloud Console → Credenciales.
 export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
+
+// Clave de la API de RAWG (gratuita para uso personal, https://rawg.io/apidocs).
+// No es secreta: la protección real la dan las reglas de Firestore.
+export const RAWG_API_KEY = "";

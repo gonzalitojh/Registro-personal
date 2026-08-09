@@ -51,6 +51,11 @@ service cloud.firestore {
         allow write: if isAllowedUser() && isOwner(userId);
       }
 
+      match /games/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
       // Las notificaciones son privadas: nadie más puede leerlas.
       match /notifications/{notifId} {
         allow read, write: if isAllowedUser() && isOwner(userId);

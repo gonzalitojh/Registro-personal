@@ -4,6 +4,7 @@
 //   users/{uid}/movies/{id}
 //   users/{uid}/series/{id}
 //   users/{uid}/books/{id}
+//   users/{uid}/games/{id}
 //   users/{uid}/notifications/{id}
 // Además, users/{uid} (el propio documento, no una subcolección)
 // guarda un pequeño perfil con el email y la fecha del último aviso
@@ -33,6 +34,7 @@ const COLLECTION_BY_TYPE = {
   movie: "movies",
   tv: "series",
   book: "books",
+  game: "games",
 };
 
 function itemsRef(uid, type) {
