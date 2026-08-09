@@ -26,7 +26,7 @@ If all checks pass, output a confirmation that the task is ready for completion.
 
 When the task file references a GitHub Issue (it contains an `issue` block with `number`), verify that the issue labels reflect the task state: the issue should carry `status: in-progress` while the work is being validated, and the type label (`type: feature|bug|style|refactor|content`) should match the change being reviewed. If the labels are inconsistent with the actual state, mention it in your report so the master agent can sync them with `scripts/gh-issue.sh set-state` / `set-type`. This check is informational; it does not block the review.
 
-Additionally, if the task status is "review" the issue should carry `status: needs-review` (applied by the publisher); the transition to `status: done` and the issue closing happen ONLY when the user promotes `dev` to `main` (workflow `.github/workflows/issues-done-on-main.yml`) — it is not a manual step.
+Additionally, if the task status is "review" the issue should carry `status: needs-review` (applied by the publisher); the transition to `status: done` and the issue closing are applied by the workflow `.github/workflows/issues-done-on-dev.yml` when the PR is merged into `dev` (best-effort: it is not a manual step, and it does not wait for the dev → main promotion).
 
 ## Reglas generales del proyecto
 

@@ -25,8 +25,8 @@
 #     (vía API). La label "ai" (marcador de issues del agente) nunca se añade ni
 #     se elimina desde este script.
 #   - La transición a "status: done" (y el cierre de la issue) la aplica el
-#     workflow .github/workflows/issues-done-on-main.yml cuando el usuario
-#     promueve dev→main; este script queda como vía manual de respaldo.
+#     workflow .github/workflows/issues-done-on-dev.yml al fusionar la PR en
+#     dev; este script queda como vía manual de respaldo.
 # =============================================================================
 set -euo pipefail
 

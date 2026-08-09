@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 2026-08-08
 
+**NOTA — TÉCNICA CONSERVADA EN ADR-053 (issue #143)**: la técnica `removeLabel` + try/catch defensivo documentada en este ADR se conserva en el workflow rediseñado en ADR-053 (`issues-done-on-dev.yml`, cierre dirigido de la issue de la PR al fusionar en `dev`): el bucle de limpieza sigue usando `github.rest.issues.removeLabel` con `core.warning` ante 404 y **nunca** `deleteLabel`. El resto de este documento permanece vigente.
+
 ## Contexto
 
 El workflow `.github/workflows/issues-done-on-dev.yml` (esquema de labels
