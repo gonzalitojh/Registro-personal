@@ -1,7 +1,7 @@
 {
   "title": "Ampliación modos claro y oscuro (negro puro y blanco puro)",
   "description": "La issue #43 pide añadir dos modos de visualización nuevos sin eliminar los existentes: (1) un modo oscuro de negro puro (#000000) para aprovechar el ahorro de consumo de las pantallas OLED y que se vea más profundo, y (2) un modo claro de blanco completo (#ffffff), en contraposición al negro puro. En el selector de tema (Ajustes → Apariencia) los nuevos modos se llamarán \"Negro puro\" y \"Blanco puro\"; los actuales pasan a llamarse \"Oscuro\" (dark) y \"Claro\" (light), que ya es su nombre actual. El sistema de temas está basado en variables CSS con atributo [data-theme] en <html> (ADR-009): :root define el tema oscuro, [data-theme=light] redefine la paleta clara y hay overrides por elemento para el modo claro. Se debe extender este sistema con dos bloques nuevos [data-theme=black] y [data-theme=white], extendiendo los overrides por elemento existentes, actualizando el select de Ajustes, el setTheme() de js/app.js (theme-color del meta), el manual de usuario y el ADR correspondiente.",
-  "status": "security-cleared",
+  "status": "documented",
   "acceptance criteria": [
     "Existen cuatro modos seleccionables en Ajustes → Apariencia → Tema: Oscuro (dark), Negro puro (black), Claro (light) y Blanco puro (white), sin eliminar ninguno de los actuales.",
     "El modo Negro puro tiene fondo puro negro (#000000) y mantiene la legibilidad del modo oscuro (texto/tarjetas en pergamino), con contraste WCAG AA.",
