@@ -47,18 +47,19 @@ import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
 // ---------- Estado ----------
 
 let currentUser = null;
-let unsubscribeItems = { movies: null, tv: null, books: null };
+let unsubscribeItems = { movies: null, tv: null, books: null, games: null };
 let unsubscribeNotifications = null;
-const allItems = { movies: [], tv: [], books: [] };
+const allItems = { movies: [], tv: [], books: [], games: [] };
 let notifications = [];
 
-const activeFilters = { movies: "todos", tv: "en_curso", books: "todos" };
-const activeSort = { movies: "añadido", tv: "añadido", books: "añadido" };
-const viewMode = { movies: "grid", tv: "list", books: "grid" };
+const activeFilters = { movies: "todos", tv: "en_curso", books: "todos", games: "todos" };
+const activeSort = { movies: "añadido", tv: "añadido", books: "añadido", games: "añadido" };
+const viewMode = { movies: "grid", tv: "list", books: "grid", games: "grid" };
 
 let moviesReady = false;
 let tvReady = false;
 let booksReady = false;
+let gamesReady = false;
 let checksTriggered = false;
 
 // ---------- Contexto para módulos ----------
@@ -106,6 +107,7 @@ const GRID_IDS = {
   movies: ["library-movies", "empty-movies"],
   tv: ["library-tv", "empty-tv"],
   books: ["library-books", "empty-books"],
+  games: ["library-games", "empty-games"],
 };
 
 function renderLibraryFor(group) {
@@ -120,7 +122,7 @@ function renderLibraryFor(group) {
 }
 
 function maybeTriggerDailyCheck() {
-  if (moviesReady && tvReady && booksReady && !checksTriggered) {
+  if (moviesReady && tvReady && booksReady && gamesReady && !checksTriggered) {
     checksTriggered = true;
     checkForUpdates(createCtx());
   }
@@ -128,7 +130,7 @@ function maybeTriggerDailyCheck() {
 
 function stopAllSubscriptions() {
   Object.values(unsubscribeItems).forEach((fn) => fn && fn());
-  unsubscribeItems = { movies: null, tv: null, books: null };
+  unsubscribeItems = { movies: null, tv: null, books: null, games: null };
   if (unsubscribeNotifications) unsubscribeNotifications();
   unsubscribeNotifications = null;
 }
@@ -201,6 +203,7 @@ async function init() {
     "panel-movies": document.getElementById("panel-movies"),
     "panel-tv": document.getElementById("panel-tv"),
     "panel-books": document.getElementById("panel-books"),
+    "panel-games": document.getElementById("panel-games"),
   };
 
   function activatePanel(panelId, { moveFocus = false } = {}) {
@@ -335,6 +338,7 @@ async function init() {
     moviesReady = false;
     tvReady = false;
     booksReady = false;
+    gamesReady = false;
     checksTriggered = false;
 
     if (!user) {
@@ -342,6 +346,7 @@ async function init() {
       allItems.movies = [];
       allItems.tv = [];
       allItems.books = [];
+      allItems.games = [];
       notifications = [];
       cleanupSettings();
       resetDevicePush();
@@ -418,6 +423,20 @@ async function init() {
         maybeTriggerDailyCheck();
       },
       onError: () => ui.showToast("No se pudieron cargar tus libros."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
+
+    unsubscribeItems.games = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "game", onChange, onError),
+      onChange: (items) => {
+        allItems.games = items;
+        gamesReady = true;
+        renderLibraryFor("games");
+        refreshExternalResults(createCtx());
+        maybeTriggerDailyCheck();
+      },
+      onError: () => ui.showToast("No se pudieron cargar tus videojuegos."),
       onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
     });
 
