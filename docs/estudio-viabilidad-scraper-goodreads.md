@@ -519,3 +519,166 @@ técnicos (4.1, 5.1, 5.2) se mantienen íntegros, y el beneficio disminuye:
 **Conclusión técnica**: no existe escenario parcial que merezca la pena: o se
 vulnera la arquitectura y el contrato para un beneficio nulo/marginal, o no se
 hace. La sección 8 formaliza la recomendación.
+
+---
+
+## 6. Carga y ética
+
+### 6.1 Modelo numérico de carga actual
+
+La app es de uso personal (registro de películas/series/libros de un usuario
+y más tarde sus amigos/feed; ver ADR-045/048). No hay telemetría que mida el
+tráfico real desde este entorno, así que **todas las cifras de volumen son
+estimaciones** de orden de magnitud para discutir el diseño:
+
+| Variable | Valor estimado | Observación |
+|---|---|---|
+| Peticiones por query (GB / OL) | **1** (GB) + 0-1 extra (OL solo si falla) | `searchBooks()` (js/api-books.js): una llamada por página; el dropdown solo pide página 1 |
+| Queries por sesión de búsqueda (incluye correcciones, cambios de grupo, re-búsqueda al seguir escribiendo — ADR-056) | **3-6** | Debounce de 200 ms + guardas anti-duplicado (`sameQueryInFlight`/`cachedForQuery`/`erroredForQuery`) |
+| Sesiones por usuario y día | **10-20** (estimación) | Buscar para añadir un libro nuevo conlleva normalmente 1-3 sesiones; 10-20 cubre actividad alta |
+| Usuarios activos | **10-100** (estimación) | App personal + amigos; sin métricas verificables |
+| **Peticiones a Google Books por día** | ≈ 1 × (3-6) × (10-20) × (10-100) → **≈ 300-12.000/día** (estimación) | Con caché en memoria solo durante el dropdown abierto (`externalCache` en js/global-search.js); sin caché persistente |
+| Frecuencia de refresco | Solo cuando el usuario busca | No hay actualización periódica de catálogo (el manual, sección 15, documenta qué se actualiza solo) |
+
+Google Books ofrece una cuota gratuita generosa (del orden de miles de
+peticiones al día por proyecto según fuentes de terceros —no verificadas en
+este estudio—); Open Library pide buen uso de sus APIs públicas y tenerlas
+destinadas a búsqueda en tiempo real, que es el uso actual (sección 7.d).
+
+### 6.2 Modelo numérico con un scraper de GoodReads (hipotético)
+
+Si, ignorando los bloqueos de 4.1 y 5, se quisiera montar el scraper, el coste
+por interacción sería varias veces mayor:
+
+| Interacción | Peticiones/acciones con GoodReads | Peticiones/acciones hoy (GB/OL) |
+|---|---|---|
+| Buscar una query | 1 challenge WAF (2-4 intercambios HTTP: challenge + cookie + re-petición)** + 1 GET a /search (si se pasara el WAF, lo que está prohibido por robots) + ejecución de JS del reto | 1 GET a Google Books |
+| Ver ficha de un resultado (para juntar portadas/sinopsis/páginas) | 1 GET por ficha `/book/show/{id}` (render del navegador headless) u otra por `/work/editions` | 0 (GB devuelve todo en la misma búsqueda) |
+| Añadir 5 libros de una búsqueda | ≈ 1 (búsqueda) + 1 × 5 (fichas) + 0-5 (ediciones) ≈ **7-11 peticiones** | 1 |
+| Cortesía recomendada entre peticiones | 3-8 s (fuentes de terceros; robots.txt solo fija 5 s de crawl-delay para bingbot) | No aplica (API con cuota) |
+| Riesgo de bloqueo | 403/challenge tras ~20-30 peticiones rápidas desde una IP; bloqueos de horas (fuentes de terceros) | No aplica (cuota) |
+
+Resultado: el scraper **multiplicaría por ~5-10× las peticiones** necesarias
+para añadir los mismos libros (de 1 a ≈7-11), exigiría navegador headless en
+servidor y una IP estable/con proxies, y su coste de cortesía (3-8 s entre
+peticiones) convertiría una búsqueda instantánea en un proceso de decenas de
+segundos. Todo ello para cubrir campos ya cubiertos (5.5).
+
+### 6.3 Caché existente y medida de cortesía
+
+- **Caché actual**: `externalCache` en `js/global-search.js` conserva por
+  grupo `{ query, items, source }` mientras el dropdown está abierto y se
+  invalida al cerrar (ADR-045/056). Es una caché anti-duplicado de UI, no un
+  mecanismo para reducir carga de servidor de terceros: no hay caché
+  persistente (no hay backend donde guardarla; y la caché local por usuario
+  multiplicaría el consumo de almacenamiento con poca esperanza de acierto).
+- **Medidas de cortesía** para cualquier fuente remota (las que ya se siguen
+  con GB/OL y se seguirían con un hipotético scraper): debounce de la
+  escritura (200 ms), no relanzar queries duplicadas ni en vuelo (guardas de
+  ADR-056), cap de 5 resultados en el dropdown, sin paginación automática,
+  sin prefetch de fichas — el enriquecimiento está acotado y no bloqueante
+  (`enrichSearchItem`, ADR-045); y en librería cívica: reintentos con backoff
+  ante errores 5xx (`fetchWithRetry` en api-books.js) en vez de martillear.
+- Con GoodReads, además, la propia investigadora ha de respetar el `Crawl-
+  delay` que el sitio publique (hoy solo bingbot: 5 s) y, sobre todo, las
+  rutas prohibidas en robots.txt (4.3): **la cortesía no convierte en
+  legítima una extracción que los términos prohíben** (4.5).
+
+### 6.4 Ética y «no sobrecargar»
+
+El requisito de la issue «no sobrecargar los servidores objetivos» se
+interpreta y cumple así:
+
+1. Hoy se cumple de raíz: la app solo consulta APIs oficiales con cuota y con
+   debounce/guardas.
+2. Un scraper de GoodReads, aunque honrara robots.txt y delays (lo que ya no
+   puede, porque el caso de uso principal, `/search`, está prohibido),
+   operaría contra una infraestructura ajena diseñada para navegadores
+   humanos, con challenge anti-bot: cada sesión de búsqueda de la app
+   consumiría recursos de CloudFront/WAF/bus reder que hoy no se consumen.
+3. La vía ética para obtener datos de GoodReads sería **pedir
+   consentimiento/uso oficial** (la API está cerrada a nuevas claves, 7.a) o
+   usar fuentes licenciadas; ninguna encaja en una app sin backend y sin
+   presupuesto.
+
+---
+
+## 7. Alternativas evaluadas
+
+### (a) API oficial de GoodReads — estado 2026
+
+**Muerta para nuevos proyectos y en proceso de desmantelamiento:**
+
+- **Diciembre 2020**: GoodReads deja de emitir nuevas claves de desarrollador
+  para su API pública y anuncia la retirada de las herramientas («As of
+  December 8th 2020, Goodreads is no longer issuing new developer keys for
+  our public developer API and plans to retire these tools» — página de ayuda
+  oficial, consultada 2026-08-09). Las claves inactivas > 30 días se
+  desactivaban.
+- **Mediados de 2022**: con claves existentes, la API quedó «lisiada»: dejó de
+  devolver año de publicación y número de páginas (testimonio documentado de
+  Brandur, sección 9); quedaban las reseñas.
+- **2025-2026**: un hilo del foro oficial (19/12/2025) reporta **403** al
+  llamar a la API con una clave histórica: «Has it finally gone away?». La
+  documentación de la API (`www.goodreads.com/api`) ya no es accesible, y los
+  endpoints XML/legacy devuelven 404 o páginas de error (verificación de
+  terceros, 2026-05-18).
+- La API v2 nunca convirtió a GoodReads en un proveedor de metadatos
+  comparable: ofrecía XML con OAuth (fichas de libro por ID/ISBN, estanterías
+  de usuario, reseñas, autores, y un `search.index.xml` básico), orientada a
+  clientes de la comunidad, no a catálogos.
+
+**Conclusión**: la API oficial no es una alternativa viable en 2026; ni
+siquiera es una alternativa para el futuro (no hay plan público de
+reabrirlas).
+
+### (b) Mantener Google Books + Open Library (statu quo)
+
+- Google Books: activa, gratuita en el volumen estimado, con CORS, etiqueta
+  de idioma y agrupación por obra ya implementada (ADR-002). Google Books
+  listó a «GoodReads» entre sus integraciones en su página de desarrolladores
+  (consultada 2026-08-09).
+- Open Library: activa, gratuita, CORS, API JSON/dumps mensuales. Su
+  documentación (2026) pide explícitamente no usarla como «data backend» a
+  gran escala — la app la usa como respaldo puntual y bajo demanda, uso
+  acorde a su espíritu: «Open Library's APIs exist to support the open book
+  ecosystem… they are not intended to serve as a data backend for
+  third-party services».
+- Ventajas: coste cero, cero mantenimiento de selectores, cero infraestructura
+  nueva, contrato de datos estable (JSON con esquema), sin fricción legal.
+
+### (c) Open Library como única fuente
+
+Técnicamente posible (la app ya sabe buscarla), pero **degradaría la UX**: OL
+no aporta páginas en la búsqueda, raramente sinopsis en el resultado de
+búsqueda (la app las pide bajo demanda), y solo una portada por obra; el
+emparejamiento por título+autor sería menos rico y la detección de «ya
+añadido» más pobre. Descartada: GB resuelve exactamente esos huecos (ADR-002
+documenta por qué se invirtió el orden de fuentes hace tiempo).
+
+### (d) APIs alternativas de metadatos de libros activas en 2026
+
+| API | Estado 2026 (verificado el 2026-08-09) | Coste | Aptitud para la app |
+|---|---|---|---|
+| **Google Books** | Activa; cuota gratuita (no verificada cuantitativamente en este estudio) | Gratuita | Ya en uso (principal) |
+| **Open Library** | Activa; pide uso cívico (no «bulk backend») | Gratuita | Ya en uso (respaldo) |
+| **ISBNdb** | Activa (108-110M títulos); planes de pago 14,99-299,99 $/mes; rate limit 1-5 req/s según plan | De pago | Metadatos de ISBN, no búsqueda por título/idioma europeo; no aporta nada sobre GB |
+| **WorldCat (OCLC)** | Activa pero de acceso restringido a bibliotecas | Restringida | No apta |
+| **LibraryThing (ThingISBN)** | API de portadas deshabilitada por abuso (fuente de terceros); ThingISBN con limitaciones | Gratuita (mermada) | No fiable |
+| **Amazon PA-API (Product Advertising)** | Activa solo para asociados de Amazon (afiliación) | Basada en comisiones | Cambia el modelo de la app y no cubre sinopsis/ediciones |
+| **Bookshare** | Activa, ámbito accesibilidad | Niche | Niche |
+| **Búsqueda de GoodReads por scrape** | Bloqueada: WAF + robots (secciones 4-5) | — | ❌ |
+
+Ninguna alternativa abierta y gratuita a GB+OL cubre los seis campos de la app
+mejor que la combinación actual; las de pago no aportan los campos que faltan
+(no faltan ninguno, 5.6).
+
+### (e) Enriquecimiento selectivo (a futuro)
+
+Si algún día la app quisiera «valoración comunitaria» o «reseñas» —lo único
+que GoodReads aportaría realmente (5.6)—, las vías conformes serían: fuentes
+de datos licenciadas (p. ej. proveedores comerciales de metadatos con
+reseñas), o un widget/enlace de afiliado oficial que no extraiga datos. Ese
+no es el alcance de la issue #50, que pide sustituir la búsqueda de libros,
+no añadir valoraciones; si se planteara, sería una issue nueva con su propio
+análisis legal/contractual.
