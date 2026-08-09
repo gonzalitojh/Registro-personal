@@ -742,6 +742,29 @@ export function setupGlobalSearch(ctx) {
     }
   });
 
+  // Issue #149: portadas de la colección (p. ej. fbcdn.net) y avatares
+  // pueden fallar (403/404 por hotlinking bloqueado). El evento "error"
+  // NO burbujea, pero los listeners en fase de CAPTURA del contenedor
+  // sí reciben el error de cualquier <img> descendiente, incluidas las
+  // que se re-renderizan con innerHTML (el contenedor persiste).
+  resultsEl.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      if (
+        !img.classList.contains("global-search__item-cover") &&
+        !img.classList.contains("global-search__friend-avatar")
+      ) {
+        return;
+      }
+      // Evitar bucle: si ya es el placeholder (data URI), no reasignar.
+      if (img.src === ui.PLACEHOLDER_COVER) return;
+      img.src = ui.PLACEHOLDER_COVER;
+    },
+    true // capture: el evento "error" no burbujea
+  );
+
   // Escape con el foco fuera del input (p. ej. sobre un resultado):
   // el keydown del input ya cierra con stopPropagation, así que esto
   // solo actúa cuando el foco está en otra parte del documento.
@@ -781,6 +804,10 @@ async function performSearch(ctx) {
   const trimmed = query.trim();
 
   if (!trimmed || trimmed.length < 2) {
+    // Issue #149: al borrar el texto se desmarca el catálogo activo para
+    // que el usuario vuelva a elegir botón de tipo (renderTypeButtons
+    // marca is-active comparando con activeGroup).
+    activeGroup = null;
     renderHint();
     return;
   }
@@ -803,6 +830,22 @@ async function performSearch(ctx) {
       cachedProfiles = await profilePromise;
     } catch {
       cachedProfiles = [];
+    }
+  }
+
+  // Issue #149: si hay un catálogo activo y la query actual no tiene
+  // estado (vuelo/caché/error) para esta query exacta, relanzar la
+  // búsqueda externa automáticamente. runExternalSearch hace su propio
+  // renderResults (muestra «Buscando en el catálogo…» y luego el
+  // resultado); por eso hacemos return y no renderizamos dos veces.
+  const group = activeGroup;
+  if (group) {
+    const sameQueryInFlight = inFlight[group] && externalQuery[group] === trimmed;
+    const cachedForQuery = externalCache[group] && externalCache[group].query === trimmed;
+    const erroredForQuery = externalError[group] && externalError[group].query === trimmed;
+    if (!sameQueryInFlight && !cachedForQuery && !erroredForQuery) {
+      runExternalSearch(group, trimmed);
+      return;
     }
   }
 
