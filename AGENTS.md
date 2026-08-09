@@ -62,3 +62,34 @@ etc.).
 - El manual debe estar siempre al día con el comportamiento real de la web;
   una PR que cambie algo visible para el usuario sin actualizarlo quedará
   incompleta.
+
+### 4. Visualización correcta en todos los modos de tema
+
+La web tiene **cuatro modos de visualización**: Oscuro, Negro puro,
+Claro y Blanco puro (ADR-009, ADR-064 y ADR-066). La familia clara
+(Claro/Blanco puro) usa `--paper` como superficie y `--ink` como texto;
+la familia oscura (Oscuro/Negro puro) al revés, con los overrides por
+elemento agrupados en `css/styles.css` y `ocio/ocio.css`.
+
+**Cualquier cosa nueva que se añada a la web** (componente, elemento,
+pantalla, color, variable CSS...) **debe cumplir siempre la visualización
+en todos los modos existentes**:
+
+1. Verificar el elemento nuevo en los **cuatro modos** (no solo en el
+   que se está tocando), incluso si el cambio parece aislado a uno.
+2. Revisar que ninguna superficie o texto quede **invisible ni con
+   contraste insuficiente** en ningún modo (mínimo WCAG AA: 4.5:1 para
+   texto normal, 3:1 para texto grande y componentes gráficos).
+3. Si el elemento usa variables de tema (`--ink`, `--paper`,
+   `--ink-raised`, `--paper-dim`, `--white`, alfas, estados), comprobar
+   los **dos papeles que juega cada variable** según la familia (fondo o
+   texto) y añadir el override correspondiente a las familias
+   (`[data-theme="light"]`/`[data-theme="white"]` y
+   `[data-theme="black"]`) siguiendo el patrón de **selectores agrupados**
+   existente, con una sola fuente de verdad por regla.
+4. Los colores hardcodeados (p. ej. hex de los sellos de las tarjetas en
+   negro puro) deben ir documentados con un comentario que explique por
+   qué no usan variable.
+
+Una PR que añada algo nuevo sin comprobar (o sin corregir) los cuatro
+modos quedará incompleta.

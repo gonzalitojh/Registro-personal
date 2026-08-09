@@ -1,0 +1,28 @@
+{
+  "title": "Perfeccionamiento modos de visualización",
+  "description": "Se ha detectado que los nuevos modos de visualización, más concretamente el modo negro puro, no funciona exactamente cómo se esperaba. Aunque el fondo sí se pone negro, las tarjetas de información de los ítems o las secciones de los ajustes entre otras cosas, las sigue manteniendo con el mismo color que el modo oscuro (pergamino #f1ead9). Sin embargo, el modo blanco puro sí que ha cambiado estos elementos para que concuerden con el tema. Revisar estos modos de visualización para que todos se vean cómo se espera.\n\nAdemás, incluir en las reglas del agente (AGENTS.md) que cualquier cosa nueva que se añada a la web debe cumplir siempre con la visualización en todos los modos existentes.\n\nContexto técnico: el modo negro puro ([data-theme=\"black\"]) es un bloque delta sobre :root que solo redeclara --ink, --ink-raised y --ink-alpha-*. Todo lo demás (--paper pergamino, --paper-dim, --white, --paper-line, --bg-state-*) hereda del modo oscuro, por lo que las superficies de papel (tarjetas de ítems, tarjetas de ajustes, dropdowns, modales, botones, entradas de formulario) siguen viéndose con los colores del modo oscuro. El modo blanco puro extendió los overrides de la familia clara a cada elemento, por eso sí concuerda. La solución es extender la familia oscura al negro puro con overrides por elemento (mismo patrón de selectores agrupados), oscureciendo TODAS las superficies y volteando el texto a papel, manteniendo intactos los modos oscuro/claro/blanco.",
+  "status": "in-progress",
+  "acceptance criteria": [
+    "En modo negro puro, las tarjetas de información de los ítems (item-card, list-row, season-episodes) se ven con superficies negras/near-black coherentes con el fondo, no con el pergamino del modo oscuro.",
+    "En modo negro puro, las secciones de los ajustes (settings-card), estadísticas (stat-tile, chart-card), perfil (friend-card, subtabs), dropdowns (notificaciones, perfil, búsqueda global), modales, botones, sidebar y toasts usan superficies oscuras con texto legible (papel/tinta clara), con contraste WCAG AA.",
+    "En modo negro puro, los estados de tarjeta (en curso, completado, standby, abandonado) y el patrón unreleased usan variantes oscuras de sus colores, distinguiéndose entre sí y del pendiente.",
+    "Los modos oscuro, claro y blanco puro NO cambian visualmente (cero regresiones): los bloques :root y [data-theme=\"light\"]/[data-theme=\"white\"] quedan intactos.",
+    "Se mantiene la responsividad: cambio solo de colores, sin medidas ni layout nuevos (sin scroll horizontal, sin texto cortado).",
+    "AGENTS.md incluye una regla que obliga a que cualquier cosa nueva añadida a la web cumpla la visualización en todos los modos existentes.",
+    "El manual de usuario describe correctamente el modo negro puro (superficies también negras)."
+  ],
+  "definition of done": [
+    "Planificación completada (modo negro puro: superficies oscuras + texto papel + estados oscuros; AGENTS.md regla 4; manual §14).",
+    "Implementación en css/styles.css y ocio/ocio.css (overrides [data-theme=\"black\"]), AGENTS.md, docs/manual-de-usuario.md y bump de versión PWA.",
+    "Validado por QA contra los criterios de aceptación (contrastes WCAG AA/AAA, coherencia en los 4 modos, cero regresiones).",
+    "Escaneo de seguridad sin hallazgos de severidad HIGH.",
+    "ADR documentando la decisión (con 'Related issue: #165').",
+    "PR contra dev SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #165 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 165,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/165",
+    "title": "Perfeccionamiento modos de visualización"
+  }
+}
