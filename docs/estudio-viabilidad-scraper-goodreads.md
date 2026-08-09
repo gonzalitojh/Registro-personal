@@ -53,13 +53,15 @@ refuerzan entre sí:
    usaría rangos de IP de centro de datos compartidos, con riesgo real de
    bloqueo.
 
-3. **Carga y fiabilidad**: un scraper multiplicaría por 2-4× las peticiones
-   frente a la vía actual (una petición HTTP por query a Google Books) y
-   requeriría medidas de cortesía de 3-8 s entre peticiones; además, el HTML de
-   GoodReads cambia sin previo aviso (React con clases ofuscadas; el scraper
-   de referencia de la comunidad, `maria-antoniak/goodreads-scraper`, está
-   abandonado y no funciona). El mantenimiento sería continuo y el riesgo de
-   bloqueo de IP, real.
+3. **Carga y fiabilidad**: un scraper multiplicaría por ~3-5× las peticiones
+   por query (challenge WAF de 2-4 intercambios + 1 GET a /search; sección 6.2)
+   y por ~8-15× el flujo de añadir 5 libros de una búsqueda (de ~1 a ≈8-15
+   peticiones) frente a la vía actual (una petición HTTP por query a Google
+   Books), y requeriría medidas de cortesía de 3-8 s entre peticiones; además,
+   el HTML de GoodReads cambia sin previo aviso (React con clases ofuscadas; el
+   scraper de referencia de la comunidad, `maria-antoniak/goodreads-scraper`,
+   está abandonado y no funciona). El mantenimiento sería continuo y el riesgo
+   de bloqueo de IP, real.
 
 4. **Valor marginal**: todos los campos que usa la app (título, autor, año,
    páginas, portadas múltiples, sinopsis) ya los aportan Google Books
@@ -271,7 +273,7 @@ El archivo lista agentes específicos (bingbot, GPTBot, CCBot, EtaoSpider,
 AmazonAdBot, facebookexternalhit, Mediapartners-Google) y un grupo genérico
 `User-agent: *`. Solo **bingbot** tiene `Crawl-delay: 5`; el grupo genérico no
 declara ningún crawl-delay. GPTBot y CCBot están bloqueados por completo
-(`Disallow: /`). Hay 28 sitemaps publicados (sección Referencias).
+(`Disallow: /`). Hay 16 sitemaps publicados (sección Referencias).
 
 Rutas relevantes para el caso de uso de la app:
 
@@ -554,12 +556,13 @@ por interacción sería varias veces mayor:
 |---|---|---|
 | Buscar una query | 1 challenge WAF (2-4 intercambios HTTP: challenge + cookie + re-petición)** + 1 GET a /search (si se pasara el WAF, lo que está prohibido por robots) + ejecución de JS del reto | 1 GET a Google Books |
 | Ver ficha de un resultado (para juntar portadas/sinopsis/páginas) | 1 GET por ficha `/book/show/{id}` (render del navegador headless) u otra por `/work/editions` | 0 (GB devuelve todo en la misma búsqueda) |
-| Añadir 5 libros de una búsqueda | ≈ 1 (búsqueda) + 1 × 5 (fichas) + 0-5 (ediciones) ≈ **7-11 peticiones** | 1 |
+| Añadir 5 libros de una búsqueda | ≈ **8-15 peticiones**, calculadas así: búsqueda = challenge WAF (2-4 intercambios) + 1 GET a /search → **3-5**; + 1 × 5 fichas → **8-10**; + 0-5 ediciones → **8-15** (el GET de /search es aparte de los 2-4 intercambios del challenge) | 1 |
 | Cortesía recomendada entre peticiones | 3-8 s (fuentes de terceros; robots.txt solo fija 5 s de crawl-delay para bingbot) | No aplica (API con cuota) |
 | Riesgo de bloqueo | 403/challenge tras ~20-30 peticiones rápidas desde una IP; bloqueos de horas (fuentes de terceros) | No aplica (cuota) |
 
-Resultado: el scraper **multiplicaría por ~5-10× las peticiones** necesarias
-para añadir los mismos libros (de 1 a ≈7-11), exigiría navegador headless en
+Resultado: el scraper **multiplicaría por ~8-15× las peticiones** necesarias
+para añadir los mismos libros (de 1 a ≈8-15; aritmética explícita en la fila
+anterior), exigiría navegador headless en
 servidor y una IP estable/con proxies, y su coste de cortesía (3-8 s entre
 peticiones) convertiría una búsqueda instantánea en un proceso de decenas de
 segundos. Todo ello para cubrir campos ya cubiertos (5.5).
@@ -720,7 +723,7 @@ independientes.
    app, introduce coste recurrente y mantiene el riesgo de bloqueo (5.4).
 
 3. **Carga desproporcionada y beneficio nulo**. El modelo de carga (6.2)
-   estima que añadir los mismos libros costaría ~7-11 peticiones frente a 1
+   estima que añadir los mismos libros costaría ≈8-15 peticiones frente a 1
    hoy, con cortesías de 3-8 s entre peticiones y riesgo de 403/bloqueo
    tras pocas decenas de peticiones; y la comparativa de metadatos (5.5-5.6)
    muestra que GoodReads no aporta **ningún** campo de los que la app usa
@@ -756,7 +759,7 @@ verificó en cada una.
 
 | URL | Qué se verificó |
 |---|---|
-| `https://www.goodreads.com/robots.txt` | Lectura íntegra: reglas para `User-agent: *`, `bingbot` (Crawl-delay: 5), GPTBot/CCBot bloqueados, `Allow: /work/editions`, `Allow: /work/quotes`, `Disallow: /search`, `/api`, `/work`, `/book/reviews/`, `/review/show`, `/review/list`, etc.; 28 sitemaps (ver anexo) |
+| `https://www.goodreads.com/robots.txt` | Lectura íntegra: reglas para `User-agent: *`, `bingbot` (Crawl-delay: 5), GPTBot/CCBot bloqueados, `Allow: /work/editions`, `Allow: /work/quotes`, `Disallow: /search`, `/api`, `/work`, `/book/reviews/`, `/review/show`, `/review/list`, etc.; 16 sitemaps (ver anexo) |
 | `https://www.goodreads.com/about/terms` | ToS «last revised on April 28, 2021»; citas de las secciones 1 (licencia limitada; prohibición de data mining/robots/extracción; terminación sin aviso) y 4 (derechos de propiedad; uso no permitido estrictamente prohibido) |
 | `https://www.goodreads.com/about/privacy` | Política de privacidad «Last updated: June 27, 2023»; GoodReads subsidiaria de Amazon; remisión al Amazon Privacy Notice; contenido de usuario público vía el servicio |
 | `https://www.goodreads.com/` + `/search?q=…` (curl) | Evidencias CORS y anti-bot del 2026-08-09 (anexo): 200 con HTML real en portada con UA de navegador; 202/0 bytes sin UA y en `/search`; sin `Access-Control-Allow-Origin`; `via: CloudFront` |
@@ -875,7 +878,7 @@ Disallow: /*reviewFilters
 
 Sitemap: https://www.goodreads.com/siteindex.author.xml
 Sitemap: https://www.goodreads.com/siteindex.index.xml
-... (28 sitemaps en total)
+... (16 sitemaps en total)
 ```
 
 ---
