@@ -115,12 +115,27 @@
               <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
             </button>
             <div class="profile-dropdown hidden" id="profile-dropdown" role="menu" aria-label="Menú de perfil">
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="stats">Estadísticas</button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="friends">Amigos</button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="activity">Actividad</button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="settings">Ajustes</button>
+              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="stats">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg></span>
+                <span>Estadísticas</span>
+              </button>
+              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="friends">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></span>
+                <span>Amigos</span>
+              </button>
+              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="activity">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg></span>
+                <span>Actividad</span>
+              </button>
+              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="settings">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></span>
+                <span>Ajustes</span>
+              </button>
               <div class="profile-dropdown__separator" role="separator"></div>
-              <button type="button" class="profile-dropdown__item profile-dropdown__item--logout" id="btn-profile-logout" role="menuitem">Cerrar sesión</button>
+              <button type="button" class="profile-dropdown__item profile-dropdown__item--logout" id="btn-profile-logout" role="menuitem">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg></span>
+                <span>Cerrar sesión</span>
+              </button>
             </div>
           </div>
         </div>
