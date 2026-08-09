@@ -58,7 +58,6 @@ export function subscribeWithRetry({
   // (con backoff) o esperar a estar online, y agota con onError final.
   function handleError(err) {
     if (cancelled || retryTimer) return;
-    console.warn("Suscripción falló, se reintentará:", err);
 
     if (!notifiedRetry && onRetrying) {
       notifiedRetry = true;
@@ -75,6 +74,7 @@ export function subscribeWithRetry({
 
     if (attempts < maxRetries) {
       attempts++;
+      console.warn("Suscripción falló, se reintentará:", err);
       retryTimer = setTimeout(retry, baseDelayMs * 2 ** (attempts - 1));
     } else {
       console.error("Suscripción agotó los reintentos:", err);
@@ -105,6 +105,13 @@ export function subscribeWithRetry({
 
   function retry() {
     if (cancelled) return;
+    // Limpiar el timer ya disparado y el listener "online": si no, el
+    // guard `retryTimer` de handleError bloquearía los reintentos
+    // siguientes (el id del timer disparado sigue siendo truthy) y el
+    // listener dispararía re-suscripciones espurias en cada reconexión.
+    clearTimeout(retryTimer);
+    retryTimer = null;
+    clearOnlineHandler();
     // Nunca dejar dos suscripciones vivas: cancelar la rota antes de
     // volver a crear (el unsubscribe de un stream ya muerto es inocuo).
     if (currentUnsubscribe) {
