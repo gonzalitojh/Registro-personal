@@ -1,6 +1,6 @@
 // =============================================================
 // Buscador Global — busca simultáneamente en películas, series,
-// libros y amigos. La barra de búsqueda vive en la cabecera
+// libros, videojuegos y amigos. La barra de búsqueda vive en la cabecera
 // (#global-search-input dentro de .search-bar-wrap) y los resultados
 // se muestran en un dropdown anclado bajo ella (#global-search-results).
 // Se abre al hacer focus/click en el input, o con Ctrl+K / "/".
@@ -48,10 +48,10 @@ let searchCtx = null;
 // externalQuery[group] = query de la búsqueda en curso.
 // searchSeq: contador monotónico para descartar respuestas obsoletas
 // (cambia con cada búsqueda y al cerrar el dropdown).
-const externalCache = { movies: null, tv: null, books: null };
-const inFlight = { movies: false, tv: false, books: false };
-const externalError = { movies: null, tv: null, books: null };
-const externalQuery = { movies: "", tv: "", books: "" };
+const externalCache = { movies: null, tv: null, books: null, games: null };
+const inFlight = { movies: false, tv: false, books: false, games: false };
+const externalError = { movies: null, tv: null, books: null, games: null };
+const externalQuery = { movies: "", tv: "", books: "", games: "" };
 let searchSeq = 0;
 
 // Grupo de tipo pulsado en los botones superiores (null = ninguno).
@@ -64,6 +64,7 @@ const GROUPS = [
   { key: "tv", label: "Serie", icon: MEDIA_ICONS.tv, itemLabel: "serie", manualText: "¿No la encuentras? Añadir manualmente una serie", type: "tv", accent: "" },
   { key: "movies", label: "Película", icon: MEDIA_ICONS.movies, itemLabel: "película", manualText: "¿No la encuentras? Añadir manualmente una película", type: "movie", accent: "" },
   { key: "books", label: "Libro", icon: MEDIA_ICONS.books, itemLabel: "libro", manualText: "¿No lo encuentras? Añadir manualmente un libro", type: "book", accent: " global-search__item-add--books" },
+  { key: "games", label: "Videojuego", icon: MEDIA_ICONS.games, itemLabel: "videojuego", manualText: "¿No lo encuentras? Añadir manualmente un videojuego", type: "game", accent: " global-search__item-add--games" },
 ];
 
 // ---- Referencias DOM (se asignan en setup) ----
@@ -151,13 +152,14 @@ function filterFriends(profiles, query) {
 // lo usan performSearch, runExternalSearch y refreshExternalResults.
 function collectionResults(trimmed) {
   if (!searchCtx) {
-    return { movies: [], tv: [], books: [], friends: [] };
+    return { movies: [], tv: [], books: [], games: [], friends: [] };
   }
   const allItems = searchCtx.getAllItems();
   return {
     movies: filterItems(allItems.movies || [], trimmed).slice(0, 5),
     tv: filterItems(allItems.tv || [], trimmed).slice(0, 5),
     books: filterItems(allItems.books || [], trimmed).slice(0, 5),
+    games: filterItems(allItems.games || [], trimmed).slice(0, 5),
     friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 3),
   };
 }
@@ -189,7 +191,7 @@ function renderTypeButtons() {
 
 function hintHtml() {
   return renderTypeButtons() +
-    `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros y amigos.</p>`;
+    `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros, videojuegos y amigos.</p>`;
 }
 
 function renderHint() {
@@ -267,10 +269,10 @@ function renderExternalSection(group, query) {
 }
 
 function renderResults(results, query) {
-  const { movies = [], tv = [], books = [], friends = [] } = results;
+  const { movies = [], tv = [], books = [], games = [], friends = [] } = results;
   const trimmed = query.trim();
 
-  const hasAny = movies.length || tv.length || books.length || friends.length;
+  const hasAny = movies.length || tv.length || books.length || games.length || friends.length;
 
   if (!trimmed || trimmed.length < 2) {
     renderHint();
@@ -300,20 +302,22 @@ function renderResults(results, query) {
     movies: "Películas",
     tv: "Series",
     books: "Libros",
+    games: "Videojuegos",
     friends: "Amigos",
   };
 
-  // Iconos de grupo: series/películas/libros usan los mismos SVGs que
-  // las pestañas (MEDIA_ICONS, coloreados por CSS con --<key>); amigos
-  // conserva su emoji (issue #134).
+  // Iconos de grupo: series/películas/libros/videojuegos usan los
+  // mismos SVGs que las pestañas (MEDIA_ICONS, coloreados por CSS con
+  // --<key>); amigos conserva su emoji (issue #134).
   const groupIcons = {
     movies: MEDIA_ICONS.movies,
     tv: MEDIA_ICONS.tv,
     books: MEDIA_ICONS.books,
+    games: MEDIA_ICONS.games,
     friends: "👤",
   };
 
-  const groupKeys = ["movies", "tv", "books", "friends"];
+  const groupKeys = ["movies", "tv", "books", "games", "friends"];
   let html = renderTypeButtons();
   const newFlat = [];
   let globalIdx = 0;
@@ -345,7 +349,7 @@ function renderResults(results, query) {
         </div>`;
         newFlat.push({ kind: "collection", type: "friend", item: entry, group: key });
       } else {
-        // Resultado de item (movie/tv/book)
+        // Resultado de item (movie/tv/book/game)
         const cover = entry.coverUrl || "";
         const title = entry.title || "Sin título";
         const author = entry.author || "";
@@ -639,15 +643,19 @@ export function closeGlobalSearch() {
   externalCache.movies = null;
   externalCache.tv = null;
   externalCache.books = null;
+  externalCache.games = null;
   inFlight.movies = false;
   inFlight.tv = false;
   inFlight.books = false;
+  inFlight.games = false;
   externalError.movies = null;
   externalError.tv = null;
   externalError.books = null;
+  externalError.games = null;
   externalQuery.movies = "";
   externalQuery.tv = "";
   externalQuery.books = "";
+  externalQuery.games = "";
 
   resultsEl.classList.add("hidden");
   resultsEl.innerHTML = "";

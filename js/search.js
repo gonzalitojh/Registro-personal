@@ -12,6 +12,7 @@
 import { addItem, updateItem, deleteItem } from "./db.js";
 import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
+import { searchGames as apiSearchGames, getGameDetails } from "./api-games.js";
 import { isUnreleasedDate, unreleasedConfirmMessage } from "./release.js";
 import { todayISO } from "./dates.js";
 import { computeProgress, markAllSeasonsWatched } from "./tv-progress.js";
@@ -19,12 +20,13 @@ import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import * as ui from "./ui.js";
 
 // Búsqueda en el catálogo de un grupo (stateless: solo devuelve
-// datos, sin tocar el DOM). group: "movies" | "tv" | "books".
+// datos, sin tocar el DOM). group: "movies" | "tv" | "books" | "games".
 // Devuelve { items, hasMore, source } (source solo para libros:
 // "googlebooks" | "openlibrary").
 export async function searchExternal(group, query, page = 1) {
   if (group === "movies") return apiSearchMovies(query, page);
   if (group === "tv") return apiSearchTv(query, page);
+  if (group === "games") return apiSearchGames(query, page);
   // Libros: siempre en español (la casilla "Solo en español" se
   // eliminó en la issue #82).
   return apiSearchBooks(query, page, null, true);
@@ -123,6 +125,40 @@ export async function handleAdd(item, btn, ctx) {
     });
   }
 
+  // --- Videojuegos (RAWG) ---
+  if (item.type === "game") {
+    btn.disabled = true;
+    btn.textContent = "Añadiendo…";
+    try {
+      const draft = {
+        externalId: item.externalId,
+        type: "game",
+        title: item.title,
+        year: item.year || "",
+        coverUrl: item.coverUrl || null,
+        status: "pendiente",
+        rating: null,
+        notes: "",
+        playLog: [],
+      };
+      try {
+        const details = await getGameDetails(item.externalId);
+        Object.assign(draft, details);
+        if (!draft.coverUrl) draft.coverUrl = item.coverUrl || null;
+      } catch (err) {
+        // no bloqueamos el alta si este paso extra falla
+      }
+      await addItem(ctx.getCurrentUser().uid, "game", draft);
+      ui.showToast(`«${item.title}» añadido a tu registro.`);
+      return true;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Añadir";
+      ui.showToast("No se pudo añadir: " + err.message);
+      return false;
+    }
+  }
+
   // --- Películas / series (sin cambios) ---
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
@@ -201,7 +237,7 @@ async function openSeenRating(uid, type, ref, opts) {
       title: opts.title,
       coverUrl: opts.coverUrl,
       communityRating: opts.communityRating ?? null,
-      communityLabel: "TMDB",
+      communityLabel: opts.communityLabel || "TMDB",
       initialRating: null,
       onSave: async (rating) => {
         await updateItem(uid, type, ref.id, { rating });
@@ -313,6 +349,48 @@ export async function handleAddSeen(item, btn, ctx) {
       coverUrl: item.coverUrl,
       description: item.description || "",
     });
+  }
+
+  // --- Videojuegos (RAWG) ---
+  if (item.type === "game") {
+    btn.disabled = true;
+    btn.textContent = "Marcando…";
+    try {
+      const draft = {
+        externalId: item.externalId,
+        type: "game",
+        title: item.title,
+        year: item.year || "",
+        coverUrl: item.coverUrl || null,
+        status: "completado",
+        rating: null,
+        notes: "",
+        playLog: [{ startedAt: todayISO(), finishedAt: todayISO() }],
+      };
+      let details = {};
+      try {
+        details = await getGameDetails(item.externalId);
+        Object.assign(draft, details);
+        // RAWG puede devolver background_image null: no pisar la
+        // portada del resultado de búsqueda (mismo patrón que TMDB).
+        draft.coverUrl = draft.coverUrl || item.coverUrl;
+      } catch (err) {
+        // no bloqueamos el alta si este paso extra falla
+      }
+
+      const ref = await addItem(ctx.getCurrentUser().uid, "game", draft);
+      return await openSeenRating(ctx.getCurrentUser().uid, "game", ref, {
+        title: item.title,
+        coverUrl: item.coverUrl,
+        communityRating: details.communityRating ?? null,
+        communityLabel: "RAWG",
+        doneToast: `«${item.title}» añadido y marcado como jugado.`,
+      });
+    } catch (err) {
+      restoreSeenBtn(btn);
+      ui.showToast("No se pudo añadir: " + err.message);
+      return false;
+    }
   }
 
   // --- Películas / series ---
@@ -471,6 +549,15 @@ export async function enrichSearchItem(item) {
       return {};
     }
   }
+  // Videojuego: datos ampliados de RAWG (sinopsis, plataformas,
+  // desarrolladores, Metacritic, ESRB...).
+  if (item.type === "game") {
+    try {
+      return await getGameDetails(item.externalId);
+    } catch (err) {
+      return {};
+    }
+  }
   // Libro: solo sinopsis, y únicamente para fuentes Open Library
   // ("/works/...") que aún no la traigan en el resultado de búsqueda.
   if (item.externalId && item.externalId.startsWith("/works/") && !item.description) {
@@ -486,12 +573,14 @@ export async function enrichSearchItem(item) {
 // Abre la vista previa de un resultado de búsqueda. Recalcula `added`
 // con el estado actual del ctx como defensa frente a cambios entre el
 // render y el click (el grupo se mapea a plural porque ctx usa las
-// claves "movies"/"tv"/"books").
+// claves "movies"/"tv"/"books"/"games").
 export function openSearchPreviewFromResults(item, added, ctx) {
+  const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+  const group = typeToGroup[item.type] || "movies";
   const currentAdded =
     item.type === "book"
       ? isBookAlreadyAdded(item, existingIdsFor("books", ctx), existingBookKeys(ctx))
-      : existingIdsFor(item.type === "movie" ? "movies" : "tv", ctx).has(item.externalId);
+      : existingIdsFor(group, ctx).has(item.externalId);
 
   ui.openSearchPreviewModal(item, {
     added: currentAdded,
@@ -536,7 +625,11 @@ export async function handleManualAdd(type, data, ctx) {
     draft.timesCompleted = 0;
     draft.history = [];
     draft.manualEpisodeCount = data.episodeCount || 10;
+  } else if (type === "game") {
+    draft.progress = null;
+    draft.playLog = [];
   } else {
+    // Libros
     draft.progress = null;
     draft.readLog = [];
   }
