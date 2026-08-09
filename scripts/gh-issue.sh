@@ -205,7 +205,7 @@ ty = [l for l in labels if l.startswith("type: ")]
 other = [l for l in labels if l not in agent and not l.startswith("status: ") and not l.startswith("ai-") and not l.startswith("type: ")]
 
 print(f"# {issue['number']} — {issue['title']}")
-print(f"Estado: {issue['state']} | URL: {issue['url']}")
+print(f"Estado: {issue['state'].lower()} | URL: {issue['url']}")
 print(f"Label agente: {agent if agent else '(ninguna)'}")
 print(f"Estado: {st if st else '(sin estado)'}")
 print(f"Residuales ai-*: {residual if residual else '(ninguna)'}")

@@ -105,7 +105,9 @@ TAIL_PID=$!
 # las sesiones hijas a medida que se completan. Termina con SIGTERM.
 python3 "$ROOT/scripts/dump-session-transcript.py" --watch "$TITLE" "$START_TS_MS" "$WATCH_POLL_SEC" >&1 &
 WATCH_PID=$!
-trap 'kill "$WATCH_PID" 2>/dev/null || true' EXIT
+# Red de seguridad: si el script muere (p. ej. por set -e), se limpian los
+# procesos en background (tail del log + watcher de subagentes).
+trap 'kill "$TAIL_PID" 2>/dev/null || true; kill "$WATCH_PID" 2>/dev/null || true' EXIT
 
 # ---- Watchdog --------------------------------------------------------------
 # Actividad = MAX(time_updated) de mensajes/parts de TODAS las sesiones del
