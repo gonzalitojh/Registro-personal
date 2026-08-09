@@ -1,0 +1,25 @@
+{
+  "title": "Múltiple búsqueda en catálogo",
+  "description": "Cuando se busca algo en el catálogo (por ejemplo el de películas) y luego se borra para buscar otra cosa, se debería desmarcar el catálogo de películas para que se vuelva a realizar la búsqueda en el catálogo deseado o esperar a que el usuario termine de escribir (quizá esperar 1-2 segundos sin recibir input o como fuese más óptimo) y que se realice la búsqueda en el mismo catálogo ya seleccionado.\n\nAdemás, al introducir algo en la barra de búsqueda y empezar a aparecer resultados, aparece un error en la consola por imágenes de fbcdn.net devolviendo 403 (Forbidden). En principio parece no afectar, pero si se puede solucionar sería ideal.\n\nDiagnóstico del bug 1 (catálogo pegado): en js/global-search.js, performSearch() no resetea activeGroup cuando la query queda vacía o < 2 caracteres, y al escribir una query nueva con un grupo activo, renderResults() muestra 'Buscando en el catálogo…' sin volver a llamar a runExternalSearch() para la nueva query (la caché externalCache[group].query no coincide). Resultado: la sección del catálogo se queda colgada en 'Buscando…' y el botón de tipo sigue marcado.\n\nDiagnóstico del bug 2 (error 403): las portadas de la colección (coverUrl guardado, p. ej. URLs de CDNs que bloquean hotlinking como fbcdn.net) fallan al cargar (403) y no hay ningún fallback que sustituya la imagen por el placeholder, generando errores en consola.",
+  "status": "documented",
+  "acceptance criteria": [
+    "Al borrar el texto de la barra de búsqueda (o dejarlo con menos de 2 caracteres), el catálogo seleccionado se desmarca y el usuario puede elegir de nuevo el catálogo donde buscar.",
+    "Si el usuario mantiene un catálogo activo y modifica la búsqueda escribiendo una nueva query (>= 2 caracteres), la búsqueda se relanza automáticamente en ese mismo catálogo (no se queda colgada en 'Buscando…').",
+    "Las imágenes de resultados del dropdown (portadas de colección y de catálogo externo, y avatares de amigos) que fallen al cargar (403, 404, red...) se sustituyen por el placeholder 'Sin imagen' sin generar errores en consola.",
+    "No se rompe la navegación por teclado, los botones de tipo (Serie/Película/Libro), la paginación ni la selección única del catálogo activo (issue #82)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada siguiendo el plan.",
+    "Validación QA aprobada (qa-reviewer): acceptance criteria y definition of done cumplidos, sin regresiones en el buscador.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #149'.",
+    "PR creada contra dev sin keyword de cierre, con actualización del task file (status review + bloque pr) y label de la issue a status: needs-review.",
+    "Issue #149 label updated to its final state."
+  ],
+  "issue": {
+    "number": 149,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/149",
+    "title": "Múltiple búsqueda en catálogo"
+  }
+}

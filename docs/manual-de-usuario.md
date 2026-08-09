@@ -348,6 +348,17 @@ resultado:
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
 
+Si borras lo escrito, el catálogo elegido se desmarca y los botones
+vuelven a quedar sin pulsar: para buscar en el catálogo tendrás que
+volver a pulsar **«Serie»**, **«Película»** o **«Libro»**. En cambio,
+si sigues escribiendo con un catálogo ya elegido, la búsqueda se repite
+automáticamente en ese mismo catálogo: no hace falta volver a pulsar el
+botón.
+
+Si una portada no se puede cargar (imagen rota o bloqueada por la web
+que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
+el resultado sigue funcionando igual.
+
 ### 7.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
