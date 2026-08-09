@@ -25,8 +25,8 @@
 #     (vía API). La label "ai" (marcador de issues del agente) nunca se añade ni
 #     se elimina desde este script.
 #   - La transición a "status: done" (y el cierre de la issue) la aplica el
-#     workflow .github/workflows/issues-done-on-main.yml cuando el usuario
-#     promueve dev→main; este script queda como vía manual de respaldo.
+#     workflow .github/workflows/issues-done-on-dev.yml al fusionar la PR en
+#     dev; este script queda como vía manual de respaldo.
 # =============================================================================
 set -euo pipefail
 
@@ -169,7 +169,7 @@ for issue in data:
     else:
         counts["user"] += 1
     flag = "AGENTE" if agent else "USUARIO"
-    state_marker = "" if issue["state"] == "OPEN" else " [CERRADA]"
+    state_marker = "" if str(issue["state"]).lower() == "open" else " [CERRADA]"
     rows.append(f"#{issue['number']:<4} [{ty:<8}] {issue['title']}  (estado: {st})  {flag}{state_marker}")
 
 if rows:
@@ -205,7 +205,7 @@ ty = [l for l in labels if l.startswith("type: ")]
 other = [l for l in labels if l not in agent and not l.startswith("status: ") and not l.startswith("ai-") and not l.startswith("type: ")]
 
 print(f"# {issue['number']} — {issue['title']}")
-print(f"Estado: {issue['state']} | URL: {issue['url']}")
+print(f"Estado: {issue['state'].lower()} | URL: {issue['url']}")
 print(f"Label agente: {agent if agent else '(ninguna)'}")
 print(f"Estado: {st if st else '(sin estado)'}")
 print(f"Residuales ai-*: {residual if residual else '(ninguna)'}")
@@ -245,7 +245,8 @@ cmd_set_state() {
     echo "ERROR: no se pudo leer la issue #$n." >&2
     exit 1
   }
-  if [[ "$state" == "CLOSED" ]]; then
+  state="${state,,}"   # normalizar a minúsculas (issue #145)
+  if [[ "$state" == "closed" ]]; then
     if [[ "$label" == "status: done" ]]; then
       echo "OK: issue #$n CERRADA → aplicando estado terminal 'status: done'."
     else
@@ -315,7 +316,8 @@ cmd_set_type() {
     echo "ERROR: no se pudo leer la issue #$n." >&2
     exit 1
   }
-  if [[ "$state" == "CLOSED" ]]; then
+  state="${state,,}"   # normalizar a minúsculas (issue #145)
+  if [[ "$state" == "closed" ]]; then
     echo "AVISO: la issue #$n está CERRADA; no se modifican sus labels." >&2
     exit 3
   fi

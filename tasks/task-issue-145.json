@@ -1,0 +1,45 @@
+{
+  "title": "Mejoras de auto-resolve-issues (issue #145) — iteración 2: watchdog por instrucción, streaming de subagentes, minúsculas y prompt mínimo",
+  "description": "Iteración 2 de la issue #145 (la PR #146 de la iteración 1 se fusionó en dev: watchdog de estancamiento 10 min + límite total 45 min + transcripción post-mortem con subagentes vía BD de opencode).\n\nLa sesión automática volvió a fallar: estancada 601s sin salida nueva, porque el watchdog mide el log crudo y opencode NO emite la salida de los subagentes en el stream (el Qa-Reviewer Agent trabajó >10 min activo pero la cuenta atrás seguía corriendo). El usuario reabrió la issue con 3 comentarios:\n\nCOMENTARIO 1: Cambia el límite de tiempo por estancamiento de 10 minutos a 20 minutos.\n\nCOMENTARIO 2 (bot): La sesión automática de SDD falló (estancada 601s); la issue vuelve a la cola (status: todo).\n\nCOMENTARIO 3 (último, principal):\n1. El límite de estancamiento debe ser POR INSTRUCCIÓN, analizando también los subagentes: un subagente puede estar más de 10 min en curso (produciendo mensajes) sin que sea estancamiento; una única instrucción no debería superar el límite. Un subagente no debería tener tiempo límite más allá del workflow completo. => El watchdog debe medir la actividad REAL de la sesión (mensajes nuevos en la BD de opencode, de la sesión primaria Y de las hijas), no solo el tamaño del log crudo.\n2. El output de los subagentes debería estar INCRUSTADO EN LA PROPIA EJECUCIÓN (en vivo), no solo al final (transcripción post-mortem). Se sugiere ejecutarlos en steps paralelos separados si es posible; si no, la mejor solución viable.\n3. Si no es posible analizar lo que hace el subagente para los límites, ampliar el límite de estancamiento a 20-30 min o incluso eliminarlo (para subagentes o todos los pasos). [El comentario 1 ya pide 10→20 min; la opción preferida es actividad real por BD.]\n4. Todas las comprobaciones de estado de issue u otros campos susceptibles de mayúsculas/minúsculas deben hacerse EN MINÚSCULA: transformar el campo a minúscula y comparar contra el valor en minúscula (p. ej. estado \"OPEN\" → \"open\"). Revisar TODOS los workflows y scripts (auto-resolve-issues.yml, issues-done-on-dev.yml, gh-issue.sh, gh-select-issue.sh...). BUG REAL detectado: github.event.issue.state devuelve 'open' (minúscula) y se compara con \"OPEN\" en el caso issue_comment → la iteración por comentario nunca funcionaría.\n5. Preguntas: ¿se usan los agentes de /.opencode/agents? (Sí: el workflow lanza --agent sdd-master que carga .opencode/agents/sdd-master.md, y sus subagentes qa-reviewer/security-champion/documentation-sync/publisher/task-architect están definidos allí; verificar y documentar). ¿El paso 'Construir prompt de la sesión' es para introducir la consulta al modelo? (Sí). Objetivo: prompt MÍNIMO de tokens: como el usuario en OpenCode solo escribe 'Resuelve la issue <N>' / 'Resuelve el comentario de la issue <N>', el prompt de CI debe reducirse al mínimo imprescindible (las instrucciones del flujo ya están en el agente sdd-master y AGENTS.md; no duplicar todo el flujo en el prompt).",
+  "status": "published",
+  "acceptance_criteria": [
+    "AC1: El watchdog de run-sdd-session.sh detecta estancamiento POR INSTRUCCIÓN/ACTIVIDAD REAL: consulta periódicamente la BD de opencode (sesión primaria + subagentes por parent_id) y considera actividad cualquier mensaje nuevo (texto/tool) de CUALQUIER sesión del árbol; si un subagente está produciendo mensajes no se mata la sesión.",
+    "AC2: El límite de estancamiento por defecto pasa de 600 s a 1200 s (20 min, comentario 1); sigue siendo configurable vía SESSION_STALL_LIMIT_SEC. El límite total de la sesión (SESSION_TOTAL_LIMIT_SEC, default 2700 s) se mantiene como cota del workflow completo.",
+    "AC3: El output de los subagentes se muestra EN VIVO en el log de la action (streaming desde la BD de opencode a medida que se completan los mensajes), no solo en la transcripción final. La transcripción completa post-mortem se mantiene como resumen final.",
+    "AC4: TODAS las comparaciones de estado de issue y campos susceptibles de mayúsculas/minúsculas en .github/workflows/*.yml y scripts/*.sh se hacen en minúscula (estado OPEN/CLOSED → open/closed, github.event.issue.state, gh-issue.sh, gh-select-issue.sh, issues-done-on-dev.yml...).",
+    "AC5: El paso 'Construir prompt de la sesión' genera un prompt MÍNIMO en tokens: instrucción de autonomía breve + 'Resuelve la issue <N>' (o 'Resuelve el comentario de la issue <N>' en iteración) + contexto esencial, sin duplicar todo el flujo SDD (ya está en .opencode/agents/sdd-master.md y AGENTS.md).",
+    "AC6: Se documenta que los agentes de /.opencode/agents SÍ se usan (--agent sdd-master carga .opencode/agents/sdd-master.md; los subagentes están definidos en ese directorio).",
+    "AC7: El flujo SDD (micro-commits, rama de PR contra dev, publisher, wip-save, rollback con motivo) no se altera; los artefactos temporales siguen excluidos del repo."
+  ],
+  "definition_of_done": [
+    "Planificación realizada (agente de planificación).",
+    "Implementación completa: scripts/run-sdd-session.sh (watchdog por actividad BD + límite 1200 s), scripts/dump-session-transcript.py (modo streaming/watch en vivo), scripts/gh-issue.sh y gh-select-issue.sh (comparaciones en minúscula), .github/workflows/auto-resolve-issues.yml (prompt mínimo + minúsculas + paso sesión), .github/workflows/issues-done-on-dev.yml (minúsculas).",
+    "Validación con qa-reviewer superada (AC + DoD + casos borde: sesión sin subagentes, BD inexistente, fallo de red, iteración por comentario).",
+    "Escaneo de seguridad superado (sin HIGH; MEDIUM/LOW informativos).",
+    "ADR en docs/ con 'Related issue: #145' (número siguiente libre).",
+    "PR creada contra dev SIN keyword de cierre en el body (la issue se cierra al fusionar vía issues-done-on-dev.yml).",
+    "Task file actualizado a status 'review' con bloque 'pr' y subido al repo (el bloque pr anterior pasa a previousPr).",
+    "Labels de la issue sincronizadas (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 145,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/145",
+    "title": "Mejoras de auto-resolve-issues"
+  },
+  "previousPr": {
+    "number": 146,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/146",
+    "title": "refactor: watchdog y transcripción de subagentes en auto-resolve-issues (issue #145)",
+    "branch": "refactor/issue-145-auto-resolve-mejoras",
+    "commit": "9cb782b",
+    "closes": "#145"
+  },
+  "pr": {
+    "number": 150,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/150",
+    "title": "refactor: watchdog por actividad BD y streaming de subagentes en auto-resolve-issues (issue #145, iteración 2)",
+    "branch": "refactor/issue-145-auto-resolve-iteracion2",
+    "commit": "7997544",
+    "closes": "#145"
+  }
+}

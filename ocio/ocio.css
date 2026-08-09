@@ -1310,9 +1310,12 @@ input, textarea, select { font-size: 16px; }
   font-size: 0.85rem;
 }
 
+/* Fila de acciones: wrap para que el botón «Deshacer» (issue #136)
+   no desborde en móvil (responsividad obligatoria) */
 .rating-modal__actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 1.1rem;
 }

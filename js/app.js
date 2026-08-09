@@ -26,6 +26,7 @@ import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails
 import { getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { APP_VERSION } from "./config.js";
+import { subscribeWithRetry } from "./retry.js";
 import { applySort } from "./sorting.js";
 import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
@@ -40,6 +41,7 @@ import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
+import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
 
 // ---------- Estado ----------
 
@@ -175,7 +177,13 @@ async function init() {
 
   const ctx = createCtx();
 
-  // Pestañas
+  // Pestañas de Ocio y enrutamiento (issue #59): cada pestaña tiene
+  // su propia URL (#/ocio/series, #/ocio/peliculas, #/ocio/libros)
+  // gestionada por el router de hash. El clic manual replica el
+  // comportamiento clásico (activar pestaña, mover foco al título)
+  // y además sincroniza la URL; las activaciones que vienen del
+  // router (carga directa, recarga, atrás/adelante) nunca roban
+  // el foco.
   const tabs = document.querySelectorAll(".tab");
   const panels = {
     "panel-movies": document.getElementById("panel-movies"),
@@ -183,24 +191,68 @@ async function init() {
     "panel-books": document.getElementById("panel-books"),
   };
 
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => {
-        t.classList.remove("is-active");
-        t.setAttribute("aria-selected", "false");
-      });
-      tab.classList.add("is-active");
-      tab.setAttribute("aria-selected", "true");
-      Object.values(panels).forEach((p) => p.classList.add("hidden"));
-      const activePanel = panels[tab.dataset.panel];
-      activePanel.classList.remove("hidden");
+  function activatePanel(panelId, { moveFocus = false } = {}) {
+    tabs.forEach((t) => {
+      t.classList.remove("is-active");
+      t.setAttribute("aria-selected", "false");
+    });
+    Object.values(panels).forEach((p) => p && p.classList.add("hidden"));
 
-      // Mover foco al título de la sección activa
-      const heading = activePanel.querySelector("h2");
+    // Defensivo: si el panel no existe (un data-panel desactualizado),
+    // se cae al estado por defecto (Series) en lugar de romper.
+    const targetId = panels[panelId] ? panelId : "panel-tv";
+    const activeTab = Array.from(tabs).find((t) => t.dataset.panel === targetId);
+    if (activeTab) {
+      activeTab.classList.add("is-active");
+      activeTab.setAttribute("aria-selected", "true");
+    }
+    panels[targetId].classList.remove("hidden");
+
+    if (moveFocus) {
+      // Mover foco al título de la sección activa (solo por clic manual).
+      const heading = panels[targetId].querySelector("h2");
       if (heading) {
         heading.setAttribute("tabindex", "-1");
         heading.focus();
       }
+    }
+  }
+
+  // Router (issue #59): en carga directa o recarga activa la vista
+  // indicada por la URL (pestaña de Ocio o sección del perfil) sin
+  // robar el foco (solo el clic manual lo mueve).
+  const profileView = document.getElementById("profile-view");
+  // Declarado antes de crear el router: el onRoute se ejecuta durante
+  // initRouter() con la ruta de la carga inicial, y profileApi todavía
+  // no existe (la sesión tampoco). El guard permite ignorarla: tras el
+  // login, watchAuthState llama a router.applyRoute() para retomarla.
+  let profileApi = null;
+  const router = initRouter({
+    onRoute: (route) => {
+      if (route.section === "perfil") {
+        // Ruta de perfil: abre la sección pedida (profile.js decide
+        // el render y, si viene con uid, el detalle del amigo).
+        if (profileApi) {
+          profileApi.openProfileSection(route.profileSection, ctx, {
+            fromRouter: true,
+            friendUid: route.uid || null,
+          });
+        }
+      } else if (route.section === "ocio") {
+        // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
+        // la pestaña (lastOcioKey lo actualiza el router internamente).
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        activatePanel(route.panelId);
+      }
+    },
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const panelId = tab.dataset.panel;
+      activatePanel(panelId, { moveFocus: true });
+      router.navigate(keyForPanel(panelId));
     });
   });
 
@@ -246,13 +298,19 @@ async function init() {
     });
   });
 
-  // Módulos especializados
+  // Módulos especializados. profileApi (declarado antes del router
+  // para su uso en onRoute) se asigna aquí.
   setupModalCloseListeners();
   setupNotifications(ctx);
-  const profileApi = setupProfile(ctx);
+  profileApi = setupProfile(ctx);
   setupSettings(ctx);
   setupSidebar({
-    onOpenSettings: () => profileApi.openProfileSection("settings", ctx),
+    // Entrada «Ajustes»: navega a la ruta del perfil para que la URL
+    // se sincronice (el router abre la sección).
+    onOpenSettings: () => router.navigate({ section: "perfil", profileSection: "settings" }),
+    // Entrada «Ocio»: además del scroll al top, vuelve a la última
+    // pestaña de Ocio activa y sincroniza la URL con el router.
+    onGoOcio: () => router.navigate(getLastOcioKey()),
   });
   setupGlobalSearch(ctx);
 
@@ -285,6 +343,13 @@ async function init() {
     currentUser = user;
     ui.showApp(user);
 
+    // Si la carga inicial pedía una ruta de perfil (#/perfil/...) sin
+    // sesión, el onRoute la ignoró (profileApi no existía aún). Al
+    // entrar, la retomamos para abrir la sección que se solicitó.
+    if (router.getCurrentSection() === "perfil") {
+      router.applyRoute();
+    }
+
     try {
       await upsertUserProfile(user.uid, {
         email: user.email,
@@ -295,48 +360,59 @@ async function init() {
       console.error("No se pudo guardar el perfil de usuario:", err);
     }
 
-    unsubscribeItems.movies = subscribeToItems(
-      user.uid,
-      "movie",
-      (items) => {
+    // Suscripciones en tiempo real. Se envuelven con subscribeWithRetry
+    // (issue #147): si al entrar falla una suscripción por un error
+    // transitorio, se reintenta sola con backoff en lugar de dejar la
+    // biblioteca vacía hasta cerrar y volver a abrir la web.
+    unsubscribeItems.movies = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "movie", onChange, onError),
+      onChange: (items) => {
         allItems.movies = items;
         moviesReady = true;
         renderLibraryFor("movies");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus películas.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus películas."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeItems.tv = subscribeToItems(
-      user.uid,
-      "tv",
-      (items) => {
+    unsubscribeItems.tv = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "tv", onChange, onError),
+      onChange: (items) => {
         allItems.tv = items;
         tvReady = true;
         renderLibraryFor("tv");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus series.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus series."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeItems.books = subscribeToItems(
-      user.uid,
-      "book",
-      (items) => {
+    unsubscribeItems.books = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "book", onChange, onError),
+      onChange: (items) => {
         allItems.books = items;
         booksReady = true;
         renderLibraryFor("books");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus libros.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus libros."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeNotifications = subscribeToNotifications(
-      user.uid,
-      (items) => {
+    // Notificaciones: mismo reintento, pero en silencio (como su onError
+    // actual, que no molestaba). El badge se rellena cuando el reintento
+    // tenga éxito.
+    unsubscribeNotifications = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToNotifications(user.uid, onChange, onError),
+      onChange: (items) => {
         notifications = items;
         ui.renderNotifications(
           document.getElementById("notif-list"),
@@ -349,8 +425,8 @@ async function init() {
         // en segundo plano (campana → notificación del sistema).
         handleNotificationsSnapshot(notifications);
       },
-      () => {}
-    );
+      onError: () => {},
+    });
   });
 }
 

@@ -13,6 +13,7 @@ import { renderSettings } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
 import { logout } from "./firebase.js";
 import { trapFocus } from "./focus-utils.js";
+import { navigate, getLastOcioKey, parseHash } from "./router.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -152,7 +153,6 @@ export function setupProfile(ctx) {
   const statsSection = document.getElementById("profile-section-stats");
   const friendsSection = document.getElementById("profile-section-friends");
   const activitySection = document.getElementById("profile-section-activity");
-  const dataSection = document.getElementById("profile-section-data");
   const settingsSection = document.getElementById("profile-section-settings");
   const friendsListEl = document.getElementById("friends-list");
   const friendDetailEl = document.getElementById("friend-detail");
@@ -172,13 +172,51 @@ export function setupProfile(ctx) {
   let currentFriendName = "";
   let currentFriendUid = "";
 
+  // Clic en una tarjeta de amigo (UI): solo navega. El router hace el
+  // resto vía onRoute → openProfileSection(friends, {friendUid}) →
+  // openFriendByUid, así no hay doble apertura ni fetchs repetidos.
+  function openFriendCard(profile) {
+    navigate({ section: "perfil", profileSection: "friends", uid: profile.uid });
+  }
+
   async function loadFriendsList() {
     friendsListEl.innerHTML = `<p class="empty-state">Cargando…</p>`;
     try {
       const profiles = await ctx.getAllUserProfiles();
-      ui.renderFriendsList(friendsListEl, profiles, ctx.getCurrentUser().uid, openFriend);
+      ui.renderFriendsList(friendsListEl, profiles, ctx.getCurrentUser().uid, openFriendCard);
+      return profiles;
     } catch (err) {
       friendsListEl.innerHTML = `<p class="empty-state">No se pudo cargar la lista de amigos.</p>`;
+      return [];
+    }
+  }
+
+  // Abre el detalle de un amigo a partir de su uid (deep-link
+  // #/perfil/amigos/<uid>, issue #59). Reutiliza la misma carga de
+  // perfiles que la lista para no duplicar fetchs; si el amigo ya no
+  // está disponible (o el uid no existe), se queda en la lista.
+  async function openFriendByUid(uid) {
+    let profiles = [];
+    try {
+      profiles = await ctx.getAllUserProfiles();
+      ui.renderFriendsList(friendsListEl, profiles, ctx.getCurrentUser().uid, openFriendCard);
+    } catch (err) {
+      profiles = [];
+    }
+    const profile = profiles.find((p) => p.uid === uid);
+    // La URL manda: si entre la carga y apertura el usuario navegó a
+    // otro amigo (o a otra sección), ya no abrimos este uid. Evita la
+    // carrera de clics rápidos (tarjeta A → tarjeta B en marcha).
+    if (profile && parseHash().uid === uid) {
+      await openFriend(profile);
+    } else if (profile) {
+      // La ruta cambió a otro uid: la navegación más reciente se
+      // encargará de abrir al amigo correcto; esta apertura caduca.
+      return;
+    } else {
+      // Sin amigo para ese uid: normalizar la URL a la lista de
+      // amigos y dejar la lista visible (ya la hemos renderizado).
+      navigate({ section: "perfil", profileSection: "friends" }, { replace: true });
     }
   }
 
@@ -257,7 +295,18 @@ export function setupProfile(ctx) {
 
   /* ---------- Apertura de secciones del perfil ---------- */
 
-  function openProfileSection(section, ctx) {
+  // Abre una sección del perfil. Cuando la llamada viene del router
+  // (fromRouter: true, p. ej. recarga directa en #/perfil/...) NO se
+  // vuelve a navegar (evita bucle); desde la UI sí se sincroniza la
+  // URL con navigate(). friendUid solo se usa en la sección de
+  // amigos: abre el detalle de ese amigo concreto (deep-link).
+  function openProfileSection(section, ctx, opts = {}) {
+    const { fromRouter = false, friendUid = null } = opts;
+    if (!fromRouter) {
+      // Navegación por la UI: el hash se sincroniza (navigate() no-op
+      // si ya estamos en la ruta canónica, así no hay doble ejecución).
+      navigate({ section: "perfil", profileSection: section });
+    }
     document.getElementById("app").classList.add("hidden");
     document.getElementById("profile-view").classList.remove("hidden");
     profileSubtabs.forEach((b) => {
@@ -268,7 +317,6 @@ export function setupProfile(ctx) {
     statsSection.classList.toggle("hidden", section !== "stats");
     friendsSection.classList.toggle("hidden", section !== "friends");
     if (activitySection) activitySection.classList.toggle("hidden", section !== "activity");
-    if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
     if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
     statsPeriodWrap.classList.toggle("hidden", section !== "stats");
     if (section === "stats") {
@@ -280,7 +328,13 @@ export function setupProfile(ctx) {
     } else if (section === "friends") {
       friendDetailEl.classList.add("hidden");
       friendsListEl.classList.remove("hidden");
-      loadFriendsList();
+      if (friendUid) {
+        // Deep-link con amigo: la lista se muestra y además se abre
+        // el detalle de ese amigo cuando estén sus datos.
+        openFriendByUid(friendUid);
+      } else {
+        loadFriendsList();
+      }
     } else if (section === "activity") {
       loadActivityFeed();
     } else if (section === "settings" && ctx) {
@@ -330,10 +384,13 @@ export function setupProfile(ctx) {
     }
   });
 
+  // Clas de perfil y subtabs: la UI solo navega (el hash cambia y el
+  // router, vía openProfileSection con fromRouter, hace el render).
+  // Así la URL es la única fuente de verdad y no hay doble trabajo.
   profileDropdown.querySelectorAll("[data-section]").forEach((item) => {
     item.addEventListener("click", () => {
       closeProfileDropdown();
-      openProfileSection(item.dataset.section, ctx);
+      navigate({ section: "perfil", profileSection: item.dataset.section });
     });
   });
 
@@ -342,9 +399,13 @@ export function setupProfile(ctx) {
     logout();
   });
 
+  // «← Volver» del perfil: cierra la vista (toggle manual: cubre el
+  // caso de navegar sin cambiar el hash) y vuelve a la última pestaña
+  // de Ocio que estuviera activa.
   document.getElementById("btn-close-profile").addEventListener("click", () => {
     document.getElementById("profile-view").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
+    navigate(getLastOcioKey());
   });
 
   statsPeriodSelect.addEventListener("change", () => {
@@ -411,13 +472,15 @@ export function setupProfile(ctx) {
 
   profileSubtabs.forEach((btn) => {
     btn.addEventListener("click", () => {
-      openProfileSection(btn.dataset.section, ctx);
+      navigate({ section: "perfil", profileSection: btn.dataset.section });
     });
   });
 
+  // «← Volver a amigos» desde el detalle: vuelve a la lista (la ruta
+  // canónica #/perfil/amigos se aplica vía router; al navegar sin
+  // friendUid el router abre la lista).
   document.getElementById("btn-back-to-friends").addEventListener("click", () => {
-    friendDetailEl.classList.add("hidden");
-    friendsListEl.classList.remove("hidden");
+    navigate({ section: "perfil", profileSection: "friends" });
   });
 
   document.querySelectorAll(".friend-subtab").forEach((btn) => {

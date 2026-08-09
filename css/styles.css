@@ -1186,7 +1186,9 @@ button {
 }
 
 .profile-dropdown__item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   width: 100%;
   text-align: left;
   background: transparent;
@@ -1197,6 +1199,12 @@ button {
   font-weight: 500;
   border-radius: var(--radius);
   cursor: pointer;
+}
+.profile-dropdown__item svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  color: currentColor;
 }
 .profile-dropdown__item:hover {
   background: var(--paper-dim);
@@ -1472,29 +1480,20 @@ button {
 
 
 /* =========================================================
-   Datos: exportar / importar copia de seguridad
+   Ajustes: apartado Datos (issue #135). La pestaña «Datos» del
+   perfil se unificó en Ajustes; los botones se apilan en
+   vertical para mantener el aspecto de las antiguas tarjetas.
    ========================================================= */
 
-.data-card {
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: var(--radius);
-  padding: 1.4rem;
-  margin-bottom: 1.2rem;
-  box-shadow: var(--shadow-card);
+.settings-card--data .btn {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 1.2rem;
 }
 
-.data-card h3 {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  margin: 0 0 0.5rem;
-}
-
-.data-card p {
-  font-size: 0.88rem;
-  color: var(--ink-soft);
-  margin: 0 0 1rem;
-  line-height: 1.5;
+.settings-card--data .btn:last-child {
+  margin-bottom: 0;
 }
 
 /* =========================================================
@@ -1697,6 +1696,9 @@ button {
 }
 
 .global-search__type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
   border: 1px solid var(--paper-line);
   color: var(--ink-soft);
@@ -1707,14 +1709,33 @@ button {
   cursor: pointer;
   transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
 }
+/* Acento por tipo de medio: mismos colores que las pestañas
+   (--teal-reel series, --stamp películas, --ochre-spine libros) y los
+   mismos SVGs (MEDIA_ICONS, issue #134). */
+.global-search__type-btn--tv { --type-accent: var(--teal-reel); }
+.global-search__type-btn--movies { --type-accent: var(--stamp); }
+.global-search__type-btn--books { --type-accent: var(--ochre-spine); }
+.global-search__type-btn .global-search__type-icon svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--type-accent);
+}
 .global-search__type-btn:hover {
-  border-color: var(--teal-reel);
+  border-color: var(--type-accent, var(--teal-reel));
   color: var(--ink);
 }
 .global-search__type-btn.is-active {
-  background: var(--teal-reel);
+  background: var(--type-accent, var(--teal-reel));
   color: var(--paper);
-  border-color: var(--teal-reel);
+  border-color: var(--type-accent, var(--teal-reel));
+}
+.global-search__type-btn.is-active .global-search__type-icon svg {
+  color: inherit;
+}
+/* Sobre el ocre el texto oscuro (--ink) contrasta mejor que el papel */
+.global-search__type-btn--books.is-active {
+  color: var(--ink);
 }
 
 /* Estado de las secciones del catálogo (buscando / error / vacío) */
@@ -1789,6 +1810,18 @@ button {
   letter-spacing: 0.05em;
   color: var(--ink-soft);
 }
+
+/* Iconos de los títulos de grupo: SVGs de las pestañas (MEDIA_ICONS)
+   coloreados con el acento de cada tipo (issue #134). friends conserva
+   su emoji "👤" y no lleva modificador. */
+.global-search__group-title svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+.global-search__group-title--tv svg { color: var(--teal-reel); }
+.global-search__group-title--movies svg { color: var(--stamp); }
+.global-search__group-title--books svg { color: var(--ochre-spine); }
 
 .global-search__group-badge {
   background: var(--teal-reel);

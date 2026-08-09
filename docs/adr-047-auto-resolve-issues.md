@@ -219,3 +219,7 @@ Related issue: #128 — https://github.com/gonzalitojh/Registro-personal/issues/
 | `README.md` | **Modificado**: sección 6, punto 6 — nota sobre la protección WIP (si la sesión falla por tokens, el progreso se guarda en `wip/issue-N` y se restaura en el siguiente intento) |
 
 Related issue: #81 — https://github.com/gonzalitojh/Registro-personal/issues/81
+
+### 9. Nota posterior — cierre de issues al fusionar la PR (ADR-053, issue #143)
+
+El prompt de la sesión ya **NO instruye escribir "Closes #N"** en el body de la PR (ni en modo normal ni en MODO ITERACIÓN): la keyword no funciona sobre `dev` (GitHub solo auto-cierra al fusionar en la rama por defecto; ADR-029/ADR-053) y el cierre + `status: done` de la issue lo aplica el workflow `.github/workflows/issues-done-on-dev.yml` al fusionar la PR en `dev`, identificando la issue por el task file de la PR, la rama `issue-<N>`/`task-<N>` o keyword del body. El resto de este documento queda como registro histórico de la implementación de la resolución automática.

@@ -6,6 +6,8 @@ Aceptado
 ## Fecha
 Agosto 2026
 
+**NOTA — CONCEPTO RECUPERADO POR ADR-053 (issue #143)**: el ADR-053 recupera el concepto de este ADR (cierre de la issue al fusionar la PR) adaptado al esquema de labels `status: *` + label `ai` (ADR-034) y con alcance **dirigido**: al fusionar la PR en `dev` se cierra y marca `status: done` SOLO la issue que esa PR resuelve (identificada por su task file, su rama o keyword del body), sin el barrido de todas las issues en revisión. El cierre deja de esperar a la promoción `dev` → `main`.
+
 **NOTA — SUPERADO EN LO RELATIVO AL ESQUEMA DE LABELS Y AL CIERRE**: este ADR queda superado por el ADR-034 (issue #74): el workflow `issue-done-on-merge.yml` queda eliminado y sustituido por `issues-done-on-main.yml`, que al promover `dev` a `main` cierra todas las issues en `status: needs-review` (no al fusionar la PR). El resto se conserva como registro histórico.
 
 ## Contexto

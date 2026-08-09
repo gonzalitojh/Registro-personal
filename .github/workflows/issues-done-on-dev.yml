@@ -1,48 +1,195 @@
 name: issues-done-on-dev
 
+# =============================================================================
+# Cierre dirigido de issues al fusionar PRs en `dev` (issue #143).
+#
+# POR QUÉ ESTE REDISEÑO:
+# - El workflow anterior se disparaba con `push: branches: [dev]` y barría
+#   TODAS las issues con label 'status: needs-review', cerrando también las
+#   issues de otras PRs pendientes de revisión (era un residuo de la época en
+#   que el cierre ocurría sobre main). Ahora el cierre es DIRIGIDO: al
+#   fusionar una PR en `dev`, SOLO se procesan las issues que esa PR resuelve.
+# - La instrucción "Closes #N" del body de las PRs nunca funcionó: GitHub solo
+#   auto-cierra issues con keywords de cierre cuando la PR se fusiona en la
+#   RAMA POR DEFECTO del repo (main), y todas las PRs se fusionan contra `dev`
+#   (hallazgo documentado en ADR-029, issue #42). Por eso el cierre lo hace
+#   este workflow como fuente única de verdad y las guías ya NO instruyen
+#   escribir la keyword en el body de las PRs.
+#
+# DISPARO:
+#   - pull_request: [closed] → solo si la PR fue MERGED, sobre `dev` y desde
+#     el propio repo (guard anti-forks; en `if:` de job se usa `github.repository`
+#     = full_name, equivalente de context.repo.full_name).
+#   - workflow_dispatch (issue_number opcional): reparación manual de una
+#     issue concreta, sin tocar ninguna otra.
+#
+# NOTA (activación, ADR-047/ADR-120): el trigger `pull_request: [closed]` usa
+# el merge ref (base+head de la PR), por lo que la versión de ESTE workflow
+# que corre es la de la rama fusionada (dev), no la de main. La publicación de
+# este archivo en dev activa inmediatamente el comportamiento en la próxima
+# fusión, sin esperar a la promoción dev → main.
+# =============================================================================
+
 on:
-  push:
-    branches: [dev]
-  workflow_dispatch:  # prueba manual opcional
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Número de issue a reparar manualmente (modo respaldo)"
+        type: string
+        required: false
 
 permissions:
-  issues: write
+  issues: write        # labels (set-state) y cierre de la issue
+  pull-requests: read  # listFiles de la PR (identificar issues)
 
 jobs:
-  mark-needs-review-done:
+  close-issue-of-pr:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request'
+        && github.event.pull_request.merged == true
+        && github.event.pull_request.base.ref == 'dev'
+        && github.event.pull_request.head.repo.full_name == github.repository)
+      || github.event_name == 'workflow_dispatch'
     steps:
-      - name: "Issues en 'status: needs-review' → 'status: done' y cerrarlas"
+      - name: "Cerrar y marcar 'status: done' las issues resueltas por la PR"
         uses: actions/github-script@v7
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            // Todas las issues (abiertas y cerradas) con la label 'status: needs-review'.
-            const iterator = github.paginate.iterator(github.rest.issues.listForRepo, {
-              owner, repo, state: 'all',
-              labels: 'status: needs-review', per_page: 100
-            });
-            let done = 0, skipped = 0;
-            for await (const { data: issues } of iterator) {
-              for (const issue of issues) {
-                if (issue.pull_request) continue; // salvaguarda anti-PR
+
+            // -------------------------------------------------------------------
+            // 1) Identificar las issues objetivo (Set → deduplicación).
+            // -------------------------------------------------------------------
+            const issueNumbers = new Set();
+
+            if (context.eventName === 'workflow_dispatch') {
+              // Modo reparación manual: solo la issue indicada. Si el input está
+              // vacío o no es numérico → no-op con nota y salida limpia (éxito).
+              // NOTA (bug de la PR #148): NO usar core.getInput() — solo lee
+              // inputs de action.yml/with:; los inputs de workflow_dispatch
+              // viven en context.payload.inputs.
+              const raw = String((context.payload.inputs || {}).issue_number || '').trim();
+              if (!/^\d+$/.test(raw)) {
+                core.notice(`workflow_dispatch sin 'issue_number' numérico ('${raw}'): no-op`);
+                return;
+              }
+              issueNumbers.add(parseInt(raw, 10));
+            } else {
+              // NOTA (bug de la PR #148): en actions/github-script `github` es
+              // el cliente octokit (github.rest.*), NO el contexto del evento:
+              // el payload se lee de context.payload (github.event es undefined
+              // y lanzaba TypeError al fusionar la PR).
+              const pr = context.payload.pull_request;
+
+              // (a) Archivos de la PR que matchean tasks/task-issue-<N>.json (paginado).
+              let page = 0;
+              while (true) {
+                const result = await github.rest.pulls.listFiles({
+                  owner, repo,
+                  pull_number: pr.number,
+                  per_page: 100, page,
+                });
+                for (const file of result.data) {
+                  const match = String(file.filename || '').match(/^tasks\/task-issue-(\d+)\.json$/);
+                  if (match) issueNumbers.add(parseInt(match[1], 10));
+                }
+                if (result.data.length < 100) break;
+                page++;
+              }
+
+              // (b) Rama de la PR: patrón issue-<N> / task-<N>
+              //     (el publisher nombra las ramas <tipo>/issue-<N>-<slug>).
+              const refMatch = String(pr.head && pr.head.ref || '').match(/(?:issue|task)-(\d+)/);
+              if (refMatch) issueNumbers.add(parseInt(refMatch[1], 10));
+
+              // (c) Keywords de cierre en el body de la PR (compatibilidad con
+              //     PRs manuales o iteraciones anteriores que aún la llevaran).
+              const keywordRe = /\b(?:closes?|closed|fix(?:es|ed)?|resolves?|resolved)\s*:?\s*#(\d+)/gi;
+              let m;
+              while ((m = keywordRe.exec(String(pr.body || ''))) !== null) {
+                issueNumbers.add(parseInt(m[1], 10));
+              }
+            }
+
+            if (issueNumbers.size === 0) {
+              core.info('La PR no referencia ninguna issue (task file, rama o body): nada que procesar.');
+              return;
+            }
+            core.info(`Issues objetivo: ${[...issueNumbers].map(n => '#' + n).join(', ')}`);
+
+            // -------------------------------------------------------------------
+            // 2) Procesar cada issue (best-effort: try/catch por issue; un fallo
+            //    jamás rompe el run).
+            // -------------------------------------------------------------------
+            let processed = 0;
+            for (const number of issueNumbers) {
+              try {
+                const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number });
+
+                // Salvaguarda anti-PR: las PRs no son issues.
+                if (issue.pull_request) {
+                  core.warning(`#${number}: es una PR, no una issue; se omite`);
+                  continue;
+                }
+
                 const names = (issue.labels || []).map(l => l.name);
+
+                // Solo issues con marcador del agente: label 'ai' O alguna label
+                // 'status: *'. Issues de usuario sin marcadores → no se tocan.
+                const hasMarker = names.includes('ai') || names.some(n => n.startsWith('status: '));
+                if (!hasMarker) {
+                  core.info(`#${number}: issue sin labels 'ai'/'status: *'; no se procesa`);
+                  continue;
+                }
+
+                // Idempotencia: ya cerrada y con 'status: done' → nada que hacer.
+                const state = String(issue.state || '').toLowerCase(); // minúsculas (issue #145)
+                if (state === 'closed' && names.includes('status: done')) {
+                  core.info(`#${number}: ya está cerrada con 'status: done'; se omite`);
+                  continue;
+                }
+
+                // Eliminar labels 'status: *' ≠ 'status: done' y residuales
+                // 'ai-*' vía removeLabel (NUNCA deleteLabel — ADR-052), en
+                // try/catch: si la label no está en la issue, se avisa y sigue.
                 const toRemove = names.filter(l =>
                   (l.startsWith('status: ') && l !== 'status: done') || l.startsWith('ai-'));
                 for (const label of toRemove) {
-                  await github.rest.issues.deleteLabel({ owner, repo, issue_number: issue.number, name: label });
-                  core.notice(`#${issue.number}: label '${label}' eliminada`);
+                  try {
+                    await github.rest.issues.removeLabel({ owner, repo, issue_number: number, name: label });
+                    core.notice(`#${number}: label '${label}' retirada de la issue`);
+                  } catch (error) {
+                    core.warning(`#${number}: no se pudo retirar la label '${label}': ${error.message}`);
+                  }
                 }
+
+                // Añadir 'status: done' si no la tiene.
                 if (!names.includes('status: done')) {
-                  await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['status: done'] });
+                  try {
+                    await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: ['status: done'] });
+                  } catch (error) {
+                    core.warning(`#${number}: no se pudo añadir 'status: done': ${error.message}`);
+                  }
                 }
-                if (issue.state === 'open') {
-                  await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
-                  core.notice(`#${issue.number}: issue cerrada`);
+
+                // Cerrar la issue si está abierta.
+                if (state === 'open') {
+                  try {
+                    await github.rest.issues.update({ owner, repo, issue_number: number, state: 'closed' });
+                  } catch (error) {
+                    core.warning(`#${number}: no se pudo cerrar la issue: ${error.message}`);
+                  }
                 }
-                core.info(`#${issue.number}: → status: done`);
-                done++;
+
+                core.notice(`#${number}: → 'status: done' y cerrada`);
+                processed++;
+              } catch (error) {
+                core.warning(`#${number}: no se pudo procesar la issue: ${error.message}`);
               }
             }
-            core.info(`Procesadas ${done} issues con 'status: needs-review'`);
+
+            core.info(`Resumen: ${processed} issues procesada(s) de ${issueNumbers.size} identificada(s).`);

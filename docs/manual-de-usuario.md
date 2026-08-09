@@ -78,8 +78,8 @@ Nada más entrar verás:
     segundos pasa a «Buscar películas, series, libros o amigos...».
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
-    - **Tu foto**: pulsándola se abre un menú con las cinco secciones de
-      tu perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
+    - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
+      tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**.
   - La cabecera **permanece siempre visible**: al hacer scroll por la
     lista no se mueve, en ningún dispositivo.
@@ -112,6 +112,27 @@ Cada pestaña se divide en dos zonas:
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
 (más en [sección 7](#7-cómo-buscar)).
+
+### 3.1 Compartir direcciones y volver a las pestañas
+
+Cada pestaña tiene su propia dirección web, que termina en
+`#/ocio/series` (Series), `#/ocio/peliculas` (Películas) o
+`#/ocio/libros` (Libros). Puedes copiar esa dirección desde la
+barra de direcciones del navegador y compartirla, guardarla en
+favoritos o enviártela a ti mismo: al volver a abrirla, la web se
+abre directamente en esa pestaña, aunque hayas entrado desde otro
+dispositivo.
+
+Los botones **atrás** y **adelante** del navegador también cambian de
+pestaña, como si fueran parte de la misma página: si estás en
+Películas, pulsas Series y luego «atrás», vuelves a Películas.
+
+Si entras sin una dirección concreta, o con una que no corresponde a
+ninguna pestaña, la web te lleva siempre a **Series**, igual que
+hasta ahora.
+
+Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
+[sección 13.0](#130-compartir-direcciones-de-tu-perfil).
 
 ## 4. Series
 
@@ -158,6 +179,8 @@ Para cada episodio puedes:
 
 - **Marcarlo como visto** con la casilla. Si el episodio aún no se ha
   estrenado, la web te preguntará antes si quieres marcarlo igualmente.
+  Si lo marcas por equivocación, la ventana de valoración ofrece
+  **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
 - **Valorarlo** con estrellas, una vez visto (más en [sección 10](#10-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
@@ -226,7 +249,8 @@ manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
 En tu lista, cada película tiene un botón **«Vista»**. Al pulsarlo se
 registra el visionado con la fecha de hoy y se abre la ventana de
 **valoración** para que la puntúes de 1 a 5 estrellas (puedes pulsar
-**«Ahora no»**).
+**«Ahora no»**). Si te arrepientes del marcado, pulsa **«Deshacer»** en
+esa ventana: el visionado se anula y no se añade al historial.
 
 Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 **«Añadir otro visionado»** — la web guarda ambos en el historial.
@@ -272,7 +296,9 @@ En la ficha del libro:
 
 - **«Empezar a leer»**: registra el inicio con la fecha de hoy.
 - **«Terminar de leer»**: cierra la lectura con la fecha de hoy y abre la
-  ventana de valoración.
+  ventana de valoración. Si pulsas **«Deshacer»** en esa ventana, el
+  libro vuelve a quedar como estaba: si estabas leyendo, vuelve a
+  «Leyendo», y la lectura terminada no se registra.
 - **«Página actual»**: anota por qué página vas. Se guarda en la ficha del
   libro y la ven tus amigos en el feed de actividad.
 - **En pausa / Abandonar / Retomar**: como en las series, sin perder tu
@@ -322,6 +348,17 @@ resultado:
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
 
+Si borras lo escrito, el catálogo elegido se desmarca y los botones
+vuelven a quedar sin pulsar: para buscar en el catálogo tendrás que
+volver a pulsar **«Serie»**, **«Película»** o **«Libro»**. En cambio,
+si sigues escribiendo con un catálogo ya elegido, la búsqueda se repite
+automáticamente en ese mismo catálogo: no hace falta volver a pulsar el
+botón.
+
+Si una portada no se puede cargar (imagen rota o bloqueada por la web
+que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
+el resultado sigue funcionando igual.
+
 ### 7.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
@@ -331,9 +368,10 @@ anotado: **películas, series, libros** (también por autor) y en tus
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
 desplegable** bajo ella con los resultados. Los resultados se agrupan con
-iconos (🎬 películas, 📺 series, 📚 libros, 👤 amigos). Pulsa un resultado
-para abrir su ficha; si pulsas un amigo, de momento verás el aviso de que
-pronto podrás ver su perfil.
+iconos: los mismos de las pestañas, cada uno en su color (series en verde,
+películas en rojo, libros en ocre) y el icono 👤 para amigos. Pulsa un
+resultado para abrir su ficha; si pulsas un amigo, de momento verás el
+aviso de que pronto podrás ver su perfil.
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
@@ -426,6 +464,11 @@ tarde, o elegir estrellas y pulsar **«Guardar valoración»**. Si pulsas
 guardar sin elegir, la web te lo recuerda. Pulsando otra vez sobre la
 misma estrella quitas la valoración.
 
+También puedes pulsar **«Deshacer»**: anula el marcado recién hecho
+(el visionado de la película, el fin de la lectura o el episodio
+marcado) y te deja como estabas. En episodios, el deshacer se ofrece
+solo mientras la ventana está abierta.
+
 En tu lista, cada título muestra tus estrellas (★) y la nota de la
 comunidad.
 
@@ -447,8 +490,11 @@ En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
 haciendo scroll normalmente.
 
-La acción se confirma con un aviso flotante. En series en pausa o
-abandonadas no funciona: la web te avisa de que la abras para retomarla.
+La acción se confirma con un aviso flotante (por ejemplo, «marcada como
+vista»). Si en la ventana de valoración pulsas **«Deshacer»**, ese aviso
+cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
+series en pausa o abandonadas no funciona: la web te avisa de que la
+abras para retomarla.
 
 ### 11.3 Deshacer un borrado
 
@@ -483,11 +529,32 @@ estás mirando.
 ## 13. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
-elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad,
-Datos o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
+elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
+o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
+también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
-Tu perfil tiene cinco secciones:
+Tu perfil tiene cuatro secciones:
+
+### 13.0 Compartir direcciones de tu perfil
+
+Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
+cada sección del perfil tiene su propia dirección web, que termina en
+`#/perfil/estadisticas` (Estadísticas), `#/perfil/amigos` (Amigos),
+`#/perfil/actividad` (Actividad) o `#/perfil/ajustes` (Ajustes). Puedes
+copiarla desde la barra de direcciones, guardarla en favoritos o
+compartirla: al abrirla, la web te lleva directo a esa sección del
+perfil. La dirección antigua `#/perfil/datos` sigue funcionando y abre
+Ajustes.
+
+Además, la ficha de un amigo tiene su propia dirección:
+`#/perfil/amigos/<identificador del amigo>`. Si la abres en cualquier
+momento, verás directamente el registro de ese amigo. Si el amigo ya
+no está disponible, la web te deja en la lista de amigos.
+
+Entrar con una dirección de perfil sin sesión iniciada abre primero la
+pantalla de entrada; al iniciar sesión, la web te lleva a la sección
+que pedías.
 
 ### 13.1 Estadísticas
 
@@ -531,22 +598,7 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 13.4 Datos
-
-Tres acciones importantes:
-
-- **Exportar copia de seguridad**: descarga un archivo con TODOS tus
-  datos (películas, series, libros, perfil y notificaciones). Es tu
-  seguro de vida: guárdalo donde quieras.
-- **Importar copia de seguridad**: restaura datos desde un archivo que
-  exportaras antes. **Añade** lo que falte a lo que ya tienes: no
-  reemplaza ni borra nada.
-- **Exportar calendario (.ics)**: descarga un archivo con los **próximos
-  episodios de tus series y los estrenos pendientes de películas**, para
-  importarlo en Google Calendar, Apple Calendar o similar y tener todos
-  los estrenos en tu agenda.
-
-### 13.5 Ajustes
+### 13.4 Ajustes
 
 Se explica completo en la [sección 14](#14-ajustes).
 
@@ -577,6 +629,17 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   portadas, tráilers...). Solo puedes usarlo una vez cada **30 minutos**
   (la web te avisa si lo intentas antes). No hace falta usarlo: la web ya
   se actualiza sola a diario (ver siguiente sección).
+- **Datos**: exporta, importa o descarga tus datos:
+  - **Exportar copia de seguridad**: descarga un archivo con TODOS tus
+    datos (películas, series, libros, perfil y notificaciones). Es tu
+    seguro de vida: guárdalo donde quieras.
+  - **Importar copia de seguridad**: restaura datos desde un archivo que
+    exportaras antes. **Añade** lo que falte a lo que ya tienes: no
+    reemplaza ni borra nada.
+  - **Exportar calendario (.ics)**: descarga un archivo con los **próximos
+    episodios de tus series y los estrenos pendientes de películas**, para
+    importarlo en Google Calendar, Apple Calendar o similar y tener todos
+    los estrenos en tu agenda.
 
 ## 15. ¿Cuándo se actualizan los datos?
 
@@ -592,6 +655,11 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante
   un tiempo para no pedirlos a cada rato.
+- Si al entrar hay un **fallo de conexión puntual** (un momento sin red
+  o un error pasajero del servidor), la web **reintenta sola durante
+  unos segundos** antes de avisarte. Puede aparecer el aviso «Hay
+  problemas de conexión. Reintentando…» mientras lo hace; normalmente
+  no tienes que hacer nada.
 
 ## 16. Privacidad
 
@@ -630,8 +698,17 @@ de seguridad).
 Es un fallo puntual del servidor de libros, no tuyo: la web reintenta
 sola. Si persiste, espera unos segundos y vuelve a intentarlo.
 
+**Al entrar no cargan mis datos**
+La web lo **reintenta automáticamente** durante unos segundos: puede
+aparecer el aviso «Hay problemas de conexión. Reintentando…». Si pasados
+unos segundos sigue sin cargar y aparece el aviso de error («No se
+pudieron cargar tus películas/series/libros»), comprueba tu conexión a
+internet y **recarga la página**.
+
 **He marcado algo por error**
-Tranquilo: puedes desmarcar episodios, quitar visionados del historial y
+Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
+valoración que se abre al marcar y todo vuelve a estar como antes.
+También puedes desmarcar episodios, quitar visionados del historial y
 «Deshacer» cualquier borrado en los segundos posteriores.
 
 **No veo a un amigo nuevo**

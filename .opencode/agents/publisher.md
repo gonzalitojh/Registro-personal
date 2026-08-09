@@ -2,9 +2,10 @@
 description: >-
   Automatically creates a new branch, commits changes, pushes to remote,
   and creates a GitHub Pull Request with a description of recent implementation changes.
-  If the task references a GitHub Issue, the PR body includes "Closes #NUMERO_ISSUE"
-  so the issue closes automatically on merge, and the issue label is updated to
-  status: needs-review after the PR is created.
+  If the task references a GitHub Issue, the PR body does NOT include any closing
+  keyword ("Closes #N" does not work against 'dev'): the issue closes when the PR
+  is merged into dev via .github/workflows/issues-done-on-dev.yml, and the issue
+  label is updated to status: needs-review after the PR is created.
   Reads task files, git diff, and ADRs to compose the PR body.
   Después de crear la PR, sube al repositorio la actualización del task file (status 'review' + bloque pr) con un segundo commit y push a la misma rama.
 mode: subagent
@@ -33,7 +34,7 @@ Gather context about the local uncommitted changes to decide on branch names and
   ```json
   "issue": { "number": 18, "url": "https://github.com/.../issues/18", "title": "..." }
   ```
-  Extract it with: `python3 -c "import json,sys; d=json.load(open('tasks/task-issue-18.json')); print(d.get('issue',{}).get('number',''))"` (adjust the filename). If there is no `issue` block or the number is not a positive integer, continue WITHOUT an issue reference (skip the "Closes #N" line and the label update). Si el task file ya contiene un bloque `pr` (iteración), se guardará como `previousPr` al publicar la nueva PR.
+  Extract it with: `python3 -c "import json,sys; d=json.load(open('tasks/task-issue-18.json')); print(d.get('issue',{}).get('number',''))"` (adjust the filename). If there is no `issue` block or the number is not a positive integer, continue WITHOUT an issue reference (the closing keyword is never included anyway: the issue closes via the workflow on merge; skip also the label update). Si el task file ya contiene un bloque `pr` (iteración), se guardará como `previousPr` al publicar la nueva PR.
 - Look for ADRs: `ls docs/adr/ 2>/dev/null` and read the most recent one if it exists.
 
 ### 2. Branch, Commit, and Push
@@ -52,11 +53,7 @@ Generate a PR body with these sections:
 **Title**: Use the task title if available, otherwise derive from the context.
 Format: `[task-type] Brief description` (e.g. `[feature] Add move history panel`)
 
-**Body**: La PRIMERA línea debe ser SIEMPRE la keyword de cierre cuando el task file referencia una issue, **incluidas las PRs de iteración/reapertura** (si ya existió una PR anterior para la misma issue, esta nueva PR lleva igualmente su propio "Closes #N"; nunca confiar en PRs previas ni omitir la keyword):
-```
-Closes #18
-```
-(GitHub recognizes "Closes #N" anywhere in the body and closes the issue automatically when the PR is merged.) EXCEPCIÓN — si el task file contiene `"no_closes": true`, OMITE la línea 'Closes #N' del body (la issue no debe cerrarse con esta PR: el cierre lo hace el workflow de promoción dev→main `issues-done-on-main.yml`; aun así, tras crear la PR aplica `set-state <N> "status: needs-review"`). Then continue with:
+**Body**: El body comienza directamente con `## Summary`. NO incluyas keywords de cierre ("Closes #N", "Fixes #N", etc.) en ninguna parte del body, **ni siquiera en las PRs de iteración/reapertura**: GitHub solo auto-cierra issues cuando la PR se fusiona en la rama POR DEFECTO (main), y todas las PRs se fusionan en `dev` (ADR-029). El cierre + `status: done` lo aplica el workflow `.github/workflows/issues-done-on-dev.yml` al fusionar la PR en `dev` (identifica la issue por el task file de la PR, por la rama `issue-<N>`/`task-<N>` o por keyword del body). NOTA: el flag `"no_closes"` del task file sigue existiendo como metadato informativo (trazabilidad de PRs anteriores), pero ya NO condiciona nada del publisher: ninguna PR lleva keyword. Then continue with:
 
 ## Summary
 <concise summary of changes>

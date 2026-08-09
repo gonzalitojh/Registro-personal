@@ -29,6 +29,7 @@ import {
   existingBookKeys,
   isBookAlreadyAdded,
 } from "./search.js";
+import { MEDIA_ICONS } from "./constants.js";
 // ---- Estado interno ----
 
 let isOpen = false;
@@ -56,10 +57,12 @@ let searchSeq = 0;
 let activeGroup = null;
 
 // Información de cada grupo para las secciones del catálogo.
+// Los iconos son los SVGs de MEDIA_ICONS (los mismos de las pestañas,
+// con su color vía CSS --type-accent / --group-accent, issue #134).
 const GROUPS = [
-  { key: "tv", label: "Serie", icon: "📺", itemLabel: "serie", manualText: "¿No la encuentras? Añadir manualmente una serie", type: "tv", accent: "" },
-  { key: "movies", label: "Película", icon: "🎬", itemLabel: "película", manualText: "¿No la encuentras? Añadir manualmente una película", type: "movie", accent: "" },
-  { key: "books", label: "Libro", icon: "📚", itemLabel: "libro", manualText: "¿No lo encuentras? Añadir manualmente un libro", type: "book", accent: " global-search__item-add--books" },
+  { key: "tv", label: "Serie", icon: MEDIA_ICONS.tv, itemLabel: "serie", manualText: "¿No la encuentras? Añadir manualmente una serie", type: "tv", accent: "" },
+  { key: "movies", label: "Película", icon: MEDIA_ICONS.movies, itemLabel: "película", manualText: "¿No la encuentras? Añadir manualmente una película", type: "movie", accent: "" },
+  { key: "books", label: "Libro", icon: MEDIA_ICONS.books, itemLabel: "libro", manualText: "¿No lo encuentras? Añadir manualmente un libro", type: "book", accent: " global-search__item-add--books" },
 ];
 
 // ---- Referencias DOM (se asignan en setup) ----
@@ -172,10 +175,13 @@ function statusClass(status) {
 }
 
 // Fila superior del dropdown con los botones de tipo (SIEMPRE visible).
+// Cada botón lleva el icono SVG de su tipo (mismos SVGs que las pestañas)
+// y una clase modificadora --<key> que el CSS usa para colorear con el
+// acento de cada tipo (issue #134).
 function renderTypeButtons() {
   return `<div class="global-search__type-buttons">
     ${GROUPS.map(
-      (g) => `<button type="button" class="global-search__type-btn${g.key === activeGroup ? " is-active" : ""}" data-group="${g.key}">${g.label}</button>`
+      (g) => `<button type="button" class="global-search__type-btn global-search__type-btn--${g.key}${g.key === activeGroup ? " is-active" : ""}" data-group="${g.key}"><span class="global-search__type-icon" aria-hidden="true">${g.icon}</span>${g.label}</button>`
     ).join("")}
   </div>`;
 }
@@ -207,7 +213,7 @@ function renderExternalSection(group, query) {
   const g = groupInfo(group);
   const cache = externalCache[group];
   const err = externalError[group];
-  let html = `<div class="global-search__group-title">
+  let html = `<div class="global-search__group-title global-search__group-title--${g.key}">
     <span>${g.icon}</span>
     <span>Catálogo · ${g.label}s</span>
   </div>`;
@@ -295,10 +301,13 @@ function renderResults(results, query) {
     friends: "Amigos",
   };
 
+  // Iconos de grupo: series/películas/libros usan los mismos SVGs que
+  // las pestañas (MEDIA_ICONS, coloreados por CSS con --<key>); amigos
+  // conserva su emoji (issue #134).
   const groupIcons = {
-    movies: "🎬",
-    tv: "📺",
-    books: "📚",
+    movies: MEDIA_ICONS.movies,
+    tv: MEDIA_ICONS.tv,
+    books: MEDIA_ICONS.books,
     friends: "👤",
   };
 
@@ -311,7 +320,9 @@ function renderResults(results, query) {
     const items = results[key];
     if (!items || !items.length) continue;
 
-    html += `<div class="global-search__group-title">
+    // Solo los grupos de medio llevan modificador de color; friends no
+    // (su emoji es la "👤" y no necesita acento, issue #134).
+    html += `<div class="global-search__group-title${key === "friends" ? "" : ` global-search__group-title--${key}`}">
       <span>${groupIcons[key]}</span>
       <span>${groupLabels[key]}</span>
       <span class="global-search__group-badge">${items.length}</span>
@@ -421,7 +432,7 @@ function renderResults(results, query) {
 function externalSectionLoadingHtml(g) {
   const index = flatResults.length;
   flatResults.push({ kind: "manual", type: g.type, group: g.key, item: null });
-  return `<div class="global-search__group-title">
+  return `<div class="global-search__group-title global-search__group-title--${g.key}">
     <span>${g.icon}</span>
     <span>Catálogo · ${g.label}s</span>
   </div>
@@ -742,6 +753,29 @@ export function setupGlobalSearch(ctx) {
     }
   });
 
+  // Issue #149: portadas de la colección (p. ej. fbcdn.net) y avatares
+  // pueden fallar (403/404 por hotlinking bloqueado). El evento "error"
+  // NO burbujea, pero los listeners en fase de CAPTURA del contenedor
+  // sí reciben el error de cualquier <img> descendiente, incluidas las
+  // que se re-renderizan con innerHTML (el contenedor persiste).
+  resultsEl.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      if (
+        !img.classList.contains("global-search__item-cover") &&
+        !img.classList.contains("global-search__friend-avatar")
+      ) {
+        return;
+      }
+      // Evitar bucle: si ya es el placeholder (data URI), no reasignar.
+      if (img.src === ui.PLACEHOLDER_COVER) return;
+      img.src = ui.PLACEHOLDER_COVER;
+    },
+    true // capture: el evento "error" no burbujea
+  );
+
   // Escape con el foco fuera del input (p. ej. sobre un resultado):
   // el keydown del input ya cierra con stopPropagation, así que esto
   // solo actúa cuando el foco está en otra parte del documento.
@@ -781,6 +815,10 @@ async function performSearch(ctx) {
   const trimmed = query.trim();
 
   if (!trimmed || trimmed.length < 2) {
+    // Issue #149: al borrar el texto se desmarca el catálogo activo para
+    // que el usuario vuelva a elegir botón de tipo (renderTypeButtons
+    // marca is-active comparando con activeGroup).
+    activeGroup = null;
     renderHint();
     return;
   }
@@ -803,6 +841,22 @@ async function performSearch(ctx) {
       cachedProfiles = await profilePromise;
     } catch {
       cachedProfiles = [];
+    }
+  }
+
+  // Issue #149: si hay un catálogo activo y la query actual no tiene
+  // estado (vuelo/caché/error) para esta query exacta, relanzar la
+  // búsqueda externa automáticamente. runExternalSearch hace su propio
+  // renderResults (muestra «Buscando en el catálogo…» y luego el
+  // resultado); por eso hacemos return y no renderizamos dos veces.
+  const group = activeGroup;
+  if (group) {
+    const sameQueryInFlight = inFlight[group] && externalQuery[group] === trimmed;
+    const cachedForQuery = externalCache[group] && externalCache[group].query === trimmed;
+    const erroredForQuery = externalError[group] && externalError[group].query === trimmed;
+    if (!sameQueryInFlight && !cachedForQuery && !erroredForQuery) {
+      runExternalSearch(group, trimmed);
+      return;
     }
   }
 

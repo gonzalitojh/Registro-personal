@@ -1,0 +1,35 @@
+{
+  "title": "Iconos en desplegable del perfil",
+  "description": "Issue #134 (type: style, priority: high):\n\n1. Al pulsar en el perfil se despliega una ventana (#profile-dropdown) para ir a una sección (Estadísticas, Amigos, Actividad, Ajustes). Añadir un icono sencillo a cada sección.\n\n2. En la búsqueda de ítems en la barra superior (dropdown #global-search-results), cambiar los iconos de series, películas y libros para que sean los mismos que los de las pestañas (tab--tv / tab--movies / tab--books, SVG en index.html) y que usen también el mismo color (--teal-reel series, --stamp películas, --ochre-spine libros).\n\nEstado actual:\n- El dropdown del perfil (index.html) tiene 4 items de sección + Cerrar sesión, todos sin icono.\n- El buscador global (js/global-search.js) usa emojis: GROUPS[].icon (📺/🎬/📚) en los títulos de grupo \"Catálogo · X\" y groupIcons (🎬/📺/📚/👤) en los títulos de grupo de resultados; los botones de tipo (Serie/Película/Libro) no tienen icono.\n- Las pestañas (index.html) usan SVGs inline stroke (televisor, claqueta, libro) con su propio color de acento (--tab-accent: --teal-reel/--stamp/--ochre-spine).\n- Práctica de bump PWA (ADR-049): un bump por PR que toca assets; actualmente 20260831.",
+  "status": "review",
+  "acceptance criteria": [
+    "Cada opción del menú de perfil (#profile-dropdown) — Estadísticas, Amigos, Actividad, Ajustes — muestra un icono sencillo (SVG inline coherente con el estilo de la app), sin romper el comportamiento actual (navegación data-section, logout).",
+    "En el dropdown de búsqueda global (barra superior), los iconos de series, películas y libros son los MISMOS SVGs que los de las pestañas (mismo trazo y forma).",
+    "Esos iconos usan el mismo color que la pestaña correspondiente: series → var(--teal-reel), películas → var(--stamp), libros → var(--ochre-spine). Aplica a los botones de tipo (Serie/Película/Libro) y a los títulos de grupo del dropdown.",
+    "Sin regresiones de responsividad: sin scroll horizontal a nivel de página en 360/768/1280 px (AGENTS.md regla 2).",
+    "Manual de usuario actualizado en la misma tarea (regla 3 de AGENTS.md): sección 7.2 (iconos de los resultados) y sección 13 (menú de perfil con iconos).",
+    "Bump PWA 20260831 → 20260832 (js/config.js APP_VERSION, index.html ?v=, service-worker.js assets)."
+  ],
+  "definition of done": [
+    "Planning: plan detallado aprobado.",
+    "Implementación realizada y con micro-commits incrementales.",
+    "Validación QA: aceptación + DoD cumplidos (qa-reviewer).",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado (docs/adr-059-*.md) con 'Related issue: #134'.",
+    "PR contra dev SIN keyword de cierre (la issue se cierra al fusionar vía issues-done-on-dev.yml).",
+    "Task file con status 'review' + bloque pr; issue #134 con label 'status: needs-review'."
+  ],
+  "issue": {
+    "number": 134,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/134",
+    "title": "Iconos en desplegable del perfil"
+  },
+  "pr": {
+    "number": 155,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/155",
+    "title": "style: iconos en el menú de perfil y en el buscador global (issue #134)",
+    "branch": "style/issue-134-iconos-desplegable-perfil",
+    "commit": "581861c",
+    "closes": "#134"
+  }
+}
