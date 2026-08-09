@@ -476,6 +476,9 @@ verás:
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
+En las series, junto a tu valoración general verás también la **media de
+tus notas de episodios** (ver sección 10).
+
 ## 10. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**:
@@ -485,6 +488,14 @@ Puedes valorar de **1 a 5 estrellas**:
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
   que se guarda desde su ficha).
+
+En la ficha de una **serie**, debajo de la valoración general, se muestra
+la **media de tus valoraciones de episodios** (por ejemplo
+«Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
+vistos sin valorar no se tienen en cuenta (la valoración mínima de un
+episodio es 1 estrella). Si todavía no has valorado ningún episodio, la
+media no aparece. Se actualiza sola en cuanto valoras un episodio, quitas
+una valoración o desmarcas episodios.
 
 En la ventana emergente puedes pulsar **«Ahora no»** para valorar más
 tarde, o elegir estrellas y pulsar **«Guardar valoración»**. Si pulsas
