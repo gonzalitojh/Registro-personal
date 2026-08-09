@@ -155,10 +155,13 @@ export function initAutoHideNav() {
   });
 
   // Aperturas de dropdown por clic y búsqueda global: reevaluar al
-  // abrirlos (el dropdown anclado exige la cabecera visible).
-  document.getElementById("btn-notifications")?.addEventListener("click", evaluate);
-  document.getElementById("btn-open-profile")?.addEventListener("click", evaluate);
-  document.getElementById("global-search-input")?.addEventListener("focus", evaluate);
+  // abrirlos (el dropdown anclado exige la cabecera visible). Los
+  // listeners se envuelven para no pasar el Event como primer
+  // argumento (delta): evaluate(Event) coaccionaría a NaN y
+  // conservaría el estado por accidente (revisión QA, issue #137).
+  document.getElementById("btn-notifications")?.addEventListener("click", () => evaluate());
+  document.getElementById("btn-open-profile")?.addEventListener("click", () => evaluate());
+  document.getElementById("global-search-input")?.addEventListener("focus", () => evaluate());
 
   // Observar cambios de clase en los elementos que condicionan el
   // estado (cambio de pestaña/panel, apertura de modales y
