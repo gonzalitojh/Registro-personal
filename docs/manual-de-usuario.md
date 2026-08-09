@@ -368,9 +368,10 @@ anotado: **películas, series, libros** (también por autor) y en tus
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
 desplegable** bajo ella con los resultados. Los resultados se agrupan con
-iconos (🎬 películas, 📺 series, 📚 libros, 👤 amigos). Pulsa un resultado
-para abrir su ficha; si pulsas un amigo, de momento verás el aviso de que
-pronto podrás ver su perfil.
+iconos: los mismos de las pestañas, cada uno en su color (series en verde,
+películas en rojo, libros en ocre) y el icono 👤 para amigos. Pulsa un
+resultado para abrir su ficha; si pulsas un amigo, de momento verás el
+aviso de que pronto podrás ver su perfil.
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
@@ -529,7 +530,8 @@ estás mirando.
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
 elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
-o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
+o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
+también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
 Tu perfil tiene cuatro secciones:

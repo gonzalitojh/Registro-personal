@@ -37,3 +37,23 @@ export const STATUS_LABELS_NEUTRAL = {
 // Mapeo de nombre de grupo ("movies", "tv", "books") a tipo de
 // ítem ("movie", "tv", "book") que se guarda en Firestore.
 export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book" };
+
+// Iconos SVG de los tipos de medio: MISMO markup que las pestañas de
+// index.html (tab--tv / tab--movies / tab--books, líneas 155-177) —
+// fuente canónica: si cambian las pestañas, actualizar aquí (issue #134).
+export const MEDIA_ICONS = {
+  tv: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+    <polyline points="17 2 12 7 7 2" />
+  </svg>`,
+  movies: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1-.3 2.1.3 2.4 1.3Z" />
+    <path d="m6.2 5.3 3.1 3.9" />
+    <path d="m12.4 3.4 3.1 4" />
+    <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+  </svg>`,
+  books: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 7v14" />
+    <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+  </svg>`,
+};
