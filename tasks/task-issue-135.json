@@ -1,7 +1,7 @@
 {
   "title": "Unificar pestaña de datos del perfil en ajustes",
   "description": "La pestaña «Datos» del perfil se debe eliminar e incluir en la de «Ajustes» en un apartado de datos (issue #135).\n\nEstado actual:\n- El perfil (index.html, .profile-subtabs) tiene 5 subtabs: Estadísticas, Amigos, Actividad, Datos (#profile-section-data) y Ajustes (#profile-section-settings).\n- El dropdown del perfil (index.html, .profile-dropdown) también tiene la entrada «Datos» (data-section=\"data\").\n- #profile-section-data contiene tres tarjetas .data-card: Exportar copia de seguridad (#btn-export-backup), Importar copia de seguridad (#btn-import-backup) y Exportar calendario (.ics) (#btn-export-ics).\n- js/profile.js referencia dataSection (const + toggle hidden) y hace wiring global de setupExportBackup(ctx)/setupExportIcs(ctx).\n- js/router.js: PROFILE_KEY_TO_SECTION mapea el token «datos» → sección \"data\" (deep links #/perfil/datos, ADR-051).\n- La pestaña Ajustes (#profile-section-settings) tiene cards: Apariencia (tema), Notificaciones y Sincronización de datos (#btn-sync-now).\n\nObjetivo:\n- Eliminar la pestaña «Datos» (subtabs y dropdown) y la sección #profile-section-data.\n- Incluir el contenido de datos (exportar/importar copia de seguridad y exportar .ics) en la pestaña Ajustes como un apartado «Datos».\n- Preservar los deep links antiguos #/perfil/datos redirigiéndolos a Ajustes (alias en el router).\n- Actualizar el manual de usuario (regla 3 de AGENTS.md) y documentar con ADR con 'Related issue: #135'.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "La pestaña «Datos» desaparece de los subtabs del perfil (Estadísticas, Amigos, Actividad, Ajustes).",
     "La entrada «Datos» desaparece del dropdown del menú de perfil.",
@@ -51,5 +51,13 @@
     "related_issue": "#135",
     "manual_usuario": "docs/manual-de-usuario.md actualizado: secciones 3 (listas a 4 secciones), 13 (13.0 nota de legado #/perfil/datos, eliminada 13.4 Datos, 13.5 Ajustes → 13.4) y 14 (apartado «Datos» con exportar/importar/.ics)",
     "readme": "sin cambios (no se ha revisado necesidad; cambio de UI ya documentado en manual y ADR)"
+  },
+  "pr": {
+    "number": 154,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/154",
+    "title": "[feature] Unificar pestaña de datos del perfil en ajustes",
+    "branch": "feature/issue-135-unificar-datos-ajustes",
+    "commit": "a0dafe4",
+    "closes": "#135"
   }
 }
