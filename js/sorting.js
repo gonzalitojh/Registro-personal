@@ -90,6 +90,12 @@ export function getSortDate(item) {
       const last = log[log.length - 1];
       activity = last.finishedAt || last.startedAt || null;
     }
+  } else if (item.type === "game") {
+    const log = item.playLog || [];
+    if (log.length) {
+      const last = log[log.length - 1];
+      activity = last.finishedAt || last.startedAt || null;
+    }
   }
   // Si se acaba de detectar que se ha estrenado (pelis y series que
   // estaban pendientes de estreno), eso también cuenta como actividad,

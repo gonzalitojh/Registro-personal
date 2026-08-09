@@ -5,6 +5,7 @@
 
 import { addWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
+import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
 import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
 import { unreleasedConfirmMessage, episodeUnreleasedMessage } from "./release.js";
@@ -32,7 +33,7 @@ async function maybeQuickItemRating(item, ctx, type, opts = {}) {
       title: item.title,
       coverUrl: item.coverUrl,
       communityRating: item.communityRating ?? null,
-      communityLabel: "TMDB",
+      communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
       onSave: async (rating) => {
         await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
@@ -98,6 +99,35 @@ async function quickMarkBook(item, ctx) {
           status: prevStatus,
         });
         item.readLog = prevReadLog;
+        item.status = prevStatus;
+      },
+    });
+    ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» terminado.`);
+  } else {
+    ctx.showToast(`Has empezado «${item.title}».`);
+  }
+}
+
+async function quickMarkGame(item, ctx) {
+  const isPlaying = item.playLog && item.playLog.length && !item.playLog[item.playLog.length - 1].finishedAt;
+  const newLog = isPlaying ? finishPlay(item.playLog, todayISO()) : startPlay(item.playLog, todayISO());
+  const status = statusFromPlayLog(newLog);
+  const prevPlayLog = isPlaying ? item.playLog : null;
+  const prevStatus = isPlaying ? item.status : null;
+  await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, { playLog: newLog, status });
+  // La ventana de valoración solo se ofrece al terminar de jugar
+  if (isPlaying) {
+    // Deshacer (issue #136): restaura el playLog y el status previos.
+    // El status se restaura LITERAL al capturado (no al recomputado
+    // del log) por si el usuario lo tenía en un estado manual.
+    const undone = await maybeQuickItemRating(item, ctx, "game", {
+      communityLabel: "RAWG",
+      onUndo: async () => {
+        await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
+          playLog: prevPlayLog,
+          status: prevStatus,
+        });
+        item.playLog = prevPlayLog;
         item.status = prevStatus;
       },
     });
@@ -294,6 +324,7 @@ export async function quickAction(item, btn, ctx) {
   try {
     if (item.type === "movie") await quickMarkMovie(item, ctx);
     else if (item.type === "tv") await quickMarkTv(item, ctx);
+    else if (item.type === "game") await quickMarkGame(item, ctx);
     else await quickMarkBook(item, ctx);
   } catch (err) {
     ctx.showToast("No se pudo actualizar: " + err.message);
