@@ -1,7 +1,7 @@
 {
   "title": "Scraper para libros (estudio de viabilidad)",
   "description": "Realizar un estudio para comprobar si sería factible sustituir el uso de la API de Google Books u OpenLibrary por un scraper de la web GoodReads. El hipotético scraper debe cumplir todos los términos y condiciones de GoodReads, respetar las reglas indicadas en su robots.txt y no sobrecargar los servidores objetivo.\n\nEstado actual del código: js/api-books.js usa Google Books API como fuente principal de búsqueda de libros (con agrupación inteligente por título+autor vía groupBooksByWork) y Open Library como fuente de respaldo (searchOpenLibrary, fetchJson), más la sinopsis bajo demanda con getOpenLibraryDescription. Es una aplicación web estática de cliente (Firebase Hosting), sin backend propio, por lo que cualquier sustitución de fuentes debe ser viable desde el navegador (CORS) o requeriría infraestructura nueva.",
-  "status": "implemented",
+  "status": "validated",
   "acceptance criteria": [
     "Existe un documento de estudio de viabilidad en docs/ que analiza sustituir Google Books API y Open Library por un scraper de GoodReads.",
     "El estudio analiza expresamente el cumplimiento de los términos y condiciones de GoodReads (incluyendo su política sobre scraping/uso de datos).",
