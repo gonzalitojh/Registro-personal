@@ -260,12 +260,22 @@ async function doAddBookSeen(item, btn, ctx, choices) {
 
     const ref = await addItem(ctx.getCurrentUser().uid, "book", draft);
     ui.closeModal();
-    return await openSeenRating(ctx.getCurrentUser().uid, "book", ref, {
+    const ok = await openSeenRating(ctx.getCurrentUser().uid, "book", ref, {
       title: item.title,
       coverUrl: choices.coverUrl,
       communityRating: null,
       doneToast: `«${item.title}» añadido y marcado como leído.`,
     });
+    // La ruta multi-portada no tiene listener que consuma la promesa
+    // (el flujo continuó en el modal de confirmación): el estado final
+    // del botón se fija aquí mismo, como hace el listener del dropdown.
+    if (ok) {
+      btn.disabled = true;
+      btn.textContent = "Visto";
+    } else {
+      restoreSeenBtn(btn);
+    }
+    return ok;
   } catch (err) {
     restoreSeenBtn(btn);
     ui.showToast("No se pudo añadir: " + err.message);
@@ -347,6 +357,10 @@ export async function handleAddSeen(item, btn, ctx) {
       };
       Object.assign(draft, details);
 
+      // TMDB puede devolver poster_path null: no pisar la portada del
+      // resultado de búsqueda (patrón del review de QA, issue #115).
+      draft.coverUrl = draft.coverUrl || item.coverUrl;
+
       const ref = await addItem(ctx.getCurrentUser().uid, "movie", draft);
       return await openSeenRating(ctx.getCurrentUser().uid, "movie", ref, {
         title: item.title,
@@ -412,6 +426,7 @@ export async function handleAddSeen(item, btn, ctx) {
     draft.timesCompleted = 0;
     draft.history = [];
     draft.awaitingRelease = false;
+    draft.coverUrl = draft.coverUrl || item.coverUrl;
 
     const ref = await addItem(ctx.getCurrentUser().uid, "tv", draft);
     return await openSeenRating(ctx.getCurrentUser().uid, "tv", ref, {
