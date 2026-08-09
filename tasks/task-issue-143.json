@@ -1,7 +1,7 @@
 {
   "title": "La action issues-done-on-dev cierra issues no deseadas",
   "description": "La action _issues-done-on-dev_ cierra todas las issues con etiqueta `status: needs-review`, esto se hizo así porque en un principio se ejecutaba esta action al pushear sobre main, antes de tener los despliegues por ramas. Ahora, me conviene que las issues se cierren al resolver las PR sobre dev. El problema es que como cierra todas las issues con esa etiqueta, cierra otras que están pendientes de revisión y no se deben cerrar aún. Otro problema además, es que la instrucción _Closes #<Nº issue>_ al principio de las PR no está funcionando.\n\nAl resolver una PR, la issue que se esté resolviendo en ese PR debe ser cerrada y cambiado el estado a `status: done`. Si se puede hacer sin un workflow mejor, en cuyo caso, eliminar _issues-done-on-dev_ puesto que ya no sería necesario. Si se necesita action para hacerlo, borrar la instrucción `Closes #<Nº issue>` de las PR para evitar tener cosas innecesarias o inútiles, y modificar el workflow para que actúe como se espera.\n\nAnálisis del master: el workflow actual `.github/workflows/issues-done-on-dev.yml` se dispara con `push: branches: [dev]` y pagina TODAS las issues con `status: needs-review` (agente y usuario), cerrando y marcando `status: done` a TODAS, no solo a la que resuelve la PR fusionada. Además, el cierre por keyword de GitHub ('Closes #N') solo funciona al fusionar en la rama POR DEFECTO (`main`), nunca sobre `dev` (hallazgo ya documentado en ADR-029 con la issue #42), por lo que la instrucción siempre fue inefectiva (but no INÚTIL si el workflow la usa como fuente).\n\nSolución adoptada (según la opción del usuario 'si se necesita action'): PISAR el workflow para que se dispare con `pull_request: types: [closed]` (merged=true, base=dev) y procese SOLO las issues referenciadas por la PR, identificadas por: (1) archivos de la PR que matcheen `tasks/task-issue-<N>.json`, (2) nombre de la rama con patrón `issue-<N>` o `task-<N>` (el publisher siempre nombra `<tipo>/issue-N-<slug>`), y (3) keywords de cierre en el body de la PR (compatibilidad con PRs manuales). ~NO~ se procesa issues no referenciadas, por lo que se conserva el `workflow_dispatch` como respaldo manual con input `issue_number`. Se ELIMINA la instrucción de incluir `Closes #N` como primera línea del body (publisher, sdd-master, auto-resolve-issues) porque GitHub no la honra sobre `dev`; el cierre lo ejecuta el workflow al fusionar la PR. Se mantiene la técnica `removeLabel` (ADR-052) y la salvaguarda anti-PR.",
-  "status": "in-progress",
+  "status": "review",
   "plan": {
     "archivo": ".github/workflows/issues-done-on-dev.yml",
     "cambios": [
@@ -36,5 +36,13 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/143",
     "title": "La action issues-done-on-dev cierra issues no deseadas"
   },
-  "no_closes": true
+  "no_closes": true,
+  "pr": {
+    "number": 148,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/148",
+    "title": "[bug] Cierre dirigido de issue al fusionar PR en dev (issue #143)",
+    "branch": "fix/issue-143-cierre-issue-al-fusionar-pr",
+    "commit": "1334aa0",
+    "closes": "#143"
+  }
 }
