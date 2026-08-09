@@ -6,7 +6,7 @@ Implementado
 ## Fecha
 Agosto 2026
 
-**NOTA — SUPERADO EN LO RELATIVO AL ESQUEMA DE LABELS Y AL CIERRE**: el esquema `ai-*` descrito aquí queda reemplazado por el de ADR-034 (issue #74): estados compartidos `status: *`, label `ai` como marcador de agente, y cierre de issues al promover `dev` a `main` (workflow `issues-done-on-main.yml`), no al fusionar la PR. El resto se conserva como registro histórico.
+**NOTA — SUPERADO EN LO RELATIVO AL ESQUEMA DE LABELS Y AL CIERRE**: el esquema `ai-*` descrito aquí queda reemplazado por el de ADR-034 (issue #74): estados compartidos `status: *`, label `ai` como marcador de agente, y cierre de issues al promover `dev` a `main` (workflow `issues-done-on-main.yml`), no al fusionar la PR — y este punto del cierre queda a su vez superado por ADR-053 (issue #143): el cierre vuelve a ocurrir al **fusionar cada PR en `dev`** (workflow `issues-done-on-dev.yml`, alcance dirigido a la issue de la PR). El resto se conserva como registro histórico.
 
 ## Contexto
 

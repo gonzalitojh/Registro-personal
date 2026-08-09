@@ -94,7 +94,7 @@ Before looking at the 'tasks' folder, determine the intent of the request:
    - "description": the issue body (and relevant comments).
    - "status": "created".
    - "acceptance criteria": extracted from the issue body if present; otherwise derive them from the request.
-   - "definition of done": SDD standard (planning, implementation, validation, security, ADR, PR created with "Closes #N") plus "Issue #N label updated to its final state".
+   - "definition of done": SDD standard (planning, implementation, validation, security, ADR, PR sin keyword de cierre — la issue se cierra al fusionar la PR en `dev` vía workflow `issues-done-on-dev`) plus "Issue #N label updated to its final state".
    - "issue": { "number": <N>, "url": <issue url>, "title": <issue title> }.
 5. **Type label check**: Verify the issue has exactly one `type: ...` label (feature, bug, style, refactor, content). If it is missing or clearly misclassified, fix it with `scripts/gh-issue.sh set-type <N> <tipo>`. Only change it when confident from the issue content; if ambiguous, ask the user instead of guessing.
 6. Update the issue status label (`set-state` elimina cualquier otra `status: *` y los residuales `ai-*` si los hubiera, sin tocar la label `ai`):
@@ -137,7 +137,7 @@ Keep the issue label in sync with the local task status on EVERY transition. The
 
 Synchronization command: `scripts/gh-issue.sh set-state <N> "<label>"`. This is BEST-EFFORT: if the command fails (network, rate limit), log the failure in your report and continue the flow — never block the SDD process because of a GitHub API hiccup. Always update the local task file status too.
 
-IMPORTANTE: la transición a `status: done` (y el cierre de la issue) la aplica el workflow `.github/workflows/issues-done-on-main.yml` cuando el usuario promueve `dev` a `main`: todas las issues en `status: needs-review` pasan a `status: done` y se cierran. Las issues permanecen en `status: needs-review` tras fusionar la PR en `dev` hasta esa promoción.
+IMPORTANTE: la transición a `status: done` (y el cierre de la issue) la aplica el workflow `.github/workflows/issues-done-on-dev.yml` al fusionar la PR de la issue en `dev`: procesa SOLO la issue resuelta por esa PR (identificada por su task file, la rama `issue-<N>`/`task-<N>` o keyword del body), nunca un barrido de `status: needs-review`. Las issues ya NO esperan a la promoción `dev` → `main`.
 
 ## Step 4 — Documentation
 
@@ -145,12 +145,12 @@ After successful validation and security clearance, invoke a documentation agent
 
 ## Step 5 — Publishing
 
-After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher ALWAYS includes "Closes #NUMERO_ISSUE" as the first line of the PR description when the task references an issue — including follow-up/iteration PRs for the same issue (never omit it). After creating the PR, the publisher uploads the task file update (status "review" + pr block) to the repository with a second commit and push to the same branch (the PR picks it up automatically), and sets the issue to `status: needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
+After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher does NOT include any closing keyword ("Closes #N") in the PR description when the task references an issue — including follow-up/iteration PRs for the same issue: GitHub only auto-closes issues when the PR merges into the default branch (main), and all PRs go to `dev` (ADR-029). The issue closes when the PR is merged into `dev` via the workflow `.github/workflows/issues-done-on-dev.yml`. After creating the PR, the publisher uploads the task file update (status "review" + pr block) to the repository with a second commit and push to the same branch (the PR picks it up automatically), and sets the issue to `status: needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
 
 ## Step 6 — Session start: reconciliation
 
 At the beginning of a session (or when the user asks), check for pending reviews and finish them:
-- `scripts/gh-issue.sh list --review` — las issues con PR fusionada en `dev` permanecen en `status: needs-review` hasta que el usuario promueva `dev` → `main` (el workflow `issues-done-on-main` las cierra entonces). Fallback manual SOLO si la promoción ya ocurrió (verifica con `gh api repos/{owner}/{repo}/compare/main...dev --jq .status` → si NO es `'ahead'`, `dev` ya está en `main`) y la issue sigue en `needs-review` (el workflow falló):
+- `scripts/gh-issue.sh list --review` — las issues con PR fusionada en `dev` las cierra el workflow `issues-done-on-dev` en el momento de la fusión (best-effort). Fallback manual SOLO si la PR del bloque `pr` del task file está MERGED (`gh pr view <N_PR> --json state -q .state` → `"MERGED"`) y la issue sigue abierta o en `status: needs-review` (el workflow no corrió o falló):
   1. `scripts/gh-issue.sh set-state <N> "status: done"` y `gh issue close <N>` (best-effort; si falla, loguea y continúa).
   2. Update the local task file `tasks/task-issue-<N>.json` → `"status": "published"` (python3 round-trip, preservando el resto de campos).
   3. Upload the change to the repository:

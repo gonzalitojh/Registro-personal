@@ -6,7 +6,9 @@ Aceptado
 ## Fecha
 2026-08-05
 
-**SUPERA A**: ADR-018 y ADR-029 en lo relativo al esquema de labels y al cierre de issues (ambos llevan nota de superación apuntando a este documento). El resto de ambos se conserva como registro histórico.
+**SUPERA A**: ADR-018 y ADR-029 en lo relativo al esquema de labels y al cierre de issues (ambos llevan notas de superación apuntando a este documento). El resto de ambos se conserva como registro histórico.
+
+**NOTA — SUPERADA EN LO RELATIVO AL CIERRE DE ISSUES (ADR-053, issue #143)**: el cierre de issues ya NO ocurre en la promoción `dev` → `main`: desde ADR-053 cada issue se cierra y marca `status: done` al **fusionar su PR en `dev`** (workflow `issues-done-on-dev.yml` con alcance dirigido a la issue de la PR). El esquema de labels `status: *` + label `ai` documentado aquí permanece plenamente vigente.
 
 ## Contexto
 

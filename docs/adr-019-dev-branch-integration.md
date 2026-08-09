@@ -6,6 +6,8 @@ Implementado
 ## Fecha
 Agosto 2026
 
+**NOTA — REFUTACIÓN (ADR-029 / ADR-053)**: la afirmación de la sección «Consecuencias → Neutras» («GitHub cierra la issue con Closes #N al fusionar la PR en cualquier rama, incluida dev») es INCORRECTA: GitHub solo auto-cierra issues con keywords de cierre al fusionar en la **rama por defecto** (`main`). Sobre `dev` el cierre lo realizan los workflows: ADR-029 (issue #42) y, actualmente, ADR-053 (issue #143) con el cierre dirigido de la issue de la PR al fusionar en `dev`.
+
 ## Contexto
 
 Hasta ahora, el agente publisher creaba todas las Pull Requests contra la rama por defecto del repositorio (`main`), lo que hacía que los cambios llegaran directamente al entorno de producción sin pasar por un entorno intermedio de verificación.
