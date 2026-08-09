@@ -17,6 +17,29 @@ export function normalizeEntry(entry) {
   return entry;
 }
 
+// Media de valoración de los episodios valorados de una serie (issue #80).
+// No tiene en cuenta los episodios sin valorar: un episodio visto sin
+// valorar (rating null) nunca cuenta como 0, la valoración mínima es 1.
+// Entrada: item.watched completo ({ temporada: { episodio: {date, rating} } }).
+// Salida: null si no hay ningún episodio con valoración válida; si no,
+// { count, average } con average sin redondear (total/count).
+export function computeEpisodeAverageRating(watched) {
+  let count = 0;
+  let total = 0;
+  for (const seasonMap of Object.values(watched || {})) {
+    if (!seasonMap || typeof seasonMap !== "object") continue;
+    for (const raw of Object.values(seasonMap)) {
+      const entry = normalizeEntry(raw);
+      const r = Number(entry?.rating);
+      if (!Number.isFinite(r) || r < 1 || r > 5) continue;
+      count++;
+      total += r;
+    }
+  }
+  if (count === 0) return null;
+  return { count, average: total / count };
+}
+
 export function computeProgress(seasonsMeta, watched) {
   const totalEpisodes = seasonsMeta.reduce((sum, s) => sum + s.episodeCount, 0);
   let totalWatched = 0;
