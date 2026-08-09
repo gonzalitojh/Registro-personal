@@ -22,7 +22,7 @@
 #      parts de TODAS las sesiones del árbol (primaria + subagentes). Solo
 #      se mata la sesión si NO hay actividad en todo el árbol durante
 #      SESSION_STALL_LIMIT_SEC (default 1200 s = 20 min) o si se supera
-#      SESSION_TOTAL_LIMIT_SEC (default 2700 s = 45 min).
+#      SESSION_TOTAL_LIMIT_SEC (default 3600 s = 60 min).
 #   4. Si la BD no está disponible (3 sondas fallidas consecutivas), entra
 #      en MODO DEGRADADO: avisa con ::warning:: y deja de matar por
 #      estancamiento (solo aplica el límite total) — política elegida para
@@ -39,7 +39,7 @@
 #
 # Variables de entorno (todas con default):
 #   SESSION_STALL_LIMIT_SEC  segundos sin actividad (BD) antes de matar (1200)
-#   SESSION_TOTAL_LIMIT_SEC  duración máxima total de la sesión (2700)
+#   SESSION_TOTAL_LIMIT_SEC  duración máxima total de la sesión (3600)
 #   SESSION_WATCH_POLL_SEC   intervalo de polling del streaming (5)
 #   SESSION_AGENT            agente opencode (sdd-master)
 #   SESSION_MODEL            modelo opencode (opencode/deepseek-v4-flash-free)
@@ -64,7 +64,7 @@ if [[ -z "$PROMPT_FILE" || -z "$TITLE" ]]; then
 fi
 
 STALL_LIMIT_SEC="${SESSION_STALL_LIMIT_SEC:-1200}"
-TOTAL_LIMIT_SEC="${SESSION_TOTAL_LIMIT_SEC:-2700}"
+TOTAL_LIMIT_SEC="${SESSION_TOTAL_LIMIT_SEC:-3600}"
 WATCH_POLL_SEC="${SESSION_WATCH_POLL_SEC:-5}"
 AGENT="${SESSION_AGENT:-sdd-master}"
 MODEL="${SESSION_MODEL:-opencode/deepseek-v4-flash-free}"
