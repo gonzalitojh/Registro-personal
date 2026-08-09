@@ -47,8 +47,13 @@ export async function searchGames(searchTerm, page = 1) {
   const url = `${BASE_URL}/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(
     searchTerm
   )}&page=${page}&page_size=${PAGE_SIZE}`;
-  const data = await fetchJson(url, { retries: 1 }).catch(() => {
-    throw new Error("No se pudo buscar en RAWG. Revisa tu clave de API.");
+  const data = await fetchJson(url, { retries: 1 }).catch((err) => {
+    // HTTP 401/403 = clave inválida o rechazada; cualquier otro fallo
+    // (red, 5xx...) es temporal y conviene distinguirlo del error de clave.
+    if (/^HTTP (401|403)/.test(err && err.message)) {
+      throw new Error("RAWG rechazó la petición. Revisa tu clave de API en js/config.js.");
+    }
+    throw new Error("No se pudo conectar con RAWG. Inténtalo de nuevo.");
   });
   return {
     items: (data.results || []).map(mapGameResult),

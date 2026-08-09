@@ -520,8 +520,8 @@ verás:
 
 - **Portada, título y año** (en la vista previa de búsqueda se indica el
   tipo: «Película · año», «Serie · año» o «Videojuego · año»).
-- **Puntuación de la comunidad**: de TMDB para películas y series, y de
-  RAWG para videojuegos (o «Sin puntuaciones»).
+- **Puntuación de la comunidad**: de TMDB para películas y series (sobre
+  10) y de RAWG para videojuegos (sobre 5), o «Sin puntuaciones».
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
   tiene).
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
@@ -686,15 +686,14 @@ Debajo hay dos gráficas:
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
 lista no sea interminable, el registro se organiza **por pestañas**:
-**Películas, Series, Libros y Videojuegos** (una a la vez, igual que en
-tu propio perfil).
+**Películas, Series y Libros** (una a la vez, igual que en tu propio
+perfil; la pestaña de **Videojuegos** aún no está disponible aquí).
 
 Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
 interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
 en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
-en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**;
-en **videojuegos**, **Todos, Pendiente, Jugando, Jugado, Standby o
-Abandonado**. Así no tienes que hacer scroll largo.
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
+Así no tienes que hacer scroll largo.
 
 Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
 vuelves a la lista de amigos y entras de nuevo en un amigo, se
