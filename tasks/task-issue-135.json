@@ -1,0 +1,55 @@
+{
+  "title": "Unificar pestaña de datos del perfil en ajustes",
+  "description": "La pestaña «Datos» del perfil se debe eliminar e incluir en la de «Ajustes» en un apartado de datos (issue #135).\n\nEstado actual:\n- El perfil (index.html, .profile-subtabs) tiene 5 subtabs: Estadísticas, Amigos, Actividad, Datos (#profile-section-data) y Ajustes (#profile-section-settings).\n- El dropdown del perfil (index.html, .profile-dropdown) también tiene la entrada «Datos» (data-section=\"data\").\n- #profile-section-data contiene tres tarjetas .data-card: Exportar copia de seguridad (#btn-export-backup), Importar copia de seguridad (#btn-import-backup) y Exportar calendario (.ics) (#btn-export-ics).\n- js/profile.js referencia dataSection (const + toggle hidden) y hace wiring global de setupExportBackup(ctx)/setupExportIcs(ctx).\n- js/router.js: PROFILE_KEY_TO_SECTION mapea el token «datos» → sección \"data\" (deep links #/perfil/datos, ADR-051).\n- La pestaña Ajustes (#profile-section-settings) tiene cards: Apariencia (tema), Notificaciones y Sincronización de datos (#btn-sync-now).\n\nObjetivo:\n- Eliminar la pestaña «Datos» (subtabs y dropdown) y la sección #profile-section-data.\n- Incluir el contenido de datos (exportar/importar copia de seguridad y exportar .ics) en la pestaña Ajustes como un apartado «Datos».\n- Preservar los deep links antiguos #/perfil/datos redirigiéndolos a Ajustes (alias en el router).\n- Actualizar el manual de usuario (regla 3 de AGENTS.md) y documentar con ADR con 'Related issue: #135'.",
+  "status": "documented",
+  "acceptance criteria": [
+    "La pestaña «Datos» desaparece de los subtabs del perfil (Estadísticas, Amigos, Actividad, Ajustes).",
+    "La entrada «Datos» desaparece del dropdown del menú de perfil.",
+    "La sección #profile-section-data se elimina del DOM y su contenido (exportar copia de seguridad, importar copia de seguridad, exportar calendario .ics) pasa a la pestaña Ajustes como un apartado «Datos» con su tarjeta propia.",
+    "Los botones de exportar/importar/exportar .ics siguen funcionando desde Ajustes (wiring conservado).",
+    "La URL antigua #/perfil/datos sigue funcionando: abre Ajustes (alias de router), sin romper la navegación ni el resto de secciones.",
+    "Sin regresiones de layout: las tarjetas de datos usan las clases de Ajustes (sin CSS muerto .data-card) y no hay scroll horizontal ni textos desbordados (360/768/1280 px).",
+    "El manual de usuario (docs/manual-de-usuario.md) refleja el cambio: se elimina la sección 13.4 «Datos» y el apartado «Datos» se documenta dentro de la sección 14 Ajustes (regla 3 de AGENTS.md).",
+    "ADR documentado con 'Related issue: #135'."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #135'.",
+    "PR creada contra dev sin keyword de cierre (la issue se cierra al fusionar en dev vía issues-done-on-dev).",
+    "Issue #135 label actualizada a su estado final (needs-review).",
+    "Task file actualizado y subido al repositorio (status review + bloque pr)."
+  ],
+  "issue": {
+    "number": 135,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/135",
+    "title": "Unificar pestaña de datos del perfil en ajustes"
+  },
+  "plan": {
+    "architect": "task-architect",
+    "summary": "Eliminar la pestaña «Datos» (subtabs y dropdown del perfil) y la sección #profile-section-data; mover las 3 acciones (exportar/importar copia de seguridad, exportar .ics) a #profile-section-settings como card «Datos» (.settings-card--data, botones apilados con fit-content; ids de botones intactos → wiring setupExportBackup/setupExportIcs sin cambios). Router: token «datos» pasa a ser alias de settings (deep link #/perfil/datos abre Ajustes; comentario fijando el orden de claves porque el inverso Object.fromEntries deja ganar a la última). Eliminado CSS .data-card. Manual: listas de secciones a 4, eliminada 13.4 Datos, 13.5→13.4, apartado «Datos» en sección 14, nota de legado #/perfil/datos en 13.0. Bump PWA 20260830→20260831. ADR-058."
+  },
+  "validation": {
+    "qa": "APROBADO en 1 iteración (qa-reviewer): 9/9 criterios PASS (el 10, DoD pendiente, no evaluado). Sin hallazgos bloqueantes. LOW informativos: texto de resumen redundante en la card «Datos» (decisión de redacción mantenida), max-width:100% redundante con fit-content (inofensivo), ADR pendiente.",
+    "hallazgos_corregidos": [],
+    "sugerencias_low": [
+      "Resumen «Exporta o importa tu copia de seguridad…» en la card «Datos» es redundante con las descripciones por acción (mantenido a propósito como patrón de las cards de Ajustes)",
+      "max-width:100% junto a width:fit-content es redundante pero inofensivo (refuerzo anti-desbordamiento)"
+    ]
+  },
+  "security": {
+    "scan": "PASS (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "low_findings": []
+  },
+  "documentation": {
+    "adr": "docs/adr-058-unificar-pestana-datos-en-ajustes.md",
+    "related_issue": "#135",
+    "manual_usuario": "docs/manual-de-usuario.md actualizado: secciones 3 (listas a 4 secciones), 13 (13.0 nota de legado #/perfil/datos, eliminada 13.4 Datos, 13.5 Ajustes → 13.4) y 14 (apartado «Datos» con exportar/importar/.ics)",
+    "readme": "sin cambios (no se ha revisado necesidad; cambio de UI ya documentado en manual y ADR)"
+  }
+}

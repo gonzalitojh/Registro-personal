@@ -153,7 +153,6 @@ export function setupProfile(ctx) {
   const statsSection = document.getElementById("profile-section-stats");
   const friendsSection = document.getElementById("profile-section-friends");
   const activitySection = document.getElementById("profile-section-activity");
-  const dataSection = document.getElementById("profile-section-data");
   const settingsSection = document.getElementById("profile-section-settings");
   const friendsListEl = document.getElementById("friends-list");
   const friendDetailEl = document.getElementById("friend-detail");
@@ -318,7 +317,6 @@ export function setupProfile(ctx) {
     statsSection.classList.toggle("hidden", section !== "stats");
     friendsSection.classList.toggle("hidden", section !== "friends");
     if (activitySection) activitySection.classList.toggle("hidden", section !== "activity");
-    if (dataSection) dataSection.classList.toggle("hidden", section !== "data");
     if (settingsSection) settingsSection.classList.toggle("hidden", section !== "settings");
     statsPeriodWrap.classList.toggle("hidden", section !== "stats");
     if (section === "stats") {

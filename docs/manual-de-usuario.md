@@ -78,8 +78,8 @@ Nada más entrar verás:
     segundos pasa a «Buscar películas, series, libros o amigos...».
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
-    - **Tu foto**: pulsándola se abre un menú con las cinco secciones de
-      tu perfil (**Estadísticas, Amigos, Actividad, Datos, Ajustes**) y la
+    - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
+      tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**.
   - La cabecera **permanece siempre visible**: al hacer scroll por la
     lista no se mueve, en ningún dispositivo.
@@ -528,21 +528,22 @@ estás mirando.
 ## 13. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
-elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad,
-Datos o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
+elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
+o Ajustes**. Desde el mismo menú también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
-Tu perfil tiene cinco secciones:
+Tu perfil tiene cuatro secciones:
 
 ### 13.0 Compartir direcciones de tu perfil
 
 Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
 cada sección del perfil tiene su propia dirección web, que termina en
 `#/perfil/estadisticas` (Estadísticas), `#/perfil/amigos` (Amigos),
-`#/perfil/actividad` (Actividad), `#/perfil/datos` (Datos) o
-`#/perfil/ajustes` (Ajustes). Puedes copiarla desde la barra de
-direcciones, guardarla en favoritos o compartirla: al abrirla, la web
-te lleva directo a esa sección del perfil.
+`#/perfil/actividad` (Actividad) o `#/perfil/ajustes` (Ajustes). Puedes
+copiarla desde la barra de direcciones, guardarla en favoritos o
+compartirla: al abrirla, la web te lleva directo a esa sección del
+perfil. La dirección antigua `#/perfil/datos` sigue funcionando y abre
+Ajustes.
 
 Además, la ficha de un amigo tiene su propia dirección:
 `#/perfil/amigos/<identificador del amigo>`. Si la abres en cualquier
@@ -595,22 +596,7 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 13.4 Datos
-
-Tres acciones importantes:
-
-- **Exportar copia de seguridad**: descarga un archivo con TODOS tus
-  datos (películas, series, libros, perfil y notificaciones). Es tu
-  seguro de vida: guárdalo donde quieras.
-- **Importar copia de seguridad**: restaura datos desde un archivo que
-  exportaras antes. **Añade** lo que falte a lo que ya tienes: no
-  reemplaza ni borra nada.
-- **Exportar calendario (.ics)**: descarga un archivo con los **próximos
-  episodios de tus series y los estrenos pendientes de películas**, para
-  importarlo en Google Calendar, Apple Calendar o similar y tener todos
-  los estrenos en tu agenda.
-
-### 13.5 Ajustes
+### 13.4 Ajustes
 
 Se explica completo en la [sección 14](#14-ajustes).
 
@@ -641,6 +627,17 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   portadas, tráilers...). Solo puedes usarlo una vez cada **30 minutos**
   (la web te avisa si lo intentas antes). No hace falta usarlo: la web ya
   se actualiza sola a diario (ver siguiente sección).
+- **Datos**: exporta, importa o descarga tus datos:
+  - **Exportar copia de seguridad**: descarga un archivo con TODOS tus
+    datos (películas, series, libros, perfil y notificaciones). Es tu
+    seguro de vida: guárdalo donde quieras.
+  - **Importar copia de seguridad**: restaura datos desde un archivo que
+    exportaras antes. **Añade** lo que falte a lo que ya tienes: no
+    reemplaza ni borra nada.
+  - **Exportar calendario (.ics)**: descarga un archivo con los **próximos
+    episodios de tus series y los estrenos pendientes de películas**, para
+    importarlo en Google Calendar, Apple Calendar o similar y tener todos
+    los estrenos en tu agenda.
 
 ## 15. ¿Cuándo se actualizan los datos?
 
