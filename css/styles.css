@@ -419,10 +419,11 @@
 [data-theme="black"] .notif-dropdown__header .btn-link,
 [data-theme="black"] .auth-error,
 [data-theme="black"] .btn--danger,
-[data-theme="black"] .btn--danger:hover,
 [data-theme="black"] .notif-row__delete:hover {
   color: var(--stamp-dark);
 }
+/* El hover de .btn--danger no se toca: su fondo pasa a --stamp y el
+   texto a --paper (5.8:1), como en el modo oscuro */
 
 /* Filas de notificación: sobre el dropdown oscuro, un tono distinto
    y un borde sutil para separarlas */
@@ -438,6 +439,29 @@
 [data-theme="black"] .global-search__manual-add {
   color: var(--teal-reel-dark);
 }
+[data-theme="black"] .global-search__item-seen,
+[data-theme="black"] .global-search__item-seen:disabled {
+  border-color: var(--teal-reel-dark);
+}
+
+/* Hover de botones con acento (fondo claro + tinta oscura):
+   las variantes claras de los acentos como fondo mantienen
+   contraste AA con la tinta negra */
+[data-theme="black"] .toast__btn:hover,
+[data-theme="black"] .global-search__item-add:hover {
+  background: var(--teal-reel-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .global-search__item-add--books:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--ink);
+}
+
+/* Barra de acento de la pestaña activa: variante clara del acento
+   para el umbral gráfico 3:1 sobre la superficie oscura */
+[data-theme="black"] .tab--tv.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
+[data-theme="black"] .tab--movies.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
+[data-theme="black"] .tab--books.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
 
 /* Iconos de los títulos de grupo de la búsqueda global: acentos
    claros sobre el dropdown oscuro (en oscuro ya estaban sobre

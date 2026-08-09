@@ -1866,6 +1866,27 @@ input, textarea, select { font-size: 16px; }
   color: var(--teal-reel-dark);
 }
 
+/* Hover de botones con acento (fondo claro + tinta oscura):
+   las variantes claras de los acentos como fondo mantienen
+   contraste AA con la tinta negra (QA issue #165) */
+[data-theme="black"] .btn--accent-media:hover,
+[data-theme="black"] .trailer-btn:hover,
+[data-theme="black"] .list-row__action:hover {
+  background: var(--teal-reel-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .btn--accent-books:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--ink);
+}
+
+/* Checkbox de episodio marcado: variante clara del acento para el
+   umbral gráfico 3:1 sobre la superficie oscura */
+[data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual {
+  background: var(--teal-reel-dark);
+  border-color: var(--teal-reel-dark);
+}
+
 /* Sellos de tarjeta: se mantienen sobre papel claro; conservan los
    hex originales del modo oscuro para el contraste oscuro-sobre-claro */
 [data-theme="black"] .item-card__stamp--pendiente { color: #7e2c22; }
