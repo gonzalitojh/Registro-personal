@@ -8,8 +8,9 @@
 // Dos grandes «secciones» de la web:
 //   - Ocio: las tres pestañas de la biblioteca
 //     (#/ocio/series, #/ocio/peliculas, #/ocio/libros).
-//   - Perfil: Estadísticas, Amigos (con id por amigo), Actividad,
-//     Datos y Ajustes (#/perfil/...).
+//   - Perfil: Estadísticas, Amigos (con id por amigo), Actividad y
+//     Ajustes (#/perfil/...). El antiguo token «datos» sobrevive
+//     como alias de Ajustes (issue #135).
 //
 // El resto de hashes (p. ej. #main-content del skip-link) se
 // considera ajeno al router y se ignora sin tocar el estado.
@@ -39,7 +40,12 @@ const PROFILE_KEY_TO_SECTION = {
   estadisticas: "stats",
   amigos: "friends",
   actividad: "activity",
-  datos: "data",
+  // Legado (issue #135): la pestaña «Datos» se unificó en Ajustes,
+  // pero #/perfil/datos sigue funcionando como alias y abre Ajustes.
+  // NO reordenar: el inverso (Object.fromEntries) deja ganar a la
+  // última clave, y «ajustes» debe quedar después de «datos» para
+  // que el canónico siga siendo #/perfil/ajustes.
+  datos: "settings",
   ajustes: "settings",
 };
 
