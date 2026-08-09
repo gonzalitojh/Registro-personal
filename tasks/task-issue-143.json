@@ -28,8 +28,8 @@
     "Validación con qa-reviewer superada (criterios de aceptación + DoD).",
     "Escaneo de seguridad sin hallazgos HIGH.",
     "ADR creado en docs/ con 'Related issue: #143' y notas de superación en los ADR afectados.",
-    "PR creada contra dev; el body ya NO incluye 'Closes #143' (la issue #143 se cierra al fusionar la PR vía el workflow reescrito, identificada por la rama `fix/issue-143-*`).",
-    "Issue #143 label actualizada a su estado final (status: in-progress → needs-review tras la PR → done + cerrada al fusionarse en dev)."
+    "Issue #143 label actualizada a su estado final (status: in-progress → needs-review tras la PR → done + cerrada al fusionarse en dev).",
+    "PR de iteración creada contra dev sin keyword de cierre; la issue #143 se cierra al fusionar vía el workflow corregido."
   ],
   "issue": {
     "number": 143,
@@ -37,12 +37,20 @@
     "title": "La action issues-done-on-dev cierra issues no deseadas"
   },
   "no_closes": true,
-  "pr": {
+  "previousPr": {
     "number": 148,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/148",
     "title": "[bug] Cierre dirigido de issue al fusionar PR en dev (issue #143)",
     "branch": "fix/issue-143-cierre-issue-al-fusionar-pr",
     "commit": "1334aa0",
+    "closes": "#143"
+  },
+  "pr": {
+    "number": 151,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/151",
+    "title": "[bug] Corregir acceso al payload del evento en issues-done-on-dev (issue #143, iteración)",
+    "branch": "fix/issue-143-context-payload-fix",
+    "commit": "a30091e",
     "closes": "#143"
   }
 }

@@ -8,6 +8,8 @@ Aceptado
 
 **SUPERA A**: ADR-034 y ADR-029 en lo relativo al **cierre de issues**: el cierre vuelve a ocurrir al fusionar la PR en `dev` (no en la promoción `dev` → `main`) y con alcance **dirigido** a la issue que la PR resuelve (no un barrido de `status: needs-review` ni la keyword del body). El esquema de labels `status: *` + label `ai` de ADR-034 permanece plenamente vigente.
 
+**ERRATA DE IMPLEMENTACIÓN CORREGIDA (iteración)**: la PR #148 (implementación inicial) introdujo un bug en el script de `actions/github-script`: usaba `github.event.pull_request` y `core.getInput('issue_number')`, que en github-script NO existen — `github` es el cliente octokit (API REST) y el payload del evento se lee de `context.payload` (los inputs de `workflow_dispatch` viven en `context.payload.inputs`). Eso producía `TypeError: Cannot read properties of undefined (reading 'pull_request')` al fusionar PRs y un no-op con `''` en el dispatch manual. Corregido en la rama `fix/issue-143-context-payload-fix`: se lee `context.payload.pull_request` y `context.payload.inputs.issue_number`. El `if:` del job con `github.event.*` es correcto (sintaxis de expresiones GitHub Actions, distinta del objeto JS).
+
 ## Contexto
 
 El workflow `.github/workflows/issues-done-on-dev.yml` gestionaba el cierre de issues con el esquema de labels `status: *` + `ai` (ADR-034), pero su diseño tenía dos problemas:

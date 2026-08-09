@@ -69,14 +69,21 @@ jobs:
             if (context.eventName === 'workflow_dispatch') {
               // Modo reparación manual: solo la issue indicada. Si el input está
               // vacío o no es numérico → no-op con nota y salida limpia (éxito).
-              const raw = core.getInput('issue_number').trim();
+              // NOTA (bug de la PR #148): NO usar core.getInput() — solo lee
+              // inputs de action.yml/with:; los inputs de workflow_dispatch
+              // viven en context.payload.inputs.
+              const raw = String((context.payload.inputs || {}).issue_number || '').trim();
               if (!/^\d+$/.test(raw)) {
                 core.notice(`workflow_dispatch sin 'issue_number' numérico ('${raw}'): no-op`);
                 return;
               }
               issueNumbers.add(parseInt(raw, 10));
             } else {
-              const pr = github.event.pull_request;
+              // NOTA (bug de la PR #148): en actions/github-script `github` es
+              // el cliente octokit (github.rest.*), NO el contexto del evento:
+              // el payload se lee de context.payload (github.event es undefined
+              // y lanzaba TypeError al fusionar la PR).
+              const pr = context.payload.pull_request;
 
               // (a) Archivos de la PR que matchean tasks/task-issue-<N>.json (paginado).
               let page = 0;
