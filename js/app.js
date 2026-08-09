@@ -26,6 +26,7 @@ import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails
 import { getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { APP_VERSION } from "./config.js";
+import { subscribeWithRetry } from "./retry.js";
 import { applySort } from "./sorting.js";
 import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
@@ -359,48 +360,59 @@ async function init() {
       console.error("No se pudo guardar el perfil de usuario:", err);
     }
 
-    unsubscribeItems.movies = subscribeToItems(
-      user.uid,
-      "movie",
-      (items) => {
+    // Suscripciones en tiempo real. Se envuelven con subscribeWithRetry
+    // (issue #147): si al entrar falla una suscripción por un error
+    // transitorio, se reintenta sola con backoff en lugar de dejar la
+    // biblioteca vacía hasta cerrar y volver a abrir la web.
+    unsubscribeItems.movies = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "movie", onChange, onError),
+      onChange: (items) => {
         allItems.movies = items;
         moviesReady = true;
         renderLibraryFor("movies");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus películas.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus películas."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeItems.tv = subscribeToItems(
-      user.uid,
-      "tv",
-      (items) => {
+    unsubscribeItems.tv = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "tv", onChange, onError),
+      onChange: (items) => {
         allItems.tv = items;
         tvReady = true;
         renderLibraryFor("tv");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus series.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus series."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeItems.books = subscribeToItems(
-      user.uid,
-      "book",
-      (items) => {
+    unsubscribeItems.books = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToItems(user.uid, "book", onChange, onError),
+      onChange: (items) => {
         allItems.books = items;
         booksReady = true;
         renderLibraryFor("books");
         refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
-      () => ui.showToast("No se pudieron cargar tus libros.")
-    );
+      onError: () => ui.showToast("No se pudieron cargar tus libros."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
 
-    unsubscribeNotifications = subscribeToNotifications(
-      user.uid,
-      (items) => {
+    // Notificaciones: mismo reintento, pero en silencio (como su onError
+    // actual, que no molestaba). El badge se rellena cuando el reintento
+    // tenga éxito.
+    unsubscribeNotifications = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) =>
+        subscribeToNotifications(user.uid, onChange, onError),
+      onChange: (items) => {
         notifications = items;
         ui.renderNotifications(
           document.getElementById("notif-list"),
@@ -413,8 +425,8 @@ async function init() {
         // en segundo plano (campana → notificación del sistema).
         handleNotificationsSnapshot(notifications);
       },
-      () => {}
-    );
+      onError: () => {},
+    });
   });
 }
 
