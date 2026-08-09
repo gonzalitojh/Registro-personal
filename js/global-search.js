@@ -23,6 +23,7 @@ import * as ui from "./ui.js";
 import {
   searchExternal,
   handleAdd,
+  handleAddSeen,
   handleManualAdd,
   openSearchPreviewFromResults,
   existingIdsFor,
@@ -256,6 +257,7 @@ function renderExternalSection(group, query) {
       <button type="button" class="global-search__item-add btn btn--small${g.accent}" data-add-index="${index}" ${added ? "disabled" : ""}>
         ${added ? "Añadido" : "Añadir"}
       </button>
+      ${added ? "" : `<button type="button" class="global-search__item-seen btn btn--small" data-seen-index="${index}">Marcar visto</button>`}
     </div>`;
     flatResults.push({ kind: "external", type: item.type, item, group });
   }
@@ -398,8 +400,11 @@ function renderResults(results, query) {
       }
     });
 
-    // Enter y Space para activar el resultado
+    // Enter y Space para activar el resultado. Si el foco está en un
+    // botón de la fila (Añadir / Marcar visto), se deja pasar el evento
+    // para que sea el botón quien active su propia acción (issue #115).
     el.addEventListener("keydown", (e) => {
+      if (e.target !== el) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         const idx = parseInt(el.dataset.globalIdx, 10);
@@ -421,6 +426,35 @@ function renderResults(results, query) {
         if (ok) {
           btn.disabled = true;
           btn.textContent = "Añadido";
+        }
+      });
+    });
+  });
+
+  // Botones «Marcar visto» de los resultados del catálogo (issue #115):
+  // alta directa como visto + valoración al momento. Durante el flujo
+  // se deshabilita también el «Añadir» de la fila para evitar dobles
+  // altas; si el flujo se aborta o se deshace, ambos se restauran.
+  resultsEl.querySelectorAll(".global-search__item-seen").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.seenIndex, 10);
+      const entry = flatResults[idx];
+      if (!entry || entry.kind !== "external") return;
+      const row = btn.closest(".global-search__item");
+      const addBtn = row ? row.querySelector(".global-search__item-add") : null;
+      if (addBtn) addBtn.disabled = true;
+      btn.disabled = true;
+      btn.textContent = "Marcando…";
+      handleAddSeen(entry.item, btn, searchCtx).then((ok) => {
+        if (!btn.isConnected) return;
+        if (ok) {
+          btn.disabled = true;
+          btn.textContent = "Visto";
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Marcar visto";
+          if (addBtn && addBtn.isConnected) addBtn.disabled = false;
         }
       });
     });

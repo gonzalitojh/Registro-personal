@@ -7,7 +7,7 @@
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
 import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
-import { normalizeEntry } from "./tv-progress.js";
+import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 
@@ -494,7 +494,7 @@ export function renderLibrary(gridEl, emptyEl, items, viewMode, { onOpen, onQuic
 // HTML del picker de estrellas (1-5). idPrefix evita ids duplicados
 // cuando hay varios pickers en pantalla a la vez (p. ej. el de la
 // ventana de valoración emergente, que usa "rm-rating").
-export function ratingPickerHtml(rating, idPrefix = "field-rating") {
+export function ratingPickerHtml(rating, idPrefix = "field-rating", extraHtml = "") {
   return `
     <div class="field-group">
       <label>Valoración</label>
@@ -508,7 +508,19 @@ export function ratingPickerHtml(rating, idPrefix = "field-rating") {
           )
           .join("")}
       </div>
+      ${extraHtml}
     </div>`;
+}
+
+// Media de valoración de los episodios valorados de la serie (issue #80).
+// Sin media: span oculto (placeholder que updateEpisodeAverage actualiza).
+function episodeAverageHtml(watched, idPrefix) {
+  const avg = computeEpisodeAverageRating(watched);
+  if (!avg) {
+    return `<span class="episode-average" id="${idPrefix}-episode-average" hidden></span>`;
+  }
+  const ratedLabel = avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
+  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${ratedLabel}">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
 }
 
 function notesFieldHtml(notes) {
@@ -1377,7 +1389,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
     </div>
 
-    ${ratingPickerHtml(item.rating)}
+    ${ratingPickerHtml(item.rating, "field-rating", episodeAverageHtml(item.watched, "field-rating"))}
     ${notesFieldHtml(item.notes)}
 
     <div class="modal-actions">
@@ -1406,6 +1418,24 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     const allWatched = watchedCount >= episodeCount && episodeCount > 0;
     markBtn.textContent = allWatched ? "Desmarcar todo" : "Marcar todo";
     markBtn.dataset.allWatched = allWatched ? "0" : "1";
+  }
+
+  function updateEpisodeAverage() {
+    const avg = computeEpisodeAverageRating(item.watched);
+    const el = content.querySelector("#field-rating-episode-average");
+    if (!el) return;
+    el.hidden = !avg;
+    if (avg) {
+      const ratedLabel =
+        avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
+      el.title = `Media de ${ratedLabel}`;
+      el.innerHTML = `Media episodios: <strong>${avg.average.toFixed(1)}</strong>`;
+    } else {
+      // Sin episodios valorados: ocultar y vaciar (evita texto obsoleto
+      // si el CSS por cualquier motivo dejara de respetar el [hidden]).
+      el.title = "";
+      el.textContent = "";
+    }
   }
 
   function wireEpisodeRows(block, seasonNumber, episodeCount) {
@@ -1447,6 +1477,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
           updateBanner(newProgress);
+          updateEpisodeAverage();
         } catch (err) {
           checkbox.checked = !checkbox.checked;
         } finally {
@@ -1477,6 +1508,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             starButtons.forEach((b) =>
               b.classList.toggle("is-active", Number(b.dataset.value) <= (newValue || 0))
             );
+            updateEpisodeAverage();
           } finally {
             starButtons.forEach((b) => (b.disabled = false));
           }
@@ -1602,6 +1634,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             }
           });
         }
+        updateEpisodeAverage();
       } finally {
         btn.disabled = false;
       }

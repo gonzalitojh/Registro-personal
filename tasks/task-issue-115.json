@@ -1,0 +1,46 @@
+{
+  "title": "Marcar ítems vistos al buscar",
+  "description": "Issue #115: Cuando se busca un ítem (serie, película o libro) en el catálogo, dar la posibilidad de marcar como visto directamente y valorarlo. Ahora hay que añadir y luego marcarlo. Sería dar la opción de evitar ese paso intermedio. En el caso de las series se valoraría la serie en su conjunto y, obviamente, se marcarían todos los episodios como vistos.\n\nContexto de código:\n- El buscador unificado (ADR-045, issue #82) muestra los resultados del catálogo (TMDB/Google Books) en el dropdown #global-search-results con una fila por resultado y un botón «Añadir» (`.global-search__item-add`) que llama a `handleAdd(item, btn, ctx)` de js/search.js.\n- La vista previa (ADR-030) se abre desde la fila sin cerrar el dropdown vía `openSearchPreviewFromResults` (js/search.js) -> `openSearchPreviewModal` (js/ui.js) con botón «Añadir» (#btn-preview-add).\n- Marcar como visto ya existe en acciones rápidas (js/quick-actions.js: `quickMarkMovie`/`quickMarkTv`/`quickMarkBook`) seguido de la ventana de valoración `openRatingModal` (issue #21, con deshacer de issue #136 vía RATING_MODAL_UNDONE).\n- Progreso de series: js/tv-progress.js (`setSeasonWatched`, `computeProgress`, `setEpisodeDate`) y `getTvSeasonsMeta` (api-movies.js) para conocer el nº de episodios por temporada.\n- Estados: película `watchLog: [fechas]` + status completado; libro `readLog: [{startedAt, finishedAt}]` + status completado; serie `watched: {temporada: {episodio: {date}}}` + status completado, nextEpisode null.\n- Alta: `addItem(uid, type, draft)` devuelve el DocumentReference (con .id) para poder valorar/deshacer tras el alta.\n- Reglas AGENTS.md: manual de usuario docs/manual-de-usuario.md debe reflejar los cambios visibles; responsividad 360/768/1280 px sin scroll horizontal; PWA: bump de APP_VERSION con scripts/bump-version.sh.",
+  "status": "review",
+  "acceptance criteria": [
+    "1. En los resultados del catálogo del buscador (serie, película o libro) existe una acción directa «Marcar visto» (además de «Añadir») que evita el paso intermedio añadir→marcar.",
+    "2. Al marcar como visto desde la búsqueda, el ítem se añade a la colección en estado completado y se abre la ventana de valoración para puntuarlo en el mismo flujo.",
+    "3. Películas: se añaden con watchLog con la fecha de hoy y status completado (awaitingRelease limpiado).",
+    "4. Libros: se añaden con readLog [{startedAt, finishedAt}] con la fecha de hoy y status completado; los libros multi-portada conservan su modal de selección de portada/sinopsis.",
+    "5. Series: se añaden con TODOS los episodios de todas las temporadas marcados como vistos (watched completo con fecha de hoy), status completado, nextEpisode null; la valoración es de la serie en su conjunto (sin label de episodio).",
+    "6. El deshacer de la ventana de valoración (patrón issue #136) revierte la acción completa: si el usuario deshace, el ítem recién añadido se elimina de la colección.",
+    "7. Tras la acción, los botones del dropdown y la colección se refrescan (Añadido/Visto) sin rehacer búsquedas (patrón refreshExternalResults).",
+    "8. Responsividad según AGENTS.md: sin scroll horizontal en 360/768/1280 px, texto que no se sale de pantalla, foco visible.",
+    "9. docs/manual-de-usuario.md actualizado con el nuevo flujo (cambio visible para el usuario).",
+    "10. PWA: APP_VERSION y STATIC_ASSETS versionados con scripts/bump-version.sh."
+  ],
+  "definition of done": [
+    "Plan aprobado (planning).",
+    "Implementación realizada y manual de usuario actualizado.",
+    "Validación QA aprobada contra criterios de aceptación y DoD.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado siguiendo el formato habitual con 'Related issue: #115'.",
+    "PR creada contra dev SIN keyword de cierre (la issue se cierra al fusionar vía issues-done-on-dev.yml).",
+    "Task file con status 'review' + bloque pr subido al repo y label de la issue en 'status: needs-review'.",
+    "Issue #115 label updated to its final state"
+  ],
+  "issue": {
+    "number": 115,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/115",
+    "title": "Marcar ítems vistos al buscar"
+  },
+  "notes": {
+    "plan": "Aprobado por task-architect: botón «Marcar visto» en filas del catálogo del dropdown (solo !added; no en la preview). handleAddSeen(item, btn, ctx) en search.js: movie (watchLog [hoy], completado, awaitingRelease:false, confirm no estrenado vía unreleasedConfirmMessage), book (readLog [{startedAt,finishedAt}] hoy, completado; multi-portada vía openBookConfirmModal->doAddBookSeen), tv (gate getTvSeasonsMeta fail-closed con toast; markAllSeasonsWatched nuevo helper puro en tv-progress.js; watched completo, completado, nextEpisode null, timesCompleted 0, history [], awaitingRelease:false; confirm por temporada de no estrenado; valoración de la serie sin episodeLabel con communityRating de getTvExtraDetails). addItem devuelve DocumentReference -> openRatingModal onSave updateItem(rating), onUndo deleteItem; toast «añadida/addo... vista/leído» o «Marcado deshecho.» (RATING_MODAL_UNDONE). global-search.js: render botón con data-seen-index, listener con stopPropagation, deshabilitar botón hermano mientras corre, guarda e.target!==el en keydown de fila (teclado). CSS .global-search__item-seen outline teal + disabled; verificación 360/768/1280. Manual §7.1. bump-version.sh 20260835. ADR-062.",
+    "implementacion": "8 archivos: search.js (handleAddSeen/doAddBookSeen/openSeenRating/restoreSeenBtn), tv-progress.js (markAllSeasonsWatched), global-search.js (botón Marcar visto + listener + guarda teclado e.target!==el), styles.css (.global-search__item-seen), manual §7.1, bump PWA 20260835. Sin commits prohibidos; handleAdd/doAddBook/preview intactos.",
+    "qa": "QA 10/10 criterios de aceptación. Único bloqueo de DoD: ADR-062 pendiente (se crea en fase de documentación). Hallazgos bajos aplicados: coverUrl null de TMDB no pisa portada del resultado; estado final del botón en ruta multi-portada fijado en doAddBookSeen. Resto de hallazgos bajos aceptados (patrones heredados de handleAdd).",
+    "seguridad": "PASS: 0 HIGH, 0 MEDIUM. LOW informativo: promesa huérfana en ruta multi-portada (ya cubierta por el fix de QA: doAddBookSeen fija el estado final del botón). Sin secretos, sin XSS (escapeHtml/safeCoverUrl/toast textContent), firestore.rules intactas, ids de alta controlados.",
+    "adr": "docs/adr-062-marcar-visto-al-buscar.md"
+  },
+  "pr": {
+    "number": 160,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/160",
+    "title": "[feature] Marcar ítems vistos al buscar y valorarlos (issue #115)",
+    "branch": "feature/issue-115-marcar-visto-al-buscar",
+    "commit": "2544e6f"
+  }
+}

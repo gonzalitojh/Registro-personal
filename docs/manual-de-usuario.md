@@ -81,19 +81,19 @@ Nada más entrar verás:
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**.
-  - La cabecera **permanece siempre visible**: al hacer scroll por la
-    lista no se mueve, en ningún dispositivo.
+  - La cabecera **se oculta al bajar por la lista y vuelve al subir**:
+    siempre está ahí cuando la necesitas
+    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **Las pestañas**: **Series**, **Películas** y **Libros**. En el
   **móvil** están en una barra fija en la parte inferior de la
   pantalla; en el **ordenador y la tablet**, en una barra fija justo
-  bajo la barra de búsqueda superior. En ambos casos permanecen
-  siempre visibles al hacer scroll. Cada pestaña lleva un icono y
+  bajo la barra de búsqueda superior. Cada pestaña lleva un icono y
   tiene su propio color: **Series en verde**, **Películas en rojo** y
   **Libros en ocre**. La pestaña activa se marca con una franja de su
   color y un fondo claro. Pulsa una pestaña para ver tu lista de ese
-  tipo, con sus filtros y su orden. Al hacer scroll solo se mueve
-  el contenido de la lista; las pestañas permanecen siempre en su
-  sitio.
+  tipo, con sus filtros y su orden. Como la cabecera, la barra de
+  pestañas se oculta al bajar por la lista y reaparece al subir
+  ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
@@ -133,6 +133,24 @@ hasta ahora.
 
 Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 [sección 13.0](#130-compartir-direcciones-de-tu-perfil).
+
+### 3.2 La cabecera y las pestañas al hacer scroll
+
+Al bajar por una lista (series, películas o libros), la barra de
+búsqueda de arriba y las pestañas se ocultan deslizándose hacia el
+borde de la pantalla, como si salieran de ella, para que la lista
+ocupe todo el espacio. En cuanto desplazas hacia arriba, vuelven a
+aparecer deslizándose desde su borde.
+
+Si sigues bajando y los filtros de la lista (estado, orden y vista)
+quedan también fuera de la pantalla, verás un pequeño botón redondeado
+**«Volver arriba»** flotando en el centro, arriba, sobre la lista:
+púlsalo para volver al principio de la lista de un salto.
+
+La navegación nunca se oculta mientras la estás usando: si estás
+escribiendo una búsqueda, o tienes abierto un menú (notificaciones,
+perfil, barra lateral) o una ficha, la cabecera y las pestañas
+permanecen en su sitio.
 
 ## 4. Series
 
@@ -337,6 +355,15 @@ resultado:
 
 - Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
   «Añadido»).
+- Pulsa **«Marcar visto»** para añadirlo **ya marcado como visto**
+  (las películas quedan vistas con la fecha de hoy, las series con
+  **todos los episodios de todas sus temporadas** y los libros como
+  leídos) y **valorarlo al momento**: se abre la ventana de estrellas
+  para puntuarlo (en las series, una sola valoración para la serie en
+  su conjunto). Si en esa ventana pulsas **«Deshacer»**, el título se
+  elimina de tu registro. Si la película aún no está estrenada, o la
+  serie tiene temporadas sin estrenar, la web te lo pregunta antes de
+  continuar.
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
   con sus detalles antes de añadirlo.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
@@ -449,6 +476,9 @@ verás:
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
+En las series, junto a tu valoración general verás también la **media de
+tus notas de episodios** (ver sección 10).
+
 ## 10. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**:
@@ -458,6 +488,14 @@ Puedes valorar de **1 a 5 estrellas**:
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
   que se guarda desde su ficha).
+
+En la ficha de una **serie**, debajo de la valoración general, se muestra
+la **media de tus valoraciones de episodios** (por ejemplo
+«Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
+vistos sin valorar no se tienen en cuenta (la valoración mínima de un
+episodio es 1 estrella). Si todavía no has valorado ningún episodio, la
+media no aparece. Se actualiza sola en cuanto valoras un episodio, quitas
+una valoración o desmarcas episodios.
 
 En la ventana emergente puedes pulsar **«Ahora no»** para valorar más
 tarde, o elegir estrellas y pulsar **«Guardar valoración»**. Si pulsas
@@ -534,6 +572,7 @@ o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
 también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
+En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas o Libros) que tenías abierta.
 Tu perfil tiene cuatro secciones:
 
 ### 13.0 Compartir direcciones de tu perfil
@@ -608,7 +647,17 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
 **menú de tu foto → Ajustes**.
 
-- **Apariencia → Tema**: elige **Oscuro** o **Claro**.
+- **Apariencia → Tema**: elige entre cuatro modos de visualización:
+  - **Oscuro**: el aspecto clásico, con fondo marrón oscuro.
+  - **Negro puro**: como el oscuro pero con el fondo totalmente negro.
+    Ideal para pantallas OLED: gasta menos batería y los colores se ven
+    más profundos.
+  - **Claro**: el aspecto clásico claro, con fondo crema y tarjetas
+    blancas.
+  - **Blanco puro**: como el claro pero con el fondo completamente
+    blanco, en contraposición al negro puro.
+  Tu elección se guarda automáticamente y se mantiene la próxima vez
+  que entres.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series

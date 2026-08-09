@@ -40,6 +40,7 @@ import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
+import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
 
@@ -150,20 +151,31 @@ async function loadOcioPartials() {
   );
 }
 
-// ---------- Tema (modo claro / oscuro) ----------
+// ---------- Tema (modos claro / oscuro / negro puro / blanco puro) ----------
 
 const STORAGE_KEY_THEME = "mi-registro-theme";
+
+// Color de fondo real de cada modo para el <meta name="theme-color">:
+// oscuro #171512, negro puro #000000, claro #f5f0e8, blanco puro #ffffff.
+const THEME_META_COLORS = {
+  dark: "#171512",
+  black: "#000000",
+  light: "#f5f0e8",
+  white: "#ffffff",
+};
 
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(STORAGE_KEY_THEME, theme);
   // Update theme-color meta tag
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = theme === "light" ? "#f5f0e8" : "#171512";
+  if (meta) meta.content = THEME_META_COLORS[theme] || THEME_META_COLORS.dark;
 }
 
 function getSavedTheme() {
-  return localStorage.getItem(STORAGE_KEY_THEME) || "dark";
+  const saved = localStorage.getItem(STORAGE_KEY_THEME);
+  // Defensivo: valores antiguos o inválidos caen al modo oscuro.
+  return Object.prototype.hasOwnProperty.call(THEME_META_COLORS, saved) ? saved : "dark";
 }
 
 // ---------- Inicialización ----------
@@ -313,6 +325,9 @@ async function init() {
     onGoOcio: () => router.navigate(getLastOcioKey()),
   });
   setupGlobalSearch(ctx);
+  // Ocultar cabecera y pestañas al desplazar en las listas de ocio,
+  // con botón flotante "Volver arriba" (issue #137).
+  initAutoHideNav();
 
   // Suscripciones en tiempo real
   watchAuthState(async (user) => {
