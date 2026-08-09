@@ -647,7 +647,17 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
 **menú de tu foto → Ajustes**.
 
-- **Apariencia → Tema**: elige **Oscuro** o **Claro**.
+- **Apariencia → Tema**: elige entre cuatro modos de visualización:
+  - **Oscuro**: el aspecto clásico, con fondo marrón oscuro.
+  - **Negro puro**: como el oscuro pero con el fondo totalmente negro.
+    Ideal para pantallas OLED: gasta menos batería y los colores se ven
+    más profundos.
+  - **Claro**: el aspecto clásico claro, con fondo crema y tarjetas
+    blancas.
+  - **Blanco puro**: como el claro pero con el fondo completamente
+    blanco, en contraposición al negro puro.
+  Tu elección se guarda automáticamente y se mantiene la próxima vez
+  que entres.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series
