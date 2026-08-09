@@ -1,7 +1,8 @@
 # Manual de usuario — Mi Registro
 
 Bienvenido a **Mi Registro**, tu cuaderno privado para llevar la cuenta de
-las películas que ves, las series que sigues y los libros que lees.
+las películas que ves, las series que sigues, los libros que lees y los
+videojuegos que juegas.
 
 Este manual explica, paso a paso y sin tecnicismos, todo lo que puedes hacer
 en la web. Léelo por secciones según lo que necesites.
@@ -16,18 +17,19 @@ en la web. Léelo por secciones según lo que necesites.
 4. [Series](#4-series)
 5. [Películas](#5-películas)
 6. [Libros](#6-libros)
-7. [Cómo buscar](#7-cómo-buscar)
-8. [Organizar y ordenar tu registro](#8-organizar-y-ordenar-tu-registro)
-9. [La ficha de cada película, serie o libro](#9-la-ficha-de-cada-película-serie-o-libro)
-10. [Valoraciones con estrellas](#10-valoraciones-con-estrellas)
-11. [Acciones rápidas](#11-acciones-rápidas)
-12. [Notificaciones](#12-notificaciones)
-13. [Tu perfil](#13-tu-perfil)
-14. [Ajustes](#14-ajustes)
-15. [¿Cuándo se actualizan los datos?](#15-cuándo-se-actualizan-los-datos)
-16. [Privacidad](#16-privacidad)
-17. [Instalar la web en tu teléfono](#17-instalar-la-web-en-tu-teléfono)
-18. [Problemas frecuentes](#18-problemas-frecuentes)
+7. [Videojuegos](#7-videojuegos)
+8. [Cómo buscar](#8-cómo-buscar)
+9. [Organizar y ordenar tu registro](#9-organizar-y-ordenar-tu-registro)
+10. [La ficha de cada película, serie, libro o videojuego](#10-la-ficha-de-cada-película-serie-libro-o-videojuego)
+11. [Valoraciones con estrellas](#11-valoraciones-con-estrellas)
+12. [Acciones rápidas](#12-acciones-rápidas)
+13. [Notificaciones](#13-notificaciones)
+14. [Tu perfil](#14-tu-perfil)
+15. [Ajustes](#15-ajustes)
+16. [¿Cuándo se actualizan los datos?](#16-cuándo-se-actualizan-los-datos)
+17. [Privacidad](#17-privacidad)
+18. [Instalar la web en tu teléfono](#18-instalar-la-web-en-tu-teléfono)
+19. [Problemas frecuentes](#19-problemas-frecuentes)
 
 ---
 
@@ -38,10 +40,11 @@ Mi Registro es una web para anotar:
 - **Series** que estás viendo, has visto o quieres ver, episodio a episodio.
 - **Películas** vistas o pendientes, con historial de revisionados.
 - **Libros** leídos, en curso o pendientes.
+- **Videojuegos** jugados, en curso o pendientes, con historial de sesiones.
 
 La web se encarga de completar sola los datos de cada título: portada,
 sinopsis, reparto, fechas de estreno, valoraciones de la comunidad, etc.
-Tú solo te ocupas de marcar lo que ves y lees.
+Tú solo te ocupas de marcar lo que ves, lees y juegas.
 
 Está pensada para un grupo de amigos: cada uno tiene su propio registro,
 pero todos pueden verse entre sí (en modo lectura).
@@ -68,31 +71,33 @@ Nada más entrar verás:
 - **Arriba, la cabecera**:
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
     deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
-    devuelve a las pestañas de Series, Películas y Libros, y, en la
-    parte de abajo, **«Ajustes»**, que abre la sección de ajustes de tu
-    perfil (más en [sección 14](#14-ajustes)). Se cierra pulsando fuera,
+    devuelve a las pestañas de Series, Películas, Libros y Videojuegos, y,
+    en la parte de abajo, **«Ajustes»**, que abre la sección de ajustes de
+    tu perfil (más en [sección 15](#15-ajustes)). Se cierra pulsando fuera,
     la ✕, la tecla **Esc** o la propia entrada.
   - **Barra de búsqueda** (en el centro): la búsqueda global
-    (más en [sección 7](#7-cómo-buscar)). Al entrar, la barra muestra
+    (más en [sección 8](#8-cómo-buscar)). Al entrar, la barra muestra
     brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
-    segundos pasa a «Buscar películas, series, libros o amigos...».
+    segundos pasa a «Buscar películas, series, libros, videojuegos o
+    amigos...».
   - A la derecha:
-    - **Icono de campana**: tus notificaciones (más en [sección 12](#12-notificaciones)).
+    - **Icono de campana**: tus notificaciones (más en [sección 13](#13-notificaciones)).
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**.
   - La cabecera **se oculta al bajar por la lista y vuelve al subir**:
     siempre está ahí cuando la necesitas
     ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
-- **Las pestañas**: **Series**, **Películas** y **Libros**. En el
-  **móvil** están en una barra fija en la parte inferior de la
-  pantalla; en el **ordenador y la tablet**, en una barra fija justo
-  bajo la barra de búsqueda superior. Cada pestaña lleva un icono y
-  tiene su propio color: **Series en verde**, **Películas en rojo** y
-  **Libros en ocre**. La pestaña activa se marca con una franja de su
-  color y un fondo claro. Pulsa una pestaña para ver tu lista de ese
-  tipo, con sus filtros y su orden. Como la cabecera, la barra de
-  pestañas se oculta al bajar por la lista y reaparece al subir
+- **Las pestañas**: **Series**, **Películas**, **Libros** y
+  **Videojuegos**. En el **móvil** están en una barra fija en la parte
+  inferior de la pantalla; en el **ordenador y la tablet**, en una barra
+  fija justo bajo la barra de búsqueda superior. Cada pestaña lleva un
+  icono y tiene su propio color: **Series en verde**, **Películas en
+  rojo**, **Libros en ocre** y **Videojuegos en violeta**. La pestaña
+  activa se marca con una franja de su color y un fondo claro. Pulsa una
+  pestaña para ver tu lista de ese tipo, con sus filtros y su orden. Como
+  la cabecera, la barra de pestañas se oculta al bajar por la lista y
+  reaparece al subir
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
@@ -106,18 +111,19 @@ Cada pestaña se divide en dos zonas:
 
 - **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
   por estado, ordenar y cambiar la vista entre cuadrícula y lista
-  (más en [sección 8](#8-organizar-y-ordenar-tu-registro)).
+  (más en [sección 9](#9-organizar-y-ordenar-tu-registro)).
 - **Debajo**: la lista de tus títulos de ese tipo.
 
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
-(más en [sección 7](#7-cómo-buscar)).
+(más en [sección 8](#8-cómo-buscar)).
 
 ### 3.1 Compartir direcciones y volver a las pestañas
 
 Cada pestaña tiene su propia dirección web, que termina en
-`#/ocio/series` (Series), `#/ocio/peliculas` (Películas) o
-`#/ocio/libros` (Libros). Puedes copiar esa dirección desde la
+`#/ocio/series` (Series), `#/ocio/peliculas` (Películas),
+`#/ocio/libros` (Libros) o `#/ocio/videojuegos` (Videojuegos). Puedes
+copiar esa dirección desde la
 barra de direcciones del navegador y compartirla, guardarla en
 favoritos o enviártela a ti mismo: al volver a abrirla, la web se
 abre directamente en esa pestaña, aunque hayas entrado desde otro
@@ -132,13 +138,13 @@ ninguna pestaña, la web te lleva siempre a **Series**, igual que
 hasta ahora.
 
 Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
-[sección 13.0](#130-compartir-direcciones-de-tu-perfil).
+[sección 14.0](#140-compartir-direcciones-de-tu-perfil).
 
 ### 3.2 La cabecera y las pestañas al hacer scroll
 
-Al bajar por una lista (series, películas o libros), la barra de
-búsqueda de arriba y las pestañas se ocultan deslizándose hacia el
-borde de la pantalla, como si salieran de ella, para que la lista
+Al bajar por una lista (series, películas, libros o videojuegos), la
+barra de búsqueda de arriba y las pestañas se ocultan deslizándose hacia
+el borde de la pantalla, como si salieran de ella, para que la lista
 ocupe todo el espacio. En cuanto desplazas hacia arriba, vuelven a
 aparecer deslizándose desde su borde.
 
@@ -186,7 +192,7 @@ pierde nada.
    resultado: se abrirá una vista previa con los detalles.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
-aparece **«Añadir manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
+aparece **«Añadir manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -200,7 +206,7 @@ Para cada episodio puedes:
   Si lo marcas por equivocación, la ventana de valoración ofrece
   **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
-- **Valorarlo** con estrellas, una vez visto (más en [sección 10](#10-valoraciones-con-estrellas)).
+- **Valorarlo** con estrellas, una vez visto (más en [sección 11](#11-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
@@ -237,7 +243,7 @@ anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
 En la ficha: **«✎ Editar información»** te permite corregir datos (título,
 año, portada...), y **«Eliminar»** borra la serie. El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
-arrepientes (más en [sección 11.3](#113-deshacer-un-borrado)).
+arrepientes (más en [sección 12.3](#123-deshacer-un-borrado)).
 
 ## 5. Películas
 
@@ -260,7 +266,7 @@ Igual que con las series: escribe el título en la **barra de búsqueda
 de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
 el resultado que quieras, o usa la vista previa pulsando sobre la fila.
 Si no la encuentras, al final de los resultados aparece **«Añadir
-manualmente»** (más en [sección 7.3](#73-añadir-manualmente)).
+manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -303,7 +309,7 @@ Si el libro tiene varias ediciones, la web te deja **elegir portada y
 sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
 se muestra como «Añadido». Si no lo encuentras, al final de los
 resultados aparece **«Añadir manualmente»**
-(más en [sección 7.3](#73-añadir-manualmente)).
+(más en [sección 8.3](#83-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -329,81 +335,135 @@ fin (o «leyendo» si está en curso). Puedes **editar las fechas** y
 **«Quitar»** una lectura del historial. Las relecturas aparecen como
 lecturas adicionales.
 
-## 7. Cómo buscar
+## 7. Videojuegos
 
-### 7.1 Buscar en el catálogo
+### 7.1 Los estados de un videojuego
+
+| Estado | Significado |
+|---|---|
+| **Pendiente** | Añadido, aún sin empezar. |
+| **Jugando** | Has empezado una partida y no la has terminado. |
+| **Jugado** | Partida terminada. |
+| **Standby** | Lo has pausado; tu historial de sesiones se conserva. |
+| **Abandonado** | Lo has dejado; tu historial de sesiones se conserva. |
+
+### 7.2 Añadir un videojuego
+
+Escribe el título en la **barra de búsqueda de la cabecera** y pulsa el
+botón **«Videojuego»** para buscar en el catálogo de **RAWG** (el mismo
+catálogo de la web de videojuegos ravg.io). Los resultados traen portada,
+año, sinopsis, plataformas, valoración de la comunidad, Metacritic y
+más datos.
+
+- Pulsa **«Añadir»** para añadirlo (el botón pasa a «Añadido»).
+- Pulsa **«Marcar visto»** para añadirlo **ya marcado como jugado** (se
+  registra la sesión con la fecha de hoy) y **valorarlo al momento**: se
+  abre la ventana de estrellas para puntuarlo. Si pulsas **«Deshacer»**
+  en esa ventana, el videojuego se elimina de tu registro.
+- Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
+  con sus detalles antes de añadirlo.
+- Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
+  no se puede pulsar.
+- Si no lo encuentras, al final de los resultados aparece **«Añadir
+  manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+
+### 7.3 Empezar y terminar partidas
+
+En tu lista, cada videojuego tiene un botón grande: **«Empezar ✓»** o, si
+ya está en curso, **«Terminar ✓»** (y **«Rejugar ↺»** cuando está jugado).
+
+En la ficha del videojuego:
+
+- **«Empezar partida»**: registra el inicio con la fecha de hoy.
+- **«Terminar partida»**: cierra la sesión con la fecha de hoy y abre la
+  ventana de valoración. Si pulsas **«Deshacer»** en esa ventana, el
+  videojuego vuelve a quedar como estaba.
+- **En pausa / Abandonar / Retomar**: como en las series y los libros,
+  sin perder tu historial de sesiones.
+
+### 7.4 Historial de sesiones
+
+En la ficha ves todas tus sesiones de juego: fecha de inicio → fecha de
+fin (o «jugando» si está en curso). Puedes **editar las fechas** y
+**«Quitar»** una sesión del historial. Las rejugadas aparecen como
+sesiones adicionales.
+
+## 8. Cómo buscar
+
+### 8.1 Buscar en el catálogo
 
 Todo se busca desde la **barra de búsqueda de la cabecera**
 (también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
 Al escribir el título (mínimo 2 caracteres) verás los resultados, y en
-la parte superior del panel hay tres botones, siempre visibles:
-**«Serie»**, **«Película»** y **«Libro»**. Pulsa el que corresponda
-para **buscar en el catálogo**:
+la parte superior del panel hay cuatro botones, siempre visibles:
+**«Serie»**, **«Película»**, **«Libro»** y **«Videojuego»**. Pulsa el
+que corresponda para **buscar en el catálogo**:
 
 - Películas y series se buscan en **TMDB** (el mismo catálogo de
   The Movie Database).
 - Libros se buscan en **Google Books** con respaldo de **Open Library**
   (y se agrupan las ediciones del mismo libro). Se buscan siempre en
   español.
+- Videojuegos se buscan en **RAWG** (rawg.io).
 
 Los resultados del catálogo aparecen en una sección **«Catálogo ·
-Series/Películas/Libros»** bajo tus resultados de la colección. Solo se
-muestra el catálogo del **último botón pulsado**: si pulsas «Película»
-después de «Serie», los resultados de series se ocultan y se muestran
-los de películas (tu colección siempre se ve igual). Para cada
-resultado:
+Series/Películas/Libros/Videojuegos»** bajo tus resultados de la
+colección. Solo se muestra el catálogo del **último botón pulsado**: si
+pulsas «Película» después de «Serie», los resultados de series se
+ocultan y se muestran los de películas (tu colección siempre se ve
+igual). Para cada resultado:
 
 - Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
   «Añadido»).
 - Pulsa **«Marcar visto»** para añadirlo **ya marcado como visto**
   (las películas quedan vistas con la fecha de hoy, las series con
-  **todos los episodios de todas sus temporadas** y los libros como
-  leídos) y **valorarlo al momento**: se abre la ventana de estrellas
-  para puntuarlo (en las series, una sola valoración para la serie en
-  su conjunto). Si en esa ventana pulsas **«Deshacer»**, el título se
-  elimina de tu registro. Si la película aún no está estrenada, o la
-  serie tiene temporadas sin estrenar, la web te lo pregunta antes de
-  continuar.
+  **todos los episodios de todas sus temporadas**, los libros como
+  leídos y los videojuegos como jugados) y **valorarlo al momento**: se
+  abre la ventana de estrellas para puntuarlo (en las series, una sola
+  valoración para la serie en su conjunto). Si en esa ventana pulsas
+  **«Deshacer»**, el título se elimina de tu registro. Si la película
+  aún no está estrenada, o la serie tiene temporadas sin estrenar, la
+  web te lo pregunta antes de continuar.
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
   con sus detalles antes de añadirlo.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
   **«¿No la encuentras? Añadir manualmente…»**
-  (más en [sección 7.3](#73-añadir-manualmente)).
+  (más en [sección 8.3](#83-añadir-manualmente)).
 
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
 
 Si borras lo escrito, el catálogo elegido se desmarca y los botones
 vuelven a quedar sin pulsar: para buscar en el catálogo tendrás que
-volver a pulsar **«Serie»**, **«Película»** o **«Libro»**. En cambio,
-si sigues escribiendo con un catálogo ya elegido, la búsqueda se repite
-automáticamente en ese mismo catálogo: no hace falta volver a pulsar el
-botón.
+volver a pulsar **«Serie»**, **«Película»**, **«Libro»** o
+**«Videojuego»**. En cambio, si sigues escribiendo con un catálogo ya
+elegido, la búsqueda se repite automáticamente en ese mismo catálogo:
+no hace falta volver a pulsar el botón.
 
 Si una portada no se puede cargar (imagen rota o bloqueada por la web
 que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
 el resultado sigue funcionando igual.
 
-### 7.2 Buscar en tu registro
+### 8.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
 **Cmd+K** en Mac, o **/**) también busca a la vez en lo que ya tienes
-anotado: **películas, series, libros** (también por autor) y en tus
-**amigos** (por nombre o correo).
+anotado: **películas, series, libros** (también por autor),
+**videojuegos** y en tus **amigos** (por nombre o correo).
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
 desplegable** bajo ella con los resultados. Los resultados se agrupan con
 iconos: los mismos de las pestañas, cada uno en su color (series en verde,
-películas en rojo, libros en ocre) y el icono 👤 para amigos. Pulsa un
-resultado para abrir su ficha; si pulsas un amigo, de momento verás el
-aviso de que pronto podrás ver su perfil.
+películas en rojo, libros en ocre, videojuegos en violeta) y el icono 👤
+para amigos. Pulsa un resultado para abrir su ficha; si pulsas un amigo,
+de momento verás el aviso de que pronto podrás ver su perfil.
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
 
-### 7.3 Añadir manualmente
+### 8.3 Añadir manualmente
 
 Si un título no aparece en el catálogo, usa el enlace
 **«¿No la encuentras? Añadir manualmente»** que aparece al final de los
@@ -413,11 +473,12 @@ resultados de catálogo del buscador. Rellena:
   (se asume una sola temporada con ese número).
 - **Películas**: título, año y portada (opcional).
 - **Libros**: título, autor, año, páginas y portada (opcional).
+- **Videojuegos**: título, año y portada (opcional).
 
 Los títulos añadidos manualmente no tienen datos automáticos (fechas de
 episodios, sinopsis...), pero se comportan igual que el resto en tu lista.
 
-## 8. Organizar y ordenar tu registro
+## 9. Organizar y ordenar tu registro
 
 En la barra de cada biblioteca tienes:
 
@@ -425,13 +486,17 @@ En la barra de cada biblioteca tienes:
   Todos / Pendiente / Viendo / Vista / Standby / Abandonada.
   En Películas: Todos / Pendiente / Vista. En Libros:
   Todos / Pendiente / Leyendo / Leído / Standby / Abandonado.
+  En Videojuegos: Todos / Pendiente / Jugando / Jugado / Standby /
+  Abandonado.
 - **Selector de orden**:
   - **Actividad reciente** (el que viene por defecto): lo que viste,
-    leíste o se estrenó más recientemente, primero.
-  - **Fecha de visionado/lectura**: por la última vez que viste o leíste.
+    leíste, jugaste o se estrenó más recientemente, primero.
+  - **Fecha de visionado/lectura/juego**: por la última vez que viste,
+    leíste o jugaste.
   - **Alfabético**: por título, de la A a la Z.
-  - **Año de estreno / publicación**: de más nuevo a más antiguo (en
-    libros, el selector se llama «Año de publicación»).
+  - **Año de estreno / publicación / lanzamiento**: de más nuevo a más
+    antiguo (en libros, el selector se llama «Año de publicación», y en
+    videojuegos, «Año de lanzamiento»).
 - **Vista cuadrícula ▦ o lista ☰**: a tu gusto (cada sección recuerda la
   suya mientras estás en la web).
 
@@ -448,14 +513,15 @@ Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
 en rojo con el texto tachado.
 
-## 9. La ficha de cada película, serie o libro
+## 10. La ficha de cada película, serie, libro o videojuego
 
 Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
 verás:
 
 - **Portada, título y año** (en la vista previa de búsqueda se indica el
-  tipo: «Película · año» o «Serie · año»).
-- **Puntuación de la comunidad** de TMDB (o «Sin puntuaciones»).
+  tipo: «Película · año», «Serie · año» o «Videojuego · año»).
+- **Puntuación de la comunidad**: de TMDB para películas y series, y de
+  RAWG para videojuegos (o «Sin puntuaciones»).
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
   tiene).
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
@@ -463,7 +529,9 @@ verás:
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: duración, género, director (películas),
-  creadores (series), reparto y sinopsis.
+  creadores (series), reparto y sinopsis. En los videojuegos:
+  plataformas, desarrolladores, Metacritic, duración media y
+  clasificación por edades (ESRB).
 - **Sagas** (películas): si la película forma parte de una saga, aparece
   un aviso y el botón **«Añadir resto de la saga»**. Pulsa el botón, marca
   las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
@@ -477,14 +545,18 @@ En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
 En las series, junto a tu valoración general verás también la **media de
-tus notas de episodios** (ver sección 10).
+tus notas de episodios** (ver sección 11).
 
-## 10. Valoraciones con estrellas
+En los videojuegos, la ficha incluye además el **historial de sesiones de
+juego** (más en [sección 7.4](#74-historial-de-sesiones)).
+
+## 11. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**:
 
 - **Películas**: al marcarla como vista se abre la ventana de valoración.
 - **Libros**: al terminar la lectura se abre la misma ventana.
+- **Videojuegos**: al terminar una partida se abre la misma ventana.
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
   que se guarda desde su ficha).
@@ -510,9 +582,9 @@ solo mientras la ventana está abierta.
 En tu lista, cada título muestra tus estrellas (★) y la nota de la
 comunidad.
 
-## 11. Acciones rápidas
+## 12. Acciones rápidas
 
-### 11.1 El botón grande de cada fila
+### 12.1 El botón grande de cada fila
 
 En la vista de **lista**, cada título tiene un botón grande con la acción
 más probable:
@@ -521,8 +593,9 @@ más probable:
 - **Serie**: «Ver T2E5» (el siguiente episodio) o «Completa ✓» si ya está
   terminada.
 - **Libro**: «Empezar ✓», «Terminar ✓» o «Releer ↺».
+- **Videojuego**: «Empezar ✓», «Terminar ✓» o «Rejugar ↺».
 
-### 11.2 Deslizar en el móvil
+### 12.2 Deslizar en el móvil
 
 En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
@@ -534,7 +607,7 @@ cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
 series en pausa o abandonadas no funciona: la web te avisa de que la
 abras para retomarla.
 
-### 11.3 Deshacer un borrado
+### 12.3 Deshacer un borrado
 
 Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
 instante: aparece el aviso ««Título» se eliminará…» con un botón
@@ -542,7 +615,7 @@ instante: aparece el aviso ««Título» se eliminará…» con un botón
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
 
-## 12. Notificaciones
+## 13. Notificaciones
 
 El **icono de campana** de la cabecera te avisa (solo dentro de la web, una vez al
 día) de:
@@ -557,14 +630,14 @@ cada una con su ✕. Pulsa fuera de la ventana (o la tecla **Esc**) para
 cerrarla.
 
 Puedes elegir qué tipos de avisos quieres (o desactivarlos todos) en
-**Ajustes → Notificaciones** ([sección 14](#14-ajustes)).
+**Ajustes → Notificaciones** ([sección 15](#15-ajustes)).
 
 Si además activas **«Notificaciones en el dispositivo»**, esos mismos
 avisos aparecen también como **notificación del sistema** (en la pantalla
 del teléfono o en el escritorio) cuando la web está abierta pero no la
 estás mirando.
 
-## 13. Tu perfil
+## 14. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
 elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
@@ -572,10 +645,10 @@ o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
 también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
-En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas o Libros) que tenías abierta.
+En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas, Libros o Videojuegos) que tenías abierta.
 Tu perfil tiene cuatro secciones:
 
-### 13.0 Compartir direcciones de tu perfil
+### 14.0 Compartir direcciones de tu perfil
 
 Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
 cada sección del perfil tiene su propia dirección web, que termina en
@@ -595,7 +668,7 @@ Entrar con una dirección de perfil sin sesión iniciada abre primero la
 pantalla de entrada; al iniciar sesión, la web te lleva a la sección
 que pedías.
 
-### 13.1 Estadísticas
+### 14.1 Estadísticas
 
 Cuatro cifras: **Películas vistas, Episodios vistos, Series completadas y
 Libros leídos**. El selector de periodo te permite verlas de **Siempre**,
@@ -608,19 +681,20 @@ Debajo hay dos gráficas:
 - **Estados actuales**: qué parte de tu registro está pendiente, en curso,
   completado, en pausa o abandonado.
 
-### 13.2 Amigos
+### 14.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
 lista no sea interminable, el registro se organiza **por pestañas**:
-**Películas, Series y Libros** (una a la vez, igual que en tu propio
-perfil).
+**Películas, Series, Libros y Videojuegos** (una a la vez, igual que en
+tu propio perfil).
 
 Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
 interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
 en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
-en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
-Así no tienes que hacer scroll largo.
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**;
+en **videojuegos**, **Todos, Pendiente, Jugando, Jugado, Standby o
+Abandonado**. Así no tienes que hacer scroll largo.
 
 Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
 vuelves a la lista de amigos y entras de nuevo en un amigo, se
@@ -629,7 +703,7 @@ vuelves a la lista de amigos y entras de nuevo en un amigo, se
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
 sus valoraciones episodio a episodio ni sus historiales completos.
 
-### 13.3 Actividad
+### 14.3 Actividad
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
@@ -637,11 +711,11 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 13.4 Ajustes
+### 14.4 Ajustes
 
-Se explica completo en la [sección 14](#14-ajustes).
+Se explica completo en la [sección 15](#15-ajustes).
 
-## 14. Ajustes
+## 15. Ajustes
 
 Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
@@ -670,7 +744,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     la primera vez: si lo deniegas, la opción se desactiva sola (puedes
     re-concederlo después en los ajustes del navegador). Al tocar la
     notificación se abre la web. Para que funcione en el móvil, la web
-    debe estar instalada como app ([sección 17](#17-instalar-la-web-en-tu-teléfono))
+    debe estar instalada como app ([sección 18](#18-instalar-la-web-en-tu-teléfono))
     y en iPhone hace falta **iOS 16.4 o superior**; en el ordenador
     funciona con la pestaña abierta en segundo plano.
 - **Sincronización de datos → «Sincronizar ahora»**: fuerza la actualización
@@ -680,8 +754,8 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   se actualiza sola a diario (ver siguiente sección).
 - **Datos**: exporta, importa o descarga tus datos:
   - **Exportar copia de seguridad**: descarga un archivo con TODOS tus
-    datos (películas, series, libros, perfil y notificaciones). Es tu
-    seguro de vida: guárdalo donde quieras.
+    datos (películas, series, libros, videojuegos, perfil y
+    notificaciones). Es tu seguro de vida: guárdalo donde quieras.
   - **Importar copia de seguridad**: restaura datos desde un archivo que
     exportaras antes. **Añade** lo que falte a lo que ya tienes: no
     reemplaza ni borra nada.
@@ -690,7 +764,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     importarlo en Google Calendar, Apple Calendar o similar y tener todos
     los estrenos en tu agenda.
 
-## 15. ¿Cuándo se actualizan los datos?
+## 16. ¿Cuándo se actualizan los datos?
 
 - **Una vez al día**, al abrir la web, se comprueba automáticamente si ha
   pasado algo: estrenos de tus películas y series pendientes, episodios
@@ -699,7 +773,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Esa misma comprobación diaria **rellena la información que falte** en tus
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo
-  ya lo tiene).
+  ya lo tiene). Los videojuegos no se actualizan solos: su información
+  (sinopsis, plataformas, valoraciones de RAWG...) se rellena en el
+  momento de añadirlos y no hay comprobación diaria de novedades para
+  ellos.
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante
@@ -710,10 +787,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   problemas de conexión. Reintentando…» mientras lo hace; normalmente
   no tienes que hacer nada.
 
-## 16. Privacidad
+## 17. Privacidad
 
 - **Tu registro es tuyo**: solo tú puedes editar tus películas, series,
-  libros y notas.
+  libros, videojuegos y notas.
 - Tus **notas personales** son privadas: nadie más las ve.
 - Tus **amigos** pueden ver (no editar) tu registro completo: estados,
   valoraciones, progreso y páginas de lectura.
@@ -722,7 +799,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Los ajustes de notificaciones se guardan en tu dispositivo y también en
   tu cuenta.
 
-## 17. Instalar la web en tu teléfono
+## 18. Instalar la web en tu teléfono
 
 Mi Registro funciona como una web normal, pero también se puede **instalar**
 para que se comporte como una aplicación:
@@ -736,7 +813,7 @@ Una vez instalada, tendrás su icono en tu pantalla. La web funciona
 aunque estés sin conexión para **ver lo que ya está cargado**; las
 anotaciones y cambios necesitan conexión a internet.
 
-## 18. Problemas frecuentes
+## 19. Problemas frecuentes
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien
@@ -751,8 +828,8 @@ sola. Si persiste, espera unos segundos y vuelve a intentarlo.
 La web lo **reintenta automáticamente** durante unos segundos: puede
 aparecer el aviso «Hay problemas de conexión. Reintentando…». Si pasados
 unos segundos sigue sin cargar y aparece el aviso de error («No se
-pudieron cargar tus películas/series/libros»), comprueba tu conexión a
-internet y **recarga la página**.
+pudieron cargar tus películas/series/libros/videojuegos»), comprueba tu
+conexión a internet y **recarga la página**.
 
 **He marcado algo por error**
 Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
@@ -779,7 +856,7 @@ Comprueba lo siguiente:
   tu navegador o teléfono (y la opción **«Notificaciones en el
   dispositivo»** activada en Ajustes → Notificaciones).
 - En **iPhone**, la web debe estar **instalada como app**
-  ([sección 17](#17-instalar-la-web-en-tu-teléfono)) y tener **iOS 16.4
+  ([sección 18](#18-instalar-la-web-en-tu-teléfono)) y tener **iOS 16.4
   o superior**.
 
 ---
