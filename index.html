@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mi Registro — pelis, series y libros</title>
-  <meta name="description" content="Registro personal de películas, series y libros." />
+  <title>Mi Registro — pelis, series, libros y videojuegos</title>
+  <meta name="description" content="Registro personal de películas, series, libros y videojuegos." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
   <link rel="apple-touch-icon" href="resources/icon.png">
@@ -81,7 +81,7 @@
             id="global-search-input"
             type="search"
             class="global-search__input"
-            placeholder="Buscar películas, series, libros o amigos..."
+            placeholder="Buscar películas, series, libros, videojuegos o amigos..."
             autocomplete="off"
             aria-label="Buscar en todo tu registro"
           />
@@ -157,6 +157,10 @@
       <section id="panel-books" class="panel hidden" role="tabpanel" aria-labelledby="tab-books" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
         <p class="empty-state">Cargando…</p>
       </section>
+
+      <section id="panel-games" class="panel hidden" role="tabpanel" aria-labelledby="tab-games" data-type-group="games" data-ocio-src="ocio/videojuegos.html" aria-live="polite" aria-atomic="true">
+        <p class="empty-state">Cargando…</p>
+      </section>
     </main>
 
     <!-- Barra de pestañas fija (issue #79): Series, Películas y
@@ -190,11 +194,19 @@
           </svg>
           <span>Libros</span>
         </button>
+        <button class="tab tab--games" id="tab-games" role="tab" aria-selected="false" data-panel="panel-games" aria-controls="panel-games">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="6" width="20" height="12" rx="6" />
+            <path d="M6 11h4M8 9v4" />
+            <path d="M15.5 11h.01M17.5 13h.01" />
+          </svg>
+          <span>Videojuegos</span>
+        </button>
       </div>
     </nav>
 
     <footer class="app-footer">
-      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books
+      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books · Datos de videojuegos vía RAWG (rawg.io)
     </footer>
   </div>
 

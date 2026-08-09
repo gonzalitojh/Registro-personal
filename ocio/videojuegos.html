@@ -1,0 +1,31 @@
+<!--
+  Contenido de la pestaña "Videojuegos". Se inyecta dentro de
+  <section id="panel-games"> (ver ocio/series.html para la explicación).
+-->
+<div class="library-controls">
+  <div class="filter-chips" data-scope="games">
+    <button class="chip is-active" data-status="todos">Todos</button>
+    <button class="chip" data-status="pendiente">Pendiente</button>
+    <button class="chip" data-status="en_curso">Jugando</button>
+    <button class="chip" data-status="completado">Jugado</button>
+    <button class="chip" data-status="standby">Standby</button>
+    <button class="chip" data-status="abandonado">Abandonado</button>
+  </div>
+  <div class="library-controls__aux">
+    <select class="sort-select" data-scope="games">
+      <option value="añadido">Actividad reciente</option>
+      <option value="fecha">Fecha de juego</option>
+      <option value="alfabetico">Alfabético</option>
+      <option value="anio">Año de lanzamiento</option>
+    </select>
+    <div class="view-toggle" data-scope="games">
+      <button type="button" class="view-toggle__btn is-active" data-view="grid" aria-label="Vista en cuadrícula">▦</button>
+      <button type="button" class="view-toggle__btn" data-view="list" aria-label="Vista en lista">☰</button>
+    </div>
+  </div>
+</div>
+<div id="library-games" class="library-grid"></div>
+<p id="empty-games" class="empty-state hidden">
+  Tu biblioteca está vacía. Busca un videojuego arriba y pulsa «Añadir».
+</p>
+<p class="library-credit">Datos de videojuegos vía <a href="https://rawg.io" target="_blank" rel="noopener noreferrer">RAWG</a></p>

@@ -28,6 +28,8 @@
   --ochre-spine-dark: #8f6522;
   --stamp: #a63b2e;
   --stamp-dark: #7e2c22;
+  --games: #7a5a9e;
+  --games-dark: #5d4780;
 
   /* Neutros */
   --white: #ffffff;
@@ -125,6 +127,8 @@
   --ochre-spine-dark: #8f6522;
   --stamp: #a63b2e;
   --stamp-dark: #8c3025;
+  --games: #7a5a9e;
+  --games-dark: #5d4780;
 
   --white: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.25);
@@ -974,10 +978,11 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Cada pestaña con su color de acento (los tres distintos entre
    sí), reutilizando la paleta existente: series verde, películas
-   rojo y libros ocre, válido en ambos temas. */
+   rojo, libros ocre y videojuegos violeta, válido en ambos temas. */
 .tab--tv { --tab-accent: var(--teal-reel); }
 .tab--movies { --tab-accent: var(--stamp); }
 .tab--books { --tab-accent: var(--ochre-spine); }
+.tab--games { --tab-accent: var(--games); }
 
 .tab svg {
   display: block;
@@ -1882,6 +1887,7 @@ body.is-back-to-top-visible .back-to-top {
 .global-search__type-btn--tv { --type-accent: var(--teal-reel); }
 .global-search__type-btn--movies { --type-accent: var(--stamp); }
 .global-search__type-btn--books { --type-accent: var(--ochre-spine); }
+.global-search__type-btn--games { --type-accent: var(--games); }
 .global-search__type-btn .global-search__type-icon svg {
   width: 1rem;
   height: 1rem;
@@ -1945,6 +1951,13 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--ochre-spine-dark);
   color: var(--paper);
 }
+.global-search__item-add--games {
+  background: var(--games);
+  color: var(--paper);
+}
+.global-search__item-add--games:hover {
+  background: var(--games-dark);
+}
 
 /* Botón «Marcar visto» de los resultados del catálogo (issue #115):
    mismo esqueleto compacto que Añadir pero en estilo outline para
@@ -2006,6 +2019,7 @@ body.is-back-to-top-visible .back-to-top {
 .global-search__group-title--tv svg { color: var(--teal-reel); }
 .global-search__group-title--movies svg { color: var(--stamp); }
 .global-search__group-title--books svg { color: var(--ochre-spine); }
+.global-search__group-title--games svg { color: var(--games); }
 
 .global-search__group-badge {
   background: var(--teal-reel);
