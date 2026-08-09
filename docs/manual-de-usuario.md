@@ -656,6 +656,11 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante
   un tiempo para no pedirlos a cada rato.
+- Si al entrar hay un **fallo de conexión puntual** (un momento sin red
+  o un error pasajero del servidor), la web **reintenta sola durante
+  unos segundos** antes de avisarte. Puede aparecer el aviso «Hay
+  problemas de conexión. Reintentando…» mientras lo hace; normalmente
+  no tienes que hacer nada.
 
 ## 16. Privacidad
 
@@ -693,6 +698,13 @@ de seguridad).
 **Al buscar libros aparece «Error 503» o tarda mucho**
 Es un fallo puntual del servidor de libros, no tuyo: la web reintenta
 sola. Si persiste, espera unos segundos y vuelve a intentarlo.
+
+**Al entrar no cargan mis datos**
+La web lo **reintenta automáticamente** durante unos segundos: puede
+aparecer el aviso «Hay problemas de conexión. Reintentando…». Si pasados
+unos segundos sigue sin cargar y aparece el aviso de error («No se
+pudieron cargar tus películas/series/libros»), comprueba tu conexión a
+internet y **recarga la página**.
 
 **He marcado algo por error**
 Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
