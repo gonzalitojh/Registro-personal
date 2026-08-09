@@ -6,6 +6,9 @@ _site/
 # del commit wip-save; aquí quedan además protegidos de un git add -A manual.
 opencode-session.log
 session-failure.txt
+# Candidato de issue y prompt de la sesión CI (scripts/gh-select-issue.sh, issue #157):
+candidate.json
+sdd_prompt.md
 
 # Artefactos de compilación de los scripts Python (scripts/*.py, issue #145):
 __pycache__/
