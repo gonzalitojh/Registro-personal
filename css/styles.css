@@ -77,6 +77,30 @@
 }
 
 /* =========================================================
+   NEGRO PURO (issue #43)
+   Delta block sobre :root: solo varía lo que debe ser
+   negro absoluto. Todo lo demás (papel, pergamino, acentos,
+   sombras, filtro del date picker, alphas de paper) se
+   hereda del modo oscuro por defecto: mismo aspecto con el
+   fondo y las superficies en #000 para que las pantallas
+   OLED apaguen esos píxeles (ahorro de consumo) y el modo
+   se vea más profundo.
+   Contraste: --paper #f1ead9 sobre #000 ≈ 17.5:1 (AAA);
+   --ink-soft #948a76 sobre #000 ≈ 6.2:1 (AA).
+   ========================================================= */
+[data-theme="black"] {
+  --ink: #000000;
+  --ink-raised: #0a0a0a;
+
+  /* Tintes de tinta negra pura sobre superficies de papel */
+  --ink-alpha-06: rgba(0, 0, 0, 0.06);
+  --ink-alpha-08: rgba(0, 0, 0, 0.08);
+  --ink-alpha-10: rgba(0, 0, 0, 0.10);
+  --ink-alpha-15: rgba(0, 0, 0, 0.15);
+  --ink-alpha-20: rgba(0, 0, 0, 0.20);
+}
+
+/* =========================================================
    MODO CLARO
    ---------------------------------------------------------
    Semántica de colores (común a ambos modos):
@@ -142,82 +166,155 @@
   --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* ---------------------------------------------------------
-   Ajustes puntuales del modo claro: los elementos que usan
+/* =========================================================
+   BLANCO PURO (issue #43)
+   Delta block sobre :root con la paleta de la familia clara
+   llevada al extremo: fondo, tarjetas y superficies en blanco
+   absoluto (#ffffff) y tinta negra pura (#000000). Los
+   elementos que usan --ink como fondo / --paper como texto
+   requieren los mismos overrides que el modo claro: ver la
+   sección "Ajustes puntuales" más abajo, donde cada selector
+   de [data-theme="light"] se repite para [data-theme="white"].
+   Contraste: #000 sobre #fff = 21:1 (AAA); --ink-soft #6b6355
+   sobre #fff ≈ 5.9:1 (AA).
+   ========================================================= */
+[data-theme="white"] {
+  --ink: #000000;
+  --ink-raised: #ffffff;
+  --ink-soft: #6b6355;
+  --paper: #ffffff;
+  --paper-dim: #ffffff;
+  --paper-line: #d9cfc0;
+
+  --backdrop: rgba(0, 0, 0, 0.25);
+
+  /* Opacidades de ink (negro puro): tintes de hover/foco */
+  --ink-alpha-06: rgba(0, 0, 0, 0.06);
+  --ink-alpha-08: rgba(0, 0, 0, 0.08);
+  --ink-alpha-10: rgba(0, 0, 0, 0.10);
+  --ink-alpha-15: rgba(0, 0, 0, 0.15);
+  --ink-alpha-20: rgba(0, 0, 0, 0.20);
+
+  /* Opacidades de paper: bordes oscuros sobre fondo blanco;
+     el 10% y el 92% se mantienen blancos (sellos translúcidos) */
+  --paper-alpha-10: rgba(255, 255, 255, 0.10);
+  --paper-alpha-14: rgba(0, 0, 0, 0.14);
+  --paper-alpha-20: rgba(0, 0, 0, 0.20);
+  --paper-alpha-30: rgba(0, 0, 0, 0.30);
+  --paper-alpha-35: rgba(0, 0, 0, 0.35);
+  --paper-alpha-40: rgba(0, 0, 0, 0.40);
+  --paper-alpha-92: rgba(255, 255, 255, 0.92);
+
+  /* Sombra algo más fuerte que en claro: única separación de
+     las tarjetas blancas sobre fondo blanco puro */
+  --date-picker-filter: none;
+
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-pop: 0 16px 44px rgba(0, 0, 0, 0.18);
+}
+
+/* =========================================================
+   AJUSTES PUNTUALES DE TEMA
+   La sección "Ajustes puntuales del modo claro" que sigue lo
+   es también del modo blanco puro: los elementos que usan
    --ink como fondo (fondo general) o --paper como color de
-   texto necesitan inversión explícita, porque en el modo claro
-   el fondo general es claro y la tinta es oscura.
-   --------------------------------------------------------- */
+   texto necesitan inversión explícita en toda la familia
+   clara (light y white).
+   ========================================================= */
 
 [data-theme="light"] html,
-[data-theme="light"] body {
+[data-theme="white"] html,
+[data-theme="light"] body,
+[data-theme="white"] body {
   background: var(--paper-dim);
   color: var(--ink);
 }
 
-[data-theme="light"] .auth-screen {
+[data-theme="light"] .auth-screen,
+[data-theme="white"] .auth-screen {
   background:
     radial-gradient(circle at 20% 20%, var(--teal-alpha-18, rgba(43, 100, 89, 0.18)), transparent 45%),
     radial-gradient(circle at 80% 80%, var(--ochre-alpha-14, rgba(185, 130, 46, 0.14)), transparent 45%),
     var(--paper-dim);
 }
 
-[data-theme="light"] .profile-view {
+[data-theme="light"] .profile-view,
+[data-theme="white"] .profile-view {
   background: var(--paper-dim);
   color: var(--ink);
 }
 
-[data-theme="light"] .icon-btn {
+[data-theme="light"] .icon-btn,
+[data-theme="white"] .icon-btn {
   color: var(--ink);
 }
 
-[data-theme="light"] .btn-link {
+[data-theme="light"] .btn-link,
+[data-theme="white"] .btn-link {
   color: var(--ink);
 }
 
-[data-theme="light"] .btn--outline-dark {
+[data-theme="light"] .btn--outline-dark,
+[data-theme="white"] .btn--outline-dark {
   color: var(--ink);
   border-color: var(--paper-alpha-40);
 }
-[data-theme="light"] .btn--outline-dark:hover {
+[data-theme="light"] .btn--outline-dark:hover,
+[data-theme="white"] .btn--outline-dark:hover {
   background: var(--ink-alpha-10);
 }
 
 [data-theme="light"] .app-footer {
   color: rgba(44, 40, 34, 0.55);
 }
+[data-theme="white"] .app-footer {
+  color: rgba(0, 0, 0, 0.55);
+}
 
-[data-theme="light"] .profile-view__header select {
+[data-theme="light"] .profile-view__header select,
+[data-theme="white"] .profile-view__header select {
   color: var(--ink);
 }
 
-[data-theme="light"] .settings-select {
+[data-theme="light"] .settings-select,
+[data-theme="white"] .settings-select {
   background: var(--white);
   color: var(--ink);
   border-color: var(--paper-alpha-30);
 }
 
-[data-theme="light"] .stats-range-fields {
+[data-theme="light"] .stats-range-fields,
+[data-theme="white"] .stats-range-fields {
   color: var(--ink);
 }
-[data-theme="light"] .stats-range-fields input[type="date"] {
+[data-theme="light"] .stats-range-fields input[type="date"],
+[data-theme="white"] .stats-range-fields input[type="date"] {
   background: var(--white);
   color: var(--ink);
   border-color: var(--paper-line);
 }
 
-[data-theme="light"] .global-search__input {
+[data-theme="light"] .global-search__input,
+[data-theme="white"] .global-search__input {
   color: var(--ink);
 }
 /* El dropdown de resultados y sus ítems usan --paper como fondo y
    --ink como texto en ambos temas (ver sección Buscador global), así
    que no necesitan override específico de modo claro. */
 
-[data-theme="light"] .activity-event__text {
+[data-theme="light"] .activity-event__text,
+[data-theme="white"] .activity-event__text {
   color: var(--ink);
 }
 
-[data-theme="light"] .switch__input:focus-visible + .switch__slider {
+/* En blanco puro el dropdown es blanco y su hover usa --paper-dim
+   (#ffffff), que lo haría invisible: se usa un tinte de tinta */
+[data-theme="white"] .profile-dropdown__item:hover {
+  background: var(--ink-alpha-06);
+}
+
+[data-theme="light"] .switch__input:focus-visible + .switch__slider,
+[data-theme="white"] .switch__input:focus-visible + .switch__slider {
   outline-color: var(--ink);
 }
 
@@ -476,7 +573,8 @@ button {
      el elemento siga siendo "clickeable" mientras se desliza. */
   transition: transform 0.25s ease, visibility 0s 0s;
 }
-[data-theme="light"] .app-header {
+[data-theme="light"] .app-header,
+[data-theme="white"] .app-header {
   background: var(--paper-dim);
 }
 
@@ -745,7 +843,8 @@ button {
      (issue #137), igual que la cabecera. */
   transition: transform 0.25s ease, visibility 0s 0s;
 }
-[data-theme="light"] .tabs--bar {
+[data-theme="light"] .tabs--bar,
+[data-theme="white"] .tabs--bar {
   background: var(--paper-dim);
 }
 

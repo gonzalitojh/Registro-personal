@@ -86,12 +86,16 @@ export function cleanupSettings() {
 
 // ---- UI Rendering ----
 
+// Valores válidos para el select de tema (Ajustes → Apariencia).
+const VALID_THEMES = ["dark", "black", "light", "white"];
+
 export function renderSettings(ctx) {
   const settings = loadSettings();
 
   const themeSelect = document.getElementById("settings-theme-select");
   if (themeSelect) {
-    themeSelect.value = settings.theme || "dark";
+    // Defensivo: un valor antiguo o inválido cae al modo oscuro.
+    themeSelect.value = VALID_THEMES.includes(settings.theme) ? settings.theme : "dark";
   }
 
   // Mientras haya una sincronización en curso, el botón de sincronizar

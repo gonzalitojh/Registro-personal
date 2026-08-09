@@ -1722,20 +1722,23 @@ input, textarea, select { font-size: 16px; }
 }
 
 /* =========================================================
-   Ajustes puntuales del modo claro (ocio)
+   Ajustes puntuales de la familia clara (light y white, ocio)
    La mayoría de los componentes de ocio heredan las variables
    ya invertidas en css/styles.css; aquí solo se corrigen los
    que usan --paper como color de texto o --ink como fondo.
    ========================================================= */
 
-[data-theme="light"] .sort-select {
+[data-theme="light"] .sort-select,
+[data-theme="white"] .sort-select {
   color: var(--ink);
 }
 
 /* La perforación tipo "entrada de cine" agujerea la tarjeta
-   dejando ver el fondo de la página, que en modo claro es
-   --paper-dim (crema), no la tinta oscura */
-[data-theme="light"] .item-card__perforation {
+   dejando ver el fondo de la página, que en la familia clara
+   (light/white) es --paper-dim (crema o blanco puro), no la
+   tinta oscura */
+[data-theme="light"] .item-card__perforation,
+[data-theme="white"] .item-card__perforation {
   background:
     radial-gradient(circle 6px at 0 50%, var(--paper-dim) 99%, transparent 100%),
     radial-gradient(circle 6px at 100% 50%, var(--paper-dim) 99%, transparent 100%);
