@@ -1,7 +1,7 @@
 {
   "title": "Múltiple búsqueda en catálogo",
   "description": "Cuando se busca algo en el catálogo (por ejemplo el de películas) y luego se borra para buscar otra cosa, se debería desmarcar el catálogo de películas para que se vuelva a realizar la búsqueda en el catálogo deseado o esperar a que el usuario termine de escribir (quizá esperar 1-2 segundos sin recibir input o como fuese más óptimo) y que se realice la búsqueda en el mismo catálogo ya seleccionado.\n\nAdemás, al introducir algo en la barra de búsqueda y empezar a aparecer resultados, aparece un error en la consola por imágenes de fbcdn.net devolviendo 403 (Forbidden). En principio parece no afectar, pero si se puede solucionar sería ideal.\n\nDiagnóstico del bug 1 (catálogo pegado): en js/global-search.js, performSearch() no resetea activeGroup cuando la query queda vacía o < 2 caracteres, y al escribir una query nueva con un grupo activo, renderResults() muestra 'Buscando en el catálogo…' sin volver a llamar a runExternalSearch() para la nueva query (la caché externalCache[group].query no coincide). Resultado: la sección del catálogo se queda colgada en 'Buscando…' y el botón de tipo sigue marcado.\n\nDiagnóstico del bug 2 (error 403): las portadas de la colección (coverUrl guardado, p. ej. URLs de CDNs que bloquean hotlinking como fbcdn.net) fallan al cargar (403) y no hay ningún fallback que sustituya la imagen por el placeholder, generando errores en consola.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Al borrar el texto de la barra de búsqueda (o dejarlo con menos de 2 caracteres), el catálogo seleccionado se desmarca y el usuario puede elegir de nuevo el catálogo donde buscar.",
     "Si el usuario mantiene un catálogo activo y modifica la búsqueda escribiendo una nueva query (>= 2 caracteres), la búsqueda se relanza automáticamente en ese mismo catálogo (no se queda colgada en 'Buscando…').",
@@ -21,5 +21,13 @@
     "number": 149,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/149",
     "title": "Múltiple búsqueda en catálogo"
+  },
+  "pr": {
+    "number": 152,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/152",
+    "title": "[fix] Desmarcar catálogo al borrar y re-búsqueda automática; fallback de portadas 403 (issue #149)",
+    "branch": "fix/issue-149-busqueda-multiple-catalogo",
+    "commit": "56c43b4",
+    "closes": "#149"
   }
 }
