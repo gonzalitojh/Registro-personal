@@ -1804,6 +1804,22 @@ input, textarea, select { font-size: 16px; }
   );
 }
 
+/* Filas de la vista de lista: mismos estados oscuros (misma
+   especificidad que la fila base, por eso se redeclaran aquí) */
+[data-theme="black"] .list-row--en_curso .list-row__content { background: var(--bg-state-en_curso); }
+[data-theme="black"] .list-row--completado .list-row__content { background: var(--bg-state-completado); }
+[data-theme="black"] .list-row--standby .list-row__content { background: var(--bg-state-standby); }
+[data-theme="black"] .list-row--abandonado .list-row__content { background: var(--bg-state-abandonado); }
+[data-theme="black"] .list-row--unreleased .list-row__content {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--bg-state-en_curso) 0px,
+    var(--bg-state-en_curso) 14px,
+    var(--bg-state-abandonado) 14px,
+    var(--bg-state-abandonado) 28px
+  );
+}
+
 /* Texto que usaba tinta sobre superficies ahora oscuras */
 [data-theme="black"] .list-row__open,
 [data-theme="black"] .season-toggle,
