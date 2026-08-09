@@ -348,3 +348,174 @@ El precedente más relevante en EE. UU. para el scraping de webs públicas es
   `/search`, que sí tiene respaldo técnico), su crawleo también incumpliría
   los ToS. **El cumplimiento de robots.txt es condición necesaria pero no
   suficiente para un scraper «legal» en el sentido contractual.**
+
+---
+
+## 5. Viabilidad técnica en esta app
+
+### 5.1 CORS: evidencia empírica
+
+La app es 100 % de cliente y consume las APIs con `fetch()` desde el
+navegador, por lo que **cualquier** fuente candidata debe devolver cabeceras
+CORS (`Access-Control-Allow-Origin`) para el origen de Firebase Hosting.
+Google Books y Open Library las devuelven (y por eso funcionan hoy). Con
+GoodReads se hizo la siguiente prueba de cortesía (una petición HEAD, el
+2026-08-09), simulando la petición preflight/real de un navegador:
+
+```
+$ curl -sI -H "Origin: https://example.local" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+    "https://www.goodreads.com/search?q=test"
+HTTP 200 | time 0.8s
+```
+
+Cabeceras relevantes de la respuesta (filtradas):
+
+```
+content-type: text/html; charset=utf-8
+server: Server
+via: 1.1 ...cloudfront.net (CloudFront)
+x-content-type-options: nosniff
+```
+
+**No aparece ninguna cabecera `Access-Control-Allow-Origin`.** Sin ella, el
+navegador bloquea la lectura de la respuesta y la petición preflight OPTIONS
+no tendría autorización. **Resultado: desde el navegador del usuario, un
+scraper de GoodReads es inviable por CORS**, incluso ignorando el resto de
+obstáculos. (Nótese que algún intermediario de AWS WAF puede emitir
+`access-control-allow-origin: *` en las respuestas de challenge vacías —se ha
+observado en fuentes de terceros en 2026—, pero eso no sirve de nada: es el
+stub del reto anti-bot, no el contenido.)
+
+### 5.2 Anti-bot: respuesta con y sin User-Agent de navegador
+
+Pruebas de cortesía realizadas el 2026-08-09 (unas pocas peticiones, espaciadas):
+
+| Petición | Resultado | Lectura |
+|---|---|---|
+| `GET https://www.goodreads.com/` con UA de Chrome | **HTTP 200**, ~55 KB de HTML real (title: «Goodreads \| Meet your next favorite book») | La portada responde a navegadores reales |
+| `GET https://www.goodreads.com/` **sin** User-Agent | **HTTP 202, 0 bytes** | Anti-bot: peticiones con pinta de robot reciben cuerpo vacío |
+| `GET https://www.goodreads.com/search?q=…` con UA de Chrome | **HTTP 202, 0 bytes** | **La búsqueda está detrás de un challenge** incluso con UA de navegador |
+| `HEAD https://www.goodreads.com/search?q=test` con UA de Chrome | HTTP 200 (sin cabeceras CORS) | El challenge se dispara en GET completos; HEAD pasa (observación puntual) |
+
+El patrón es coherente con lo que confirman fuentes independientes entre 2024
+y 2026 (sección 9): GoodReads sirve a través de **CloudFront + AWS WAF**, y la
+ruta `/search` está «gated»: devuelve **HTTP 202 con cuerpo vacío** y cabecera
+`x-amzn-waf-action: challenge` (verificado por el incidente del proyecto
+`bookcover-api`, GitHub issue #47, mayo de 2026, y por pruebas documentales de
+2026-05-18). El challenge requiere ejecutar el JavaScript del reto
+(`challenge.js` alojado en `awswaf.com`) para obtener una cookie y rehacer la
+petición: **imposible desde un `fetch()` de un sitio estático**, y
+prácticamente imposible desde scripts sencillos sin un navegador headless.
+
+Además, el contenido real (React, sección 5.3) se renderiza en el cliente:
+aunque se pasara el challenge, el HTML inicial de las fichas es «una cáscara»
+que no contiene las reseñas ni buena parte de los metadatos sin ejecutar JS.
+
+### 5.3 Estabilidad del HTML/DOM para scraping (investigación documental)
+
+Experiencia documentada de la comunidad (2024-2026, fuentes en sección 9):
+
+- GoodReads migró a un frontend **React** con clases CSS **ofuscadas** que
+  **cambian sin previo aviso**: «Goodreads periodically changes HTML class
+  names and page structure»; los selectores por clase se rompen con frecuencia.
+  El scraper de referencia `maria-antoniak/goodreads-scraper` (GitHub) lleva
+  el aviso permanente «unmaintained and no longer functioning».
+- Las partes más estables son el **JSON-LD** embebido (schema.org `Book`) y
+  los atributos `data-testid`, pero ni siquiera `data-testid` es un contrato:
+  «the `RatingStars` and `ReviewCard` markers, the `data-testid` attributes,
+  and the section wrappers change without notice».
+- Las reseñas/valoraciones se cargan asíncronamente y tras un botón «Show
+  more»; sin ejecutar JS no aparecen.
+- La **paginación** de shelves y listas exige sesión/cookies (`_session_id2`);
+  sin ella, algunas rutas devuelven la página 1 repetida silenciosamente.
+
+Conclusión: cualquier scraper de GoodReads exigiría **mantenimiento continuo**
+de selectores y pruebas periódicas; es un activo frágil, no un contrato de
+datos estable.
+
+### 5.4 Infraestructura requerida vs. app estática sin backend
+
+Para que GoodReads sustituyera o respaldara a Google Books/Open Library
+haría falta, mínimo:
+
+1. **Un backend/proxy propio** que: (a) ejecute el challenge de AWS WAF,
+   (b) renderice el HTML con un navegador headless (Playwright/Puppeteer),
+   (c) extraiga los campos, y (d) reexponga el resultado al frontend con
+   cabeceras CORS. La app **no tiene backend** — es estática en Firebase
+   Hosting (sección 3.1) —, así que esto rompería la arquitectura actual.
+2. **Una IP con buena reputación**: las IPs de los centros de datos
+   (incluidas las de los rangos compartidos de las funciones en la nube)
+   están señalizadas; las guías de scraping de 2026 recomiendan
+   **proxies residenciales** para mantener el acceso, con coste asociado
+   (servicios comerciales de scrape o pools de IPs; ver 7.d). Sin ellos, el
+   riesgo de bloqueo/rate-limit (403 o challenges) tras pocas decenas de
+   peticiones es alto (fuentes: sección 9).
+3. **Coste**: cualquier vía que funcione de verdad (funciones en la nube +
+   navegador headless + proxies residenciales, o bien APIs comerciales de
+   scraping, p. ej. del orden de dólares por millar de resultados —estimación
+   sin verificar—) introduce coste recurrente donde hoy el coste por búsqueda
+   es cero.
+
+La alternativa de no usar backend —un fetch directo del navegador— está
+descartada por CORS (5.1) y por el challenge de WAF (5.2): **no existe
+implementación de cliente puro viable**.
+
+### 5.5 Tabla comparativa de metadatos: GoodReads vs Google Books vs Open Library
+
+Campos reales que usa la app (sección 3.3) y cómo los cubriría cada fuente.
+GoodReads se evalúa como fuente scrapeada (página de libro + búsqueda; no hay
+API pública, sección 7.a):
+
+| Campo que usa la app | Google Books (hoy: principal) | Open Library (hoy: respaldo) | GoodReads (scrape hipotético) |
+|---|---|---|---|
+| Título (+subtítulo) | ✅ `volumeInfo.title/subtitle` | ✅ `title` | ✅ en la ficha (JSON-LD/Apollo); la búsqueda `/search` está prohibida por robots y gated por WAF |
+| Autor(es) | ✅ `authors[]` | ✅ `author_name[]` | ✅ en la ficha y ficha de autor (`/author/show/`, permitida por robots) |
+| Año | ✅ `publishedDate` (YYYY) | ✅ `first_publish_year` | ✅ `publicationYear` en la ficha (JSON-LD) |
+| Páginas | ✅ `pageCount` (por edición) | ❌ no lo aporta (`null`) | ✅ en la ficha de la edición |
+| Portada(s) **múltiples por obra** | ✅ varias por grupo (thumbnails de cada edición) | ⚠️ 1 por obra (`cover_i`) | ⚠️ 1-2 por edición; varias obras en `/work/editions` (permitida por robots, pero 1 petición extra por obra) |
+| Sinopsis | ✅ `description` (por edición) | ⚠️ bajo demanda (`/works/X.json`), a menudo ausente | ✅ en la ficha (contenido de editorial; su extracción choca con ToS 4.1) |
+| Filtro idioma español | ✅ `langRestrict=es` + `language` | ✅ `lang=es` + idioma de edición | ❌ sin filtro fiable por idioma en la búsqueda/fichas |
+| Extras no usados (valoración, reseñas, géneros) | ❌ | ❌ | ✅ los aportaría (no necesarios para la app) |
+
+### 5.6 Qué aportaría GoodReads que hoy no esté cubierto
+
+Analizando campo por campo (5.5): **ninguno de los seis campos que la app usa
+está huérfano**. Google Books ya da múltiples portadas y sinopsis por obra
+(agrupación ADR-002), y Open Library cubre el respaldo y la sinopsis bajo
+demanda. GoodReads solo añadiría:
+
+- **Valoración media y número de valoraciones** por libro (goodreads.com es
+  la referencia social del libro en habla inglesa).
+- **Reseñas de la comunidad** (no usadas por la app; y con problemas propios
+  de derechos de autor y privacidad para reutilizarlas).
+- **Géneros/etiquetas** y listas comunitarias (funcionalidad no solicitada).
+- **Más portadas por edición** en algunos casos (cubierto ya por GB).
+
+La issue #50 no pide ninguna de esas capacidades: la app quiere buscar un
+libro por título/autor, ver varias portadas/sinopsis y añadirlo. GoodReads,
+por tanto, **no resuelve ninguna carencia actual**.
+
+### 5.7 Escenarios parciales
+
+Incluso acotando el scraper a un uso de apoyo, los obstáculos legales y
+técnicos (4.1, 5.1, 5.2) se mantienen íntegros, y el beneficio disminuye:
+
+- **(a) GoodReads solo como respaldo** (cuando Google Books falla): hoy el
+  respaldo es Open Library, que sí funciona desde el navegador y tiene CORS.
+  Sustituirlo por GoodReads no mejoraría los campos cubiertos (5.5) y
+  añadiría el 100 % del coste de infraestructura (5.4).
+- **(b) GoodReads solo para enriquecer un campo** (p. ej. sinopsis cuando GB
+  y OL no tienen): los casos en que ambos carecen de sinopsis y GoodReads la
+  tiene son un subconjunto pequeño (estimación sin medir), y el coste de
+  infraestructura es el mismo. La sinopsis es además contenido de editorial:
+  su extracción es la parte más visiblemente afectada por los ToS (4.1) y por
+  los derechos de autor (4.4).
+- **(c) GoodReads solo para portadas de ediciones** (`/work/editions`, única
+  ruta «permitida» por robots y sin WAF según fuentes de 2026): cubriría un
+  hueco que hoy ya cubre Google Books agrupando por obra (ADR-002); aun así
+  requeriría backend + navegador headless y seguiría incumpliendo los ToS.
+
+**Conclusión técnica**: no existe escenario parcial que merezca la pena: o se
+vulnera la arquitectura y el contrato para un beneficio nulo/marginal, o no se
+hace. La sección 8 formaliza la recomendación.
