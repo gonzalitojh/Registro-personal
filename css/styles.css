@@ -423,7 +423,7 @@
   color: var(--stamp-dark);
 }
 /* El hover de .btn--danger no se toca: su fondo pasa a --stamp y el
-   texto a --paper (5.8:1), como en el modo oscuro */
+   texto a --paper (5.33:1), como en el modo oscuro */
 
 /* Filas de notificación: sobre el dropdown oscuro, un tono distinto
    y un borde sutil para separarlas */
