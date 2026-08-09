@@ -140,7 +140,8 @@ jobs:
                 }
 
                 // Idempotencia: ya cerrada y con 'status: done' → nada que hacer.
-                if (issue.state === 'closed' && names.includes('status: done')) {
+                const state = String(issue.state || '').toLowerCase(); // minúsculas (issue #145)
+                if (state === 'closed' && names.includes('status: done')) {
                   core.info(`#${number}: ya está cerrada con 'status: done'; se omite`);
                   continue;
                 }
@@ -169,7 +170,7 @@ jobs:
                 }
 
                 // Cerrar la issue si está abierta.
-                if (issue.state === 'open') {
+                if (state === 'open') {
                   try {
                     await github.rest.issues.update({ owner, repo, issue_number: number, state: 'closed' });
                   } catch (error) {
