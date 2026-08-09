@@ -399,7 +399,7 @@ export function setupProfile(ctx) {
     logout();
   });
 
-  // «← Volver» del perfil: cierra la vista (toggle manual: cubre el
+  // Flecha de volver del perfil: cierra la vista (toggle manual: cubre el
   // caso de navegar sin cambiar el hash) y vuelve a la última pestaña
   // de Ocio que estuviera activa.
   document.getElementById("btn-close-profile").addEventListener("click", () => {

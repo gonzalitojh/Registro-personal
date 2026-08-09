@@ -171,14 +171,6 @@
   color: var(--ink);
 }
 
-[data-theme="light"] .btn--ghost {
-  color: var(--ink);
-  border-color: var(--paper-alpha-35);
-}
-[data-theme="light"] .btn--ghost:hover {
-  border-color: var(--ink);
-}
-
 [data-theme="light"] .btn-link {
   color: var(--ink);
 }
@@ -380,17 +372,6 @@ button {
 }
 .btn--primary:hover {
   background: var(--white);
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--paper);
-  border-color: var(--paper-alpha-35);
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-}
-.btn--ghost:hover {
-  border-color: var(--paper);
 }
 
 .btn--small {
