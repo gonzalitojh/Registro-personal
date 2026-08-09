@@ -1,7 +1,7 @@
 {
   "title": "Valoración media series (issue #80)",
   "description": "En el caso de las series, junto a la valoración del usuario de la serie, poner una valoración media de todos los episodios valorados. No tener en cuenta aquellos sin valorar, es decir, la valoración de un episodio nunca puede ser 0, sería 1 como mínimo.\n\nIssue: https://github.com/gonzalitojh/Registro-personal/issues/80\n\nContexto técnico:\n- Los episodios vistos se guardan en item.watched con forma { \"temporada\": { \"episodio\": { date: \"YYYY-MM-DD\", rating: 1-5|null } } }.\n- La valoración de episodio se normaliza con normalizeEntry (js/tv-progress.js) y puede ser null (episodio sin valorar). Nunca es 0.\n- El modal de serie (openTvModal en js/ui.js) muestra el picker de valoración de la serie (ratingPickerHtml(item.rating)) en su campo \"Valoración\".\n- persistWatched muta item.watched en memoria, por lo que la media puede actualizarse en vivo tras valorar/desvalorar episodios.",
-  "status": "implemented",
+  "status": "validated",
   "acceptance criteria": [
     "En la ficha de una serie (modal de detalle), junto a la valoración del usuario de la serie se muestra la valoración media de los episodios valorados, con un decimal (p. ej. 4.2).",
     "Los episodios sin valorar (rating null) no cuentan en la media: la media se calcula solo sobre episodios con valoración 1-5.",
