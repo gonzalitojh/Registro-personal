@@ -8,7 +8,7 @@ Aceptado
 
 ## Contexto
 
-La issue #137 (type: feature) pide que al desplazar **hacia abajo** en
+La issue #137 (type: style) pide que al desplazar **hacia abajo** en
 las listas de ocio (series, películas o libros — y cualquier pestaña
 futura) se oculten las **pestañas** y la **barra de búsqueda superior**;
 en cuanto se desplace hacia arriba, ambos deben reaparecer, con una
@@ -45,8 +45,10 @@ cuando la lista es muy extensa.
 
 La implementación está validada (QA PASS, 9/9 criterios de aceptación) y
 escaneada (seguridad PASS, 0 hallazgos); el manual de usuario se
-actualizó en la misma tarea (regla 3 de AGENTS.md). Este ADR documenta
-la decisión a posteriori, como los recientes (ADR-059).
+actualizó en la misma tarea (regla 3 de AGENTS.md). Re-validada en la
+revisión de la PR #158 (QA 9/9, seguridad PASS; se endureció la
+envuelta de los listeners de clic/foco). Este ADR documenta la decisión
+a posteriori, como los recientes (ADR-059).
 
 Related issue: #137 — https://github.com/gonzalitojh/Registro-personal/issues/137
 
@@ -137,7 +139,9 @@ el flujo del documento, no hay reflows del contenido.
   .global-search__results, #app, body` (los cambios del propio `<body>`
   son inofensivos: `setNavHidden` es no-op si el estado no cambia);
   `focusin` en cabecera/pestañas; clics en `#btn-notifications` y
-  `#btn-open-profile`; `focus` en `#global-search-input`; `resize` del
+  `#btn-open-profile`; `focus` en `#global-search-input` (los tres
+  envueltos en `() => evaluate()`: pasar el Event como delta coaccionaría
+  a NaN y conservaría el estado por accidente); `resize` del
   viewport; y `evaluate()` inicial al cargar.
 
 ### 3. Integración, manual y PWA
@@ -244,11 +248,13 @@ el flujo del documento, no hay reflows del contenido.
   navegación «siempre visible»; este ADR describe su evolución, no lo
   modifica. Los ADRs de dropdowns (ADR-027, ADR-035, ADR-038) tampoco se
   tocan.
-- **Rama `feat/issue-137-auto-hide-nav`** con 7 commits (base `dev`):
+- **Rama `feat/issue-137-auto-hide-nav`** (base `dev`): commits
   `3541d29` (index.html: botón + bump), `ffccffd` (styles.css: bloque de
   ocultación + botón), `a77d68b` (js/auto-hide-nav.js), `0df13f7`
   (app.js: integración), `f8de71d` (manual §3.2), `ac6d594` (fix delta
-  en listener y conservación de estado), `9fe9dac` (bump PWA + precache).
+  en listener y conservación de estado), `9fe9dac` (bump PWA +
+  precache), y `9f7900c` (ADR-060) + revisión de PR #158 (envuelta de
+  listeners `() => evaluate()` para no pasar el Event como delta).
 
 ## Archivos creados/modificados
 
