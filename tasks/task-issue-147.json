@@ -1,0 +1,36 @@
+{
+  "title": "Recarga de ítems: reintento automático al fallar la carga inicial",
+  "description": "En ocasiones, al entrar en la web no cargan los datos (películas, series, libros, notificaciones) y hay que cerrar y volver a abrir la aplicación. Implementar un reintento para evitar que esto pase.\n\nContexto técnico: la carga inicial de datos se hace en js/app.js dentro de watchAuthState() mediante suscripciones onSnapshot (subscribeToItems y subscribeToNotifications en js/db.js). Cuando una suscripción falla (error transitorio de red o de conexión con Firestore), el callback onError solo muestra un toast (\"No se pudieron cargar tus películas/series/libros\") y nunca se vuelve a intentar: la biblioteca queda vacía hasta que el usuario cierra y reabre la web (lo que relanza watchAuthState). También hay lecturas puntuales (getDoc/getDocs) que pueden fallar de forma transitoria.\n\nSolución propuesta: envolver las suscripciones de la carga inicial con un mecanismo de reintento con espera progresiva (backoff exponencial, p. ej. 1s, 2s, 4s) y un máximo de intentos (p. ej. 3 reintentos, 4 intentos en total). Al fallar, cancelar la suscripción rota y volver a suscribirse; al agotar los reintentos, mostrar el toast de error final. Avisar al usuario la primera vez que se está reintentando (toast informativo, no repetido en cada intento). La suscripción renovada debe seguir funcionando en vivo (el onError y onChange originales se conservan). Al cerrar sesión (stopAllSubscriptions) no deben quedar reintentos pendientes (guard de cancelación).",
+  "status": "review",
+  "acceptance criteria": [
+    "Si una suscripción de datos inicial (películas, series, libros o notificaciones) falla por un error transitorio al entrar en la web, se reintenta automáticamente (backoff progresivo, máximo de intentos) sin que el usuario tenga que cerrar y volver a abrir.",
+    "Cuando el reintento tiene éxito, los datos se cargan y renderizan con normalidad (bibliotecas, badge de notificaciones) y se mantiene la suscripción en vivo (cambios posteriores en Firestore siguen reflejándose).",
+    "Si se agotan los reintentos, se muestra el aviso final de error al usuario (no se queda en silencio ni en bucle infinito).",
+    "Durante el reintento no se spamean toasts: a lo sumo un aviso informativo de que se está reintentando y el error final si se agotan los intentos.",
+    "Al cerrar sesión o cambiar de usuario (stopAllSubscriptions) no quedan reintentos pendientes ni suscripciones fantasma.",
+    "El flag de \"ready\" de cada grupo solo se activa cuando la suscripción entrega datos con éxito (la comprobación diaria no se dispara con datos incompletos)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada siguiendo el plan.",
+    "Validación QA aprobada (qa-reviewer): acceptance criteria y definition of done cumplidos, sin regresiones en la carga inicial ni en las suscripciones en vivo.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "Manual de usuario actualizado si el comportamiento visible cambia (regla 3 de AGENTS.md).",
+    "ADR documentado con 'Related issue: #147'.",
+    "PR creada contra dev sin keyword de cierre, con actualización del task file (status review + bloque pr) y label de la issue a status: needs-review.",
+    "Issue #147 label updated to its final state."
+  ],
+  "issue": {
+    "number": 147,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/147",
+    "title": "Recarga de ítems"
+  },
+  "pr": {
+    "number": 153,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/153",
+    "title": "[fix] Reintento automático en la carga inicial de datos (issue #147)",
+    "branch": "fix/issue-147-retry-carga-inicial",
+    "commit": "34c27f1",
+    "closes": "#147"
+  }
+}
