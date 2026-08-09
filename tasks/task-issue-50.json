@@ -1,0 +1,27 @@
+{
+  "title": "Scraper para libros (estudio de viabilidad)",
+  "description": "Realizar un estudio para comprobar si sería factible sustituir el uso de la API de Google Books u OpenLibrary por un scraper de la web GoodReads. El hipotético scraper debe cumplir todos los términos y condiciones de GoodReads, respetar las reglas indicadas en su robots.txt y no sobrecargar los servidores objetivo.\n\nEstado actual del código: js/api-books.js usa Google Books API como fuente principal de búsqueda de libros (con agrupación inteligente por título+autor vía groupBooksByWork) y Open Library como fuente de respaldo (searchOpenLibrary, fetchJson), más la sinopsis bajo demanda con getOpenLibraryDescription. Es una aplicación web estática de cliente (Firebase Hosting), sin backend propio, por lo que cualquier sustitución de fuentes debe ser viable desde el navegador (CORS) o requeriría infraestructura nueva.",
+  "status": "planned",
+  "acceptance criteria": [
+    "Existe un documento de estudio de viabilidad en docs/ que analiza sustituir Google Books API y Open Library por un scraper de GoodReads.",
+    "El estudio analiza expresamente el cumplimiento de los términos y condiciones de GoodReads (incluyendo su política sobre scraping/uso de datos).",
+    "El estudio analiza expresamente el robots.txt de GoodReads y qué rutas están permitidas/prohibidas para rastreo.",
+    "El estudio analiza la carga que generaría sobre los servidores de GoodReads y cómo evitar sobrecargarlos (rate limiting, caché, volumen de peticiones).",
+    "El estudio evalúa la viabilidad técnica real en esta aplicación concreta (app estática de cliente sin backend: CORS, autenticación Cloudflare/anti-bot, requisitos de infraestructura).",
+    "El estudio concluye con una recomendación clara (factible / no factible, condiciones, alternativas) y justificada.",
+    "El estudio es autocontenido y verificable (enlaza o cita las fuentes consultadas: robots.txt, ToS, documentación)."
+  ],
+  "definition of done": [
+    "Planificación completada (plan del estudio aprobado).",
+    "Estudio implementado en docs/ y validado por QA contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos de severidad HIGH.",
+    "ADR documentando la decisión/conclusión del estudio (con 'Related issue: #50').",
+    "PR contra dev SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #50 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 50,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/50",
+    "title": "Scraper para libros"
+  }
+}
