@@ -81,19 +81,19 @@ Nada más entrar verás:
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**.
-  - La cabecera **permanece siempre visible**: al hacer scroll por la
-    lista no se mueve, en ningún dispositivo.
+  - La cabecera **se oculta al bajar por la lista y vuelve al subir**:
+    siempre está ahí cuando la necesitas
+    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **Las pestañas**: **Series**, **Películas** y **Libros**. En el
   **móvil** están en una barra fija en la parte inferior de la
   pantalla; en el **ordenador y la tablet**, en una barra fija justo
-  bajo la barra de búsqueda superior. En ambos casos permanecen
-  siempre visibles al hacer scroll. Cada pestaña lleva un icono y
+  bajo la barra de búsqueda superior. Cada pestaña lleva un icono y
   tiene su propio color: **Series en verde**, **Películas en rojo** y
   **Libros en ocre**. La pestaña activa se marca con una franja de su
   color y un fondo claro. Pulsa una pestaña para ver tu lista de ese
-  tipo, con sus filtros y su orden. Al hacer scroll solo se mueve
-  el contenido de la lista; las pestañas permanecen siempre en su
-  sitio.
+  tipo, con sus filtros y su orden. Como la cabecera, la barra de
+  pestañas se oculta al bajar por la lista y reaparece al subir
+  ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
@@ -133,6 +133,24 @@ hasta ahora.
 
 Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 [sección 13.0](#130-compartir-direcciones-de-tu-perfil).
+
+### 3.2 La cabecera y las pestañas al hacer scroll
+
+Al bajar por una lista (series, películas o libros), la barra de
+búsqueda de arriba y las pestañas se ocultan deslizándose hacia el
+borde de la pantalla, como si salieran de ella, para que la lista
+ocupe todo el espacio. En cuanto desplazas hacia arriba, vuelven a
+aparecer deslizándose desde su borde.
+
+Si sigues bajando y los filtros de la lista (estado, orden y vista)
+quedan también fuera de la pantalla, verás un pequeño botón redondeado
+**«Volver arriba»** flotando en el centro, arriba, sobre la lista:
+púlsalo para volver al principio de la lista de un salto.
+
+La navegación nunca se oculta mientras la estás usando: si estás
+escribiendo una búsqueda, o tienes abierto un menú (notificaciones,
+perfil, barra lateral) o una ficha, la cabecera y las pestañas
+permanecen en su sitio.
 
 ## 4. Series
 

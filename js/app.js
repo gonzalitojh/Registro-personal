@@ -40,6 +40,7 @@ import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar } from "./sidebar.js";
+import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
 
@@ -313,6 +314,9 @@ async function init() {
     onGoOcio: () => router.navigate(getLastOcioKey()),
   });
   setupGlobalSearch(ctx);
+  // Ocultar cabecera y pestañas al desplazar en las listas de ocio,
+  // con botón flotante "Volver arriba" (issue #137).
+  initAutoHideNav();
 
   // Suscripciones en tiempo real
   watchAuthState(async (user) => {
