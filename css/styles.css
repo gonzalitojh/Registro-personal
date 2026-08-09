@@ -490,6 +490,10 @@ button {
   right: 0;
   z-index: 46;
   background: var(--ink);
+  /* Deslizamiento suave al ocultarse/mostrarse con el scroll
+     (issue #137): la transición de visibility va retardada para que
+     el elemento siga siendo "clickeable" mientras se desliza. */
+  transition: transform 0.25s ease, visibility 0s 0s;
 }
 [data-theme="light"] .app-header {
   background: var(--paper-dim);
@@ -756,6 +760,9 @@ button {
   z-index: 45;
   background: var(--ink);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Deslizamiento suave al ocultarse/mostrarse con el scroll
+     (issue #137), igual que la cabecera. */
+  transition: transform 0.25s ease, visibility 0s 0s;
 }
 [data-theme="light"] .tabs--bar {
   background: var(--paper-dim);
@@ -772,6 +779,86 @@ button {
     bottom: auto;
     padding-bottom: 0;
   }
+}
+
+/* =========================================================
+   Ocultar navegación al desplazar (issue #137)
+   =========================================================
+   Al hacer scroll hacia abajo en las listas, la cabecera y la
+   barra de pestañas se ocultan deslizándose "hacia su borde" y
+   reaparecen al subir (o al interactuar con la navegación).
+   La animación es un simple translateY: la cabecera sale por el
+   borde superior y las pestañas por su borde correspondiente
+   (abajo en móvil, bajo la cabecera en ≥768px). Con
+   prefers-reduced-motion la transición se anula globalmente y el
+   cambio es instantáneo, sin desplazamiento visible. */
+
+/* Cabecera: sube por completo (translateY(-100%) incluye su altura
+   completa aunque varíe). El visibility se retrasa para que el
+   deslizamiento sea visible y no se corte a mitad. */
+body.is-nav-hidden .app-header {
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.25s ease, visibility 0s 0.25s;
+}
+body.is-nav-hidden .tabs--bar {
+  visibility: hidden;
+  transition: transform 0.25s ease, visibility 0s 0.25s;
+}
+/* Móvil: las pestañas cuelgan del borde inferior, bajan por él. */
+@media (max-width: 767.98px) {
+  body.is-nav-hidden .tabs--bar {
+    transform: translateY(100%);
+  }
+}
+/* ≥768px: las pestañas viven bajo la cabecera, suben con ella
+   (header + su propia altura = borde superior del viewport). */
+@media (min-width: 768px) {
+  body.is-nav-hidden .tabs--bar {
+    transform: translateY(calc(-100% - var(--header-h)));
+  }
+}
+
+/* Botón flotante "Volver arriba" (issue #137): centrado arriba,
+   flotando sobre la lista (position: fixed, no ocupa una línea).
+   Solo se muestra cuando los filtros de la lista han quedado
+   totalmente fuera de vista y la navegación está oculta; lo
+   controla js/auto-hide-nav.js con body.is-back-to-top-visible.
+   z-index 44: por debajo de la cabecera (46) y las pestañas (45)
+   para no taparlas cuando reaparecen, pero sobre el contenido. */
+.back-to-top {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 44;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-pop);
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
+body.is-back-to-top-visible .back-to-top {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.2s ease 0.15s, visibility 0s 0s 0.15s;
+}
+.back-to-top:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 .tabs {
