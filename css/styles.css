@@ -1847,6 +1847,23 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
 }
 
+/* Botón «Marcar visto» de los resultados del catálogo (issue #115):
+   mismo esqueleto compacto que Añadir pero en estilo outline para
+   diferenciar la acción. */
+.global-search__item-seen {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--teal-reel);
+  color: var(--teal-reel);
+  font-weight: 600;
+}
+.global-search__item-seen:hover { background: var(--teal-reel); color: var(--paper); }
+.global-search__item-seen:disabled { opacity: 0.55; cursor: default; background: transparent; color: var(--teal-reel); }
+
 /* Fila «Añadir manualmente» al final de cada sección del catálogo */
 .global-search__manual-add {
   display: block;

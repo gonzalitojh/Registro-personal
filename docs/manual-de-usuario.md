@@ -355,6 +355,15 @@ resultado:
 
 - Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
   «Añadido»).
+- Pulsa **«Marcar visto»** para añadirlo **ya marcado como visto**
+  (las películas quedan vistas con la fecha de hoy, las series con
+  **todos los episodios de todas sus temporadas** y los libros como
+  leídos) y **valorarlo al momento**: se abre la ventana de estrellas
+  para puntuarlo (en las series, una sola valoración para la serie en
+  su conjunto). Si en esa ventana pulsas **«Deshacer»**, el título se
+  elimina de tu registro. Si la película aún no está estrenada, o la
+  serie tiene temporadas sin estrenar, la web te lo pregunta antes de
+  continuar.
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
   con sus detalles antes de añadirlo.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y

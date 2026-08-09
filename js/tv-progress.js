@@ -95,6 +95,15 @@ export function setSeasonWatched(watched, seasonNumber, episodeCount, allWatched
   return { ...(watched || {}), [key]: seasonMap };
 }
 
+// Marca como vistas TODAS las temporadas de una serie (issue #115):
+// aplica setSeasonWatched(allWatched=true) sobre cada temporada.
+export function markAllSeasonsWatched(watched, seasonsMeta, date) {
+  return seasonsMeta.reduce(
+    (acc, s) => setSeasonWatched(acc, s.seasonNumber, s.episodeCount, true, date),
+    watched || {}
+  );
+}
+
 // Archiva el visionado actual (si lo hay) en el historial y deja la
 // serie lista para volver a verse desde el principio, sin perder el
 // nº de veces vista ni las fechas anteriores.
