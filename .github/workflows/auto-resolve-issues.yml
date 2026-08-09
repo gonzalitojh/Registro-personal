@@ -351,7 +351,9 @@ jobs:
             ':(exclude)candidate.json' \
             ':(exclude)sdd_prompt.md' \
             ':(exclude)opencode-session.log' \
-            ':(exclude)session-failure.txt' 2>/dev/null || true
+            ':(exclude)session-failure.txt' \
+            ':(exclude)__pycache__' \
+            ':(exclude)*.pyc' 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar: no se crea la rama $BRANCH_NAME."
             exit 0
