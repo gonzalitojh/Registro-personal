@@ -9,10 +9,13 @@
 // funciones de alta, preview y llamadas a la API.
 // =============================================================
 
-import { addItem } from "./db.js";
+import { addItem, updateItem, deleteItem } from "./db.js";
 import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
-import { isUnreleasedDate } from "./release.js";
+import { isUnreleasedDate, unreleasedConfirmMessage } from "./release.js";
+import { todayISO } from "./dates.js";
+import { computeProgress, markAllSeasonsWatched } from "./tv-progress.js";
+import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import * as ui from "./ui.js";
 
 // Búsqueda en el catálogo de un grupo (stateless: solo devuelve
@@ -171,6 +174,255 @@ export async function handleAdd(item, btn, ctx) {
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "Añadir";
+    ui.showToast("No se pudo añadir: " + err.message);
+    return false;
+  }
+}
+
+/* ---------- Alta directa como visto desde el catálogo (issue #115) ---------- */
+
+// Restaura el botón «Marcar visto» a su estado inicial (tras abortar,
+// fallar o deshacer el flujo de alta como visto).
+function restoreSeenBtn(btn) {
+  if (!btn) return;
+  btn.disabled = false;
+  btn.textContent = "Marcar visto";
+}
+
+// Da de alta el ítem como visto y abre la ventana de valoración al
+// momento (patrón maybeQuickItemRating de quick-actions.js). Nunca
+// lanza: si la ventana no puede abrirse, el alta ya persistida queda
+// intacta. Devuelve true solo si el flujo terminó sin deshacer; false
+// si el usuario deshizo el marcado (el toast ya informó de ello).
+async function openSeenRating(uid, type, ref, opts) {
+  try {
+    const result = await openRatingModal({
+      type,
+      title: opts.title,
+      coverUrl: opts.coverUrl,
+      communityRating: opts.communityRating ?? null,
+      communityLabel: "TMDB",
+      initialRating: null,
+      onSave: async (rating) => {
+        await updateItem(uid, type, ref.id, { rating });
+      },
+      onUndo: async () => {
+        await deleteItem(uid, type, ref.id);
+      },
+    });
+    const undone = result === RATING_MODAL_UNDONE;
+    if (undone) {
+      ui.showToast("Marcado deshecho.");
+      // false = el botón debe restaurarse: tras el undo, el snapshot de
+      // Firestore re-renderiza la fila con ambos botones activos y en el
+      // interín no debe quedar el botón en «Visto» (issue #115).
+      return false;
+    }
+    ui.showToast(opts.doneToast);
+    return true;
+  } catch (err) {
+    console.error("No se pudo abrir la valoración:", err);
+    return false;
+  }
+}
+
+// Alta de libro ya leído (issue #115): mismo esqueleto que doAddBook,
+// pero con status "completado" y el readLog con inicio y fin hoy.
+async function doAddBookSeen(item, btn, ctx, choices) {
+  btn.disabled = true;
+  btn.textContent = "Marcando…";
+  try {
+    const draft = {
+      externalId: item.externalId,
+      type: "book",
+      title: item.title,
+      year: item.year || "",
+      coverUrl: choices.coverUrl || null,
+      author: item.author || null,
+      pages: item.pages || null,
+      status: "completado",
+      rating: null,
+      notes: "",
+      description: choices.description || "",
+      progress: null,
+      readLog: [{ startedAt: todayISO(), finishedAt: todayISO() }],
+    };
+
+    // Para libros de Open Library (ID "/works/..."), buscar sinopsis
+    // si no se proporcionó ninguna (mismo backfill que doAddBook).
+    if (!draft.description && item.externalId && item.externalId.startsWith("/works/")) {
+      try {
+        draft.description = await getOpenLibraryDescription(item.externalId);
+      } catch (err) {
+        // no bloqueamos el alta
+      }
+    }
+
+    const ref = await addItem(ctx.getCurrentUser().uid, "book", draft);
+    ui.closeModal();
+    return await openSeenRating(ctx.getCurrentUser().uid, "book", ref, {
+      title: item.title,
+      coverUrl: choices.coverUrl,
+      communityRating: null,
+      doneToast: `«${item.title}» añadido y marcado como leído.`,
+    });
+  } catch (err) {
+    restoreSeenBtn(btn);
+    ui.showToast("No se pudo añadir: " + err.message);
+    return false;
+  }
+}
+
+// Marca un resultado del catálogo como visto directamente y abre la
+// valoración al momento, evitando el paso intermedio añadir→marcar
+// (issue #115). En series marca TODOS los episodios de TODAS las
+// temporadas y valora la serie en su conjunto.
+// Devuelve Promise<boolean>: true = añadido y flujo completado,
+// false = abortado, error o deshecho.
+export async function handleAddSeen(item, btn, ctx) {
+  if (!ctx.getCurrentUser()) return false;
+
+  // Para libros con múltiples portadas o sinopsis, abrir modal de
+  // selección antes de añadir (mismo predicado que handleAdd). No se
+  // espera: el resultado llega vía doAddBookSeen.
+  if (
+    item.type === "book" &&
+    ((item.allCovers && item.allCovers.length > 1) ||
+      (item.allDescriptions && item.allDescriptions.length > 1))
+  ) {
+    ui.openBookConfirmModal(item, {
+      onConfirm: (choices) => doAddBookSeen(item, btn, ctx, choices),
+      onCancel: () => ui.closeModal(),
+    });
+    return;
+  }
+
+  // Ruta rápida: sin opciones que elegir (o fuente Open Library con una portada).
+  if (item.type === "book") {
+    return await doAddBookSeen(item, btn, ctx, {
+      coverUrl: item.coverUrl,
+      description: item.description || "",
+    });
+  }
+
+  // --- Películas / series ---
+  btn.disabled = true;
+  btn.textContent = "Marcando…";
+  try {
+    if (item.type === "movie") {
+      let details = {};
+      try {
+        details = await getMovieDetails(item.externalId);
+      } catch (err) {
+        // no bloqueamos el alta si este paso extra falla
+      }
+
+      // Confirmación de no estrenado: los resultados de búsqueda no
+      // traen releaseDate, así que se usa el de los detalles (con
+      // fallback null, que el mensaje trata como "sin fecha oficial").
+      const msg = unreleasedConfirmMessage({
+        type: "movie",
+        manual: false,
+        releaseDate: details.releaseDate || null,
+        title: item.title,
+      });
+      if (msg && !window.confirm(msg)) {
+        restoreSeenBtn(btn);
+        return false;
+      }
+
+      const draft = {
+        externalId: item.externalId,
+        type: "movie",
+        title: item.title,
+        year: item.year || "",
+        coverUrl: item.coverUrl || null,
+        author: item.author || null,
+        pages: item.pages || null,
+        status: "completado",
+        rating: null,
+        notes: "",
+        watchLog: [todayISO()],
+        awaitingRelease: false,
+      };
+      Object.assign(draft, details);
+
+      const ref = await addItem(ctx.getCurrentUser().uid, "movie", draft);
+      return await openSeenRating(ctx.getCurrentUser().uid, "movie", ref, {
+        title: item.title,
+        coverUrl: item.coverUrl,
+        communityRating: details.communityRating ?? null,
+        doneToast: `«${item.title}» añadida y marcada como vista.`,
+      });
+    }
+
+    // Serie: GATE obligatorio — sin temporadas no hay alta a medias.
+    let seasonsMeta = [];
+    try {
+      seasonsMeta = await getTvSeasonsMeta(item.externalId);
+    } catch (err) {
+      seasonsMeta = [];
+    }
+    if (!seasonsMeta.length) {
+      ui.showToast(`No se pudo marcar «${item.title}»: no se pudieron obtener sus temporadas.`);
+      restoreSeenBtn(btn);
+      return false;
+    }
+
+    // Confirmación si hay temporadas aún no estrenadas.
+    const unreleasedSeasons = seasonsMeta.filter((s) => isUnreleasedDate(s.airDate));
+    if (unreleasedSeasons.length) {
+      const msg = `«${item.title}» · ${unreleasedSeasons.length} de ${seasonsMeta.length} temporadas aún no están estrenadas. ¿Marcarlas todas igualmente como vistas?`;
+      if (!window.confirm(msg)) {
+        restoreSeenBtn(btn);
+        return false;
+      }
+    }
+
+    let tvDetails = {};
+    try {
+      tvDetails = await getTvExtraDetails(item.externalId);
+    } catch (err) {
+      // no bloqueamos el alta si este paso extra falla
+    }
+
+    const draft = {
+      externalId: item.externalId,
+      type: "tv",
+      title: item.title,
+      year: item.year || "",
+      coverUrl: item.coverUrl || null,
+      author: item.author || null,
+      pages: item.pages || null,
+      status: "completado",
+      rating: null,
+      notes: "",
+    };
+    Object.assign(draft, tvDetails);
+    if (tvDetails.seasonAirDates && Object.keys(tvDetails.seasonAirDates).length) {
+      draft.seasonAirDates = tvDetails.seasonAirDates;
+    }
+    // Todos los episodios de todas las temporadas, marcados hoy.
+    const watched = markAllSeasonsWatched({}, seasonsMeta, todayISO());
+    const progress = computeProgress(seasonsMeta, watched);
+    draft.watched = watched;
+    draft.nextEpisode = null;
+    draft.firstWatchedAt = progress.firstWatchedAt;
+    draft.lastWatchedAt = progress.lastWatchedAt;
+    draft.timesCompleted = 0;
+    draft.history = [];
+    draft.awaitingRelease = false;
+
+    const ref = await addItem(ctx.getCurrentUser().uid, "tv", draft);
+    return await openSeenRating(ctx.getCurrentUser().uid, "tv", ref, {
+      title: item.title,
+      coverUrl: item.coverUrl,
+      communityRating: tvDetails.communityRating ?? null,
+      // Sin episodeLabel: la valoración es de la serie en su conjunto.
+      doneToast: `«${item.title}» añadida y marcada como vista.`,
+    });
+  } catch (err) {
+    restoreSeenBtn(btn);
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
   }
