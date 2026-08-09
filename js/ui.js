@@ -519,7 +519,8 @@ function episodeAverageHtml(watched, idPrefix) {
   if (!avg) {
     return `<span class="episode-average" id="${idPrefix}-episode-average" hidden></span>`;
   }
-  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${avg.count} episodios valorados">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
+  const ratedLabel = avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
+  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${ratedLabel}">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
 }
 
 function notesFieldHtml(notes) {
@@ -1425,8 +1426,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     if (!el) return;
     el.hidden = !avg;
     if (avg) {
-      el.title = `Media de ${avg.count} episodios valorados`;
+      const ratedLabel =
+        avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
+      el.title = `Media de ${ratedLabel}`;
       el.innerHTML = `Media episodios: <strong>${avg.average.toFixed(1)}</strong>`;
+    } else {
+      // Sin episodios valorados: ocultar y vaciar (evita texto obsoleto
+      // si el CSS por cualquier motivo dejara de respetar el [hidden]).
+      el.title = "";
+      el.textContent = "";
     }
   }
 

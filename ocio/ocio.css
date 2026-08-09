@@ -379,6 +379,11 @@ input, textarea, select { font-size: 16px; }
   font-size: 0.75rem;
   color: var(--ink-soft);
 }
+/* Sin episodios valorados la media no se muestra: display:block del
+   elemento vencería al [hidden] del navegador, así que se fuerza. */
+.episode-average[hidden] {
+  display: none;
+}
 .episode-average strong { color: var(--ink); }
 
 .modal-actions {
