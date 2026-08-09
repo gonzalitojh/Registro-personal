@@ -577,7 +577,7 @@ segundos. Todo ello para cubrir campos ya cubiertos (5.5).
   escritura (200 ms), no relanzar queries duplicadas ni en vuelo (guardas de
   ADR-056), cap de 5 resultados en el dropdown, sin paginación automática,
   sin prefetch de fichas — el enriquecimiento está acotado y no bloqueante
-  (`enrichSearchItem`, ADR-045); y en librería cívica: reintentos con backoff
+  (`enrichSearchItem`, ADR-045);   y como cortesía técnica hacia el proveedor: reintentos con backoff
   ante errores 5xx (`fetchWithRetry` en api-books.js) en vez de martillear.
 - Con GoodReads, además, la propia investigadora ha de respetar el `Crawl-
   delay` que el sitio publique (hoy solo bingbot: 5 s) y, sobre todo, las
@@ -682,3 +682,200 @@ reseñas), o un widget/enlace de afiliado oficial que no extraiga datos. Ese
 no es el alcance de la issue #50, que pide sustituir la búsqueda de libros,
 no añadir valoraciones; si se planteara, sería una issue nueva con su propio
 análisis legal/contractual.
+
+---
+
+## 8. Recomendación final
+
+**Veredicto: NO factible** sustituir Google Books / Open Library por un
+scraper de GoodReads en esta aplicación (ni como fuente principal ni como
+respaldo), bajo la restricción de la propia issue de «cumplir todos los
+términos y condiciones de GoodReads y respetar … robots.txt». El estudio no
+partía de una conclusión preconcebida; la evidencia recolectada el
+2026-08-09 (secciones 4, 5, 6 y 7) converge en ella desde cuatro frentes
+independientes.
+
+### Argumentos principales
+
+1. **Bloqueo legal/contractual doble**. Los ToS de GoodReads prohíben
+   textualmente «data mining, robots, or similar data gathering and
+   extraction tools» y la recolección de «book listings, descriptions,
+   reviews» (sección 1; citas en 4.1); y `robots.txt` prohíbe `/search`
+   (`Disallow: /search`), que es el caso de uso que la issue quiere
+   sustituir (4.3). El precedente hiQ v. LinkedIn (9.º Cir., 2022) muestra
+   que aunque la CFAA no cubre el scraping de datos públicos, la vía del
+   **incumplimiento contractual** por violar las condiciones del sitio es
+   real y ya ha terminado en condenas/acuerdos con indemnización (4.4).
+   Un scraper conforme a la issue sería, por definición, una violación de
+   ambas capas: no hay forma de cumplir la restricción y scrapear a la vez.
+
+2. **Bloqueo técnico en la arquitectura actual (cliente 100 % estático)**.
+   GoodReads no puede consultarse desde el navegador: sin cabeceras CORS en
+   las respuestas reales (5.1), con la búsqueda detrás de un challenge de
+   AWS WAF que devuelve 202 vacío a peticiones que no ejecutan su JS (5.2,
+   replicado con curl y confirmado por terceros en 2026), y con contenido
+   renderizado por React que exige navegador headless (5.3). Montar un
+   servidor proxy (Firebase Functions u otro) con navegador headless y IP
+   con reputación/proxies residenciales rompe el diseño sin backend de la
+   app, introduce coste recurrente y mantiene el riesgo de bloqueo (5.4).
+
+3. **Carga desproporcionada y beneficio nulo**. El modelo de carga (6.2)
+   estima que añadir los mismos libros costaría ~7-11 peticiones frente a 1
+   hoy, con cortesías de 3-8 s entre peticiones y riesgo de 403/bloqueo
+   tras pocas decenas de peticiones; y la comparativa de metadatos (5.5-5.6)
+   muestra que GoodReads no aporta **ningún** campo de los que la app usa
+   (título, autor, año, páginas, portadas múltiples, sinopsis, idioma): todo
+   está cubierto por Google Books (+ Open Library de respaldo). Lo único
+   exclusivo de GoodReads (valoraciones, reseñas, géneros) no lo usa la app.
+
+### Alternativa recomendada
+
+- **Mantener el statu quo**: Google Books como fuente principal con
+  agrupación por obra y Open Library como respaldo (+ sinopsis bajo
+  demanda), tal como documentan ADR-002/045/056. Es gratuito, estable,
+  sin infraestructura y sin fricción legal (alternativa (b) de la sección
+  7).
+- **Seguimiento**: sin coste, vigilar dos frentes documentados en este
+  estudio: (i) el ánimo de las APIs de Open Library de no ser usadas como
+  «data backend» — la app ya usa un patrón de respaldo puntual acorde;
+  (ii) si en el futuro se quisieran valoraciones/reseñas comunitarias
+  (único valor exclusivo de GoodReads), plantearlo como issue nueva con
+  fuentes licenciadas o integración oficial (7.e), nunca con scraping.
+- Si algún día se rompiera Google Books de forma permanente, la migración
+  natural es Open Library como única fuente (7.c), con la degradación de UX
+  conocida y documentada; no un scraper.
+
+---
+
+## 9. Referencias y fuentes
+
+Todas las URLs fueron consultadas el **2026-08-09**. Se indica qué se
+verificó en cada una.
+
+### Fuentes primarias (en vivo, 2026-08-09)
+
+| URL | Qué se verificó |
+|---|---|
+| `https://www.goodreads.com/robots.txt` | Lectura íntegra: reglas para `User-agent: *`, `bingbot` (Crawl-delay: 5), GPTBot/CCBot bloqueados, `Allow: /work/editions`, `Allow: /work/quotes`, `Disallow: /search`, `/api`, `/work`, `/book/reviews/`, `/review/show`, `/review/list`, etc.; 28 sitemaps (ver anexo) |
+| `https://www.goodreads.com/about/terms` | ToS «last revised on April 28, 2021»; citas de las secciones 1 (licencia limitada; prohibición de data mining/robots/extracción; terminación sin aviso) y 4 (derechos de propiedad; uso no permitido estrictamente prohibido) |
+| `https://www.goodreads.com/about/privacy` | Política de privacidad «Last updated: June 27, 2023»; GoodReads subsidiaria de Amazon; remisión al Amazon Privacy Notice; contenido de usuario público vía el servicio |
+| `https://www.goodreads.com/` + `/search?q=…` (curl) | Evidencias CORS y anti-bot del 2026-08-09 (anexo): 200 con HTML real en portada con UA de navegador; 202/0 bytes sin UA y en `/search`; sin `Access-Control-Allow-Origin`; `via: CloudFront` |
+
+### Fuentes documentales (websearch, consultadas el 2026-08-09)
+
+| URL | Qué se verificó |
+|---|---|
+| `https://help.goodreads.com/s/article/Why-is-Goodreads-limiting-API-usage` | Comunicado oficial de soporte: desde dic-2020 no se emiten nuevas claves de la API pública y se planea retirar la versión actual |
+| `https://www.goodreads.com/topic/show/21788520-api-deprecation` | Foro oficial (dic-2020): banner de deprecación; claves desactivadas por 30 días de inactividad; no se anunciaba retirada de endpoints activos |
+| `https://www.goodreads.com/topic/show/23306370-api-down` | Foro oficial (19/12/2025): usuario con clave histórica recibe **403**; «Has it finally gone away?» |
+| `https://brandur.org/atoms/gq7cdyc` | Testimonio: hacia mediados de 2022 la API dejó de devolver año de publicación y páginas; reseñas aún disponibles; el autor abandonó el sync |
+| `https://law.justia.com/cases/federal/appellate-courts/ca9/17-16783/17-16783-2022-04-18.html` | 9.º Circuito (18/04/2022): CFAA «gates-up-or-down» (Van Buren); el scraping de datos públicos no es acceso «sin autorización» |
+| `https://www.morganlewis.com/blogs/sourcingatmorganlewis/2022/12/linkedin-v-hiq-landmark-data-scraping-suit-provides-guidance-to-data-scrapers-and-web-operators` | Desenlace hiQ v. LinkedIn (dic-2022): sentencia de incumplimiento contractual contra hiQ, acuerdo confidencial con 500 000 $ e injunción permanente; allanamiento y apropiación indebida |
+| `https://calawyers.org/privacy-law/ninth-circuit-holds-data-scraping-is-legal-in-hiq-v-linkedin/` | Contexto: tras hiQ/Van Buren la CFAA no protege a los operadores; quedan vías contractuales y de agravios |
+| `https://github.com/w3slley/bookcover-api/issues/47` | Incidente (mayo 2026): `/search` devuelve `HTTP 202` vacío con cabecera `x-amzn-waf-action: challenge` vía CloudFront; el autor lo atribuye al WAF recién introducido |
+| `https://browse.sh/skills/goodreads.com/find-book-nycdz1.md` | Guía técnica (verificación 2026-05-18): `/search?q=` gated por AWS WAF (202 con `window.gokuProps` + `challenge.js`); `/book/show/`, `/author/show/`, `/work/editions/` y `/book/auto_complete` sin WAF; API retirada dic-2020 (endpoints 404); sin rate-limit con ≤5 req/s, challenges si se supera |
+| `https://thunderbit.com/blog/scrape-goodreads-with-python` | Guía (16/04/2026): frontend React, JSON-LD estable, clases que cambian, `robots.txt` con `/search` bloqueado y `/book/show/` no bloqueado, delays 3-8 s, 403 tras peticiones rápidas, cookie `_session_id2` para paginación |
+| `https://automatio.ai/how-to-scrape/goodreads` | Guía (13/02/2026): Cloudflare/DataDome/reCAPTCHA en flujos agresivos, selectores React inestables, proxies residenciales recomendados |
+| `https://crawlbase.com/blog/scrape-goodreads-ratings-and-comments/` | Blog (01/10/2024): render JS necesario; «Goodreads is client-side rendered»; ToS/robots.txt como límites; API oficial efectivamente retirada |
+| `https://dev.to/agenthustler/how-to-scrape-goodreads-in-2026-books-reviews-author-profiles-and-ratings-15e` | Guía (26/03/2026): JSON-LD como fuente estable; rate limiting 1-3 s; proxies residenciales; respetar robots.txt |
+| `https://openlibrary.org/developers/api` | Documentación viva de Open Library: APIs «not intended to serve as a data backend for third-party services»; dumps mensuales para volumen; CORS |
+| `https://developers.google.com/books` | Google Books API activa y documentada (búsqueda por `q`, `langRestrict`, `maxResults`) |
+| `https://isbndb.com/blog/book-api/` y `https://bookscouter.com/blog/book-databases/` | Estado 2026 de alternativas: ISBNdb (de pago, 14,99-299,99 $/mes, 108-110M títulos), WorldCat (restringido), LibraryThing (API de portadas deshabilitada por abuso), Amazon PA-API (solo afiliados) |
+| `https://apileague.com/articles/book-apis/` | Panorama de APIs de libros 2026; menciones de cuotas gratuitas de Google Books (cantidad no verificada en este estudio) |
+| `https://www.goodreads.com/api`, `http://goodreads.readthedocs.io` y wrappers (github.com/Ricoledan/goodreads-api-client, baahrens/goodreads-api-node) | Referencia histórica de la API v2 (XML/OAuth; methods como `search.index.xml`, `book.show`, estanterías, reseñas) para documentar estado 4.1/7.a |
+
+### Anexo — evidencias curl (verbatim, 2026-08-09)
+
+Peticiones de cortesía (6 en total, espaciadas; ninguna de scraping masivo):
+
+```
+# 1) HEAD /search con UA de navegador y Origin simulado → CORS ausente
+$ curl -sI -H "Origin: https://example.local" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+    "https://www.goodreads.com/search?q=test"
+HTTP 200 | time 0.817134s
+# Cabeceras (filtradas):
+#   content-type: text/html; charset=utf-8
+#   server: Server
+#   via: 1.1 <id>.cloudfront.net (CloudFront)
+#   x-content-type-options: nosniff
+#   (sin cabecera Access-Control-Allow-Origin)
+
+# 2) HEAD /search sin User-Agent → 200 (pasa el challenge en HEAD)
+$ curl -sI -H "Origin: https://example.local" "https://www.goodreads.com/search?q=test"
+HTTP 200 | time 0.944270s
+
+# 3) GET / con UA de navegador → 200 con HTML real (~55 KB)
+$ curl -s "https://www.goodreads.com/" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+    -o /dev/null -w "HTTP %{http_code} | %{size_download} bytes"
+HTTP 200 | 56155 bytes
+
+# 4) GET / sin User-Agent → 202 vacío (anti-bot)
+$ curl -s "https://www.goodreads.com/" -o /dev/null -w "HTTP %{http_code} | %{size_download} bytes"
+HTTP 202 | 0 bytes
+
+# 5) GET /search con UA de navegador → 202 vacío (challenge WAF en la búsqueda)
+$ curl -s "https://www.goodreads.com/search?q=cien%20a%C3%B1os%20de%20soledad" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+    -o /dev/null -w "HTTP %{http_code} | %{size_download} bytes"
+HTTP 202 | 0 bytes
+
+# 6) HEAD /search con UA → confirmación de infraestructura (CloudFront)
+$ curl -sI "https://www.goodreads.com/search?q=test" \
+    -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" \
+    -D - -o /dev/null | grep -iE "HTTP/|server|via"
+HTTP/2 200
+server: Server
+via: 1.1 <id>.cloudfront.net (CloudFront)
+```
+
+### Anexo — robots.txt de GoodReads (fragmentos clave, verbatim, 2026-08-09)
+
+```
+User-agent: bingbot
+Crawl-delay: 5
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: *
+Allow: /work/editions
+Allow: /work/quotes
+Disallow: /about/team_member/
+Disallow: /admin
+Disallow: /api
+Disallow: /blog/list_rss
+Disallow: /book/reviews/
+Disallow: /book_link/follow/
+Disallow: /buy_buttons/
+Disallow: /ebooks
+Disallow: /friend/add_as_friend
+Disallow: /home/index_rss
+Disallow: /oggiPlayerLoader.htm
+Disallow: /photo/group/
+Disallow: /quotes/list_rss
+Disallow: /review/list
+Disallow: /review/list_rss
+Disallow: /review/rate
+Disallow: /review/show
+Disallow: /search
+Disallow: /shelf/user_shelves
+Disallow: /tooltips
+Disallow: /track
+Disallow: /trivia/answer
+Disallow: /user/updates_rss
+Disallow: /user/year_in_books
+Disallow: /videos/
+Disallow: /work
+Disallow: /*reviewFilters
+
+Sitemap: https://www.goodreads.com/siteindex.author.xml
+Sitemap: https://www.goodreads.com/siteindex.index.xml
+... (28 sitemaps en total)
+```
+
+---
