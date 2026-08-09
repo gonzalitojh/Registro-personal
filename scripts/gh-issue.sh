@@ -169,7 +169,7 @@ for issue in data:
     else:
         counts["user"] += 1
     flag = "AGENTE" if agent else "USUARIO"
-    state_marker = "" if issue["state"] == "OPEN" else " [CERRADA]"
+    state_marker = "" if str(issue["state"]).lower() == "open" else " [CERRADA]"
     rows.append(f"#{issue['number']:<4} [{ty:<8}] {issue['title']}  (estado: {st})  {flag}{state_marker}")
 
 if rows:
@@ -245,7 +245,8 @@ cmd_set_state() {
     echo "ERROR: no se pudo leer la issue #$n." >&2
     exit 1
   }
-  if [[ "$state" == "CLOSED" ]]; then
+  state="${state,,}"   # normalizar a minúsculas (issue #145)
+  if [[ "$state" == "closed" ]]; then
     if [[ "$label" == "status: done" ]]; then
       echo "OK: issue #$n CERRADA → aplicando estado terminal 'status: done'."
     else
@@ -315,7 +316,8 @@ cmd_set_type() {
     echo "ERROR: no se pudo leer la issue #$n." >&2
     exit 1
   }
-  if [[ "$state" == "CLOSED" ]]; then
+  state="${state,,}"   # normalizar a minúsculas (issue #145)
+  if [[ "$state" == "closed" ]]; then
     echo "AVISO: la issue #$n está CERRADA; no se modifican sus labels." >&2
     exit 3
   fi

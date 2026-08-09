@@ -147,10 +147,14 @@ After successful validation and security clearance, invoke a documentation agent
 
 After the documentation is completed and the ADR is written, invoke the Publisher agent to publish the changes, finalize the release, or distribute the artifacts. The publisher does NOT include any closing keyword ("Closes #N") in the PR description when the task references an issue — including follow-up/iteration PRs for the same issue: GitHub only auto-closes issues when the PR merges into the default branch (main), and all PRs go to `dev` (ADR-029). The issue closes when the PR is merged into `dev` via the workflow `.github/workflows/issues-done-on-dev.yml`. After creating the PR, the publisher uploads the task file update (status "review" + pr block) to the repository with a second commit and push to the same branch (the PR picks it up automatically), and sets the issue to `status: needs-review`. Todas las PR se crean contra la rama de integración `dev` (nunca contra `main`); el usuario promueve `dev` a `main` cuando estime que la versión es estable. El publisher aplica `--base dev` automáticamente.
 
+> **Iteración con PR existente** (issue #145): si la issue ya tiene una rama de trabajo en origin (patrón `<tipo>/issue-<N>-*`) con PR abierta, NO crees una PR duplicada: actualiza la existente con `gh pr edit <NUM> --title ... --body-file ...` (body SIN keyword de cierre) y añade un comentario con `gh pr comment <NUM> --body "..."` resumiendo lo nuevo aplicado en la iteración (cambios, validaciones, seguridad, ADR).
+
+> **Rama WIP restaurada** (issue #128/#145): si la sesión parte de la rama `wip/issue-<N>` (progreso restaurado automáticamente tras un fallo previo), NO derives la rama de PR desde `origin/dev` (perderías lo restaurado): créala o actualízala DESDE el estado actual (`git checkout -b <tipo>/issue-<N>-<slug>` o actualizando la rama existente). Nunca publiques `wip/issue-<N>` como PR.
+
 ## Step 6 — Session start: reconciliation
 
 At the beginning of a session (or when the user asks), check for pending reviews and finish them:
-- `scripts/gh-issue.sh list --review` — las issues con PR fusionada en `dev` las cierra el workflow `issues-done-on-dev` en el momento de la fusión (best-effort). Fallback manual SOLO si la PR del bloque `pr` del task file está MERGED (`gh pr view <N_PR> --json state -q .state` → `"MERGED"`) y la issue sigue abierta o en `status: needs-review` (el workflow no corrió o falló):
+- `scripts/gh-issue.sh list --review` — las issues con PR fusionada en `dev` las cierra el workflow `issues-done-on-dev` en el momento de la fusión (best-effort). Fallback manual SOLO si la PR del bloque `pr` del task file está MERGED (`gh pr view <N_PR> --json state -q .state` → normaliza a minúsculas y compara con `"merged"`; issue #145) y la issue sigue abierta o en `status: needs-review` (el workflow no corrió o falló):
   1. `scripts/gh-issue.sh set-state <N> "status: done"` y `gh issue close <N>` (best-effort; si falla, loguea y continúa).
   2. Update the local task file `tasks/task-issue-<N>.json` → `"status": "published"` (python3 round-trip, preservando el resto de campos).
   3. Upload the change to the repository:

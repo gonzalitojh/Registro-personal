@@ -138,7 +138,7 @@ def dep_resolved(num):
     except RuntimeError:
         return False  # La issue no existe → no se puede verificar → no resuelta.
     labels = {l["name"] for l in (d.get("labels") or [])}
-    return d.get("state") == "CLOSED" or "status: done" in labels
+    return (d.get("state") or "").lower() == "closed" or "status: done" in labels
 
 def excluded_reason(issue):
     """Devuelve motivo de exclusión o None si es elegible."""
