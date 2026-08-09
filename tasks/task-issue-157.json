@@ -1,7 +1,7 @@
 {
   "title": "Cambiar botón de volver",
   "description": "Issue #157: Cambiar el botón de volver por una flecha hacia la izquierda simplemente, sin recuadro ni palabra «volver».\n\nEl botón afectado es #btn-close-profile, en la cabecera de la vista de perfil (index.html):\n<button type=\"button\" class=\"btn btn--ghost\" id=\"btn-close-profile\">← Volver</button>\n\nTiene recuadro (clase btn btn--ghost, con borde redondeado) y la palabra «Volver». Debe quedarse solo una flecha hacia la izquierda, sin recuadro ni texto.\n\nEl botón #btn-back-to-friends («← Todos los amigos», class btn-link) NO dice «volver» y ya carece de recuadro: fuera del alcance de esta issue.\n\nContexto de código:\n- index.html línea 204: botón #btn-close-profile dentro de .profile-view__header.\n- css/styles.css: .icon-btn (botón de icono transparente sin recuadro, con svg de 1.15rem, focus-visible con outline teal) ya usado en la cabecera (hamburguesa #btn-sidebar-toggle y campana #btn-notifications); [data-theme=\"light\"] .icon-btn color var(--ink).\n- js/profile.js línea ~402-410: listener de clic de #btn-close-profile (cierra la vista de perfil y navega a la última pestaña de Ocio). No cambia la lógica, solo el aspecto.\n- docs/manual-de-usuario.md sección 13: describe el perfil; el botón de volver no está documentado explícitamente hoy.\n- Regla AGENTS.md: cualquier cambio visible para el usuario debe reflejarse en docs/manual-de-usuario.md.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "1. El botón de volver del perfil (#btn-close-profile) muestra únicamente una flecha hacia la izquierda.",
     "2. Sin recuadro: sin borde ni fondo de botón (clase btn/btn--ghost eliminada).",
@@ -32,5 +32,13 @@
     "qa": "Aprobado 8/8 criterios de aceptación y 5/5 validaciones extra. Contraste tema claro 12.8:1 (AA/AAA). Área táctil ~28px < 44px aceptada (consistencia con .icon-btn existentes). Pendiente: ADR-061, PR contra dev, task file review + bloque pr, labels.",
     "seguridad": "PASS: sin hallazgos HIGH. LOW informativo: candidate.json/sdd_prompt.md (artefactos CI untracked) -> añadidos a .gitignore. js/config.js solo toca APP_VERSION (config Firebase pública preexistente, no secreto).",
     "adr": "docs/adr-061-boton-volver-perfil-flecha.md"
+  },
+  "pr": {
+    "number": 159,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/159",
+    "title": "[style] Botón de volver del perfil como flecha sin recuadro (issue #157)",
+    "branch": "style/issue-157-boton-volver-flecha",
+    "commit": "80c1564",
+    "closes": "#157"
   }
 }
