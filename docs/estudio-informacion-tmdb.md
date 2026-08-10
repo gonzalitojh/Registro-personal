@@ -34,7 +34,7 @@ probado con IGDB, ADR-067) sería necesario si el número de usuarios creciese
 hasta golpear el rate limit conjunto (~40 req/s por clave, compartida entre
 todos los usuarios).
 
-El catálogo completo se detalla en la sección 4: **21 secciones** de la API
+El catálogo completo se detalla en la sección 4: ~21 secciones de la API
 v3 cubren desde la ficha técnica de películas (presupuesto, recaudación,
 productoras, idiomas) hasta biografías de actores y directores, filmografías
 completas, listas editoriales (trending, populares, estrenos), galerías de
@@ -135,7 +135,7 @@ líneas reales del estado actual solo como evidencia.
    (memoria 24 h y `networkFirst` del service worker), el consumo actual de
    TMDB (~410 llamadas/día del baseline del estudio de almacenamiento,
    ADR-073) y la atribución ya presente en el footer de `index.html`.
-4. **Análisis por secciones** (sección 4): para cada una de las 21 secciones
+4. **Análisis por secciones** (sección 4): para cada una de las ~21 secciones
    de la API se listan los endpoints principales, los datos que devuelven y
    su utilidad potencial, con una clasificación de viabilidad en la
    arquitectura actual (categorías A/B de la sección 5).
@@ -207,7 +207,7 @@ dónde encaja en la arquitectura actual.
 
 ## 4. Catálogo de la información de TMDB por secciones
 
-Fuente: OpenAPI oficial de la API v3 (21 secciones/tags) + documentación de
+Fuente: OpenAPI oficial de la API v3 (~21 secciones de endpoints) + documentación de
 cada endpoint. Para cada sección: **endpoints**, **datos principales** y
 **utilidad para una web tipo IMDB/TMDB**. Los endpoints ya usados por la app
 se marcan con 🟢; los parcialmente usados con 🟡.
@@ -237,9 +237,10 @@ hace que «enriquecer la ficha» sea barato en llamadas.
 **Endpoints**: `GET /3/tv/{id}` 🟡 (parcial), `tv/{id}/season/{n}` 🟡
 (parcial), `tv/{id}/season/{n}/episode/{m}`, `tv/{id}/aggregate_credits`,
 `tv/{id}/content_ratings`, `tv/{id}/episode_groups`, `tv/{id}/screened_theatrically`,
-`tv/{id}/networks`, `tv/{id}/external_ids`, y sub-endpoints por temporada y
+`tv/{id}/external_ids`, y sub-endpoints por temporada y
 episodio (`credits`, `videos`, `images`, `translations`, `external_ids`,
-`watch/providers`).
+`watch/providers`). (El campo `networks` con las cadenas viene dentro de la
+propia ficha `tv/{id}`.)
 
 **Datos**: `number_of_seasons`, `number_of_episodes`, `networks` (cadenas),
 `origin_country`, `last_episode_to_air`, `status`, `episode_run_time`,
@@ -370,9 +371,11 @@ alimentan el Discover (`with_keywords`).
 
 ### 4.10 Empresas y redes
 
-**Endpoints**: `GET /3/company/{id}`, `company/{id}/movies`, `company/{id}/images`,
+**Endpoints**: `GET /3/company/{id}`, `company/{id}/images`,
 `company/{id}/alternative_names`, `network/{id}`, `network/{id}/images`,
-`network/{id}/alternative_names`.
+`network/{id}/alternative_names`. (La filmografía de una productora no tiene
+endpoint propio: se obtiene vía `discover/movie?with_companies={id}`,
+sección 4.6.)
 
 **Datos**: productoras/estudios (nombre, logo, sede, descripción, películas
 producidas) y cadenas de TV (Netflix, HBO, AMC… con su catálogo).
@@ -436,7 +439,7 @@ para usuarios que consumen contenido en otros idiomas.
 ### 4.15 External IDs e integración externa
 
 **Endpoints**: `GET /3/movie|tv|person/{id}/external_ids` (+ season,
-episode), `find/{external_id}?external_source=imdb_id|tvdb_id|freebase_mid|freebase_id|tvdb_id|tvrage_id|wikidata_id|facebook_id|instagram_id|twitter_id`.
+episode), `find/{external_id}?external_source=imdb_id|tvdb_id|freebase_mid|freebase_id|tvrage_id|wikidata_id|facebook_id|instagram_id|twitter_id`.
 
 **Datos**: `imdb_id`, `tvdb_id`, `wikidata_id`, IDs de redes sociales; y la
 resolución inversa (dado un ID externo, obtener el TMDB id).
@@ -491,8 +494,9 @@ llamada cacheable durante meses (es un endpoint estático).
 ### 4.19 Autenticación y cuentas (v3 y v4)
 
 **Endpoints**: v3: `authentication/guest_session/new`,
-`authentication/token/new`, `authentication/create_session`,
-`account`, `account/{id}/rated|favorite|watchlist`, `account/{id}/lists`;
+`authentication/token/new`, `authentication/session/new`,
+`account/{account_id}`, `account/{account_id}/rated|favorite|watchlist`,
+`account/{account_id}/lists`;
 v4: `4/auth/request_token`, `4/auth/access_token`, `4/account`,
 `4/list`, `4/list/{id}` (crear/editar listas propias).
 
@@ -712,7 +716,7 @@ Consultadas el 2026-08-10:
 
 - Documentación oficial de la API v3 (índice, Getting Started, FAQ, Rate
   Limiting, Append To Response): https://developer.themoviedb.org/docs
-- Catálogo OpenAPI de la API v3 (21 secciones/tags): https://developer.themoviedb.org/openapi/tmdb-api.json
+- Catálogo OpenAPI de la API v3 (secciones de endpoints): https://developer.themoviedb.org/openapi/tmdb-api.json
 - Términos de uso de la API (v. 20/10/2023): https://www.themoviedb.org/documentation/api/terms-of-use
 - FAQ (SLA, costes, atribución): https://developer.themoviedb.org/docs/faq
 - Logos y atribución: https://www.themoviedb.org/about/logos-attribution
@@ -753,7 +757,7 @@ Consultadas el 2026-08-10:
 | `/3/collection/{id}` | GET | 4.8 | 🟢 | Sagas completas | A |
 | `/3/genre/movie\|tv/list` | GET | 4.9 | no | Géneros | A |
 | `/3/movie\|tv/{id}/keywords` | GET | 4.9 | no | Temas de la obra | A |
-| `/3/company/{id}` (+ `/movies`) | GET | 4.10 | no | Productoras y filmografía | A |
+| `/3/company/{id}` | GET | 4.10 | no | Productoras (filmografía vía `discover?with_companies`) | A |
 | `/3/network/{id}` | GET | 4.10 | no | Cadenas y catálogo | A |
 | `/3/movie\|tv/{id}/watch/providers` | GET | 4.11 | 🟢 | Dónde ver (ES) | A |
 | `/3/watch/providers/movie\|tv` | GET | 4.11 | no | Índice de plataformas | A |
