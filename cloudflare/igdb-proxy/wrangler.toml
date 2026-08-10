@@ -1,0 +1,16 @@
+# =============================================================
+# wrangler.toml — configuración del Worker proxy de IGDB.
+#
+# Cambia `name` y `compatibility_date` si lo necesitas.
+# Los secretos NO van aquí: se configuran con:
+#   wrangler secret put TWITCH_CLIENT_ID
+#   wrangler secret put TWITCH_CLIENT_SECRET
+# y opcionalmente:
+#   wrangler secret put ALLOWED_ORIGIN   (p. ej. https://tuapp.web.app)
+# =============================================================
+name = "igdb-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[observability]
+enabled = false

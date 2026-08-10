@@ -13,7 +13,7 @@ import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } 
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 
 function scopeFor(type) {
-  return type === "book" ? "book" : "media";
+  return type === "book" ? "book" : type === "game" ? "game" : "media";
 }
 
 export function statusLabel(status, type) {
@@ -30,8 +30,9 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;");
 }
 
-// HTML para un distintivo de puntuación de la comunidad (TMDB).
-// Variante compacta (--sm) para filas de episodio (issue #45).
+// HTML para un distintivo de puntuación de la comunidad (TMDB, IGDB
+// para videojuegos). Variante compacta (--sm) para filas de episodio
+// (issue #45).
 function communityRatingValueHtml(value, label = "TMDB") {
   const val = Number(value).toFixed(1);
   return `<span class="community-rating community-rating--sm">
@@ -44,20 +45,22 @@ function communityRatingValueHtml(value, label = "TMDB") {
 // Devuelve cadena vacía si no hay datos (no ocupa espacio en la cuadrícula).
 function communityRatingHtml(item) {
   if (item.communityRating == null) return "";
-  return communityRatingValueHtml(item.communityRating).replace(
+  const label = item.type === "game" ? "IGDB" : "TMDB";
+  return communityRatingValueHtml(item.communityRating, label).replace(
     "community-rating community-rating--sm",
     "community-rating"
   );
 }
 
 // Para modales: siempre muestra una línea, ya sea la nota real o
-// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB.
+// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB/IGDB.
 function communityRatingDisplay(item) {
+  const label = item.type === "game" ? "IGDB" : "TMDB";
   if (item.communityRating != null) {
     const val = Number(item.communityRating).toFixed(1);
     return `<div class="modal-detail__ratings">
       <span class="community-rating">
-        <span class="community-rating__label">TMDB</span>
+        <span class="community-rating__label">${label}</span>
         <span class="community-rating__value">${val}</span>
       </span>
     </div>`;
@@ -80,6 +83,7 @@ function trailerButtonHtml(item) {
 function typeLabel(type) {
   if (type === "movie") return "Película";
   if (type === "tv") return "Serie";
+  if (type === "game") return "Videojuego";
   return "Libro";
 }
 
@@ -94,7 +98,7 @@ export const PLACEHOLDER_COVER =
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
 // se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
 // defecto. El timer se limpia al cerrar sesión.
-export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros o amigos...";
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros, videojuegos o amigos...";
 const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
 const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
 let searchPlaceholderTimer = null;
@@ -278,6 +282,16 @@ function progressLine(item) {
     const times = log.filter((e) => e.finishedAt).length;
     return `Leído el ${formatDateEs(last.finishedAt)}${times > 1 ? ` · ×${times}` : ""}`;
   }
+  if (item.type === "game") {
+    if (item.status === "standby") return "En pausa";
+    if (item.status === "abandonado") return "Abandonado";
+    const log = item.playLog || [];
+    if (!log.length) return "";
+    const last = log[log.length - 1];
+    if (!last.finishedAt) return `Jugando desde ${formatDateEs(last.startedAt)}`;
+    const times = log.filter((e) => e.finishedAt).length;
+    return `Jugado el ${formatDateEs(last.finishedAt)}${times > 1 ? ` · ×${times}` : ""}`;
+  }
   return "";
 }
 
@@ -293,6 +307,13 @@ function quickActionLabel(item) {
   if (item.type === "tv") {
     if (!item.nextEpisode) return "Completa ✓";
     return `Ver T${item.nextEpisode.season}E${item.nextEpisode.episode}`;
+  }
+  if (item.type === "game") {
+    const log = item.playLog || [];
+    const isPlaying = log.length && !log[log.length - 1].finishedAt;
+    if (isPlaying) return "Terminar ✓";
+    if (log.length) return "Rejugar ↺";
+    return "Empezar ✓";
   }
   const log = item.readLog || [];
   const isReading = log.length && !log[log.length - 1].finishedAt;
@@ -569,9 +590,9 @@ function renderStatusActions(status) {
   return `<div class="status-actions">${buttons.join("")}</div>`;
 }
 
-function renderStandbyBanner(status, extraText) {
+function renderStandbyBanner(status, extraText, abandonLabel = "Abandonado/a") {
   if (status !== "standby" && status !== "abandonado") return "";
-  const label = status === "standby" ? "En pausa" : "Abandonado/a";
+  const label = status === "standby" ? "En pausa" : abandonLabel;
   return `<div class="standby-banner"><span>${label}${
     extraText ? " · " + escapeHtml(extraText) : ""
   } — tu progreso se conserva.</span></div>`;
@@ -617,6 +638,29 @@ function extraInfoHtml(item) {
   }
   if (item.cast && item.cast.length) {
     lines.push(`<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`);
+  }
+  if (item.type === "game") {
+    if (item.platforms && item.platforms.length) {
+      lines.push(
+        `<p class="extra-info__line"><strong>Plataformas:</strong> ${escapeHtml(item.platforms.join(", "))}</p>`
+      );
+    }
+    if (item.developers && item.developers.length) {
+      lines.push(
+        `<p class="extra-info__line"><strong>Desarrollador${item.developers.length > 1 ? "es" : ""}:</strong> ${escapeHtml(
+          item.developers.join(", ")
+        )}</p>`
+      );
+    }
+    if (item.metacritic != null) {
+      lines.push(`<p class="extra-info__line"><strong>Metacritic:</strong> ${escapeHtml(item.metacritic)}</p>`);
+    }
+    if (item.playtime) {
+      lines.push(`<p class="extra-info__line"><strong>Duración media:</strong> ~${escapeHtml(item.playtime)} horas</p>`);
+    }
+    if (item.esrbName) {
+      lines.push(`<p class="extra-info__line"><strong>Clasificación:</strong> ${escapeHtml(item.esrbName)}</p>`);
+    }
   }
   const overview = item.overview || item.description;
   if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
@@ -745,6 +789,8 @@ export function openManualAddModal(type, onSubmit) {
       ? "Añadir libro manualmente"
       : type === "tv"
       ? "Añadir serie manualmente"
+      : type === "game"
+      ? "Añadir videojuego manualmente"
       : "Añadir película manualmente";
 
   content.innerHTML = `
@@ -1109,6 +1155,31 @@ function renderReadLogRows(readLog) {
   </div>`;
 }
 
+// Historial de sesiones de juego de un videojuego (espejo del de
+// lecturas, con su propia semántica; issue #47).
+function renderPlayLogRows(playLog) {
+  if (!playLog || !playLog.length) {
+    return `<p class="log-empty">Aún no has empezado a jugarlo.</p>`;
+  }
+  return `<div class="log-list">
+    ${playLog
+      .map(
+        (entry, index) => `
+        <div class="log-row">
+          <input type="date" class="play-start" data-index="${index}" value="${entry.startedAt}" />
+          <span class="log-row__arrow">→</span>
+          ${
+            entry.finishedAt
+              ? `<input type="date" class="play-finish" data-index="${index}" value="${entry.finishedAt}" />`
+              : `<span class="log-row__playing">jugando</span>`
+          }
+          <button type="button" class="btn btn--small btn--danger play-remove" data-index="${index}">Quitar</button>
+        </div>`
+      )
+      .join("")}
+  </div>`;
+}
+
 export function openBookModal(item, callbacks) {
   const {
     onStartReading,
@@ -1214,6 +1285,119 @@ export function openBookModal(item, callbacks) {
       rating: getRating() || null,
       notes: content.querySelector("#field-notes").value.trim(),
       progress: raw === "" ? null : Number(raw),
+    });
+  });
+
+  content.querySelector("#btn-delete-item").addEventListener("click", () => {
+    onDelete();
+  });
+
+  // Record previous focus and trap
+  modal._previousActiveElement = document.activeElement;
+  modal.classList.remove("hidden");
+  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
+}
+
+/* ---------- Modal de detalle: videojuegos (sesiones de juego) ---------- */
+
+export function openGameModal(item, callbacks) {
+  const {
+    onStartPlay,
+    onFinishPlay,
+    onUpdateEntry,
+    onRemoveEntry,
+    onSetStatus,
+    onSaveMeta,
+    onDelete,
+    onEdit,
+  } = callbacks;
+  const modal = document.getElementById("item-modal");
+  const content = document.getElementById("modal-content");
+  const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
+  const isPlaying =
+    item.playLog && item.playLog.length && !item.playLog[item.playLog.length - 1].finishedAt;
+
+  content.innerHTML = `
+    <div class="modal-detail__header">
+      <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div>
+        <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
+        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
+      </div>
+    </div>
+    ${editButtonHtml()}
+
+    ${extraInfoHtml(item)}
+
+    ${renderStandbyBanner(item.status, "", "Abandonado")}
+    ${renderStatusActions(item.status)}
+
+    <div class="field-group">
+      <label>Sesiones de juego</label>
+      ${renderPlayLogRows(item.playLog)}
+      <div class="log-add-row">
+        <input type="date" id="field-log-date" value="${todayISO()}" />
+        <button type="button" class="btn btn--small btn--accent-games" id="btn-log-action">
+          ${isPlaying ? "Terminar partida" : "Empezar partida"}
+        </button>
+      </div>
+    </div>
+
+    ${ratingPickerHtml(item.rating)}
+    ${notesFieldHtml(item.notes)}
+
+    <div class="modal-actions">
+      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
+      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
+    </div>
+  `;
+
+  const getRating = wireRatingAndGetValue(content, item.rating);
+  const rerender = () => openGameModal(item, callbacks);
+
+  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
+
+  content.querySelector("#btn-log-action").addEventListener("click", async () => {
+    const dateVal = content.querySelector("#field-log-date").value;
+    if (!dateVal) return;
+    if (isPlaying) await onFinishPlay(dateVal);
+    else await onStartPlay(dateVal);
+    rerender();
+  });
+
+  content.querySelectorAll(".play-start").forEach((input) => {
+    input.addEventListener("change", async () => {
+      if (!input.value) return;
+      await onUpdateEntry(Number(input.dataset.index), { startedAt: input.value });
+      rerender();
+    });
+  });
+
+  content.querySelectorAll(".play-finish").forEach((input) => {
+    input.addEventListener("change", async () => {
+      if (!input.value) return;
+      await onUpdateEntry(Number(input.dataset.index), { finishedAt: input.value });
+      rerender();
+    });
+  });
+
+  content.querySelectorAll(".play-remove").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm("¿Quitar esta sesión del historial?")) return;
+      await onRemoveEntry(Number(btn.dataset.index));
+      rerender();
+    });
+  });
+
+  wireStatusActions(content, async (newStatusOrNull) => {
+    await onSetStatus(newStatusOrNull);
+    rerender();
+  });
+
+  content.querySelector("#btn-save-item").addEventListener("click", () => {
+    onSaveMeta({
+      rating: getRating() || null,
+      notes: content.querySelector("#field-notes").value.trim(),
     });
   });
 

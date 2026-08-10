@@ -32,6 +32,14 @@ input, textarea, select { font-size: 16px; }
   color: var(--paper);
 }
 
+.btn--accent-games {
+  background: var(--games);
+  color: var(--paper);
+}
+.btn--accent-games:hover {
+  background: var(--games-dark);
+}
+
 /* =========================================================
    Modal de confirmación al añadir libro (cover picker +
    description selector)
@@ -169,6 +177,22 @@ input, textarea, select { font-size: 16px; }
   padding: 1.4rem 0.2rem;
   border-top: 1px dashed var(--paper-alpha-20);
   margin-top: 0.6rem;
+}
+
+/* Línea de atribución al final de cada biblioteca (p. ej. datos de
+   videojuegos vía IGDB en ocio/videojuegos.html). */
+.library-credit {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  margin: 0.8rem 0 0;
+  text-align: right;
+}
+.library-credit a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+}
+.library-credit a:hover {
+  color: var(--ink);
 }
 
 /* Ficha / entrada de la biblioteca, con borde perforado tipo ticket */
@@ -1919,6 +1943,10 @@ input, textarea, select { font-size: 16px; }
 }
 [data-theme="black"] .btn--accent-books:hover {
   background: var(--ochre-spine-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .btn--accent-games:hover {
+  background: var(--games-dark);
   color: var(--ink);
 }
 

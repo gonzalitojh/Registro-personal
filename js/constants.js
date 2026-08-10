@@ -6,7 +6,8 @@
 // =============================================================
 
 // Etiquetas de estado con contexto (para mostrar en la UI).
-// "media" cubre películas y series; "book" es para libros.
+// "media" cubre películas y series; "book" es para libros;
+// "game" cubre videojuegos.
 export const STATUS_LABELS = {
   media: {
     pendiente: "Pendiente",
@@ -22,6 +23,13 @@ export const STATUS_LABELS = {
     standby: "Standby",
     abandonado: "Abandonado",
   },
+  game: {
+    pendiente: "Pendiente",
+    en_curso: "Jugando",
+    completado: "Jugado",
+    standby: "Standby",
+    abandonado: "Abandonado",
+  },
 };
 
 // Etiquetas neutrales de estado (sin contexto de tipo).
@@ -34,9 +42,9 @@ export const STATUS_LABELS_NEUTRAL = {
   abandonado: "Abandonado",
 };
 
-// Mapeo de nombre de grupo ("movies", "tv", "books") a tipo de
-// ítem ("movie", "tv", "book") que se guarda en Firestore.
-export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book" };
+// Mapeo de nombre de grupo ("movies", "tv", "books", "games") a tipo de
+// ítem ("movie", "tv", "book", "game") que se guarda en Firestore.
+export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book", games: "game" };
 
 // Iconos SVG de los tipos de medio: MISMO markup que las pestañas de
 // index.html (tab--tv / tab--movies / tab--books, líneas 155-177) —
@@ -55,5 +63,10 @@ export const MEDIA_ICONS = {
   books: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M12 7v14" />
     <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+  </svg>`,
+  games: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="2" y="6" width="20" height="12" rx="6" />
+    <path d="M6 11h4M8 9v4" />
+    <path d="M15.5 11h.01M17.5 13h.01" />
   </svg>`,
 };
