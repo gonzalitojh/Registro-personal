@@ -1,7 +1,7 @@
 {
   "title": "Pestaña de videojuegos en amigos",
   "description": "Incluye la pestaña de videojuegos en la vista de amigos. La sección de amigos del perfil muestra el registro de otro usuario en modo solo lectura organizado por pestañas (Películas, Series, Libros — ADR-048). Los videojuegos existen como categoría propia del producto desde la issue #47 (colección games en Firestore, pestaña en Ocio, etc.), pero el detalle de amigo aún no los muestra; el manual (sección 14.2) documenta explícitamente que la pestaña de Videojuegos aún no está disponible ahí. Hay que añadir la subpestaña Videojuegos con sus chips de filtro por estado (Todos / Pendiente / Jugando / Jugado / Standby / Abandonado, coherentes con ocio/videojuegos.html) y cargar los items de tipo game del amigo desde Firestore.",
-  "status": "documented",
+  "status": "review",
   "acceptance_criteria": [
     "El detalle de amigo muestra una subpestaña nueva «Videojuegos» junto a Películas, Series y Libros.",
     "La subpestaña tiene chips de filtro por estado: Todos, Pendiente, Jugando, Jugado, Standby y Abandonado (mismos estados que ocio/videojuegos.html).",
@@ -25,5 +25,13 @@
     "number": 172,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/172",
     "title": "Pestaña de videojuegos en amigos"
+  },
+  "pr": {
+    "number": 182,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/182",
+    "title": "feat: pestaña de videojuegos en amigos (issue #172)",
+    "branch": "feat/issue-172-pestana-videojuegos-amigos",
+    "commit": "481e64c",
+    "closes": "#172"
   }
 }
