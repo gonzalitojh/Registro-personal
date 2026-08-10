@@ -1,0 +1,33 @@
+{
+  "title": "Notificaciones de videojuegos",
+  "description": "Incluye los videojuegos en las daily-check y las notificaciones.",
+  "status": "review",
+  "acceptance criteria": [
+    "Los videojuegos (juegos en curso / pendientes del usuario) aparecen en las daily-check.",
+    "Los videojuegos generan notificaciones en los mismos canales que el resto de contenidos (si aplica).",
+    "La experiencia del usuario queda documentada en el manual de usuario si cambia algo visible."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect).",
+    "Implementación realizada (micro-commits).",
+    "Validación contra aceptación y DoD (qa-reviewer).",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado si procede (documentation-sync).",
+    "PR creada contra dev sin keyword de cierre (publisher).",
+    "Task file actualizado con estado final y bloque pr.",
+    "Issue #175 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 175,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/175",
+    "title": "Notificaciones de videojuegos"
+  },
+  "pr": {
+    "number": 187,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/187",
+    "title": "[feature] Aviso de lanzamiento de videojuegos en la comprobación diaria",
+    "branch": "feat/issue-175-aviso-lanzamiento-videojuegos",
+    "commit": "d81ea43",
+    "closes": "#175"
+  }
+}
