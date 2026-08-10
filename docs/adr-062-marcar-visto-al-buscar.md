@@ -1,7 +1,7 @@
 # ADR-062: Marcar ítems como vistos al buscar en el catálogo (issue #115)
 
 ## Estado
-Aceptado
+Aceptado (parcialmente revisado por la issue #177 — ver «Revisión: textos por tipo»)
 
 ## Fecha
 2026-08-09
@@ -192,9 +192,13 @@ bump por PR** (ADR-049/059/061) vía `scripts/bump-version.sh`:
   acción sin necesidad; la issue pide el acceso directo en la lista de
   resultados, y el alta con valoración ya cubre el resto.
 - **Variantes de texto por género** («Marcar vista» para películas,
-  «Marcar leído» para libros): descartado — texto uniforme «Marcar
-  visto» para los tres tipos, consistente con el botón secundario de
-  acciones rápidas y sin distinguir el género del ítem en la interfaz.
+  «Marcar leído» para libros): descartado en origen — texto uniforme
+  «Marcar visto» para los tres tipos. **Revisado por la issue #177**:
+  el texto del botón y sus estados pasan a depender del tipo de ítem
+  (`SEEN_ACTION_LABELS` en `js/constants.js`): «Marcar visto»/«Visto»
+  para películas y series, «Marcar leído»/«Leído» para libros y
+  «Marcar jugado»/«Jugado» para videojuegos. El género (vista vs.
+  visto) sigue sin distinguirse; el término sí.
 - **Confirmación a nivel de episodio para series**: descartado — el
   objetivo es marcar la serie entera de una vez; preguntar episodio a
   episodio contradice el flujo de un clic y el manual lo explicaría
@@ -280,3 +284,30 @@ bump por PR** (ADR-049/059/061) vía `scripts/bump-version.sh`:
 | `docs/adr-062-marcar-visto-al-buscar.md` | **Nuevo**: este documento |
 
 Related issue: #115 — https://github.com/gonzalitojh/Registro-personal/issues/115
+
+## Revisión: textos por tipo (issue #177)
+
+La issue #177 pide que cada tipo de ítem use su propio término para el
+estado de «completado»: los videojuegos deben decir **«jugado»** y nunca
+«visto» ni otra variante. Se revisa la decisión del texto uniforme del
+botón del catálogo:
+
+- **`js/constants.js`**: nuevos `SEEN_ACTION_LABELS` y
+  `seenActionLabels(type)` con `action` («Marcar visto»/«Marcar
+  leído»/«Marcar jugado») y `done` («Visto»/«Leído»/«Jugado») por
+  alcance (`media`/`book`/`game`).
+- **`js/global-search.js`**: el botón `.global-search__item-seen` del
+  catálogo se renderiza con `seenActionLabels(item.type).action` y el
+  estado final/restauración del flujo usa `labels.done` / `labels.action`.
+- **`js/search.js`**: `restoreSeenBtn(btn, type)` usa
+  `seenActionLabels(type).action`; la ruta multi-portada de libros fija
+  `seenActionLabels("book").done`.
+- **Manual**: §7.2 y §8.1 documentan el término por tipo.
+- **Bump PWA** `20260902` → `20260903`.
+
+Los toasts de éxito ya eran por tipo («añadido y marcado como jugado»,
+«añadida y marcada como vista», «añadido y marcado como leído») y no se
+tocan. Los estados de la colección (`STATUS_LABELS`) ya distinguían por
+tipo y tampoco se ven afectados.
+
+Related issue: #177 — https://github.com/gonzalitojh/Registro-personal/issues/177
