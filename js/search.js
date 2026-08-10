@@ -146,6 +146,10 @@ export async function handleAdd(item, btn, ctx) {
         const details = await getGameDetails(item.externalId);
         Object.assign(draft, details);
         if (!draft.coverUrl) draft.coverUrl = item.coverUrl || null;
+        // Guarda obligatoria de releaseDate truthy: isUnreleasedDate(null)
+        // devuelve true y un juego sin fecha quedaría awaitingRelease para
+        // siempre (no hay refresco diario que lo resuelva).
+        if (details.releaseDate && isUnreleasedDate(details.releaseDate)) draft.awaitingRelease = true;
       } catch (err) {
         // no bloqueamos el alta si este paso extra falla
       }
@@ -368,6 +372,7 @@ export async function handleAddSeen(item, btn, ctx) {
         rating: null,
         notes: "",
         playLog: [{ startedAt: todayISO(), finishedAt: todayISO() }],
+        awaitingRelease: false,
       };
       let details = {};
       try {
