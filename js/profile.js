@@ -166,8 +166,8 @@ export function setupProfile(ctx) {
   const statsRangeEnd = document.getElementById("stats-range-end");
 
   // Estado de la vista de detalle de amigo (pestañas y filtros en memoria)
-  const friendData = { movies: [], tv: [], books: [] };
-  const friendFilters = { movies: "todos", tv: "todos", books: "todos" };
+  const friendData = { movies: [], tv: [], books: [], games: [] };
+  const friendFilters = { movies: "todos", tv: "todos", books: "todos", games: "todos" };
   let friendActiveTab = "movies";
   let currentFriendName = "";
   let currentFriendUid = "";
@@ -238,7 +238,7 @@ export function setupProfile(ctx) {
       btn.classList.toggle("is-active", isActive);
       btn.setAttribute("aria-selected", String(isActive));
     });
-    ["movies", "tv", "books"].forEach((key) => {
+    ["movies", "tv", "books", "games"].forEach((key) => {
       document.getElementById("friend-panel-" + key).classList.toggle("hidden", key !== tabKey);
     });
     friendActiveTab = tabKey;
@@ -266,9 +266,11 @@ export function setupProfile(ctx) {
     friendData.movies = [];
     friendData.tv = [];
     friendData.books = [];
+    friendData.games = [];
     friendFilters.movies = "todos";
     friendFilters.tv = "todos";
     friendFilters.books = "todos";
+    friendFilters.games = "todos";
     document.querySelectorAll(".friend-chip").forEach((chip) => {
       const isAll = chip.dataset.status === "todos";
       chip.classList.toggle("is-active", isAll);
@@ -277,15 +279,17 @@ export function setupProfile(ctx) {
     setFriendTab("movies");
     document.getElementById("friend-movies").innerHTML = `<p class="empty-state">Cargando…</p>`;
     try {
-      const [movies, series, books] = await Promise.all([
+      const [movies, series, books, games] = await Promise.all([
         ctx.getItemsOnce(profile.uid, "movie"),
         ctx.getItemsOnce(profile.uid, "tv"),
         ctx.getItemsOnce(profile.uid, "book"),
+        ctx.getItemsOnce(profile.uid, "game"),
       ]);
       if (requestedUid !== currentFriendUid) return;
       friendData.movies = movies;
       friendData.tv = series;
       friendData.books = books;
+      friendData.games = games;
       renderFriendTab(friendActiveTab);
     } catch (err) {
       if (requestedUid !== currentFriendUid) return;
