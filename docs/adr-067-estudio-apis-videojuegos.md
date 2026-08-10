@@ -1,10 +1,10 @@
 # ADR-067: Estudio de APIs de videojuegos — se adopta IGDB con proxy Cloudflare Worker (issue #47)
 
 ## Estado
-Aceptado (revisado: 2026-08-10 — RAWG caída, se sustituye por IGDB)
+Aceptado (revisado: 2026-08-10 — RAWG caída, se sustituye por IGDB; revisión 2: despliegue del proxy)
 
 ## Fecha
-2026-08-09 (revisión 2026-08-10)
+2026-08-09 (revisiones 2026-08-10)
 
 ## Contexto
 
@@ -35,6 +35,57 @@ de julio y agosto de 2026, respuestas por tiempo agotado), imposibilidad de
 registrarse para obtener la clave y testimonios de cierre de la API. La
 implementación **se reconsidera y migra** a IGDB con un proxy Cloudflare
 Worker, según el estudio actualizado que se documenta en este ADR.
+
+**Revisión 2 (2026-08-10) — aprendizajes del primer despliegue real del
+proxy**: el usuario siguió el README en su PC y reportó (comentario en la
+issue #47) que el paso 4 fallaba con un error SSL/TLS (*«no se puede crear
+un canal seguro SSL/TLS»*), que el navegador mostraba una conexión no
+segura y que no sabía si debía hacer la configuración en otro sitio ni si
+debía hacer commit y push. Verificación independiente del diagnóstico:
+
+- La URL que el usuario puso en `js/config.js`
+  (`https://igdb-proxy.registro-personal.gonzalojh596.workers.dev`) **no
+  existe**: el TLS handshake falla (el wildcard de `*.workers.dev`
+  resuelve, pero la ruta no está provista). El subdominio real de su
+  cuenta es `gonzalojh596.workers.dev` y el Worker que desplegó se llama
+  **`registro-personal`**, no `igdb-proxy`: probablemente ejecutó
+  `wrangler init` (que crea `wrangler.jsonc` y toca el `.gitignore`) y
+  `wrangler deploy` desde otra carpeta o con esa configuración, de modo
+  que el nombre del Worker no es el fijado por `wrangler.toml`.
+- Ese Worker desplegado está además **detrás de Cloudflare Access / Zero
+  Trust** (su URL redirige a una página de login
+  `gonzalojh596.cloudflareaccess.com`): un proxy público no puede ir
+  detrás de un acceso con sesión — por eso «el navegador no muestra
+  nada».
+- El error SSL/TLS en Windows es el `curl` de PowerShell (alias de
+  `Invoke-WebRequest`, TLS 1.0 por defecto) fallando contra Cloudflare
+  (exige TLS 1.2+), o la URL inexistente; la solución es `curl.exe` o el
+  navegador.
+
+Decisiones de esta revisión:
+
+1. **`GET /` de verificación en el Worker** (`{"ok": true,
+   "service": "igdb-proxy", "secretsConfigured": …}`): permite probar el
+   despliegue desde el navegador sin secretos ni POST, distinguiendo
+   «Worker bien desplegado» de «faltan secretos»; si se ve una página de
+   login, el problema es Cloudflare Access.
+2. **README endurecido** (`cloudflare/igdb-proxy/README.md`): sección 0
+   con «dónde se ejecuta» (tu PC, en `cloudflare/igdb-proxy/`) y «qué se
+   sube a GitHub» (solo `js/config.js`; nunca `wrangler.jsonc` ni los
+   cambios del `.gitignore`); aviso de no ejecutar `wrangler init`;
+   comprobación de que la URL impresa por `wrangler deploy` es la que hay
+   que usar y de que el Worker es público (sin Cloudflare Access);
+   prueba por navegador y `curl.exe` para Windows; tabla de solución de
+   problemas ampliada (handshake SSL/TLS, 404/error 1042, página de
+   login de Cloudflare Access).
+3. **`IGDB_PROXY_URL` vuelve al placeholder vacío** en `js/config.js`: la
+   URL commiteada por el usuario no existe (handshake TLS fallido
+   verificado) y rompería la búsqueda de videojuegos con un error de
+   conexión en vez del aviso diseñado («Falta IGDB_PROXY_URL…»). El
+   aviso diseñado es el estado honesto hasta que el despliegue real
+   funcione.
+4. **Manual de usuario §19** ampliado con el caso «No se pudo conectar
+   con IGDB…» (URL incorrecta o Worker detrás de Cloudflare Access).
 
 Related issue: #47 — https://github.com/gonzalitojh/Registro-personal/issues/47
 
@@ -207,18 +258,23 @@ Pasos completos en `cloudflare/igdb-proxy/README.md`. Resumen:
    *Application Integration*), anotar **Client ID** y generar **Client
    Secret** (se muestra una sola vez).
 2. **Cloudflare**: cuenta gratuita; `wrangler login`; `wrangler deploy`
-   en `cloudflare/igdb-proxy/`.
+   en `cloudflare/igdb-proxy/`. El Worker debe desplegarse con el nombre
+   **`igdb-proxy`** (el de `wrangler.toml`), **público** (sin Cloudflare
+   Access/Zero Trust) y su URL exacta (la que imprime `wrangler deploy`)
+   es la que usa la web. No ejecutar `wrangler init` (crea un
+   `wrangler.jsonc` que puede desplegar el Worker con otro nombre).
 3. **Secretos**: `wrangler secret put TWITCH_CLIENT_ID`,
    `wrangler secret put TWITCH_CLIENT_SECRET` y (recomendado)
    `wrangler secret put ALLOWED_ORIGIN` con el dominio de la web.
-4. **App**: poner la URL del Worker en `IGDB_PROXY_URL` de `js/config.js`.
+4. **App**: poner la URL del Worker en `IGDB_PROXY_URL` de `js/config.js`
+   (el único cambio que se sube a GitHub).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `docs/adr-067-estudio-apis-videojuegos.md` | **Nuevo**: este documento (revisado: RAWG → IGDB + proxy) |
-| `cloudflare/igdb-proxy/worker.js`, `wrangler.toml`, `README.md` | **Nuevos**: proxy de IGDB (Cloudflare Worker) con instrucciones de despliegue y configuración |
+| `docs/adr-067-estudio-apis-videojuegos.md` | **Nuevo**: este documento (revisado: RAWG → IGDB + proxy; revisión 2: aprendizajes del despliegue real) |
+| `cloudflare/igdb-proxy/worker.js`, `wrangler.toml`, `README.md` | **Nuevos**: proxy de IGDB (Cloudflare Worker) con instrucciones de despliegue y configuración (revisión 2: `GET /` de verificación y README endurecido) |
 | `js/api-games.js`, `js/config.js`, `service-worker.js`, `js/search.js`, `js/ui.js`, `js/modal-handlers.js`, `js/quick-actions.js`, `index.html`, `ocio/videojuegos.html`, `ocio/ocio.css` | **Existentes**: migración de RAWG a IGDB (rama `feat/issue-47-pestana-videojuegos`) |
 | `docs/manual-de-usuario.md` | **Existente**: §7.2, §8.1, §10, §16 y §19 actualizados (IGDB, escala 0–10, avisos del proxy) |
 | `tasks/task-issue-47.json` | **Existente**: definición de done (criterio «ADR documentado con 'Related issue: #47'») que este ADR cumple |

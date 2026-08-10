@@ -40,6 +40,11 @@ export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
 // URL pública de tu Cloudflare Worker, proxy de IGDB (Twitch).
 // IGDB no tiene CORS y su Client Secret no puede exponerse en una SPA:
 // el Worker guarda los secretos y reenvía las peticiones a IGDB.
+// IMPORTANTE: pon aquí la URL EXACTA que imprime `wrangler deploy`
+// (formato https://igdb-proxy.<tu-subdominio>.workers.dev). Si pones
+// una URL que no existe, la búsqueda de videojuegos fallará.
 // Despliega el Worker y configura los secretos siguiendo
 // cloudflare/igdb-proxy/README.md, y pon aquí su URL.
-export const IGDB_PROXY_URL = "https://igdb-proxy.registro-personal.gonzalojh596.workers.dev";
+// Sin valor (""), la búsqueda de videojuegos muestra un aviso claro
+// («Falta IGDB_PROXY_URL…») y el resto de la app funciona igual.
+export const IGDB_PROXY_URL = "";

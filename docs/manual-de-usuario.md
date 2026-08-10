@@ -841,6 +841,15 @@ las credenciales de Twitch del Worker (Client ID y Client Secret) o el
 límite de peticiones. En cualquier caso, el resto de la web funciona
 igual.
 
+**Al buscar videojuegos aparece «No se pudo conectar con IGDB…»**
+Suele significar que la URL del Worker en `js/config.js` no es
+correcta (p. ej. el Worker se desplegó con otro nombre, o está detrás
+de una página de acceso de «Cloudflare Access»). Quien administra la
+web debe revisar el paso a paso de `cloudflare/igdb-proxy/README.md`,
+usar la URL exacta que imprime `wrangler deploy` y comprobar que el
+Worker es público (que se ve su JSON `{"ok": true, ...}` en el
+navegador).
+
 **Al entrar no cargan mis datos**
 La web lo **reintenta automáticamente** durante unos segundos: puede
 aparecer el aviso «Hay problemas de conexión. Reintentando…». Si pasados

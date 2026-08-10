@@ -111,6 +111,38 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    // GET / — verificación del despliegue (paso 4 del README). No necesita
+    // secretos ni llama a IGDB: permite comprobar desde el navegador que el
+    // Worker está desplegado y es público (si estuviera detrás de Cloudflare
+    // Access/Zero Trust no se vería este JSON, sino una página de login).
+    if (request.method === "GET" && url.pathname === "/") {
+      const secretsConfigured = Boolean(
+        env.TWITCH_CLIENT_ID && env.TWITCH_CLIENT_SECRET
+      );
+      return new Response(
+        JSON.stringify(
+          {
+            ok: true,
+            service: "igdb-proxy",
+            secretsConfigured,
+            hint: secretsConfigured
+              ? "Secretos OK. Prueba el POST a /v4/games del README."
+              : "Faltan secretos: wrangler secret put TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET",
+          },
+          null,
+          2
+        ),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders(env, request),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     // Reenvía TODO lo que venga bajo /v4/* (p. ej. /v4/games).
     if (!url.pathname.startsWith("/v4/")) {
       return new Response(
