@@ -42,4 +42,4 @@ export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
 // el Worker guarda los secretos y reenvía las peticiones a IGDB.
 // Despliega el Worker y configura los secretos siguiendo
 // cloudflare/igdb-proxy/README.md, y pon aquí su URL.
-export const IGDB_PROXY_URL = "";
+export const IGDB_PROXY_URL = "https://igdb-proxy.registro-personal.gonzalojh596.workers.dev";
