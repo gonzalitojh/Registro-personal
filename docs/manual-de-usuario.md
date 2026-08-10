@@ -722,7 +722,8 @@ sus valoraciones episodio a episodio ni sus historiales completos.
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
-«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…».
+«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…»,
+«Está jugando…», «Terminó de jugar…».
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 

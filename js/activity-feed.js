@@ -18,6 +18,8 @@ const EVENT_TYPES = {
   SERIES_EPISODES: "series_episodes",
   BOOK_STARTED: "book_started",
   BOOK_FINISHED: "book_finished",
+  GAME_STARTED: "game_started",
+  GAME_FINISHED: "game_finished",
 };
 
 /* ------------------------------------------------------------------ */
@@ -32,9 +34,10 @@ const EVENT_TYPES = {
  * @param {Array}  movies      - Películas del amigo
  * @param {Array}  series      - Series del amigo
  * @param {Array}  books       - Libros del amigo
+ * @param {Array}  games       - Videojuegos del amigo
  * @returns {Array<object>}    - Eventos { date, type, label, friendName, item, detail }
  */
-export function buildFriendFeed(friendName, movies, series, books) {
+export function buildFriendFeed(friendName, movies, series, books, games = []) {
   const events = [];
 
   // ---- Películas ----
@@ -169,6 +172,23 @@ export function buildFriendFeed(friendName, movies, series, books) {
     }
   });
 
+  // ---- Videojuegos ----
+  games.forEach((g) => {
+    (g.playLog || []).forEach((entry) => {
+      if (entry.startedAt && !entry.finishedAt) {
+        maybePushDateEvent(events, entry.startedAt, EVENT_TYPES.GAME_STARTED, "Está jugando", friendName, g, "");
+      }
+      if (entry.finishedAt) {
+        maybePushDateEvent(events, entry.finishedAt, EVENT_TYPES.GAME_FINISHED, "Terminó de jugar", friendName, g, "");
+      }
+    });
+
+    // Fallback: completado sin playLog (usa updatedAt)
+    if (g.status === "completado" && (!g.playLog || g.playLog.length === 0)) {
+      maybePushDateEvent(events, g.updatedAt, EVENT_TYPES.GAME_FINISHED, "Terminó de jugar", friendName, g, "");
+    }
+  });
+
   // ---- Ordenar por fecha descendente (más reciente primero) ----
   events.sort((a, b) => {
     // Si una tiene date y la otra no, la que tiene date va primero
@@ -184,15 +204,15 @@ export function buildFriendFeed(friendName, movies, series, books) {
 /**
  * Genera el feed combinado de todos los amigos.
  *
- * @param {Array<object>} friendsData - Array de { profile, movies, series, books }
+ * @param {Array<object>} friendsData - Array de { profile, movies, series, books, games }
  * @returns {Array<object>} Eventos combinados y ordenados
  */
 export function buildGlobalFeed(friendsData) {
   const allEvents = [];
 
-  friendsData.forEach(({ profile, movies, series, books }) => {
+  friendsData.forEach(({ profile, movies, series, books, games }) => {
     const name = profile.displayName || profile.email || "Alguien";
-    const events = buildFriendFeed(name, movies, series, books);
+    const events = buildFriendFeed(name, movies, series, books, games);
     allEvents.push(...events);
   });
 

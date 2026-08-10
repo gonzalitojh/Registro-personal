@@ -2386,6 +2386,8 @@ function eventIcon(type) {
     series_episodes: "📺",
     book_started: "📖",
     book_finished: "📚",
+    game_started: "🎮",
+    game_finished: "🏆",
   };
   return icons[type] || "📌";
 }
