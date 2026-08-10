@@ -128,6 +128,7 @@
   --teal-reel-dark: #4f9c8e;
   --ochre-spine-dark: #c99a4e;
   --stamp-dark: #cf6655;
+  --games-dark: #9a7bc4;
 }
 
 /* =========================================================
@@ -460,12 +461,17 @@
   background: var(--ochre-spine-dark);
   color: var(--ink);
 }
+[data-theme="black"] .global-search__item-add--games:hover {
+  background: var(--games-dark);
+  color: var(--ink);
+}
 
 /* Barra de acento de la pestaña activa: variante clara del acento
    para el umbral gráfico 3:1 sobre la superficie oscura */
 [data-theme="black"] .tab--tv.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--movies.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
 [data-theme="black"] .tab--books.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
+[data-theme="black"] .tab--games.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 
 /* Iconos de los títulos de grupo de la búsqueda global: acentos
    claros sobre el dropdown oscuro (en oscuro ya estaban sobre
@@ -473,6 +479,7 @@
 [data-theme="black"] .global-search__group-title--tv svg { color: var(--teal-reel-dark); }
 [data-theme="black"] .global-search__group-title--movies svg { color: var(--stamp-dark); }
 [data-theme="black"] .global-search__group-title--books svg { color: var(--ochre-spine-dark); }
+[data-theme="black"] .global-search__group-title--games svg { color: var(--games-dark); }
 
 /* Interruptor: la bolita pasa a oscura (seguía siendo papel) */
 [data-theme="black"] .switch__slider::before {

@@ -1945,6 +1945,10 @@ input, textarea, select { font-size: 16px; }
   background: var(--ochre-spine-dark);
   color: var(--ink);
 }
+[data-theme="black"] .btn--accent-games:hover {
+  background: var(--games-dark);
+  color: var(--ink);
+}
 
 /* Checkbox de episodio marcado: variante clara del acento para el
    umbral gráfico 3:1 sobre la superficie oscura */
