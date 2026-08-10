@@ -640,6 +640,7 @@ día) de:
 
 - **Estrenos de películas**: ««Título» ya se ha estrenado (fecha).»
 - **Estrenos de series**: ««Título» ya se ha estrenado.»
+- **Estrenos de videojuegos**: ««Título» ya está a la venta (fecha).»
 - **Nuevos episodios**: «Nuevo episodio disponible de «Título»: T2E5.»
 
 La campana muestra un **número con las no leídas**. Al abrirla, las
@@ -781,6 +782,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   - Estrenos de películas
   - Nuevos episodios de series
   - Estrenos de series
+  - Estrenos de videojuegos
   - Actividad de amigos
   - **Notificaciones en el dispositivo**: si la activas, los avisos
     anteriores también llegan como **notificaciones del sistema** (en la
@@ -818,12 +820,14 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Esa misma comprobación diaria **rellena la información que falte** en tus
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo
-  ya lo tiene). Los videojuegos no se actualizan solos: su información
+  ya lo tiene). Con los videojuegos no pasa eso: su información
   (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
-  momento de añadirlos y no hay comprobación diaria de novedades para
-  ellos. Un caso aparte: al abrir la ficha de un videojuego, si IGDB
-  tiene tráiler, se guarda en ese momento (los juegos siguen sin
-  actualizarse solos).
+  momento de añadirlos y no se vuelve a pedir. La comprobación diaria
+  sí se ocupa de sus **lanzamientos**: si uno de tus videojuegos con
+  fecha de lanzamiento conocida sale a la venta, te llega el aviso
+  correspondiente (los juegos sin fecha no tienen nada que avisar). Un
+  caso aparte: al abrir la ficha de un videojuego, si IGDB tiene
+  tráiler, se guarda en ese momento.
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante
