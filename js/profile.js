@@ -444,12 +444,13 @@ export function setupProfile(ctx) {
       const friendsData = await Promise.all(
         others.map(async (profile) => {
           try {
-            const [movies, series, books] = await Promise.all([
+            const [movies, series, books, games] = await Promise.all([
               ctx.getItemsOnce(profile.uid, "movie"),
               ctx.getItemsOnce(profile.uid, "tv"),
               ctx.getItemsOnce(profile.uid, "book"),
+              ctx.getItemsOnce(profile.uid, "game"),
             ]);
-            return { profile, movies, series, books };
+            return { profile, movies, series, books, games };
           } catch {
             return null;
           }
