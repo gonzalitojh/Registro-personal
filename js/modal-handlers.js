@@ -7,7 +7,7 @@
 import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
-import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry } from "./tv-progress.js";
+import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
@@ -15,6 +15,7 @@ import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
+import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
 
 // Abre la ventana de valoración tras marcar como vista/leída una
@@ -546,6 +547,11 @@ async function openTvItem(item, ctx) {
     onSetEpisodeRating: (seasonNumber, episodeNumber, rating) =>
       persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating)),
 
+    // Episodio YA visto visto de nuevo (issue #133): suma 1 al contador
+    // de visualizaciones y pone la fecha en hoy, conservando la valoración.
+    onSetEpisodeSeenAgain: (seasonNumber, episodeNumber) =>
+      persistWatched(markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())),
+
     onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
       return persistWatched(
@@ -602,14 +608,20 @@ export function setupModalCloseListeners() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const episodeActionsModal = document.getElementById("episode-actions-modal");
       const ratingModal = document.getElementById("rating-modal");
       const modal = document.getElementById("item-modal");
       const notifDropdown = document.getElementById("notif-dropdown");
 
-      // Prioridad: ventana de valoración > modal activo > notificaciones.
-      // (La búsqueda global ya no es un modal desde la issue #46: su
-      // dropdown de resultados gestiona su propio Escape con
-      // stopPropagation, así que nunca llega hasta aquí.)
+      // Prioridad: episodio-ya-visto > ventana de valoración > modal
+      // activo > notificaciones. (La búsqueda global ya no es un modal
+      // desde la issue #46: su dropdown de resultados gestiona su propio
+      // Escape con stopPropagation, así que nunca llega hasta aquí.)
+      if (episodeActionsModal && !episodeActionsModal.classList.contains("hidden")) {
+        e.preventDefault();
+        closeEpisodeActionsModal();
+        return;
+      }
       if (ratingModal && !ratingModal.classList.contains("hidden")) {
         e.preventDefault();
         closeRatingModal();

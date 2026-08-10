@@ -79,27 +79,55 @@
 }
 
 /* =========================================================
-   NEGRO PURO (issue #43)
-   Delta block sobre :root: solo varía lo que debe ser
-   negro absoluto. Todo lo demás (papel, pergamino, acentos,
-   sombras, filtro del date picker, alphas de paper) se
-   hereda del modo oscuro por defecto: mismo aspecto con el
-   fondo y las superficies en #000 para que las pantallas
-   OLED apaguen esos píxeles (ahorro de consumo) y el modo
-   se vea más profundo.
-   Contraste: --paper #f1ead9 sobre #000 ≈ 17.5:1 (AAA);
-   --ink-soft #948a76 sobre #000 ≈ 6.2:1 (AA).
+   NEGRO PURO (issues #43 y #165)
+   Delta block sobre :root ampliado en la issue #165: además
+   del fondo en negro absoluto, TODAS las superficies de la
+   familia oscura (tarjetas, secciones, dropdowns, modales,
+   entradas, estados) pasan a negro/near-black y la tinta a
+   papel, para que el modo concuerde con el tema igual que
+   el blanco puro con la familia clara. Las superficies que
+   usan --paper como fondo requieren los overrides de la
+   sección "AJUSTES PUNTUALES DEL TEMA — MODO NEGRO PURO"
+   más abajo (mismo patrón de selectores agrupados que la
+   familia clara).
+   Contraste (sobre #000/#0a0a0a): --paper #f1ead9 ≈ 17.5:1
+   (AAA); --ink-soft #948a76 ≈ 6.2:1 (AA); acentos claros
+   --teal-reel-dark #4f9c8e ≈ 6.6:1, --ochre-spine-dark
+   #c99a4e ≈ 8.4:1, --stamp-dark #cf6655 ≈ 4.8:1 (AA);
+   fondos de estado oscuros con texto papel ≈ 10:1 (AAA).
    ========================================================= */
 [data-theme="black"] {
   --ink: #000000;
   --ink-raised: #0a0a0a;
+  --paper-dim: #111111;
+  --white: #0f0f0f;
 
-  /* Tintes de tinta negra pura sobre superficies de papel */
-  --ink-alpha-06: rgba(0, 0, 0, 0.06);
-  --ink-alpha-08: rgba(0, 0, 0, 0.08);
-  --ink-alpha-10: rgba(0, 0, 0, 0.10);
-  --ink-alpha-15: rgba(0, 0, 0, 0.15);
-  --ink-alpha-20: rgba(0, 0, 0, 0.20);
+  /* Bordes sutiles claros sobre superficies oscuras */
+  --paper-line: rgba(241, 234, 217, 0.28);
+
+  /* Tintes de papel (claro translúcido): hovers, focos, líneas
+     divisorias y sombras sobre las superficies ahora oscuras */
+  --ink-alpha-06: rgba(241, 234, 217, 0.06);
+  --ink-alpha-08: rgba(241, 234, 217, 0.08);
+  --ink-alpha-10: rgba(241, 234, 217, 0.10);
+  --ink-alpha-15: rgba(241, 234, 217, 0.15);
+  --ink-alpha-20: rgba(241, 234, 217, 0.20);
+
+  /* Estados de tarjeta en versión oscura: mismo matiz semántico
+     con fondo oscuro (los sellos de las tarjetas, que se
+     mantienen claros sobre papel, usan los hex originales
+     hardcodeados en los overrides) */
+  --bg-state-en_curso: #12372f;
+  --bg-state-completado: #33291a;
+  --bg-state-standby: #26241e;
+  --bg-state-abandonado: #3d1f18;
+
+  /* Acentos oscuros → variantes claras legibles sobre las
+     superficies oscuras (los usos sobre fondos claros quedan
+     cubiertos por los overrides de los sellos) */
+  --teal-reel-dark: #4f9c8e;
+  --ochre-spine-dark: #c99a4e;
+  --stamp-dark: #cf6655;
 }
 
 /* =========================================================
@@ -320,6 +348,136 @@
 [data-theme="light"] .switch__input:focus-visible + .switch__slider,
 [data-theme="white"] .switch__input:focus-visible + .switch__slider {
   outline-color: var(--ink);
+}
+
+/* =========================================================
+   AJUSTES PUNTUALES DEL TEMA — MODO NEGRO PURO (issue #165)
+   La familia oscura usa --paper como superficie (fondo) y
+   --ink como texto sobre ella. En negro puro las superficies
+   pasan a oscuras (--ink-raised) y el texto a papel, igual
+   que la familia clara invierte los mismos papeles al revés
+   (--ink fondo / --paper texto). Selectores agrupados: una
+   sola fuente de verdad por regla, mismo patrón que los
+   overrides de light/white.
+   ========================================================= */
+
+/* Superficies de papel → superficies oscuras. Borde sutil:
+   en negro puro las sombras sobre fondo negro no separan. */
+[data-theme="black"] .skip-link,
+[data-theme="black"] .btn--primary,
+[data-theme="black"] .library-card,
+[data-theme="black"] .app-sidebar,
+[data-theme="black"] .back-to-top,
+[data-theme="black"] .tab.is-active,
+[data-theme="black"] .modal__card,
+[data-theme="black"] .modal__close,
+[data-theme="black"] .toast,
+[data-theme="black"] .notif-dropdown,
+[data-theme="black"] .profile-dropdown,
+[data-theme="black"] .stat-tile,
+[data-theme="black"] .chart-card,
+[data-theme="black"] .profile-subtab.is-active,
+[data-theme="black"] .friend-subtab.is-active,
+[data-theme="black"] .friend-card,
+[data-theme="black"] .friend-chip.is-active,
+[data-theme="black"] .settings-card,
+[data-theme="black"] .global-search__results {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-20);
+}
+
+/* Hover del botón primario: tinte claro sobre la superficie oscura */
+[data-theme="black"] .btn--primary:hover {
+  background: var(--paper-alpha-14);
+}
+
+/* Icono de la pestaña activa: seguía a --ink (ahora #000, invisible) */
+[data-theme="black"] .tab.is-active svg {
+  color: var(--paper);
+}
+
+/* Texto que usaba tinta sobre superficies ahora oscuras */
+[data-theme="black"] .app-sidebar__link,
+[data-theme="black"] .app-sidebar__close:hover,
+[data-theme="black"] .modal__close:hover,
+[data-theme="black"] .profile-dropdown__item,
+[data-theme="black"] .btn--outline,
+[data-theme="black"] .global-search__item-title,
+[data-theme="black"] .global-search__friend-name,
+[data-theme="black"] .global-search__item-status.chip,
+[data-theme="black"] .global-search__type-btn:hover,
+[data-theme="black"] .global-search__clear:hover,
+[data-theme="black"] .switch__input:focus-visible + .switch__slider {
+  color: var(--paper);
+}
+
+/* Cierre del modal: tinta suave legible sobre el chip oscuro */
+[data-theme="black"] .modal__close {
+  color: var(--ink-soft);
+}
+
+/* Enlaces y avisos con acento de peligro: variante clara del
+   acento (--stamp-dark pasa a #cf6655 en negro puro) */
+[data-theme="black"] .profile-dropdown__item--logout,
+[data-theme="black"] .notif-dropdown__header .btn-link,
+[data-theme="black"] .auth-error,
+[data-theme="black"] .btn--danger,
+[data-theme="black"] .notif-row__delete:hover {
+  color: var(--stamp-dark);
+}
+/* El hover de .btn--danger no se toca: su fondo pasa a --stamp y el
+   texto a --paper (5.33:1), como en el modo oscuro */
+
+/* Filas de notificación: sobre el dropdown oscuro, un tono distinto
+   y un borde sutil para separarlas */
+[data-theme="black"] .notif-row {
+  background: var(--ink);
+  border: 1px solid var(--paper-alpha-10);
+}
+
+/* Botón "marcar como visto" y "alta manual" de la búsqueda global:
+   acento claro sobre el dropdown oscuro */
+[data-theme="black"] .global-search__item-seen,
+[data-theme="black"] .global-search__item-seen:disabled,
+[data-theme="black"] .global-search__manual-add {
+  color: var(--teal-reel-dark);
+}
+[data-theme="black"] .global-search__item-seen,
+[data-theme="black"] .global-search__item-seen:disabled {
+  border-color: var(--teal-reel-dark);
+}
+
+/* Hover de botones con acento (fondo claro + tinta oscura):
+   las variantes claras de los acentos como fondo mantienen
+   contraste AA con la tinta negra */
+[data-theme="black"] .toast__btn:hover,
+[data-theme="black"] .global-search__item-add:hover {
+  background: var(--teal-reel-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .global-search__item-add--books:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--ink);
+}
+
+/* Barra de acento de la pestaña activa: variante clara del acento
+   para el umbral gráfico 3:1 sobre la superficie oscura */
+[data-theme="black"] .tab--tv.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
+[data-theme="black"] .tab--movies.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
+[data-theme="black"] .tab--books.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
+
+/* Iconos de los títulos de grupo de la búsqueda global: acentos
+   claros sobre el dropdown oscuro (en oscuro ya estaban sobre
+   papel, no sobre tinta) */
+[data-theme="black"] .global-search__group-title--tv svg { color: var(--teal-reel-dark); }
+[data-theme="black"] .global-search__group-title--movies svg { color: var(--stamp-dark); }
+[data-theme="black"] .global-search__group-title--books svg { color: var(--ochre-spine-dark); }
+
+/* Interruptor: la bolita pasa a oscura (seguía siendo papel) */
+[data-theme="black"] .switch__slider::before {
+  background: var(--ink-raised);
+  border: 1px solid var(--paper-alpha-30);
 }
 
 * {

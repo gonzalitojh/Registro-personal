@@ -1,4 +1,4 @@
-# ADR-066: Estudio de APIs de videojuegos — se adopta IGDB con proxy Cloudflare Worker (issue #47)
+# ADR-067: Estudio de APIs de videojuegos — se adopta IGDB con proxy Cloudflare Worker (issue #47)
 
 ## Estado
 Aceptado (revisado: 2026-08-10 — RAWG caída, se sustituye por IGDB)
@@ -217,7 +217,7 @@ Pasos completos en `cloudflare/igdb-proxy/README.md`. Resumen:
 
 | Archivo | Cambio |
 |---------|--------|
-| `docs/adr-066-estudio-apis-videojuegos.md` | **Nuevo**: este documento (revisado: RAWG → IGDB + proxy) |
+| `docs/adr-067-estudio-apis-videojuegos.md` | **Nuevo**: este documento (revisado: RAWG → IGDB + proxy) |
 | `cloudflare/igdb-proxy/worker.js`, `wrangler.toml`, `README.md` | **Nuevos**: proxy de IGDB (Cloudflare Worker) con instrucciones de despliegue y configuración |
 | `js/api-games.js`, `js/config.js`, `service-worker.js`, `js/search.js`, `js/ui.js`, `js/modal-handlers.js`, `js/quick-actions.js`, `index.html`, `ocio/videojuegos.html`, `ocio/ocio.css` | **Existentes**: migración de RAWG a IGDB (rama `feat/issue-47-pestana-videojuegos`) |
 | `docs/manual-de-usuario.md` | **Existente**: §7.2, §8.1, §10, §16 y §19 actualizados (IGDB, escala 0–10, avisos del proxy) |
