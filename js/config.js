@@ -47,4 +47,4 @@ export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
 // cloudflare/igdb-proxy/README.md, y pon aquí su URL.
 // Sin valor (""), la búsqueda de videojuegos muestra un aviso claro
 // («Falta IGDB_PROXY_URL…») y el resto de la app funciona igual.
-export const IGDB_PROXY_URL = "https://registro-personal.gonzalojh596.workers.dev";
+export const IGDB_PROXY_URL = "https://igdb-proxy.gonzalojh596.workers.dev";
