@@ -42,6 +42,23 @@ export const STATUS_LABELS_NEUTRAL = {
   abandonado: "Abandonado",
 };
 
+// Textos de la acción «marcar como completado» según el tipo (issue #177):
+// el término varía por tipo — películas/series «visto», libros «leído»,
+// videojuegos «jugado». Se usan en el botón del catálogo (issue #115)
+// y en sus estados final/restauración.
+export const SEEN_ACTION_LABELS = {
+  media: { action: "Marcar visto", done: "Visto" },
+  book: { action: "Marcar leído", done: "Leído" },
+  game: { action: "Marcar jugado", done: "Jugado" },
+};
+
+// Textos de «marcar como completado» para el tipo de ítem dado
+// (misma familia de alcance que STATUS_LABELS, issue #177).
+export function seenActionLabels(type) {
+  const scope = type === "book" ? "book" : type === "game" ? "game" : "media";
+  return SEEN_ACTION_LABELS[scope];
+}
+
 // Mapeo de nombre de grupo ("movies", "tv", "books", "games") a tipo de
 // ítem ("movie", "tv", "book", "game") que se guarda en Firestore.
 export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book", games: "game" };
