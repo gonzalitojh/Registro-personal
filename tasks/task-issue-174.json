@@ -1,0 +1,39 @@
+{
+  "title": "Estadísticas de videojuegos (horas jugadas, géneros, plataformas)",
+  "description": "La issue #174 pide añadir a las estadísticas del perfil (sección Estadísticas, js/profile.js) lo relativo a videojuegos: horas jugadas, géneros y plataformas. Actualmente la sección solo cubre películas (vistas), series (episodios vistos y completadas) y libros (leídos). Los juegos viven en la colección `games` (issue #47) con: `playLog` (array de sesiones { startedAt, finishedAt } — finishedAt null mientras se juega), `genres` (array de strings), `platforms` (array de strings), `status` (pendiente/en_curso/completado/standby/abandonado) y `playtime: null` (IGDB no expone duración media, ADR-067). Por tanto, las horas jugadas solo pueden venir de un campo opcional por sesión (no existe hoy): se añade `hours` por sesión en el modal de juego (editable), sumado en las estadísticas. Géneros y plataformas se agregan por juego.",
+  "status": "review",
+  "acceptance criteria": [
+    "La sección Estadísticas del perfil muestra datos de videojuegos: juegos jugados, juegos completados, sesiones de juego y horas jugadas, respetando el filtro de periodo (siempre/año/mes/rango)",
+    "El modal de un videojuego permite registrar horas opcionales por sesión (campo editable por sesión, persistido en el playLog como `hours`)",
+    "Se muestran dos gráficas nuevas: Géneros (top) y Plataformas (top), calculadas de los juegos del usuario",
+    "Los videojuegos se incluyen en la gráfica de Actividad por mes (sesiones de juego) y en la de Estados actuales (statusCounts)",
+    "La gráfica de Estados actuales no se rompe con los estados de juego (pendiente/en_curso/completado/standby/abandonado)",
+    "Tiles y gráficas usan las variables de tema existentes y son visibles en los cuatro modos de visualización (oscuro, negro puro, claro, blanco puro) con contraste mínimo WCAG AA",
+    "Responsividad: sin scroll horizontal en 360px/768px/1280px (AGENTS.md regla 2)",
+    "El manual de usuario se actualiza: sección 14.1 Estadísticas (nuevas cifras y gráficas) y sección 7.4 Historial de sesiones (campo horas opcional)",
+    "Sesiones antiguas sin `hours` no rompen nada (se tratan como 0 horas)"
+  ],
+  "definition of done": [
+    "Planificación: análisis del modelo de datos y diseño de la solución",
+    "Implementación: cambios en js/profile.js, js/ui.js (modal de juego), index.html (canvas de gráficas nuevas), ocio/ocio.css (input de horas), js/modal-handlers.js si procede",
+    "Validación: revisión QA de aceptación y casos borde (sesiones sin horas, sin juegos, periodo vacío, estados de juego)",
+    "Seguridad: escaneo sin secretos ni datos sensibles",
+    "ADR: docs/adr-070-estadisticas-videojuegos.md con 'Related issue: #174'",
+    "Manual de usuario actualizado",
+    "PR contra dev sin keyword de cierre",
+    "Issue #174 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 174,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/174",
+    "title": "Estadísticas de videojuegos"
+  },
+  "pr": {
+    "number": 186,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/186",
+    "title": "feat: estadísticas de videojuegos en el perfil (issue #174)",
+    "branch": "feat/issue-174-estadisticas-videojuegos",
+    "commit": "6c3e9f1",
+    "closes": "#174"
+  }
+}

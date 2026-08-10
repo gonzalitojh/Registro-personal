@@ -645,6 +645,17 @@ input, textarea, select { font-size: 16px; }
   min-width: 0;
 }
 
+.log-row input[type="number"] {
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--ink);
+  flex: 0 1 4.5rem;
+  width: 4.5rem;
+  min-width: 0;
+}
+
 .log-row .btn {
   flex-shrink: 0;
   margin-left: auto;
@@ -1954,6 +1965,7 @@ input, textarea, select { font-size: 16px; }
 [data-theme="black"] .log-add-row input[type="date"],
 [data-theme="black"] .log-add-row input[type="text"],
 [data-theme="black"] .log-row input[type="date"],
+[data-theme="black"] .log-row input[type="number"],
 [data-theme="black"] .episode-row input.episode-date,
 [data-theme="black"] .manual-form .field-group input {
   color: var(--paper);
