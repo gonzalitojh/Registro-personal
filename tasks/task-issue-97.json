@@ -1,7 +1,7 @@
 {
   "title": "Ocultar secciones (y pestañas) desde Ajustes",
   "description": "En los ajustes se deben poder ocultar secciones e incluso pestañas de las secciones. Actualmente solo hay una sección (ocio), pero próximamente habrá más. Si solo se tiene visible una sección, la barra lateral de navegación no tendría sentido y para esos casos se sustituiría por un botón para acceder a los ajustes.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Nueva tarjeta «Secciones y pestañas» en Ajustes (perfil → Ajustes) con un interruptor por sección (hoy: Ocio) y un interruptor por pestaña de cada sección (Series, Películas, Libros), generados desde un registro central (extensible a secciones futuras).",
     "Ocultar una pestaña la retira de la barra de pestañas y de la navegación; la pestaña activa cae a la primera visible y las URLs (#/ocio/series, ...) que apunten a una pestaña oculta abren la primera visible normalizando el hash.",
@@ -27,5 +27,12 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/97",
     "title": "Ocultar secciones"
   },
-  "plan": "Plan del task-architect aplicado: SECTION_REGISTRY en settings.js, DEFAULT_SETTINGS.visibleSections/visibleTabs, guards (última sección/pestaña), card Secciones y pestañas, applyTabVisibility + guard activatePanel, refreshNavigation, renderSidebar + botón engranaje (#btn-header-settings) cuando ≤1 sección visible, normalización de URLs (replaceState) y consumidores (profile close, onGoOcio), sync Firestore extendida, ADR-067 y manual."
+  "plan": "Plan del task-architect aplicado: SECTION_REGISTRY en settings.js, DEFAULT_SETTINGS.visibleSections/visibleTabs, guards (última sección/pestaña), card Secciones y pestañas, applyTabVisibility + guard activatePanel, refreshNavigation, renderSidebar + botón engranaje (#btn-header-settings) cuando ≤1 sección visible, normalización de URLs (replaceState) y consumidores (profile close, onGoOcio), sync Firestore extendida, ADR-067 y manual.",
+  "pr": {
+    "number": 170,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/170",
+    "title": "[feature] Ocultar secciones y pestañas desde Ajustes",
+    "branch": "feat/issue-97-ocultar-secciones",
+    "closes": "#97"
+  }
 }
