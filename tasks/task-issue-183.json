@@ -1,0 +1,28 @@
+{
+  "title": "Estudio almacenamiento mínimo",
+  "description": "Realizar un estudio, sin implementar nada, de la posibilidad de hacer un guardado de información mínima en base de datos. Esto implicaría guardar la información mínima y básica para cada ítem y extraer la mayor parte de información directamente de las APIs. Quizá guardar solo el id y la información relativa a los visionados y valoraciones sería demasiado poco porque se sobrecargarían las APIs por las llamadas, pero otra opción sería guardar la información básica que se muestra en las tarjetas y hacer uso de las APIs al visualizar la información. Pero no habría que mantener una actualización de datos de base de datos.\n\nEl estudio debe cubrir: lo que hay actualmente (inventario de campos guardados por tipo en Firestore, arquitectura de sincronización diaria, consumidores de los datos), todas las posibles alternativas de almacenamiento (statu quo, solo IDs + datos de usuario, híbrido tarjeta + detalles bajo demanda, almacenamiento solo local, capa proxy con caché centralizada, variantes de refresco), su evaluación cuantitativa (coste Firestore, llamadas a APIs con sus límites, latencia, offline/PWA, amigos/actividad, notificaciones de estrenos, ICS/backup/estadísticas) y una recomendación clara y justificada. No se implementa nada: el entregable es el documento de estudio en docs/ y un ADR con la decisión/conclusión.",
+  "status": "implemented",
+  "acceptance criteria": [
+    "Existe un documento de estudio en docs/ (docs/estudio-almacenamiento-minimo.md) que analiza la posibilidad de guardar información mínima en base de datos.",
+    "El estudio documenta el estado actual: qué campos se guardan hoy por tipo (películas, series, libros, videojuegos) en Firestore y cómo funciona el refresco/sincronización actual (ADR-021).",
+    "El estudio enumera y analiza todas las alternativas razonables de almacenamiento: (a) statu quo, (b) solo id + datos de visionado/valoración con todo lo demás en vivo desde las APIs, (c) guardar la información básica de las tarjetas y consultar las APIs al visualizar (la opción que plantea la issue), (d) almacenamiento solo local (IndexedDB/localStorage), (e) otras opciones relevantes (p. ej. capa proxy/caché centralizada como el Worker de IGDB).",
+    "El estudio evalúa cada alternativa contra los criterios relevantes: coste/lecturas-escrituras-almacenamiento de Firestore, número de llamadas a las APIs (TMDB, Google Books, Open Library, IGDB) y sus límites, latencia y UX, funcionamiento offline/PWA, sección de amigos y feed de actividad, notificaciones de estrenos, exportación ICS/backup y estadísticas.",
+    "El estudio analiza expresamente el riesgo de sobrecargar las APIs (la preocupación de la issue) con estimaciones cuantitativas (p. ej. con una biblioteca de N ítems, cuántas llamadas supondría cada alternativa al abrir una pestaña o al visualizar fichas).",
+    "El estudio concluye con una recomendación clara (opción más óptima) y justificada, indicando qué campos convendría guardar y cuáles extraer siempre de las APIs.",
+    "El estudio es autocontenido y verificable (cita los archivos reales de la app, los límites documentados de cada API y los ADR existentes).",
+    "No se implementa ningún cambio de código en la app (solo documentación)."
+  ],
+  "definition of done": [
+    "Planificación completada (plan del estudio aprobado).",
+    "Estudio implementado en docs/ y validado por QA contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos de severidad HIGH.",
+    "ADR documentando la decisión/conclusión del estudio (con 'Related issue: #183').",
+    "PR contra dev SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #183 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 183,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/183",
+    "title": "Estudio almacenamiento mínimo"
+  }
+}
