@@ -37,7 +37,7 @@ import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
-import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey, countVisibleSections } from "./settings.js";
+import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
 import { setupSidebar, renderSidebar } from "./sidebar.js";
 import { initAutoHideNav } from "./auto-hide-nav.js";

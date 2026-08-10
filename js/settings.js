@@ -416,7 +416,15 @@ function wireVisibilityToggles(ctx) {
     scheduleFirestoreSync(ctx);
     // Refrescar guardas y avisos: tras el cambio puede quedar otra
     // fila como última visible (y quedar deshabilitada).
+    // El input en foco se reemplaza por el re-render: restaurar el
+    // foco al equivalente re-renderizado (los ids son deterministas:
+    // section-visible-<id> / tab-visible-<sección>-<pestaña>).
+    const focusedId = document.activeElement instanceof HTMLInputElement ? document.activeElement.id : null;
     renderSectionsCard(loadSettings());
+    if (focusedId) {
+      const restored = document.getElementById(focusedId);
+      if (restored) restored.focus();
+    }
     if (onVisibilityChange) onVisibilityChange();
   });
 }
