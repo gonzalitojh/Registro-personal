@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260838" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260838" />
+  <link rel="stylesheet" href="css/styles.css?v=20260839" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260839" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -71,6 +71,19 @@
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        <!-- Botón engranaje (issue #97): sustituye a la barra lateral
+             ☰ cuando solo hay una sección visible (decide sidebar.js).
+             Abre Ajustes directamente, como la entrada pinned de la
+             barra lateral. Sale oculto por defecto. -->
+        <button type="button" class="icon-btn hidden" id="btn-header-settings"
+                aria-label="Abrir ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
 
@@ -317,6 +330,12 @@
         </div>
 
         <div class="settings-card">
+          <h3>Secciones y pestañas</h3>
+          <p class="settings-desc">Elige qué secciones y pestañas quieres ver. Ocultar algo no borra tus datos: solo lo quita de la vista.</p>
+          <div id="sections-visibility-list"></div>
+        </div>
+
+        <div class="settings-card">
           <h3>Notificaciones</h3>
           <p class="settings-desc">Controla qué tipo de notificaciones quieres recibir.</p>
           <div class="settings-row">
@@ -415,7 +434,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260838"></script>
+  <script type="module" src="js/app.js?v=20260839"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

@@ -69,79 +69,48 @@ export const SECTIONS = [
 let openSettings = null;
 let onGoOcio = null;
 
+// Predicado de visibilidad de secciones, inyectado por app.js vía
+// setupSidebar({ isSectionVisible }) (issue #97): con solo una
+// sección visible la barra lateral no tiene sentido y se sustituye
+// por el botón de Ajustes #btn-header-settings de la cabecera.
+let isSectionVisible = () => true;
+
+// Elementos DOM resueltos en setupSidebar; los reutilizan
+// renderSidebar y updateHeaderNavButtons (issue #97), que se llaman
+// también desde app.js cuando cambian las secciones visibles.
+let sidebar = null;
+let backdrop = null;
+let toggle = null;
+let closeBtn = null;
+let nav = null;
+let footer = null;
+let headerSettings = null;
+
+let focusTrapCleanup = null;
+
 export function setupSidebar(opts) {
   openSettings = opts?.onOpenSettings || null;
   onGoOcio = opts?.onGoOcio || null;
+  isSectionVisible = opts?.isSectionVisible || (() => true);
 
-  const sidebar = document.getElementById("app-sidebar");
-  const backdrop = document.getElementById("app-sidebar-backdrop");
-  const toggle = document.getElementById("btn-sidebar-toggle");
-  const closeBtn = document.getElementById("btn-sidebar-close");
-  const nav = document.getElementById("app-sidebar-nav");
-  const footer = document.getElementById("app-sidebar-footer");
+  sidebar = document.getElementById("app-sidebar");
+  backdrop = document.getElementById("app-sidebar-backdrop");
+  toggle = document.getElementById("btn-sidebar-toggle");
+  closeBtn = document.getElementById("btn-sidebar-close");
+  nav = document.getElementById("app-sidebar-nav");
+  footer = document.getElementById("app-sidebar-footer");
+  headerSettings = document.getElementById("btn-header-settings");
 
   if (!sidebar || !backdrop || !toggle || !closeBtn || !nav) {
     console.warn("sidebar: elementos DOM no encontrados");
     return;
   }
 
-  let focusTrapCleanup = null;
-
-  // Render de las entradas a partir del array SECTIONS. Los ids son
-  // literales controlados por este módulo (sin datos de usuario).
-  nav.innerHTML = SECTIONS.filter((s) => !s.pinned)
-    .map(
-      (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
-               data-section="${s.id}">
-        <span aria-hidden="true">${s.icon}</span>
-        <span>${s.label}</span>
-      </button>`
-    )
-    .join("");
-
-  // Footer inferior: entradas pinned (p. ej. «Ajustes»), separadas
-  // visualmente del resto por una línea. Si el contenedor no existe
-  // (HTML antiguo), no hacemos nada: defensivo.
-  if (footer) {
-    footer.innerHTML = SECTIONS.filter((s) => s.pinned)
-      .map(
-        (s) => `<button type="button" class="app-sidebar__link"
-                 data-section="${s.id}">
-          <span aria-hidden="true">${s.icon}</span>
-          <span>${s.label}</span>
-        </button>`
-      )
-      .join("");
-  }
-
-  function openSidebar() {
-    sidebar.classList.add("is-open");
-    backdrop.classList.remove("hidden");
-    sidebar.setAttribute("aria-hidden", "false");
-    toggle.setAttribute("aria-expanded", "true");
-
-    // Si el dropdown de búsqueda está abierto, cerrarlo: el backdrop
-    // del drawer (z-index 55) lo taparía (z-index 40).
-    closeGlobalSearch();
-
-    // Atrapar foco dentro del drawer mientras esté abierto
-    focusTrapCleanup = trapFocus(sidebar);
-  }
-
-  function closeSidebar() {
-    sidebar.classList.remove("is-open");
-    backdrop.classList.add("hidden");
-    sidebar.setAttribute("aria-hidden", "true");
-    toggle.setAttribute("aria-expanded", "false");
-
-    if (focusTrapCleanup) {
-      focusTrapCleanup();
-      focusTrapCleanup = null;
-    }
-
-    // Restaurar foco al botón hamburguesa
-    toggle.focus();
-  }
+  // El botón engranaje de la cabecera (issue #97) abre Ajustes,
+  // igual que la entrada pinned de la barra lateral.
+  headerSettings?.addEventListener("click", () => {
+    if (openSettings) openSettings();
+  });
 
   toggle.addEventListener("click", () => {
     if (sidebar.classList.contains("is-open")) {
@@ -173,4 +142,94 @@ export function setupSidebar(opts) {
     closeSidebar();
     if (section && section.onClick) section.onClick();
   });
+
+  // Estado inicial: entre ☰ y ⚙ según el número de secciones visibles.
+  renderSidebar();
+}
+
+function openSidebar() {
+  sidebar.classList.add("is-open");
+  backdrop.classList.remove("hidden");
+  sidebar.setAttribute("aria-hidden", "false");
+  toggle.setAttribute("aria-expanded", "true");
+
+  // Si el dropdown de búsqueda está abierto, cerrarlo: el backdrop
+  // del drawer (z-index 55) lo taparía (z-index 40).
+  closeGlobalSearch();
+
+  // Atrapar foco dentro del drawer mientras esté abierto
+  focusTrapCleanup = trapFocus(sidebar);
+}
+
+function closeSidebar() {
+  sidebar.classList.remove("is-open");
+  backdrop.classList.add("hidden");
+  sidebar.setAttribute("aria-hidden", "true");
+  toggle.setAttribute("aria-expanded", "false");
+
+  if (focusTrapCleanup) {
+    focusTrapCleanup();
+    focusTrapCleanup = null;
+  }
+
+  // Restaurar foco al botón hamburguesa. Cuando solo queda una sección
+  // visible el toggle queda oculto (clase hidden) pero sigue en el DOM;
+  // el guard es por robustez si faltara el elemento.
+  if (toggle) toggle.focus();
+}
+
+// Número de secciones (no pinned) visibles según el predicado
+// inyectado. Con <= 1, la barra lateral se sustituye por el engranaje.
+function visibleSectionCount() {
+  return SECTIONS.filter((s) => !s.pinned && isSectionVisible(s.id)).length;
+}
+
+// Decide entre el toggle ☰ y el botón de Ajustes ⚙ de la cabecera.
+function updateHeaderNavButtons() {
+  const count = visibleSectionCount();
+  if (toggle) toggle.classList.toggle("hidden", count <= 1);
+  if (headerSettings) headerSettings.classList.toggle("hidden", count > 1);
+}
+
+// Re-render de la barra lateral tras cambios de visibilidad de
+// secciones (issue #97). Lo llama app.js vía refreshNavigation.
+export function renderSidebar() {
+  if (!nav || !footer) return;
+
+  // Si el drawer está abierto y va a quedar sin secciones que listar,
+  // cerrarlo primero (evita un drawer abierto y vacío).
+  if (sidebar && sidebar.classList.contains("is-open") && visibleSectionCount() <= 1) {
+    closeSidebar();
+  }
+
+  // Render de las entradas a partir del array SECTIONS. Los ids son
+  // literales controlados por este módulo (sin datos de usuario).
+  // Solo se listan las secciones visibles; las pinned (p. ej.
+  // «Ajustes») van siempre al footer.
+  nav.innerHTML = SECTIONS.filter((s) => !s.pinned && isSectionVisible(s.id))
+    .map(
+      (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
+               data-section="${s.id}">
+        <span aria-hidden="true">${s.icon}</span>
+        <span>${s.label}</span>
+      </button>`
+    )
+    .join("");
+
+  // Footer inferior: entradas pinned (p. ej. «Ajustes»), separadas
+  // visualmente del resto por una línea. Si el contenedor no existe
+  // (HTML antiguo), no hacemos nada: defensivo.
+  // (Sin filtro de visibilidad: son secciones de utilidad, no
+  // contenido ocultable.)
+  footer.innerHTML = SECTIONS.filter((s) => s.pinned)
+    .map(
+      (s) => `<button type="button" class="app-sidebar__link"
+               data-section="${s.id}">
+        <span aria-hidden="true">${s.icon}</span>
+        <span>${s.label}</span>
+      </button>`
+    )
+    .join("");
+
+  updateHeaderNavButtons();
 }
