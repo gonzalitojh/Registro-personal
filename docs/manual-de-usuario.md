@@ -649,9 +649,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 
 - **Apariencia → Tema**: elige entre cuatro modos de visualización:
   - **Oscuro**: el aspecto clásico, con fondo marrón oscuro.
-  - **Negro puro**: como el oscuro pero con el fondo totalmente negro.
-    Ideal para pantallas OLED: gasta menos batería y los colores se ven
-    más profundos.
+  - **Negro puro**: como el oscuro pero con el fondo y todas las
+    superficies (tarjetas, secciones de ajustes, menús) totalmente
+    negros, con el texto claro. Ideal para pantallas OLED: gasta menos
+    batería y los colores se ven más profundos.
   - **Claro**: el aspecto clásico claro, con fondo crema y tarjetas
     blancas.
   - **Blanco puro**: como el claro pero con el fondo completamente
