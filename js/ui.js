@@ -10,6 +10,7 @@ import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
 import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
+import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : "media";
@@ -1228,6 +1229,29 @@ export function openBookModal(item, callbacks) {
 
 /* ---------- Modal de detalle: series (temporadas y episodios) ---------- */
 
+// Sincroniza el estado VISUAL de una fila de episodio con su entrada
+// real (normalizada o null) en item.watched: checkbox, clase is-watched,
+// fecha, fila 2 (meta), contador y estrellas (issue #133/#136).
+function applyEpisodeRowState(row, entry) {
+  const checked = Boolean(entry && entry.date);
+  const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+  const checkbox = row.querySelector(".episode-checkbox");
+  const visual = row.querySelector(".episode-checkbox-visual");
+  const dateInput = row.querySelector(".episode-date");
+  const meta = row.querySelector(".episode-row__meta");
+  const ratingWrap = row.querySelector(".episode-rating");
+  checkbox.checked = checked;
+  row.classList.toggle("is-watched", checked);
+  dateInput.disabled = !checked;
+  dateInput.value = checked ? entry.date : "";
+  meta.classList.toggle("hidden", !checked);
+  if (times > 1) visual.setAttribute("data-count", String(times));
+  else visual.removeAttribute("data-count");
+  ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
+    s.classList.toggle("is-active", Number(s.dataset.value) <= ((checked ? entry.rating : null) || 0))
+  );
+}
+
 function renderSeasonBlock(s, watched) {
   const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
   const watchedCount = Object.keys(seasonWatched).length;
@@ -1258,6 +1282,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
       const checked = Boolean(date);
+      const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
       const future = !manual && isUnreleasedDate(e.airDate);
       // Badge de nota TMDB: solo en series automáticas y cuando el episodio
       // tiene votos (episodeRating != null). Las series manuales no lo traen.
@@ -1267,12 +1292,17 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
           : "";
       return `
       <div class="episode-row ${checked ? "is-watched" : ""}" data-episode="${e.episodeNumber}"
-           data-air-date="${e.airDate || ""}">
+           data-air-date="${e.airDate || ""}" data-episode-name="${escapeHtml(e.name)}">
         <div class="episode-row__main">
           <label class="episode-checkbox-wrap">
             <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""}
-                   aria-label="Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto" />
-            <span class="episode-checkbox-visual" aria-hidden="true"></span>
+                   aria-label="${
+                     checked
+                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o desmarcarlo`
+                       : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
+                   }" />
+            <span class="episode-checkbox-visual" aria-hidden="true"
+                  ${times > 1 ? `data-count="${times}"` : ""}></span>
           </label>
           <span class="episode-row__num" aria-hidden="true">E${e.episodeNumber}</span>
           <span class="episode-row__name">${escapeHtml(e.name)}${
@@ -1283,17 +1313,19 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
           : ""
       }</span>
           ${communityBadge}
-          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
         </div>
-        <div class="episode-rating ${checked ? "" : "hidden"}">
-          ${[1, 2, 3, 4, 5]
-            .map(
-              (n) =>
-                `<button type="button" class="episode-rating__star ${
-                  rating >= n ? "is-active" : ""
-                }" data-value="${n}">★</button>`
-            )
-            .join("")}
+        <div class="episode-row__meta ${checked ? "" : "hidden"}">
+          <div class="episode-rating">
+            ${[1, 2, 3, 4, 5]
+              .map(
+                (n) =>
+                  `<button type="button" class="episode-rating__star ${
+                    rating >= n ? "is-active" : ""
+                  }" data-value="${n}">★</button>`
+              )
+              .join("")}
+          </div>
+          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
         </div>
       </div>`;
     })
@@ -1304,6 +1336,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const {
     onExpandSeason,
     onSetEpisodeDate,
+    onSetEpisodeSeenAgain,
     onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
@@ -1447,6 +1480,55 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
+        // Estado REAL antes del clic (el navegador ya conmutó el checkbox)
+        const currentEntry = normalizeEntry(
+          (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+        );
+        const wasWatched = Boolean(currentEntry && currentEntry.date);
+
+        // Episodio ya visto: preguntar qué hacer (verlo de nuevo o
+        // desmarcarlo) en lugar de desmarcar a secas (issue #133).
+        if (wasWatched) {
+          // El diálogo captura document.activeElement al abrir, pero el
+          // checkbox se deshabilita antes (el navegador mueve el foco a
+          // body): guardamos el elemento activo previo aquí para
+          // restaurar el foco a la casilla al cerrar (QA #133).
+          const prevActive = document.activeElement;
+          checkbox.checked = true; // restaurar al instante (sin parpadeo)
+          checkbox.disabled = true;
+          try {
+            const choice = await openEpisodeActionsModal({
+              title: item.title,
+              subtitle: `T${seasonNumber}E${episodeNumber} · ${row.dataset.episodeName || ""}`,
+              times: currentEntry.times || 1,
+            });
+            let newProgress = null;
+            if (choice === "seen_again") {
+              newProgress = await onSetEpisodeSeenAgain(seasonNumber, episodeNumber);
+            } else if (choice === "unmarked") {
+              newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, null);
+            }
+            // Repintado SIEMPRE derivado de item.watched (patrón issue #136):
+            // en el caso «cancelar» la fila vuelve a su estado real (inofensivo)
+            // y no hay progreso nuevo que repintar en el banner.
+            const entry2 = normalizeEntry(
+              (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+            );
+            applyEpisodeRowState(row, entry2);
+            const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
+            updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
+            if (newProgress) updateBanner(newProgress);
+          } catch (err) {
+            showToast("No se pudo actualizar: " + String(err && err.message ? err.message : err));
+          } finally {
+            checkbox.disabled = false;
+            if (prevActive && document.contains(prevActive)) prevActive.focus();
+          }
+          return;
+        }
+
+        // Episodio sin marcar: flujo actual (confirmación de sin estrenar
+        // y ventana de valoración posterior del lado de modal-handlers).
         if (checkbox.checked && !item.manual && isUnreleasedDate(airDate)) {
           const msg = episodeUnreleasedMessage(item.title, seasonNumber, episodeNumber, airDate);
           if (!window.confirm(msg)) {
@@ -1464,16 +1546,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           const entry2 = normalizeEntry(
             (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
           );
-          const isWatched = Boolean(entry2 && entry2.date);
-          checkbox.checked = isWatched;
-          row.classList.toggle("is-watched", isWatched);
-          dateInput.disabled = !isWatched;
-          dateInput.value = isWatched ? entry2.date : "";
-          ratingWrap.classList.toggle("hidden", !isWatched);
-          const rating2 = entry2 ? entry2.rating : null;
-          ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
-            s.classList.toggle("is-active", Number(s.dataset.value) <= (rating2 || 0))
-          );
+          applyEpisodeRowState(row, entry2);
           const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
           updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
           updateBanner(newProgress);
@@ -1619,19 +1692,11 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           `.season-episodes[data-season-episodes="${seasonNumber}"]`
         );
         if (episodesBlock.dataset.loaded) {
-          const today = todayISO();
           episodesBlock.querySelectorAll(".episode-row").forEach((row) => {
-            const checkbox = row.querySelector(".episode-checkbox");
-            const dateInput = row.querySelector(".episode-date");
-            const ratingWrap = row.querySelector(".episode-rating");
-            checkbox.checked = shouldMarkAll;
-            row.classList.toggle("is-watched", shouldMarkAll);
-            dateInput.disabled = !shouldMarkAll;
-            dateInput.value = shouldMarkAll ? today : "";
-            ratingWrap.classList.toggle("hidden", !shouldMarkAll);
-            if (!shouldMarkAll) {
-              ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => s.classList.remove("is-active"));
-            }
+            const entry = normalizeEntry(
+              (item.watched || {})[String(seasonNumber)]?.[String(row.dataset.episode)]
+            );
+            applyEpisodeRowState(row, entry);
           });
         }
         updateEpisodeAverage();
