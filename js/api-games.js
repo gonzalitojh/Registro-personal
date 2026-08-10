@@ -23,19 +23,37 @@ function requireProxy() {
 }
 
 // Petición POST al proxy, que la reenvía a api.igdb.com/v4 con las
-// cabeceras Client-ID y Authorization ya puestas.
+// cabeceras Client-ID y Authorization ya puestas. Normaliza los
+// errores de transporte (red caída, proxy inalcanzable, CORS
+// bloqueado) y de parseo a un mensaje en español claro, igual que
+// hacen el resto de clientes de API (fetchJson), y reintenta una vez
+// los fallos de transporte (los fallos del proxy suelen ser
+// transitorios; el límite de IGDB es 4 req/s, un reintento es seguro).
 async function igdbPost(endpoint, body) {
   requireProxy();
-  const res = await fetch(`${PROXY_BASE}/v4/${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body,
-  });
+  const doFetch = () =>
+    fetch(`${PROXY_BASE}/v4/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body,
+    });
+  let res;
+  try {
+    res = await doFetch();
+  } catch {
+    try {
+      res = await doFetch(); // un solo reintento ante fallos transitorios
+    } catch {
+      // Red caída, proxy inalcanzable o CORS bloqueado: no hay
+      // respuesta HTTP que inspeccionar.
+      throw new Error("No se pudo conectar con IGDB. Inténtalo de nuevo.");
+    }
+  }
   if (!res.ok) {
     // HTTP 401/403 = credenciales de Twitch inválidas o token
     // caducado; 403 puede ser también "origen no permitido" del
-    // proxy. Cualquier otro fallo (red, 5xx...) es temporal y
-    // conviene distinguirlo del error de credenciales.
+    // proxy. Cualquier otro fallo (5xx...) es temporal y conviene
+    // distinguirlo del error de credenciales.
     if (res.status === 401 || res.status === 403) {
       throw new Error(
         "IGDB rechazó la petición. Revisa las credenciales del proxy (cloudflare/igdb-proxy/README.md)."
@@ -43,7 +61,12 @@ async function igdbPost(endpoint, body) {
     }
     throw new Error("No se pudo conectar con IGDB. Inténtalo de nuevo.");
   }
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    // Cuerpo no JSON (p. ej. página de error HTML del host).
+    throw new Error("No se pudo conectar con IGDB. Inténtalo de nuevo.");
+  }
 }
 
 const SEARCH_FIELDS = [
