@@ -317,10 +317,10 @@ jobs:
 
       - name: Sesión OpenCode (agente sdd-master, watchdog + transcripción)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
-          echo "Lanzando sesión automática para la issue #$N (watchdog: estancamiento 20 min por actividad BD, total 60 min)..."
+          echo "Lanzando sesión automática para la issue #$N (watchdog: estancamiento 20 min por actividad BD, total 90 min)..."
           # run-sdd-session.sh gestiona el watchdog (estancamiento/límite total),
           # la transcripción con logs de subagentes y el motivo de fallo; su
           # exit code NO nulo hace fallar el paso (issue #145).
@@ -334,7 +334,7 @@ jobs:
       # restaura con wip-restore. Best-effort: un fallo aquí solo avisa.
       # El watchdog de run-sdd-session.sh (issue #145) corta la sesión estancada
       # (20 min sin actividad en la BD de opencode, incluidos subagentes) o que
-      # supera el límite total 60 min) con motivo claro.
+      # supera el límite total 90 min) con motivo claro.
       # =========================================================================
       - name: Guardar progreso WIP en fallo de sesión (best-effort)
         id: wip-save
