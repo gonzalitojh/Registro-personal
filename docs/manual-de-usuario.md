@@ -535,15 +535,16 @@ verás:
 - **Puntuación de la comunidad**: de TMDB para películas y series (sobre
   10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones».
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
-  tiene).
+  tiene; en los videojuegos, solo cuando IGDB dispone de uno).
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
   **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: duración, género, director (películas),
   creadores (series), reparto y sinopsis. En los videojuegos:
-  plataformas, desarrolladores, editores y clasificación por edades
-  (ESRB).
+  desarrolladores, editores y clasificación por edades (ESRB).
+- **Plataformas** (videojuegos): las plataformas jugables se muestran
+  como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
   un aviso y el botón **«Añadir resto de la saga»**. Pulsa el botón, marca
   las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
@@ -804,7 +805,9 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   ya lo tiene). Los videojuegos no se actualizan solos: su información
   (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
   momento de añadirlos y no hay comprobación diaria de novedades para
-  ellos.
+  ellos. Un caso aparte: al abrir la ficha de un videojuego, si IGDB
+  tiene tráiler, se guarda en ese momento (los juegos siguen sin
+  actualizarse solos).
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante

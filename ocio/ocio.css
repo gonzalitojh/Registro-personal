@@ -1643,6 +1643,51 @@ input, textarea, select { font-size: 16px; }
 }
 
 /* =========================================================
+   Plataformas jugables de videojuegos (IGDB)
+   ========================================================= */
+
+.game-platforms {
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.game-platforms__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.game-platforms__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sin white-space: nowrap a propósito: nombres largos como
+   "PC (Microsoft Windows)" deben poder partirse (responsividad) */
+.game-platform {
+  display: inline-flex;
+  align-items: center;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* =========================================================
    Recomendaciones TMDB (contenido similar)
    ========================================================= */
 
@@ -1833,7 +1878,8 @@ input, textarea, select { font-size: 16px; }
 [data-theme="black"] .view-toggle__btn.is-active,
 [data-theme="black"] .list-row__content,
 [data-theme="black"] .saga-list,
-[data-theme="black"] .watch-provider {
+[data-theme="black"] .watch-provider,
+[data-theme="black"] .game-platform {
   background: var(--ink-raised);
   color: var(--paper);
   border: 1px solid var(--paper-alpha-20);

@@ -14,6 +14,7 @@ import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
+import { getGameDetails } from "./api-games.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
@@ -343,13 +344,31 @@ function openBookItem(item, ctx) {
   });
 }
 
-function openGameItem(item, ctx) {
+async function openGameItem(item, ctx) {
   const reopen = () => openGameItem(item, ctx);
   async function persist(newLog) {
     const status = statusFromPlayLog(newLog);
     await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, { playLog: newLog, status });
     item.playLog = newLog;
     item.status = status;
+  }
+
+  // Tráiler de IGDB (extra no crítico): los juegos añadidos antes de
+  // existir esta consulta no traen trailerUrl guardado; se pide al
+  // abrir la ficha y se persiste fuego-y-olvido. Si falla, el modal
+  // se abre igualmente (mismo espíritu que los watch providers).
+  if (item.externalId && !item.trailerUrl) {
+    try {
+      const details = await getGameDetails(item.externalId);
+      if (details.trailerUrl) {
+        item.trailerUrl = details.trailerUrl;
+        await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
+          trailerUrl: details.trailerUrl,
+        });
+      }
+    } catch (err) {
+      // no bloqueamos la apertura del modal
+    }
   }
 
   ui.openGameModal(item, {

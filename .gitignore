@@ -13,3 +13,7 @@ sdd_prompt.md
 # Artefactos de compilación de los scripts Python (scripts/*.py, issue #145):
 __pycache__/
 *.pyc
+
+# Caché local de wrangler (Cloudflare) — contiene account ID y email (PII).
+# Hallazgo MEDIUM del security-champion (issue #171): nunca commitear.
+.wrangler/
