@@ -1,7 +1,7 @@
 {
   "title": "Estadísticas de videojuegos (horas jugadas, géneros, plataformas)",
   "description": "La issue #174 pide añadir a las estadísticas del perfil (sección Estadísticas, js/profile.js) lo relativo a videojuegos: horas jugadas, géneros y plataformas. Actualmente la sección solo cubre películas (vistas), series (episodios vistos y completadas) y libros (leídos). Los juegos viven en la colección `games` (issue #47) con: `playLog` (array de sesiones { startedAt, finishedAt } — finishedAt null mientras se juega), `genres` (array de strings), `platforms` (array de strings), `status` (pendiente/en_curso/completado/standby/abandonado) y `playtime: null` (IGDB no expone duración media, ADR-067). Por tanto, las horas jugadas solo pueden venir de un campo opcional por sesión (no existe hoy): se añade `hours` por sesión en el modal de juego (editable), sumado en las estadísticas. Géneros y plataformas se agregan por juego.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "La sección Estadísticas del perfil muestra datos de videojuegos: juegos jugados, juegos completados, sesiones de juego y horas jugadas, respetando el filtro de periodo (siempre/año/mes/rango)",
     "El modal de un videojuego permite registrar horas opcionales por sesión (campo editable por sesión, persistido en el playLog como `hours`)",
@@ -27,5 +27,13 @@
     "number": 174,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/174",
     "title": "Estadísticas de videojuegos"
+  },
+  "pr": {
+    "number": 186,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/186",
+    "title": "feat: estadísticas de videojuegos en el perfil (issue #174)",
+    "branch": "feat/issue-174-estadisticas-videojuegos",
+    "commit": "6c3e9f1",
+    "closes": "#174"
   }
 }
