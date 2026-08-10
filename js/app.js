@@ -37,12 +37,12 @@ import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
-import { setupSettings, syncThemeToSettings, cleanupSettings } from "./settings.js";
+import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
-import { setupSidebar } from "./sidebar.js";
+import { setupSidebar, renderSidebar } from "./sidebar.js";
 import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
-import { initRouter, keyForPanel, getLastOcioKey } from "./router.js";
+import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
 
 // ---------- Estado ----------
 
@@ -204,6 +204,20 @@ async function init() {
   };
 
   function activatePanel(panelId, { moveFocus = false } = {}) {
+    // Pestañas ocultas por el usuario (issue #97): si la pestaña
+    // pedida no está visible (URL directa, recarga, atrás/adelante o
+    // un tab oculto), cae a la primera visible de la sección y
+    // normaliza la URL in-place. replaceState no dispara hashchange,
+    // así que no hay bucle. (No se usa router aquí: en la carga
+    // inicial el guard se ejecuta dentro de initRouter, antes de que
+    // la const router esté asignada — TDZ.)
+    const panelKey = keyForPanel(panelId);
+    if (panelKey && !isTabVisible(panelKey)) {
+      panelId = getFirstVisibleTabPanel("ocio");
+      const fallbackKey = getFirstVisibleTabKey("ocio");
+      if (fallbackKey) history.replaceState(null, "", hashForKey(fallbackKey));
+    }
+
     tabs.forEach((t) => {
       t.classList.remove("is-active");
       t.setAttribute("aria-selected", "false");
@@ -228,6 +242,27 @@ async function init() {
         heading.focus();
       }
     }
+  }
+
+  // Pestañas ocultas por el usuario (issue #97): retirar de la barra
+  // y de la vista. Las suscripciones y cargas de datos siguen activas
+  // (las pestañas se ocultan y muestran con la clase hidden, sin
+  // desmontar nada). Si la pestaña oculta era la activa, activatePanel
+  // ya cae a la primera visible por su guard.
+  function applyTabVisibility() {
+    Object.entries(SECTION_REGISTRY.ocio.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-panel="${tab.panelId}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = panels[tab.panelId];
+      if (panelEl) panelEl.classList.toggle("hidden", !isTabVisible(tabKey));
+    });
+  }
+
+  // Refresco completo de la navegación tras un cambio de visibilidad
+  // (issue #97): pestañas de Ocio + barra lateral/☰↔⚙ de la cabecera.
+  function refreshNavigation() {
+    applyTabVisibility();
+    renderSidebar();
   }
 
   // Router (issue #59): en carga directa o recarga activa la vista
@@ -315,16 +350,26 @@ async function init() {
   setupModalCloseListeners();
   setupNotifications(ctx);
   profileApi = setupProfile(ctx);
-  setupSettings(ctx);
+  // Los cambios de visibilidad de Ajustes refrescan pestañas y
+  // barra lateral al momento (issue #97).
+  setupSettings(ctx, { onVisibilityChange: refreshNavigation });
   setupSidebar({
     // Entrada «Ajustes»: navega a la ruta del perfil para que la URL
     // se sincronice (el router abre la sección).
     onOpenSettings: () => router.navigate({ section: "perfil", profileSection: "settings" }),
     // Entrada «Ocio»: además del scroll al top, vuelve a la última
     // pestaña de Ocio activa y sincroniza la URL con el router.
-    onGoOcio: () => router.navigate(getLastOcioKey()),
+    // Si esa pestaña quedó oculta, la clave se normaliza a la
+    // primera visible (issue #97).
+    onGoOcio: () => router.navigate(normalizeTabKey("ocio", getLastOcioKey())),
+    // Visibilidad de secciones (issue #97): con una sola sección
+    // visible, la barra lateral se sustituye por el ⚙ de la cabecera.
+    isSectionVisible: (id) => isSectionVisible(id),
   });
   setupGlobalSearch(ctx);
+  // Reflejar las pestañas ocultas guardadas en el estado inicial
+  // (el sidebar ya se re-renderizó dentro de setupSidebar).
+  applyTabVisibility();
   // Ocultar cabecera y pestañas al desplazar en las listas de ocio,
   // con botón flotante "Volver arriba" (issue #137).
   initAutoHideNav();

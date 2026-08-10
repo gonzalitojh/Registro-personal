@@ -71,7 +71,12 @@ Nada más entrar verás:
     devuelve a las pestañas de Series, Películas y Libros, y, en la
     parte de abajo, **«Ajustes»**, que abre la sección de ajustes de tu
     perfil (más en [sección 14](#14-ajustes)). Se cierra pulsando fuera,
-    la ✕, la tecla **Esc** o la propia entrada.
+    la ✕, la tecla **Esc** o la propia entrada. Si en
+    [Ajustes → Secciones y pestañas](#14-ajustes) dejas solo **una
+    sección visible**, la barra lateral se sustituye por un botón
+    **engranaje ⚙** en la cabecera que abre directamente Ajustes; en
+    cuanto vuelvas a tener más de una sección visible, la barra
+    lateral reaparece.
   - **Barra de búsqueda** (en el centro): la búsqueda global
     (más en [sección 7](#7-cómo-buscar)). Al entrar, la barra muestra
     brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
@@ -665,6 +670,22 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     blanco, en contraposición al negro puro.
   Tu elección se guarda automáticamente y se mantiene la próxima vez
   que entres.
+- **Secciones y pestañas**: elige qué secciones y pestañas de la web
+  ves. Hoy hay una sola sección, **«Ocio»**, con sus tres pestañas
+  (**Series**, **Películas** y **Libros**); en el futuro se añadirán
+  más secciones y aparecerán aquí con sus pestañas. Al **ocultar una
+  pestaña**, desaparece de la barra de pestañas y de la vista: tus
+  datos, avisos y actualizaciones siguen funcionando igual, solo deja
+  de verse. Al **ocultar una sección**, desaparece de la barra lateral
+  de navegación; si solo dejas **una sección visible**, la barra
+  lateral (☰) se sustituye por un botón **engranaje ⚙** en la cabecera
+  que abre Ajustes directamente, y vuelve a aparecer cuando tengas más
+  de una sección visible. Siempre queda al menos una sección y una
+  pestaña de cada sección visible: el interruptor de la última que
+  quedaría se muestra apagado (gris) y no se puede tocar, con una nota
+  explicativa. Ocultar algo **no borra tus datos**: solo lo quita de
+  la vista, y puedes volver a mostrarlo cuando quieras. Los cambios se
+  guardan solos.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series
