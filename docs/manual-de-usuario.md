@@ -350,10 +350,10 @@ lecturas adicionales.
 ### 7.2 Añadir un videojuego
 
 Escribe el título en la **barra de búsqueda de la cabecera** y pulsa el
-botón **«Videojuego»** para buscar en el catálogo de **RAWG** (el mismo
-catálogo de la web de videojuegos ravg.io). Los resultados traen portada,
-año, sinopsis, plataformas, valoración de la comunidad, Metacritic y
-más datos.
+botón **«Videojuego»** para buscar en el catálogo de **IGDB** (el mismo
+catálogo de la web de videojuegos igdb.com, consultado a través de un
+proxy propio). Los resultados traen portada, año, sinopsis, plataformas,
+valoración de la comunidad y más datos.
 
 - Pulsa **«Añadir»** para añadirlo (el botón pasa a «Añadido»).
 - Pulsa **«Marcar visto»** para añadirlo **ya marcado como jugado** (se
@@ -404,7 +404,8 @@ que corresponda para **buscar en el catálogo**:
 - Libros se buscan en **Google Books** con respaldo de **Open Library**
   (y se agrupan las ediciones del mismo libro). Se buscan siempre en
   español.
-- Videojuegos se buscan en **RAWG** (rawg.io).
+- Videojuegos se buscan en **IGDB** (igdb.com) a través de un proxy
+  propio (ver sección 19).
 
 Los resultados del catálogo aparecen en una sección **«Catálogo ·
 Series/Películas/Libros/Videojuegos»** bajo tus resultados de la
@@ -521,7 +522,7 @@ verás:
 - **Portada, título y año** (en la vista previa de búsqueda se indica el
   tipo: «Película · año», «Serie · año» o «Videojuego · año»).
 - **Puntuación de la comunidad**: de TMDB para películas y series (sobre
-  10) y de RAWG para videojuegos (sobre 5), o «Sin puntuaciones».
+  10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones».
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
   tiene).
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
@@ -530,8 +531,8 @@ verás:
   incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: duración, género, director (películas),
   creadores (series), reparto y sinopsis. En los videojuegos:
-  plataformas, desarrolladores, Metacritic, duración media y
-  clasificación por edades (ESRB).
+  plataformas, desarrolladores, editores y clasificación por edades
+  (ESRB).
 - **Sagas** (películas): si la película forma parte de una saga, aparece
   un aviso y el botón **«Añadir resto de la saga»**. Pulsa el botón, marca
   las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
@@ -773,7 +774,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo
   ya lo tiene). Los videojuegos no se actualizan solos: su información
-  (sinopsis, plataformas, valoraciones de RAWG...) se rellena en el
+  (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
   momento de añadirlos y no hay comprobación diaria de novedades para
   ellos.
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
@@ -822,6 +823,16 @@ de seguridad).
 **Al buscar libros aparece «Error 503» o tarda mucho**
 Es un fallo puntual del servidor de libros, no tuyo: la web reintenta
 sola. Si persiste, espera unos segundos y vuelve a intentarlo.
+
+**Al buscar videojuegos aparece «Falta IGDB_PROXY_URL…» o «IGDB rechazó la petición…»**
+La búsqueda de videojuegos se hace a través de un **proxy propio**
+(IGDB no permite consultas directas desde el navegador). Si aparece
+«Falta IGDB_PROXY_URL…», quien administra la web tiene que desplegar el
+Cloudflare Worker de `cloudflare/igdb-proxy/` y poner su URL en
+`js/config.js`. Si aparece «IGDB rechazó la petición…», hay que revisar
+las credenciales de Twitch del Worker (Client ID y Client Secret) o el
+límite de peticiones. En cualquier caso, el resto de la web funciona
+igual.
 
 **Al entrar no cargan mis datos**
 La web lo **reintenta automáticamente** durante unos segundos: puede

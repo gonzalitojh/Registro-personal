@@ -1,10 +1,10 @@
-# ADR-066: Estudio de APIs de videojuegos — se adopta RAWG como catálogo (issue #47)
+# ADR-066: Estudio de APIs de videojuegos — se adopta IGDB con proxy Cloudflare Worker (issue #47)
 
 ## Estado
-Aceptado
+Aceptado (revisado: 2026-08-10 — RAWG caída, se sustituye por IGDB)
 
 ## Fecha
-2026-08-09
+2026-08-09 (revisión 2026-08-10)
 
 ## Contexto
 
@@ -18,121 +18,160 @@ junto con la implementación.
 
 La app es **100 % cliente** (Firebase Hosting, vanilla JS, sin backend ni
 proxy propio, con service worker): cualquier fuente de datos debe poder
-consultarse directamente desde el navegador (CORS habilitado) y encajar en
-el patrón ya consolidado de las otras pestañas. Películas y series usan
-**TMDB** (clave en query string, `networkFirst` para `api.themoviedb.org` y
-`cacheFirst` para `image.tmdb.org` en el service worker, ADR-006 y ADR-007);
-libros usan **Google Books + Open Library** (ADR-002, ADR-045, ADR-056 y
-ADR-065). El punto de partida de la issue eran **RAWG e IGDB** como
-candidatas principales, con otras alternativas menores a evaluar.
+consultarse desde el navegador (CORS) o a través de un **proxy mínimo** si
+la API lo exige. Películas y series usan **TMDB** (clave en query string,
+`networkFirst` para `api.themoviedb.org` y `cacheFirst` para
+`image.tmdb.org` en el service worker, ADR-006 y ADR-007); libros usan
+**Google Books + Open Library** (ADR-002, ADR-045, ADR-056 y ADR-065).
 
-El estudio ya está **realizado y validado (QA PASS)**: la implementación de
-la pestaña (rama `feat/issue-47-pestana-videojuegos`) usa RAWG, y el manual
-de usuario se actualizó en la misma tarea (`docs/manual-de-usuario.md` §7,
-regla 3 de AGENTS.md). Este ADR documenta el estudio y la decisión a
-posteriori, como los ADR recientes (ADR-059 a ADR-065), y cumple la
-definición de done de `tasks/task-issue-47.json` («ADR documentado con
-'Related issue: #47'»).
+**Revisión (2026-08-10)**: la primera versión de este estudio eligió
+**RAWG** como catálogo y la implementación de la pestaña (rama
+`feat/issue-47-pestana-videojuegos`) se publicó a revisión (PR #166). Antes
+de fusionarse, el usuario reportó (comentario en la issue #47) que **RAWG
+ha dejado de dar soporte y está caída**: no se puede obtener la API key. Se
+verifica de forma independiente: monitorización pública de rawg.io con
+**0 % de disponibilidad en los últimos 30 días** (incidencias constantes
+de julio y agosto de 2026, respuestas por tiempo agotado), imposibilidad de
+registrarse para obtener la clave y testimonios de cierre de la API. La
+implementación **se reconsidera y migra** a IGDB con un proxy Cloudflare
+Worker, según el estudio actualizado que se documenta en este ADR.
 
 Related issue: #47 — https://github.com/gonzalitojh/Registro-personal/issues/47
 
 ## Decisión
 
-**Adoptar RAWG como única fuente del catálogo de videojuegos** (búsqueda en
-el buscador global + datos ampliados al añadir), replicando el patrón de
-integración de TMDB. No se adopta ningún proxy ni backend intermedio.
+**Adoptar IGDB (Twitch) como única fuente del catálogo de videojuegos**,
+consultado a través de un **Cloudflare Worker propio** que actúa de proxy
+seguro: guarda el Client ID y el Client Secret como secretos cifrados de
+Cloudflare, obtiene el token OAuth en servidor y reenvía las peticiones a
+`https://api.igdb.com/v4/*` añadiendo CORS. La web solo conoce la **URL
+pública del Worker** (`IGDB_PROXY_URL` en `js/config.js`), nunca los
+secretos.
 
-### Estudio comparativo de candidatas
+### Estudio comparativo de candidatas (revisado)
 
-#### IGDB (Twitch) — descartada
+#### RAWG — descartada (caída)
 
-Catalogada como la **base de datos de videojuegos más completa** del
-mercado, pero incompatible con la arquitectura de la app por tres motivos
-bloqueantes:
+- Fue la elección inicial (v1 de este ADR): REST GET con clave en query
+  string, CORS habilitado, catálogo de ~500 000 juegos con Metacritic,
+  ESRB, desarrolladores y nota de la comunidad 0–5.
+- **Estado actual (verificado 2026-08-10)**: la API **ya no está
+  operativa** — no responde (timeouts), lleva **semanas con incidencias
+  continuas** (0 % de disponibilidad en 30 días según monitorización
+  pública) y **no se puede obtener una clave** (el registro no funciona).
+  El usuario no pudo obtener la API key y confirma la caída.
+- Consecuencia: no es viable como dependencia de la app.
 
-- Exige **Client ID + Client Secret**: el secreto es una credencial tipo
-  contraseña que **no puede exponerse en una SPA** (quedaría visible en el
-  código que se sirve al navegador) y cuyo uso en cliente **viola el acuerdo
-  de desarrollador de Twitch**.
-- **No permite CORS** desde el navegador: las peticiones requieren un
-  **proxy/backend** que firme el token OAuth en servidor, infraestructura de
-  la que el proyecto carece por diseño.
-- El **token OAuth en servidor obligatorio** arrastra el mismo problema de
-  infraestructura y añade gestión de caducidad/renovación.
+#### TheGamesDB (TGDB) — descartada
 
-#### RAWG — seleccionada
+- Gratuita y con clave API accesible (registro en su foro).
+- **CORS: NO** (verificado empíricamente el 2026-08-10): las respuestas de
+  `api.thegamesdb.net` no incluyen `Access-Control-Allow-Origin` (ni en el
+  preflight OPTIONS ni en las GET). **Requiere un proxy igualmente**, así
+  que no ofrece la ventaja de «sin infraestructura» que se le suponía.
+- **Sin valoraciones de la comunidad**: el modelo de datos no expone
+  puntuaciones de usuarios ni de crítica (solo clasificación por edades
+  tipo «E - Everyone»). El usuario lo confirma y lo echa en falta.
+- Metadatos limitados: sin Metacritic, sin nota de comunidad, sin
+  duración, portadas vía CDN propia.
+- Al necesitar proxy de todos modos (CORS) y ofrecer **menos datos que
+  IGDB**, no aporta ninguna ventaja frente a la opción elegida.
 
-- **REST GET simple** con la clave en query string (`?key=`), **CORS
-  habilitado**: funciona desde el navegador sin backend, como TMDB.
-- Clave **gratuita para uso personal** (≈ **20 000 peticiones/mes**),
-  tratada como **no secreta** igual que TMDB/Google Books: la protección
-  real la dan las reglas de Firestore, no la ocultación de la clave.
-- Catálogo de **~500 000 juegos** con metadatos ricos: **Metacritic, ESRB,
-  desarrolladores, editores, plataformas, duración media (playtime), nota de
-  la comunidad (escala 0–5) y portada** (`background_image`).
-- **Atribución requerida**: se cumple con el crédito en el footer
-  (`index.html`) y en el propio panel (`ocio/videojuegos.html`).
+#### IGDB (Twitch) — seleccionada
+
+- **Base de datos de videojuegos más completa**: nota de la comunidad
+  (`total_rating` / `aggregated_rating`, escala 0–100 normalizada a 0–10
+  en la app), géneros, plataformas, desarrolladores y editores (vía
+  `involved_companies`), clasificación por edades ESRB/PEGI, portadas en
+  CDN (`images.igdb.com`), sinopsis, fechas, etc.
+- **Gratuita para uso no comercial** (acuerdo de desarrollador de Twitch);
+  límite de **4 peticiones por segundo**, más que suficiente para uso
+  personal.
+- **Exige servidor**: no tiene CORS y el Client Secret es una credencial
+  tipo contraseña que **no puede exponerse en una SPA** (además de violar
+  el acuerdo de Twitch). La solución estándar es un **proxy mínimo** que
+  custodie los secretos — aquí un **Cloudflare Worker** (plan gratuito,
+  sin servidor que mantener, con secretos cifrados).
 
 #### Otras candidatas evaluadas brevemente — descartadas
 
-- **GiantBomb**: requiere API key, tiene CORS limitado desde el navegador y
-  ofrece menos datos que RAWG.
-- **TheGamesDB**: datos pobres (sin Metacritic ni ESRB) y CORS dudoso.
+- **GiantBomb**: requiere API key, CORS limitado desde el navegador y
+  menos datos que IGDB.
 - **FreeToGame**: solo juegos *free-to-play*; no sirve como catálogo
   general.
 - **Steam Web API**: solo el catálogo de Steam, requiere clave y datos
   limitados (sin portadas normalizadas ni nota de comunidad).
 - **CheapShark**: solo ofertas/precios; no es un catálogo.
 
-### Patrón de integración (idéntico al de TMDB)
+### Patrón de integración
 
-- La clave se deja en **`js/config.js`** como `RAWG_API_KEY` (placeholder
-  vacío por defecto; el usuario la obtiene gratis en `rawg.io/apidocs`).
+- **Cloudflare Worker** en `cloudflare/igdb-proxy/` (`worker.js` +
+  `wrangler.toml` + `README.md` con el paso a paso): obtiene el token
+  OAuth de Twitch (flujo `client_credentials`), lo cachea con su
+  caducidad y reenvía `POST /v4/*` a `api.igdb.com` con las cabeceras
+  `Client-ID` y `Authorization: Bearer`, añadiendo CORS. El origen
+  permitido se restringe opcionalmente con el secreto `ALLOWED_ORIGIN`.
+- La URL del Worker se configura en **`js/config.js`** como
+  `IGDB_PROXY_URL` (placeholder vacío por defecto; el usuario la obtiene
+  al desplegar el Worker). Los secretos (`TWITCH_CLIENT_ID`,
+  `TWITCH_CLIENT_SECRET`) viven solo en Cloudflare (`wrangler secret put`),
+  nunca en el repositorio ni en el navegador.
 - Búsqueda y datos ampliados en **`js/api-games.js`** (`searchGames` con
-  paginación y `getGameDetails`), con la clave en query string.
-- Service worker: **`networkFirst` para `api.rawg.io`** (API, junto a TMDB,
-  Google Books y Open Library) y **`cacheFirst` para `media.rawg.io`**
-  (portadas), en `service-worker.js`.
-- Si falta la clave, la búsqueda **falla con un aviso claro** («Falta la
-  clave de RAWG en js/config.js (gratis en rawg.io/apidocs)»), y un **HTTP
-  401/403 se distingue** del resto de errores de red («RAWG rechazó la
-  petición. Revisa tu clave de API en js/config.js»).
+  paginación por `limit`/`offset` y `getGameDetails`), usando el lenguaje
+  de consulta Apicalypse de IGDB.
+- Service worker: **`cacheFirst` para `images.igdb.com`** (portadas); la
+  API de IGDB va por el proxy con POST y no se cachea.
+- Si falta la URL del proxy, la búsqueda **falla con un aviso claro**
+  («Falta IGDB_PROXY_URL en js/config.js (ver
+  cloudflare/igdb-proxy/README.md)»), y un **HTTP 401/403 se distingue**
+  del resto de errores de red («IGDB rechazó la petición. Revisa las
+  credenciales del proxy…»).
 
 ## Consecuencias
 
 ### Positivas
 
-- **Cero backend**: RAWG funciona desde el navegador con CORS habilitado;
-  se conserva la arquitectura 100 % cliente de Firebase Hosting y el
-  service worker.
-- **Mismas garantías que TMDB**: patrón de integración probado (query
-  string, networkFirst/cacheFirst), clave no secreta protegida por las
-  reglas de Firestore, y manejo de errores explícito (clave ausente,
-  clave rechazada y error de red).
-- **Metadatos ricos**: Metacritic, ESRB, desarrolladores, plataformas,
-  duración y portada en el mismo flujo que películas/series/libros.
+- **Catálogo de mayor calidad disponible**: IGDB tiene nota de la
+  comunidad (0–10, igual que TMDB), géneros, plataformas,
+  desarrolladores/ editores, ESRB y portadas — todo lo que RAWG ofrecía
+  salvo Metacritic y duración media.
+- **Secretos a salvo**: el Client Secret de Twitch nunca llega al
+  navegador; el Worker los guarda cifrados (secretos de Cloudflare).
+- **Proxy mínimo y gratuito**: Cloudflare Workers tiene plan gratuito; no
+  hay servidor que mantener ni coste recurrente; la app sigue siendo
+  estática.
+- **Manejo de errores explícito**: proxy no configurado, credenciales
+  rechazadas y error de red se distinguen (igual que con RAWG).
 
 ### Negativas / Riesgos
 
-- **Clave necesaria para buscar**: sin `RAWG_API_KEY` en `js/config.js` la
-  búsqueda no funciona; se mitiga con un aviso claro en el flujo de
-  búsqueda.
-- **Cuota mensual**: ≈ 20 000 peticiones/mes en el plan gratuito personal;
-  suficiente para uso individual pero no ilimitada.
-- **Escala de nota distinta**: la nota de comunidad de RAWG es **0–5**,
-  frente al **0–10** de TMDB; la diferencia queda documentada en el manual
-  de usuario (`docs/manual-de-usuario.md` §10).
-- **Datos en inglés**: RAWG no ofrece localización completa; títulos,
-  géneros y sinopsis se muestran tal como los sirve la API.
+- **Infraestructura mínima nueva**: quien administre la web debe
+  desplegar el Worker y configurar los secretos una vez (pasos en
+  `cloudflare/igdb-proxy/README.md`). Sin ese despliegue, la búsqueda de
+  videojuegos no funciona (con aviso claro).
+- **Cuenta de Twitch necesaria**: IGDB se gestiona a través de
+  dev.twitch.tv (gratis, requiere cuenta).
+- **Sin Metacritic ni duración media**: IGDB no expone esos campos; la
+  ficha muestra plataformas, desarrolladores, editores, ESRB, sinopsis y
+  nota de la comunidad.
+- **Límite de peticiones**: 4 req/s (uso no comercial); suficiente para
+  uso personal.
+- **Dependencia del Worker**: si el Worker falla (secretos, límites de
+  Cloudflare), la búsqueda se degrada; el resto de la app no se ve
+  afectada.
 
 ### Neutras
 
-- **Atribución obligatoria**: se añade el crédito «Datos de videojuegos vía
-  RAWG (rawg.io)» en el footer de `index.html` y en `ocio/videojuegos.html`.
+- **Atribución**: se mantiene el crédito «Datos de videojuegos vía IGDB
+  (igdb.com)» en el footer de `index.html` y en `ocio/videojuegos.html`.
 - **Colección Firestore nueva**: los juegos se guardan en
   `users/{uid}/games` (cubierta por `firestore.rules`) y se incluyen en la
   copia de seguridad, como el resto de tipos.
-- **Sin migración de datos**: no había datos previos de videojuegos.
+- **Sin migración de datos**: no había datos previos de videojuegos en
+  producción (la PR aún no se había fusionado cuando se revisó la
+  decisión); el campo `externalId` de IGDB es el que se guarda.
+- **Escala de nota**: IGDB puntúa 0–100; la app la normaliza a **0–10**
+  (igual que TMDB) y así queda documentado en el manual de usuario (§10).
 
 ## Trabajo futuro (fuera del alcance de la v1 de la issue #47)
 
@@ -147,25 +186,42 @@ plantearán como issues independientes si se desean:
 
 ## Alternativas descartadas
 
-- **IGDB (Twitch)**: descartada — Client Secret inexponible en una SPA, sin
-  CORS y token OAuth en servidor obligatorio (requiere backend).
-- **GiantBomb**: descartada — CORS limitado y menos metadatos que RAWG.
-- **TheGamesDB**: descartada — datos pobres y CORS dudoso.
+- **RAWG**: descartada — API caída y sin soporte (verificado 2026-08-10);
+  no se puede obtener clave.
+- **TheGamesDB**: descartada — sin CORS (requiere proxy igualmente) y sin
+  valoraciones de la comunidad; menos datos que IGDB.
+- **GiantBomb**: descartada — CORS limitado y menos metadatos que IGDB.
 - **FreeToGame**: descartada — solo free-to-play.
 - **Steam Web API**: descartada — solo el catálogo de Steam y datos
   limitados.
 - **CheapShark**: descartada — solo ofertas, no catálogo.
-- **Proxy/backend propio (p. ej. para poder usar IGDB)**: descartado —
-  rompe la arquitectura 100 % cliente de la app y añade coste recurrente.
+- **Proxy/backend propio alojado (VPS, función cloud genérica)**: se
+  prefiere el **Cloudflare Worker** por su plan gratuito, despliegue
+  mínimo y secretos cifrados integrados.
+
+## Configuración necesaria (quien administra la web)
+
+Pasos completos en `cloudflare/igdb-proxy/README.md`. Resumen:
+
+1. **Twitch**: crear aplicación en dev.twitch.tv/console/apps (tipo
+   *Application Integration*), anotar **Client ID** y generar **Client
+   Secret** (se muestra una sola vez).
+2. **Cloudflare**: cuenta gratuita; `wrangler login`; `wrangler deploy`
+   en `cloudflare/igdb-proxy/`.
+3. **Secretos**: `wrangler secret put TWITCH_CLIENT_ID`,
+   `wrangler secret put TWITCH_CLIENT_SECRET` y (recomendado)
+   `wrangler secret put ALLOWED_ORIGIN` con el dominio de la web.
+4. **App**: poner la URL del Worker en `IGDB_PROXY_URL` de `js/config.js`.
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `docs/adr-066-estudio-apis-videojuegos.md` | **Nuevo**: este documento |
-| `js/api-games.js`, `js/config.js`, `service-worker.js`, `js/search.js`, `js/global-search.js`, `js/ui.js`, `js/modal-handlers.js`, `js/quick-actions.js`, `js/game-log.js`, `js/app.js`, `js/db.js`, `js/constants.js`, `js/sorting.js`, `js/router.js`, `js/export-backup.js`, `index.html`, `ocio/videojuegos.html`, `ocio/ocio.css`, `css/styles.css`, `firestore.rules` | **Existentes**: implementación de la pestaña de videojuegos (rama `feat/issue-47-pestana-videojuegos`, QA PASS) — no se modifican con este ADR |
-| `docs/manual-de-usuario.md` | **Existente**: §7 «Videojuegos» actualizado en la implementación — no se modifica con este ADR |
-| `tasks/task-issue-47.json` | **Existente**: definición de done (criterio «ADR documentado con 'Related issue: #47'») que este ADR cumple — no se modifica |
+| `docs/adr-066-estudio-apis-videojuegos.md` | **Nuevo**: este documento (revisado: RAWG → IGDB + proxy) |
+| `cloudflare/igdb-proxy/worker.js`, `wrangler.toml`, `README.md` | **Nuevos**: proxy de IGDB (Cloudflare Worker) con instrucciones de despliegue y configuración |
+| `js/api-games.js`, `js/config.js`, `service-worker.js`, `js/search.js`, `js/ui.js`, `js/modal-handlers.js`, `js/quick-actions.js`, `index.html`, `ocio/videojuegos.html`, `ocio/ocio.css` | **Existentes**: migración de RAWG a IGDB (rama `feat/issue-47-pestana-videojuegos`) |
+| `docs/manual-de-usuario.md` | **Existente**: §7.2, §8.1, §10, §16 y §19 actualizados (IGDB, escala 0–10, avisos del proxy) |
+| `tasks/task-issue-47.json` | **Existente**: definición de done (criterio «ADR documentado con 'Related issue: #47'») que este ADR cumple |
 
 Relacionado con: tasks/task-issue-47.json
 
