@@ -35,9 +35,9 @@ function corsHeaders(env, request) {
   const origin = request.headers.get("Origin");
   let allowOrigin = env.ALLOWED_ORIGIN || "*";
   if (origin && env.ALLOWED_ORIGIN && origin !== env.ALLOWED_ORIGIN) {
-    // Origen no permitido: no se añade cabecera CORS (el navegador
-    // bloqueará la petición, que es justo lo que se quiere).
-    allowOrigin = origin; // se bloquea abajo con 403
+    // Origen no permitido: se bloquea con 403 antes de llegar aquí;
+    // no se añade cabecera CORS al orígen no autorizado.
+    allowOrigin = env.ALLOWED_ORIGIN;
   }
   return {
     "Access-Control-Allow-Origin": allowOrigin,
@@ -77,8 +77,7 @@ async function getAccessToken(env) {
   });
   const res = await fetch(`${TWITCH_TOKEN_URL}?${params}`, { method: "POST" });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Token IGDB fallido (HTTP ${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Token IGDB fallido (HTTP ${res.status}).`);
   }
   const data = await res.json();
   cachedToken = data.access_token;
@@ -92,19 +91,22 @@ async function getAccessToken(env) {
 
 export default {
   async fetch(request, env) {
+    // Restricción opcional de origen (recomendada en producción).
+    // Se comprueba ANTES del preflight para que un origen no
+    // permitido reciba 403 también en el OPTIONS y el navegador
+    // bloquee la petición sin llegar a llamar a IGDB.
+    if (!isAllowedOrigin(env, request)) {
+      return new Response(JSON.stringify({ error: "Origen no permitido" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Preflight CORS
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: corsHeaders(env, request),
-      });
-    }
-
-    // Restricción opcional de origen (recomendada en producción).
-    if (!isAllowedOrigin(env, request)) {
-      return new Response(JSON.stringify({ error: "Origen no permitido" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
       });
     }
 
