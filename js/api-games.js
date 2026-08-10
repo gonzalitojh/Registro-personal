@@ -96,6 +96,9 @@ const DETAIL_FIELDS = [
   "age_ratings.category",
 ].join(", ");
 
+// Campos del endpoint game_videos de IGDB (tráiler de YouTube).
+const GAME_VIDEO_FIELDS = ["video_id", "name"].join(", ");
+
 // Clasificaciones por edades de IGDB: category 1 = ESRB.
 const ESRB_RATINGS = {
   1: "RP", 2: "EC", 3: "E", 4: "E10+", 5: "T", 6: "M", 7: "AO",
@@ -153,10 +156,36 @@ export async function searchGames(searchTerm, page = 1) {
   return { items, hasMore: items.length === 20 };
 }
 
+// Extrae la URL del tráiler de YouTube a partir de la respuesta del
+// endpoint game_videos de IGDB. Prioriza el vídeo con "trailer" en el
+// nombre; si no, el primero con video_id no vacío. null si no hay
+// ninguno (mismo patrón que _extractTrailerUrl de api-movies.js).
+function extractTrailerUrl(videos) {
+  if (!Array.isArray(videos) || !videos.length) return null;
+  const withId = videos.filter((v) => v && v.video_id);
+  if (!withId.length) return null;
+  const best =
+    withId.find((v) => (v.name || "").toLowerCase().includes("trailer")) ||
+    withId[0];
+  return `https://www.youtube.com/watch?v=${best.video_id}`;
+}
+
+// URL del tráiler del juego (o null). El tráiler es un extra no
+// crítico: nunca lanza, cualquier fallo devuelve null.
+async function getGameTrailerUrl(id) {
+  try {
+    const body = `fields ${GAME_VIDEO_FIELDS}; where game = ${Number(id)}; limit 5;`;
+    const data = await igdbPost("game_videos", body);
+    return extractTrailerUrl(Array.isArray(data) ? data : []);
+  } catch {
+    return null;
+  }
+}
+
 // Datos ampliados de un juego: sinopsis completa, géneros,
-// plataformas, desarrolladores, editores, clasificación ESRB y
-// nota de la comunidad. Se piden una sola vez, al añadirlo (y para
-// enriquecer la vista previa del catálogo).
+// plataformas, desarrolladores, editores, clasificación ESRB,
+// nota de la comunidad y tráiler. Se piden una sola vez, al
+// añadirlo (y para enriquecer la vista previa del catálogo).
 export async function getGameDetails(id) {
   const body = `fields ${DETAIL_FIELDS}; where id = ${Number(id)};`;
   const data = await igdbPost("games", body);
@@ -180,5 +209,6 @@ export async function getGameDetails(id) {
     communityRating: toCommunityRating(r),
     coverUrl: coverUrl(r.cover && r.cover.image_id),
     year: yearFromTimestamp(r.first_release_date),
+    trailerUrl: await getGameTrailerUrl(id),
   };
 }

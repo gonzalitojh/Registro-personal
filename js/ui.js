@@ -177,6 +177,7 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
     </div>
     ${editionsNote}
     <div id="preview-details">
+      ${gamePlatformsHtml(item)}
       ${extraInfoHtml(item)}
       ${previewPagesHtml(item)}
       ${previewSeasonsHtml(item)}
@@ -227,7 +228,7 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
       Object.assign(item, details);
 
       // Solo se re-renderiza el bloque de detalles, no la estructura
-      previewDetailsEl.innerHTML = extraInfoHtml(item) + previewPagesHtml(item) + previewSeasonsHtml(item);
+      previewDetailsEl.innerHTML = gamePlatformsHtml(item) + extraInfoHtml(item) + previewPagesHtml(item) + previewSeasonsHtml(item);
 
       // Si llegaron rating de comunidad o tráiler nuevos, refrescar
       // esos bloques (pueden no existir: p. ej. libros)
@@ -640,11 +641,6 @@ function extraInfoHtml(item) {
     lines.push(`<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`);
   }
   if (item.type === "game") {
-    if (item.platforms && item.platforms.length) {
-      lines.push(
-        `<p class="extra-info__line"><strong>Plataformas:</strong> ${escapeHtml(item.platforms.join(", "))}</p>`
-      );
-    }
     if (item.developers && item.developers.length) {
       lines.push(
         `<p class="extra-info__line"><strong>Desarrollador${item.developers.length > 1 ? "es" : ""}:</strong> ${escapeHtml(
@@ -886,6 +882,22 @@ function watchProvidersHtml(item) {
       ${providersGroupHtml(wp.rent, "Alquiler")}
       ${providersGroupHtml(wp.buy, "Compra")}
       ${wp.link ? `<a class="watch-providers__link" href="${escapeHtml(wp.link)}" target="_blank" rel="noopener">Ver opciones en TMDB</a>` : ""}
+    </div>`;
+}
+
+// Chips con las plataformas jugables de un videojuego (IGDB), para
+// que se vean como etiquetas y no como texto plano. Devuelve cadena
+// vacía si no hay plataformas (no ocupa espacio en el modal).
+function gamePlatformsHtml(item) {
+  if (!item.platforms || !item.platforms.length) return "";
+  return `
+    <div class="game-platforms">
+      <span class="game-platforms__title">Plataformas:</span>
+      <ul class="game-platforms__list">
+        ${item.platforms
+          .map((p) => `<li class="game-platform">${escapeHtml(p)}</li>`)
+          .join("")}
+      </ul>
     </div>`;
 }
 
@@ -1327,6 +1339,9 @@ export function openGameModal(item, callbacks) {
     </div>
     ${editButtonHtml()}
 
+    ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
+    ${gamePlatformsHtml(item)}
     ${extraInfoHtml(item)}
 
     ${renderStandbyBanner(item.status, "", "Abandonado")}
@@ -2108,6 +2123,7 @@ export function openReadOnlyModal(item, ownerName) {
     ${upcomingBadge(item)}
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
+    ${gamePlatformsHtml(item)}
     ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
