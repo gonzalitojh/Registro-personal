@@ -1,0 +1,70 @@
+{
+  "title": "Arreglo de los episodios de las series",
+  "description": "Dos problemas en la lista de episodios por temporada de una serie (issue #133):\n\n1. Visualización en móviles incorrecta: se ve el título en vertical en muchos casos. Se debería ver el título y la valoración de la comunidad en una línea, y la valoración propia y la fecha de última visualización en la siguiente. Si el título es largo puede ocupar más de una línea, pero debe quedar centrado verticalmente con la valoración de la comunidad.\n\n2. Un episodio debe poder volver a marcarse como visto sin esperar a completar la serie. Al presionar el botón de visto cuando el episodio ya está marcado, preguntar al usuario si lo ha visto de nuevo o si desea desmarcarlo. En el propio botón de visto, mostrar el número de visualizaciones del episodio en lugar de un tick cuando se haya visto más de una vez.",
+  "status": "review",
+  "acceptance criteria": [
+    "En móvil (~360 px) y tablet (~768 px), cada episodio de la lista muestra el título y la valoración de la comunidad en una misma línea (el título puede ocupar varias líneas si es largo, centrado verticalmente con la valoración de la comunidad) y en la línea siguiente la valoración propia y la fecha de última visualización.",
+    "Ningún título de episodio se muestra en vertical (no hay modo de escritura vertical) y no hay scroll horizontal ni textos desbordados a 360/768/1280 px.",
+    "Al pulsar el botón de visto sobre un episodio ya marcado como visto, se pregunta al usuario si lo ha visto de nuevo o si desea desmarcarlo (diálogo/confirmación), sin depender de que la serie esté completada.",
+    "El botón de visto muestra el número de visualizaciones del episodio en lugar de un tick cuando el episodio se ha visto más de una vez.",
+    "Confirmar «lo he visto de nuevo» incrementa el número de visualizaciones y actualiza la fecha de última visualización; «desmarcar» elimina la marca de visto (y el contador queda coherente con el modelo de datos).",
+    "La serie no debe quedar marcada como completada automáticamente por la acción de «visto de nuevo» si no estaba completa antes (el estado de completado sigue dependiendo de marcar todos los episodios).",
+    "Sin regresiones en escritorio (1280 px): el diseño actual de la lista de episodios se conserva salvo los cambios pedidos.",
+    "El manual de usuario (docs/manual-de-usuario.md) refleja el nuevo comportamiento de los botones de episodio si aplica (regla 3 de AGENTS.md).",
+    "ADR documentado con 'Related issue: #133'."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #133'.",
+    "PR creada contra dev sin keyword de cierre (la issue se cierra al fusionar en dev vía issues-done-on-dev).",
+    "Issue #133 label actualizada a su estado final (needs-review).",
+    "Task file actualizado y subido al repositorio (status review + bloque pr)."
+  ],
+  "issue": {
+    "number": 133,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/133",
+    "title": "Arreglo de los episodios de las series"
+  },
+  "plan": {
+    "architect": "task-architect",
+    "summary": "Layout de episodios a 2 líneas en todos los anchos (causa del título vertical: flex-wrap:wrap + min-width:0 + overflow-wrap:anywhere en .episode-row__main): línea 1 checkbox+nº+título (multilínea, centrado vertical)+badge comunidad; línea 2 estrellas+fecha (nuevo .episode-row__meta, padding-left 30px). Modelo de datos: campo times en la entrada de episodio (normalizeEntry lo normaliza a 1 para legacy; sin migración de backup), markEpisodeSeenAgain() nueva en tv-progress.js, setEpisodeDate/setSeasonWatched preservan times, computeProgress sin cambios. Nuevo diálogo #episode-actions-modal + js/episode-actions-modal.js (patrón rating-modal.js, promesa 'seen_again'|'unmarked'|null): al pulsar la casilla de un episodio ya visto pregunta «Lo he visto de nuevo» / «Desmarcar» / cancelar; rama !wasWatched intacta (confirm sin estrenar + ventana valoración issue #136). Checkbox visual muestra data-count (nº veces) en lugar del tick cuando times>1 (regla CSS ::after attr(data-count)). applyEpisodeRowState() unifica repintado derivado de item.watched (checkbox, marcar todo). Callback onSetEpisodeSeenAgain en modal-handlers via persistWatched. Escape: prioridad episode-actions > rating > item > notifs. Bump PWA 20260831→20260901 (index.html×3, service-worker×6, js/config.js APP_VERSION). Manual §4.3 actualizado. ADR-059. Sin cambios: export-backup, quick-actions, rating-modal, styles.css."
+  },
+  "validation": {
+    "qa": "APROBADO en 1 iteración (qa-reviewer): 12/12 criterios PASS por revisión estática (sin node/navegador en el entorno). Sin hallazgos bloqueantes. LOW informativos: (1) restauración de foco del diálogo podía caer en body al deshabilitar el checkbox antes de abrir — CORREGIDO con prevActive.focus() en finally; (2) ruta './css/ocio.css' incorrecta y PRE-EXISTENTE en STATIC_ASSETS del SW (el archivo real es ocio/ocio.css) — no tocada, fuera de alcance; (3) ADR-059 pendiente (documentación-sync).",
+    "hallazgos_corregidos": [
+      "Restauración de foco del diálogo: se captura document.activeElement antes de deshabilitar el checkbox y se reenfoca en finally (js/ui.js, rama wasWatched)"
+    ],
+    "sugerencias_low": [
+      "Ruta './css/ocio.css' en STATIC_ASSETS del service-worker es incorrecta (real: './ocio/ocio.css'); pre-existente, corregir en futuro bump",
+      "Verificación visual final en navegador a 360/768/1280 px recomendada al desplegar (QA estático en este entorno)"
+    ]
+  },
+  "security": {
+    "scan": "PASS (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 3,
+    "low_findings": [
+      "js/ui.js: interpolación de `times` en aria-label/data-count sin escape numérico — CORREGIDO (Math.max(1, Number(times)||1))",
+      "js/ui.js data-air-date sin escapar — PRE-EXISTENTE, fuera de alcance",
+      "service-worker.js ruta ./css/ocio.css incorrecta — PRE-EXISTENTE, fuera de alcance"
+    ]
+  },
+  "documentation": {
+    "adr": "docs/adr-059-episodios-series-revision-y-contador.md",
+    "related_issue": "#133",
+    "manual_usuario": "docs/manual-de-usuario.md §4.3 actualizado: bullet «Volver a ver un episodio» (diálogo, fecha a hoy, +1 contador, casilla con nº de veces en lugar de ✓); verificado sin inconsistencias",
+    "readme": "sin cambios (cambio de UI ya documentado en manual y ADR)"
+  },
+  "pr": {
+    "number": 168,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/168",
+    "title": "[feature] Arreglo de los episodios de las series: layout 2 líneas y re-visionado",
+    "branch": "feature/issue-133-episodios-series",
+    "commit": "362a150",
+    "closes": "#133"
+  }
+}
