@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260838',
-  './css/ocio.css?v=20260838',
-  './js/app.js?v=20260838',
+  './css/styles.css?v=20260839',
+  './css/ocio.css?v=20260839',
+  './js/app.js?v=20260839',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -70,10 +70,10 @@ const STATIC_ASSETS = [
   './js/auto-hide-nav.js',
   './js/push.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260838',
-  './ocio/peliculas.html?v=20260838',
-  './ocio/libros.html?v=20260838',
-  './ocio/videojuegos.html?v=20260838',
+  './ocio/series.html?v=20260839',
+  './ocio/peliculas.html?v=20260839',
+  './ocio/libros.html?v=20260839',
+  './ocio/videojuegos.html?v=20260839',
 ];
 
 // -------------------------------------------------------------
@@ -295,18 +295,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ---- Cache First: imágenes de RAWG (portadas) ----
-  if (url.hostname === 'media.rawg.io') {
+  // ---- Cache First: imágenes de IGDB (portadas) ----
+  if (url.hostname === 'images.igdb.com') {
     event.respondWith(cacheFirst(event.request));
     return;
   }
 
-  // ---- Network First: APIs externas (TMDB, Google Books, Open Library, RAWG) ----
+  // ---- Network First: APIs externas (TMDB, Google Books, Open Library) ----
   if (
     url.hostname === 'api.themoviedb.org' ||
     url.hostname === 'www.googleapis.com' ||
-    url.hostname === 'openlibrary.org' ||
-    url.hostname === 'api.rawg.io'
+    url.hostname === 'openlibrary.org'
   ) {
     event.respondWith(networkFirst(event.request).then(({ response }) => response));
     return;

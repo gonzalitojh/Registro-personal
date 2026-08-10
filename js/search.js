@@ -125,7 +125,7 @@ export async function handleAdd(item, btn, ctx) {
     });
   }
 
-  // --- Videojuegos (RAWG) ---
+  // --- Videojuegos (IGDB vía proxy) ---
   if (item.type === "game") {
     btn.disabled = true;
     btn.textContent = "Añadiendo…";
@@ -351,7 +351,7 @@ export async function handleAddSeen(item, btn, ctx) {
     });
   }
 
-  // --- Videojuegos (RAWG) ---
+  // --- Videojuegos (IGDB vía proxy) ---
   if (item.type === "game") {
     btn.disabled = true;
     btn.textContent = "Marcando…";
@@ -371,7 +371,7 @@ export async function handleAddSeen(item, btn, ctx) {
       try {
         details = await getGameDetails(item.externalId);
         Object.assign(draft, details);
-        // RAWG puede devolver background_image null: no pisar la
+        // IGDB puede devolver cover null: no pisar la
         // portada del resultado de búsqueda (mismo patrón que TMDB).
         draft.coverUrl = draft.coverUrl || item.coverUrl;
       } catch (err) {
@@ -383,7 +383,7 @@ export async function handleAddSeen(item, btn, ctx) {
         title: item.title,
         coverUrl: item.coverUrl,
         communityRating: details.communityRating ?? null,
-        communityLabel: "RAWG",
+        communityLabel: "IGDB",
         doneToast: `«${item.title}» añadido y marcado como jugado.`,
       });
     } catch (err) {
@@ -549,7 +549,7 @@ export async function enrichSearchItem(item) {
       return {};
     }
   }
-  // Videojuego: datos ampliados de RAWG (sinopsis, plataformas,
+  // Videojuego: datos ampliados de IGDB (sinopsis, plataformas,
   // desarrolladores, Metacritic, ESRB...).
   if (item.type === "game") {
     try {

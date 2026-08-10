@@ -121,7 +121,7 @@ async function quickMarkGame(item, ctx) {
     // El status se restaura LITERAL al capturado (no al recomputado
     // del log) por si el usuario lo tenía en un estado manual.
     const undone = await maybeQuickItemRating(item, ctx, "game", {
-      communityLabel: "RAWG",
+      communityLabel: "IGDB",
       onUndo: async () => {
         await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
           playLog: prevPlayLog,

@@ -10,7 +10,7 @@
 // Versión de despliegue/caché. Se incrementa con scripts/bump-version.sh
 // y se usa para versionar las URLs de los assets (?v=...) de modo que
 // cada deploy invalide las cachés del service worker y del navegador.
-export const APP_VERSION = '20260838';
+export const APP_VERSION = '20260839';
 
 // Configuración de tu proyecto de Firebase
 // (Firebase console → Configuración del proyecto → Tus apps → SDK)
@@ -37,6 +37,9 @@ export const TMDB_API_KEY = "f23a198de513705e5970b196de181edb";
 // desde Google Cloud Console → Credenciales.
 export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
 
-// Clave de la API de RAWG (gratuita para uso personal, https://rawg.io/apidocs).
-// No es secreta: la protección real la dan las reglas de Firestore.
-export const RAWG_API_KEY = "";
+// URL pública de tu Cloudflare Worker, proxy de IGDB (Twitch).
+// IGDB no tiene CORS y su Client Secret no puede exponerse en una SPA:
+// el Worker guarda los secretos y reenvía las peticiones a IGDB.
+// Despliega el Worker y configura los secretos siguiendo
+// cloudflare/igdb-proxy/README.md, y pon aquí su URL.
+export const IGDB_PROXY_URL = "";

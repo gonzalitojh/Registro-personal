@@ -180,7 +180,7 @@ input, textarea, select { font-size: 16px; }
 }
 
 /* Línea de atribución al final de cada biblioteca (p. ej. datos de
-   videojuegos vía RAWG en ocio/videojuegos.html). */
+   videojuegos vía IGDB en ocio/videojuegos.html). */
 .library-credit {
   font-size: 0.7rem;
   color: var(--ink-soft);

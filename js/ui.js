@@ -29,7 +29,7 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;");
 }
 
-// HTML para un distintivo de puntuación de la comunidad (TMDB, RAWG
+// HTML para un distintivo de puntuación de la comunidad (TMDB, IGDB
 // para videojuegos). Variante compacta (--sm) para filas de episodio
 // (issue #45).
 function communityRatingValueHtml(value, label = "TMDB") {
@@ -44,7 +44,7 @@ function communityRatingValueHtml(value, label = "TMDB") {
 // Devuelve cadena vacía si no hay datos (no ocupa espacio en la cuadrícula).
 function communityRatingHtml(item) {
   if (item.communityRating == null) return "";
-  const label = item.type === "game" ? "RAWG" : "TMDB";
+  const label = item.type === "game" ? "IGDB" : "TMDB";
   return communityRatingValueHtml(item.communityRating, label).replace(
     "community-rating community-rating--sm",
     "community-rating"
@@ -52,9 +52,9 @@ function communityRatingHtml(item) {
 }
 
 // Para modales: siempre muestra una línea, ya sea la nota real o
-// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB/RAWG.
+// un indicador de "Sin puntuaciones" cuando no hay datos de TMDB/IGDB.
 function communityRatingDisplay(item) {
-  const label = item.type === "game" ? "RAWG" : "TMDB";
+  const label = item.type === "game" ? "IGDB" : "TMDB";
   if (item.communityRating != null) {
     const val = Number(item.communityRating).toFixed(1);
     return `<div class="modal-detail__ratings">

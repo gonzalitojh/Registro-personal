@@ -361,7 +361,7 @@ function openGameItem(item, ctx) {
       // El status se restaura LITERAL al capturado (no al recomputado
       // del log) por si el usuario lo tenía en un estado manual.
       await maybeOpenItemRatingWindow(item, ctx, "game", {
-        communityLabel: "RAWG",
+        communityLabel: "IGDB",
         onUndo: async () => {
           await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
             playLog: prevLog,
