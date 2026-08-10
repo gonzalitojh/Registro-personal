@@ -1,0 +1,35 @@
+{
+  "title": "Actividad / feed de videojuegos",
+  "description": "Incluye los videojuegos a la vista de actividad/feed. La vista #/perfil/actividad (ADR-015) genera un feed de actividad de amigos a partir de películas, series y libros (buildFriendFeed en js/activity-feed.js). Los videojuegos existen como categoría propia (colección games, pestaña en Ocio, subpestaña en amigos — ADR-068/issue #172) con playLog [{ startedAt, finishedAt }] y estados pendiente/en_curso/completado/standby/abandonado, pero el feed aún no los incluye. Hay que generar eventos de videojuegos (empezó a jugar / terminó de jugar) a partir del playLog y cargar los items de tipo game de cada amigo al construir el feed.",
+  "status": "review",
+  "acceptance_criteria": [
+    "El feed de actividad (#/perfil/actividad) incluye eventos de videojuegos de los amigos: «Está jugando…» cuando hay una sesión abierta (startedAt sin finishedAt) y «Terminó de jugar…» cuando una sesión tiene finishedAt.",
+    "Fallback: si el juego está completado pero no tiene playLog, se genera «Terminó de jugar…» con updatedAt.",
+    "Los eventos de videojuegos se ordenan cronológicamente con el resto (más reciente primero) y se agrupan por fecha igual que los actuales.",
+    "Al pulsar un evento de videojuego se abre la ficha de solo lectura del amigo sin errores (icono, portada y modal correctos).",
+    "No se rompe la funcionalidad existente del feed (películas, series, libros) ni el resto de la app.",
+    "Carga del amigo: los videojuegos se obtienen con ctx.getItemsOnce(profile.uid, 'game') en paralelo con el resto de categorías."
+  ],
+  "definition_of_done": [
+    "Planificación realizada.",
+    "Implementación completada (js/activity-feed.js, js/profile.js, js/ui.js y manual de usuario).",
+    "Validación por QA contra criterios de aceptación y defensa (a11y, responsividad, 4 modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR nuevo creado documentando la decisión (con 'Related issue: #173').",
+    "PR contra dev SIN keyword de cierre creada por el publisher, con estado de la issue a status: needs-review y task file en 'review'.",
+    "Issue #173 label updated to its final state."
+  ],
+  "issue": {
+    "number": 173,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/173",
+    "title": "Actividad / feed de videojuegos."
+  },
+  "pr": {
+    "number": 185,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/185",
+    "title": "feat: videojuegos en el feed de actividad (issue #173)",
+    "branch": "feat/issue-173-actividad-feed-videojuegos",
+    "commit": "c03900d",
+    "closes": "#173"
+  }
+}
