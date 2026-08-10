@@ -535,3 +535,241 @@ devuelve toda la ficha enriquecida**. La app ya usa este mecanismo
 (`getMovieDetails`/`getTvExtraDetails`). Implicación: enriquecer la ficha
 tipo IMDB cuesta **1 llamada por apertura** (con caché), no N llamadas.
 
+---
+
+## 5. Viabilidad técnica en la arquitectura actual
+
+Clasificación en dos categorías según los recursos que exigiría cada sección
+del catálogo en la web actual (100 % cliente, sin backend, service worker):
+
+### Categoría A — Factible hoy en el cliente (CORS + GET público + `api_key`)
+
+**Toda la información de las secciones 4.1-4.18 y 4.21 cae en esta
+categoría** — la práctica totalidad de la API. Razones verificadas:
+
+1. **CORS habilitado** para todos los orígenes (verificado empíricamente con
+   `curl` a `api.themoviedb.org` el 2026-08-10: `access-control-allow-origin:
+   *`). El navegador puede consultar TMDB directamente, como ya hace hoy.
+2. **Autenticación por `api_key` en query string** (v3): soportada por la
+   documentación oficial para uso no comercial; la clave ya está en el
+   cliente (`js/config.js`) y expuesta por diseño (igual que Google
+   Books/Open Library). En un cliente público no es un secreto; TMDB
+   ratifica su esquema v3 precisamente para este tipo de integraciones.
+3. **Patrones de consumo ya existentes**: caché 24 h en memoria
+   (`providersCache`), `networkFirst` para la API y `cacheFirst` para el CDN
+   de imágenes en el service worker, snapshots Firestore con refresh diario
+   (ADR-021). Ampliar secciones = añadir funciones en `js/api-movies.js` que
+   sigan estos patrones; no hay cambio arquitectónico.
+4. **Coste de llamadas marginal**: con `append_to_response` (4.21), una
+   ficha enriquecida tipo IMDB cuesta **1 llamada**; las listas editoriales y
+   discover, 1 llamada por sección; las imágenes y vídeos van por el CDN sin
+   rate limit. Sobre el baseline de ~410 llamadas TMDB/día del ADR-073, una
+   fase típica añade del orden de 1-5 llamadas por apertura de ficha,
+   amortizadas por las cachés existentes.
+
+### Categoría B — Requiere infraestructura nueva (proxy o backend)
+
+Solo dos escenarios la necesitarían, **ninguno urgente hoy**:
+
+1. **Escalado de usuarios**: el rate limit (~40 req/s, sección 6.1) es **por
+   clave**, no por IP: todos los usuarios de la app comparten la misma clave
+   y el tope se golpea de forma conjunta. Con pocos usuarios y caché, no hay
+   riesgo (el consumo actual es ~410 llamadas/día ≈ 0,005 req/s de media,
+   órdenes de magnitud por debajo del tope). Si la web creciese a decenas de
+   usuarios activos simultáneos, la vía sería el **patrón de proxy Cloudflare
+   Worker ya probado con IGDB** (ADR-067): caché server-side, agregación de
+   peticiones y ocultación de la clave — sin cambiar la arquitectura de la
+   app.
+2. **Funciones de cuenta TMDB** (4.19): OAuth y gestión de sesiones exigen
+   backend (el flujo de token de v4 requiere guardar credenciales).
+   **Descartado** por no aportar valor frente al sistema propio de la app.
+
+**Conclusión de viabilidad**: **la idea de la issue es factible** en la
+arquitectura actual para la práctica totalidad de la información de TMDB, con
+coste de infraestructura **cero**, siempre que se respete el modelo de
+consumo actual (bajo volumen + caché + bajo demanda). El proxy solo sería una
+fase posterior de escalado, y el patrón ya está probado.
+
+---
+
+## 6. Límites: rate limits, costes y términos de uso
+
+### 6.1 Rate limits (documentación oficial, consultada el 2026-08-10)
+
+- El límite legacy de **40 requests/10 s se deshabilitó el 16/12/2019**.
+- Existe un límite superior **blando de ~40 requests/segundo por clave** para
+  mitigar el scraping masivo. **Puede cambiar en cualquier momento** sin
+  aviso (declaración oficial).
+- Ante un `429`, la documentación pide **respetarlo** (dejar de pedir);
+  la app debe tratar `429` como caso de back-off y servir caché. TMDB no
+  ofrece SLA (FAQ oficial); su estado se publica en
+  `status.themoviedb.org`.
+- Implicación de diseño: el consumo debe ser **bajo volumen + caché + bajo
+  demanda**, exactamente el modelo actual. Nada de recopilación masiva por
+  usuario (p. ej. re-consultar la ficha completa de todos los ítems en cada
+  visita) — para eso ya están los snapshots Firestore.
+
+### 6.2 Costes
+
+- **Gratis para uso no comercial** con atribución (FAQ oficial). La app es
+  personal/no comercial → coste 0 €.
+- **Uso comercial requiere acuerdo escrito** con TMDB (tarifas). Si algún día
+  la web monetizase, habría que migrar a API comercial (no es el caso).
+- **Prohibido** (términos de uso, sección 1.C): entrenar modelos ML/AI con
+  los datos, usarlos para chatbots/LLM, recopilarlos para reventa, usarlos
+  como alojamiento de imágenes publicitarias, o hacer derivados de la API.
+
+### 6.3 Términos de uso (texto leído en `themoviedb.org/documentation/api/terms-of-use`, versión 20/10/2023)
+
+- **Atribución obligatoria**: logo aprobado de TMDB + aviso «This product
+  uses the TMDB API but is not endorsed or certified by TMDB» **en la
+  sección About/Credits de la aplicación**. La app ya cumple (footer de
+  `index.html:222`, con el aviso textual en español). Para nuevas secciones
+  que muestren datos de TMDB no haría falta más, pero convendría añadir el
+  **logo aprobado** en la página de ajustes/acerca si se amplía el uso.
+- **Caché máxima de 6 meses** de los datos de la API: los snapshots en
+  Firestore (ADR-021/073) son el mecanismo coherente; el refresh diario
+  renueva dentro del margen. No cachear en el service worker por más de 6
+  meses los datos de la API (las **imágenes del CDN no están sujetas a este
+  límite** — la documentación solo limita "information", y el CDN se usa con
+  `cacheFirst`).
+- **Suspensión unilateral**: TMDB puede cambiar, suspender o descontinuar
+  cualquier aspecto de la API en cualquier momento. Riesgo mitigado por los
+  snapshots locales (la app conserva los datos aunque TMDB caiga).
+
+### 6.4 Estimación de carga por fase propuesta
+
+Sobre el baseline de ~410 llamadas TMDB/día/usuario (ADR-073), cada fase
+añade llamadas **solo cuando el usuario abre la función** (nada en el
+refresh diario):
+
+| Fase | Llamada adicional típica | Estimación por usuario activo |
+|---|---|---|
+| F1 Personas/filmografía | `person/{id}` + `combined_credits` (1-2 por apertura de persona) | +5-15/día |
+| F2 Discover/trending | 1 llamada por sección visitada | +3-10/día |
+| F3 Imágenes/vídeos/certificaciones | CDN (sin rate limit) + 1 `append_to_response` | +1-3/día |
+| F4 External IDs/configuration | 1 llamada cacheable larga | +0-2/día |
+
+Total estimado **+10-30 llamadas/día** en uso intensivo (≈ +2-7 % sobre el
+baseline), muy por debajo de cualquier límite y amortizable por las cachés.
+
+---
+
+## 7. Alternativas evaluadas
+
+1. **Mantener el statu quo** (solo 9 endpoints, ficha básica): no satisface
+   la idea de la issue; descartada por no aportar el valor IMDB pedido.
+2. **Proxy/backend obligatorio desde el inicio**: sobredimensionado; toda la
+   información de categoría A funciona hoy en cliente sin infraestructura.
+   Se descarta salvo fase de escalado (patrón ADR-067).
+3. **Migrar a API v4 con Access Token**: no aporta datos nuevos para la web,
+   obliga a gestionar un token sin beneficio en cliente público (4.20).
+   Descartada; se mantiene v3.
+4. **Integrar cuentas/listas/reviews de TMDB** (4.16, 4.19): duplica el
+   sistema propio de valoración/listas de la app y exige OAuth.
+   Descartada por coste/beneficio.
+5. **Ampliación por fases en cliente (opción adoptada)**: aprovechar los
+   patrones existentes para enriquecer la web de forma incremental, con las
+   cachés y el bajo volumen como garantía frente a los límites.
+
+---
+
+## 8. Recomendación final (alcance para issues futuras)
+
+**Sí, es viable montar una "especie de IMDB/TMDB" dentro de la web** sin
+cambios de arquitectura: TMDB ofrece toda la información necesaria y la
+app puede consumirla desde el cliente con su modelo actual. Para no
+sobredimensionar, se recomienda un **alcance por fases**, cada una como issue
+de implementación separada (ordenado por valor/esfuerzo):
+
+- **Fase 1 — Personas y filmografía** (secciones 4.3, 4.4): página de
+  actor/director (biografía, foto, datos personales) y filmografía completa
+  navegable desde los créditos de la ficha. Máximo impacto visual hacia
+  "IMDB propio", mínimo coste (1-2 llamadas por apertura, person_id ya
+  disponible). Enlazado con el `cast` ya mostrado.
+- **Fase 2 — Descubrimiento** (4.6, 4.7): secciones Trending/Estrenos/
+  Populares/Top Rated y exploración avanzada con Discover (género, año,
+  plataforma, nota). Cero lógica de ranking propia.
+- **Fase 3 — Riqueza de ficha** (4.2, 4.12, 4.13): galerías de imágenes,
+  vídeos adicionales, certificaciones por país y release dates por país;
+  ficha de episodio individual con fotograma y reparto invitado.
+- **Fase 4 — Integración externa** (4.15, 4.18): «ver en IMDb/Wikipedia»,
+  importar por ID externo con `find`, y configuración dinámica (tamaños de
+  imagen y traducciones de jobs de crew).
+- **Fuera de alcance** (documentado para no re-evaluarlo): reviews y listas
+  de usuarios TMDB (4.16), autenticación/cuentas (4.19), v4 (4.20),
+  changes/changelog (4.17 — solo nota futura para el refresh del ADR-021).
+
+Cada fase debe respetar las reglas del proyecto (manual de usuario, temas,
+responsividad) cuando toque UI, y las condiciones de la sección 6
+(atribución, caché ≤ 6 meses, bajo volumen + caché).
+
+---
+
+## 9. Referencias y fuentes
+
+Consultadas el 2026-08-10:
+
+- Documentación oficial de la API v3 (índice, Getting Started, FAQ, Rate
+  Limiting, Append To Response): https://developer.themoviedb.org/docs
+- Catálogo OpenAPI de la API v3 (21 secciones/tags): https://developer.themoviedb.org/openapi/tmdb-api.json
+- Términos de uso de la API (v. 20/10/2023): https://www.themoviedb.org/documentation/api/terms-of-use
+- FAQ (SLA, costes, atribución): https://developer.themoviedb.org/docs/faq
+- Logos y atribución: https://www.themoviedb.org/about/logos-attribution
+- Estado del servicio: https://status.themoviedb.org
+- Código real de la app: `js/api-movies.js`, `js/config.js`,
+  `service-worker.js`, `index.html` (líneas citadas en el texto).
+- Estudios previos de la casa (formato y baseline de carga): ADR-065
+  (scraper GoodReads), ADR-067 (APIs de videojuegos), ADR-073 (estudio de
+  almacenamiento mínimo, ~410 llamadas TMDB/día).
+
+---
+
+## Anexo A. Tabla resumen de endpoints
+
+| Endpoint | Método | Sección | ¿Usado hoy? | Valor tipo IMDB | Categoría |
+|---|---|---|---|---|---|
+| `/3/movie/{id}` | GET | 4.1 | 🟡 | Ficha técnica completa | A |
+| `/3/tv/{id}` | GET | 4.2 | 🟡 | Ficha de serie completa | A |
+| `/3/tv/{id}/season/{n}` | GET | 4.2 | 🟡 | Temporada y episodios | A |
+| `/3/tv/{id}/season/{n}/episode/{m}` | GET | 4.2 | no | Ficha de episodio | A |
+| `/3/tv/{id}/aggregate_credits` | GET | 4.2/4.4 | no | Reparto por personaje | A |
+| `/3/tv/{id}/content_ratings` | GET | 4.2 | no | Edad recomendada por país | A |
+| `/3/tv/{id}/episode_groups` | GET | 4.2 | no | Orden de visionado | A |
+| `/3/person/{id}` | GET | 4.3 | no | Biografía de persona | A |
+| `/3/person/popular` | GET | 4.3/4.7 | no | Actores populares | A |
+| `/3/person/{id}/combined_credits` | GET | 4.3/4.4 | no | Filmografía completa | A |
+| `/3/movie|tv/{id}/credits` | GET | 4.4 | 🟢 (append) | Reparto y crew completos | A |
+| `/3/movie|tv/{id}/similar` | GET | 4.4 | 🟢 | Contenidos similares | A |
+| `/3/search/movie` | GET | 4.5 | 🟢 | Búsqueda de películas | A |
+| `/3/search/tv` | GET | 4.5 | 🟢 | Búsqueda de series | A |
+| `/3/search/person` | GET | 4.5 | no | Búsqueda de personas | A |
+| `/3/search/multi` | GET | 4.5 | no | Búsqueda unificada | A |
+| `/3/discover/movie` | GET | 4.6 | no | Exploración avanzada | A |
+| `/3/discover/tv` | GET | 4.6 | no | Exploración avanzada | A |
+| `/3/trending/{all\|movie\|tv\|person}/{day\|week}` | GET | 4.7 | no | Tendencias | A |
+| `/3/movie/{now_playing\|popular\|top_rated\|upcoming}` | GET | 4.7 | no | Listas editoriales | A |
+| `/3/tv/{popular\|top_rated\|airing_today\|on_the_air}` | GET | 4.7 | no | Listas editoriales | A |
+| `/3/collection/{id}` | GET | 4.8 | 🟢 | Sagas completas | A |
+| `/3/genre/movie\|tv/list` | GET | 4.9 | no | Géneros | A |
+| `/3/movie\|tv/{id}/keywords` | GET | 4.9 | no | Temas de la obra | A |
+| `/3/company/{id}` (+ `/movies`) | GET | 4.10 | no | Productoras y filmografía | A |
+| `/3/network/{id}` | GET | 4.10 | no | Cadenas y catálogo | A |
+| `/3/movie\|tv/{id}/watch/providers` | GET | 4.11 | 🟢 | Dónde ver (ES) | A |
+| `/3/watch/providers/movie\|tv` | GET | 4.11 | no | Índice de plataformas | A |
+| `/3/movie\|tv\|person/{id}/images` | GET | 4.12 | no | Galerías | A |
+| `/3/movie\|tv/{id}/videos` | GET | 4.13 | 🟢 (append) | Tráilers y extras | A |
+| `/3/movie\|tv\|person/{id}/translations` | GET | 4.14 | no | Multiidioma | A |
+| `/3/movie\|tv\|person/{id}/external_ids` | GET | 4.15 | no | Deep links externos | A |
+| `/3/find/{external_id}` | GET | 4.15 | no | Importar por ID externo | A |
+| `/3/movie\|tv/{id}/reviews` | GET | 4.16 | no | Reseñas TMDB | A (valor bajo) |
+| `/3/list/{id}` | GET | 4.16 | no | Listas curadas | A (valor bajo) |
+| `/3/movie\|tv\|person/changes` | GET | 4.17 | no | Changelog (futuro) | A (nota) |
+| `/3/configuration` (+ countries/jobs/tz/languages) | GET | 4.18 | no | Datos dinámicos | A |
+| `/3/authentication/*`, `/3/account/*` | GET | 4.19 | no | Cuentas TMDB | B (descartado) |
+| `/4/account`, `/4/list` | GET/POST | 4.19 | no | Cuentas/listas v4 | B (descartado) |
+
+Leyenda: 🟢 ya usado por la app · 🟡 usado parcialmente · A = factible en
+cliente hoy · B = requiere infraestructura (descartado por coste/beneficio).
+
+
