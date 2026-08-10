@@ -1,7 +1,7 @@
 {
   "title": "Exportación ICS de videojuegos",
   "description": "Incluye los videojuegos en la exportación ICS de fechas de lanzamiento. La exportación .ics (js/export-ics.js) ya incluye los próximos episodios de series y los estrenos de películas pendientes (ADR-014); ahora debe incluir también los lanzamientos de videojuegos pendientes (releaseDate futura, sin historial de juego), reutilizando el flag awaitingRelease introducido en la issue #175.",
-  "status": "created",
+  "status": "implemented",
   "acceptance criteria": [
     "La exportación .ics incluye los videojuegos del usuario con fecha de lanzamiento futura y no jugados (pendientes de lanzamiento).",
     "Los videojuegos ya jugados o con fecha de lanzamiento pasada/sin fecha NO aparecen en la exportación.",
