@@ -18,6 +18,26 @@ const DEFAULT_SETTINGS = {
     friend_activity: true,
     device_push: false,
   },
+  visibleSections: { ocio: true },
+  visibleTabs: { series: true, peliculas: true, libros: true },
+};
+
+// Registro central de secciones y pestañas de la web (issue #97).
+// El orden de las claves es el orden de la barra lateral y el de la
+// «primera visible» de cada sección. Añadir una sección futura solo
+// requiere añadir una entrada aquí: { id: { label, tabs } }, con
+// cada pestaña { label, panelId } (panelId = id del panel en
+// index.html). El resto del módulo (helpers, guardas y render de la
+// card de Ajustes) se adapta solo.
+export const SECTION_REGISTRY = {
+  ocio: {
+    label: "Ocio",
+    tabs: {
+      series: { label: "Series", panelId: "panel-tv" },
+      peliculas: { label: "Películas", panelId: "panel-movies" },
+      libros: { label: "Libros", panelId: "panel-books" },
+    },
+  },
 };
 
 // ---- Load / Save (localStorage) ----
@@ -34,17 +54,62 @@ function deepMerge(defaults, overrides) {
   return result;
 }
 
+// Sanitiza las invariantes de visibilidad de secciones/pestañas
+// (issue #97) tras leer localStorage o el fallback sin guardar:
+//   (a) si ninguna sección quedó visible, se activan todas;
+//   (b) si una sección se quedó sin pestañas visibles, se activan todas
+//       sus pestañas;
+//   (c) las claves que no estén en el registro se ignoran (tolerante
+//       ante ajustes antiguos o de secciones futuras ya retiradas).
+function sanitizeVisibility(settings) {
+  const validSectionIds = Object.keys(SECTION_REGISTRY);
+  const validTabKeys = Object.values(SECTION_REGISTRY).flatMap((s) => Object.keys(s.tabs));
+
+  const sections = {};
+  const tabs = {};
+  validSectionIds.forEach((id) => {
+    sections[id] = settings.visibleSections[id] !== false;
+  });
+  validTabKeys.forEach((key) => {
+    tabs[key] = settings.visibleTabs[key] !== false;
+  });
+  settings.visibleSections = sections;
+  settings.visibleTabs = tabs;
+
+  if (!validSectionIds.some((id) => sections[id])) {
+    validSectionIds.forEach((id) => {
+      sections[id] = true;
+    });
+  }
+
+  Object.values(SECTION_REGISTRY).forEach((section) => {
+    const keys = Object.keys(section.tabs);
+    if (keys.length > 0 && !keys.some((k) => tabs[k])) {
+      keys.forEach((k) => {
+        tabs[k] = true;
+      });
+    }
+  });
+
+  return settings;
+}
+
 export function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return deepMerge(DEFAULT_SETTINGS, parsed);
+      return sanitizeVisibility(deepMerge(DEFAULT_SETTINGS, parsed));
     }
   } catch (e) {
     console.warn("No se pudieron leer los ajustes:", e);
   }
-  return { ...DEFAULT_SETTINGS, notifications: { ...DEFAULT_SETTINGS.notifications } };
+  return sanitizeVisibility({
+    ...DEFAULT_SETTINGS,
+    notifications: { ...DEFAULT_SETTINGS.notifications },
+    visibleSections: { ...DEFAULT_SETTINGS.visibleSections },
+    visibleTabs: { ...DEFAULT_SETTINGS.visibleTabs },
+  });
 }
 
 export function saveSettings(settings) {
@@ -69,6 +134,8 @@ function scheduleFirestoreSync(ctx) {
         await ctx.upsertUserProfile(user.uid, {
           preferences: {
             notifications: settings.notifications,
+            visibleSections: settings.visibleSections,
+            visibleTabs: settings.visibleTabs,
           },
         });
       }
@@ -129,6 +196,75 @@ export function renderSettings(ctx) {
     }
     devEl.disabled = permission === "denied";
   }
+
+  // Card «Secciones y pestañas»: render dinámico desde el registro.
+  renderSectionsCard(settings);
+}
+
+// ---- Card «Secciones y pestañas» (issue #97) ----
+
+// Render de la card desde el registro: una fila por sección (con sus
+// pestañas anidadas en un .settings-group). Los ids son literales
+// controlados por este módulo (sin datos de usuario).
+function renderSectionsCard(settings) {
+  const container = document.getElementById("sections-visibility-list");
+  if (container) container.innerHTML = buildSectionsHTML(settings);
+}
+
+function buildSectionsHTML(settings) {
+  const visibleSectionIds = Object.keys(SECTION_REGISTRY).filter((id) => settings.visibleSections[id] !== false);
+  // Si solo queda una sección visible, su switch se deshabilita: se
+  // mantiene siempre al menos una sección a la vista.
+  const onlyOneSection = visibleSectionIds.length <= 1;
+
+  return Object.entries(SECTION_REGISTRY)
+    .map(([sectionId, section]) => {
+      const sectionVisible = settings.visibleSections[sectionId] !== false;
+      const sectionLocked = onlyOneSection && sectionVisible;
+
+      const sectionRow = `
+        <div class="settings-row">
+          <label class="settings-row__text" for="section-visible-${sectionId}">
+            ${section.label}
+            ${sectionLocked ? `<p class="settings-row__hint">No puedes ocultar la última sección visible.</p>` : ""}
+          </label>
+          <label class="switch" aria-hidden="true">
+            <input type="checkbox" id="section-visible-${sectionId}" class="switch__input"
+                   data-vis-section="${sectionId}" ${sectionVisible ? "checked" : ""}
+                   ${sectionLocked ? "disabled" : ""} />
+            <span class="switch__slider"></span>
+          </label>
+        </div>`;
+
+      const visibleTabKeys = Object.keys(section.tabs).filter((k) => settings.visibleTabs[k] !== false);
+      const tabsGroup = Object.entries(section.tabs)
+        .map(([tabKey, tab]) => {
+          const tabVisible = settings.visibleTabs[tabKey] !== false;
+          // La última pestaña visible de la sección no se puede
+          // ocultar: se mantiene siempre al menos una a la vista.
+          const tabLocked = tabVisible && visibleTabKeys.length <= 1;
+          const hint = tabLocked ? `No puedes ocultar la última pestaña visible de ${section.label}.` : "";
+          return `
+          <div class="settings-row">
+            <label class="settings-row__text" for="tab-visible-${sectionId}-${tabKey}">
+              ${tab.label}
+              ${hint ? `<p class="settings-row__hint">${hint}</p>` : ""}
+            </label>
+            <label class="switch" aria-hidden="true">
+              <input type="checkbox" id="tab-visible-${sectionId}-${tabKey}" class="switch__input"
+                     data-vis-tab="${tabKey}" ${tabVisible ? "checked" : ""}
+                     ${tabLocked ? "disabled" : ""} />
+              <span class="switch__slider"></span>
+            </label>
+          </div>`;
+        })
+        .join("");
+
+      return `${sectionRow}
+        <div class="settings-group">${tabsGroup}
+        </div>`;
+    })
+    .join("\n");
 }
 
 // ---- Event Wiring ----
@@ -224,10 +360,73 @@ function wireNotificationToggles(ctx) {
 
 // ---- Public API ----
 
-export function setupSettings(ctx) {
+// Callback de módulo inyectado por app.js vía
+// setupSettings({ onVisibilityChange }): se invoca tras guardar un
+// cambio de visibilidad para que la navegación se refresque
+// (applyTabVisibility + renderSidebar).
+let onVisibilityChange = null;
+
+export function setupSettings(ctx, { onVisibilityChange: onChange = null } = {}) {
+  onVisibilityChange = onChange;
   wireThemeSelect(ctx);
   wireNotificationToggles(ctx);
   wireSyncButton(ctx);
+  wireVisibilityToggles(ctx);
+}
+
+// Toggles de visibilidad de la card «Secciones y pestañas» (issue
+// #97). La delegación de `change` vive en el contenedor (los checks
+// se re-renderizan tras cada cambio; el listener se registra UNA vez,
+// aquí, porque el contenedor nunca se reconstruye).
+function wireVisibilityToggles(ctx) {
+  const list = document.getElementById("sections-visibility-list");
+  if (!list) return;
+
+  list.addEventListener("change", (e) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    if (!input.dataset.visSection && !input.dataset.visTab) return;
+
+    const settings = loadSettings();
+    const componentKey = input.dataset.visSection || input.dataset.visTab;
+
+    if (input.dataset.visSection) {
+      settings.visibleSections[componentKey] = input.checked;
+      // Defensa en profundidad: nunca puede quedar 0 secciones visibles.
+      const visibleCount = Object.keys(SECTION_REGISTRY).filter((id) => settings.visibleSections[id] !== false).length;
+      if (visibleCount === 0) {
+        input.checked = true;
+        return;
+      }
+    } else {
+      settings.visibleTabs[componentKey] = input.checked;
+      // Defensa en profundidad: nunca puede quedar 0 pestañas visibles
+      // en la sección afectada.
+      const sectionId = Object.keys(SECTION_REGISTRY).find((id) => SECTION_REGISTRY[id].tabs[componentKey]);
+      if (sectionId) {
+        const visibleTabs = Object.keys(SECTION_REGISTRY[sectionId].tabs).filter((k) => settings.visibleTabs[k] !== false);
+        if (visibleTabs.length === 0) {
+          input.checked = true;
+          return;
+        }
+      }
+    }
+
+    saveSettings(settings);
+    scheduleFirestoreSync(ctx);
+    // Refrescar guardas y avisos: tras el cambio puede quedar otra
+    // fila como última visible (y quedar deshabilitada).
+    // El input en foco se reemplaza por el re-render: restaurar el
+    // foco al equivalente re-renderizado (los ids son deterministas:
+    // section-visible-<id> / tab-visible-<sección>-<pestaña>).
+    const focusedId = document.activeElement instanceof HTMLInputElement ? document.activeElement.id : null;
+    renderSectionsCard(loadSettings());
+    if (focusedId) {
+      const restored = document.getElementById(focusedId);
+      if (restored) restored.focus();
+    }
+    if (onVisibilityChange) onVisibilityChange();
+  });
 }
 
 /**
@@ -249,4 +448,61 @@ export function syncThemeToSettings(theme) {
 export function getNotificationPrefs() {
   const settings = loadSettings();
   return settings.notifications || {};
+}
+
+// ---- Visibilidad de secciones y pestañas (issue #97) ----
+// Los helpers leen loadSettings() fresco en cada llamada (nunca
+// mutan) para que reflejen siempre el estado guardado. Los usa
+// sidebar.js (vía inyección), app.js y profile.js.
+
+// ¿Está visible la sección? También devuelve false si el id no
+// existe en el registro (sección futura retirada).
+export function isSectionVisible(sectionId) {
+  if (!SECTION_REGISTRY[sectionId]) return false;
+  return loadSettings().visibleSections[sectionId] !== false;
+}
+
+// Ids de las secciones visibles, en el orden del registro (el orden
+// de la barra lateral y de la «primera visible»).
+export function getVisibleSectionIds() {
+  return Object.keys(SECTION_REGISTRY).filter((id) => loadSettings().visibleSections[id] !== false);
+}
+
+// Número entero de secciones visibles (lo usa sidebar.js para
+// decidir entre barra lateral ☰ y botón de Ajustes).
+export function countVisibleSections() {
+  return getVisibleSectionIds().length;
+}
+
+// ¿Está visible la pestaña (clave global, p. ej. "series")?
+export function isTabVisible(tabKey) {
+  return loadSettings().visibleTabs[tabKey] !== false;
+}
+
+// Primera clave visible de las pestañas de una sección, según el
+// registro; null si ninguna.
+export function getFirstVisibleTabKey(sectionId) {
+  const section = SECTION_REGISTRY[sectionId];
+  if (!section) return null;
+  const settings = loadSettings();
+  const key = Object.keys(section.tabs).find((k) => settings.visibleTabs[k] !== false);
+  return key || null;
+}
+
+// panelId de la primera clave visible de la sección (o null).
+export function getFirstVisibleTabPanel(sectionId) {
+  const key = getFirstVisibleTabKey(sectionId);
+  const section = SECTION_REGISTRY[sectionId];
+  return key && section ? section.tabs[key].panelId : null;
+}
+
+// Normaliza una clave de pestaña: la devuelve si es conocida y
+// visible; si no, la primera visible de la sección. Lo usan los
+// flujos que navegan a una pestaña (entrada «Ocio», volver del
+// perfil) para que nunca aterricen en una oculta.
+export function normalizeTabKey(sectionId, key) {
+  const section = SECTION_REGISTRY[sectionId];
+  const settings = loadSettings();
+  if (section && section.tabs[key] && settings.visibleTabs[key] !== false) return key;
+  return getFirstVisibleTabKey(sectionId);
 }

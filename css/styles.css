@@ -1945,6 +1945,26 @@ body.is-back-to-top-visible .back-to-top {
   outline-offset: 3px;
 }
 
+/* Guardas de visibilidad (issue #97): switch deshabilitado = última
+   sección/pestaña visible; solo opacidad+cursor, válido en los 4 temas. */
+.switch__input:disabled + .switch__slider {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Pestañas de una sección, anidadas bajo su fila (issue #97). */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 0.4rem 1.1rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--paper-line);
+}
+.settings-group .settings-row {
+  padding: 0.5rem 0;
+  border-bottom: none;
+}
+
 /* =============================================================
    Buscador global (issue #46)
    La barra de búsqueda vive en la cabecera (input #global-search-input

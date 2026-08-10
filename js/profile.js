@@ -9,7 +9,7 @@ import { STATUS_LABELS_NEUTRAL } from "./constants.js";
 import * as ui from "./ui.js";
 import { setupExportBackup } from "./export-backup.js";
 import { setupExportIcs } from "./export-ics.js";
-import { renderSettings } from "./settings.js";
+import { renderSettings, normalizeTabKey } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
 import { logout } from "./firebase.js";
 import { trapFocus } from "./focus-utils.js";
@@ -401,11 +401,12 @@ export function setupProfile(ctx) {
 
   // Flecha de volver del perfil: cierra la vista (toggle manual: cubre el
   // caso de navegar sin cambiar el hash) y vuelve a la última pestaña
-  // de Ocio que estuviera activa.
+  // de Ocio que estuviera activa (normalizada a la primera visible si
+  // esa pestaña quedó oculta, issue #97).
   document.getElementById("btn-close-profile").addEventListener("click", () => {
     document.getElementById("profile-view").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
-    navigate(getLastOcioKey());
+    navigate(normalizeTabKey("ocio", getLastOcioKey()));
   });
 
   statsPeriodSelect.addEventListener("change", () => {
