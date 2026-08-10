@@ -807,9 +807,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     exportaras antes. **Añade** lo que falte a lo que ya tienes: no
     reemplaza ni borra nada.
   - **Exportar calendario (.ics)**: descarga un archivo con los **próximos
-    episodios de tus series y los estrenos pendientes de películas**, para
-    importarlo en Google Calendar, Apple Calendar o similar y tener todos
-    los estrenos en tu agenda.
+    episodios de tus series, los estrenos pendientes de películas y los
+    lanzamientos pendientes de tus videojuegos**, para importarlo en Google
+    Calendar, Apple Calendar o similar y tener todos los estrenos en tu
+    agenda.
 
 ## 16. ¿Cuándo se actualizan los datos?
 
