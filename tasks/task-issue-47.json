@@ -4,7 +4,7 @@
   "status": "implemented",
   "acceptance criteria": [
     "Existe un estudio documentado que compara RAWG, IGDB, TheGamesDB y otras APIs de videojuegos, justifica la elección (IGDB con proxy Cloudflare Worker) y explica por qué se descartan RAWG (caída) e IGDB sin proxy, en el ADR de esta issue ('Related issue: #47')",
-    "Existe una nueva pestaña 'Videojuegos' con las mismas características que las pestañas de series/películas/libros: búsqueda en catálogo (RAWG) desde el buscador global, alta manual, estados, filtros, orden, vista grid/lista, ficha de detalle, valoración, notas, editar y eliminar",
+    "Existe una nueva pestaña 'Videojuegos' con las mismas características que las pestañas de series/películas/libros: búsqueda en catálogo (IGDB vía proxy) desde el buscador global, alta manual, estados, filtros, orden, vista grid/lista, ficha de detalle, valoración, notas, editar y eliminar",
     "El catálogo de videojuegos se consulta a través de un Cloudflare Worker propio (cloudflare/igdb-proxy/) que custodia Client ID/Client Secret de IGDB; la app solo usa IGDB_PROXY_URL en js/config.js",
     "Los juegos tienen los estados: Pendiente, Jugando, Jugado, Standby y Abandonado",
     "La pestaña tiene URL propia #/ocio/videojuegos y aparece en la barra de pestañas y en los resultados del buscador global (colección y catálogo)",
