@@ -17,6 +17,25 @@ import { navigate, getLastOcioKey, parseHash } from "./router.js";
 
 let activityChart = null;
 let statusChart = null;
+let genreChart = null;
+let platformChart = null;
+
+// Normaliza una fecha (string YYYY-MM-DD o Timestamp de Firestore) a
+// string YYYY-MM-DD; devuelve null si no es válida (mismo patrón que
+// maybePushDateEvent de activity-feed.js, issue #174).
+function toDateStr(date) {
+  if (!date) return null;
+  if (typeof date === "object" && date.toDate) {
+    return date.toDate().toISOString().slice(0, 10);
+  }
+  if (typeof date === "object" && date.seconds) {
+    return new Date(date.seconds * 1000).toISOString().slice(0, 10);
+  }
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+  return null;
+}
 
 function getCurrentStatsFilter() {
   const statsPeriodSelect = document.getElementById("stats-period-select");
@@ -92,12 +111,96 @@ function computeStats(filter, ctx) {
     });
   });
 
+  // Videojuegos (issue #174): la fecha efectiva de una sesión es
+  // finishedAt ?? startedAt (una sola fecha por sesión, evita doble
+  // conteo). Fallback: si el juego está completado y no tiene sesiones
+  // en el periodo, se cuenta con su updatedAt si cae en el periodo.
+  let gamesPlayed = 0;
+  let gamesCompleted = 0;
+  let gameSessions = 0;
+  let gameHours = 0;
+  const genreCounts = {};
+  const platformCounts = {};
+  allItems.games.forEach((g) => {
+    let playedInPeriod = false;
+    const playedGenres = new Set();
+    const playedPlatforms = new Set();
+    (g.playLog || []).forEach((entry) => {
+      const eff = toDateStr(entry.finishedAt) ?? toDateStr(entry.startedAt);
+      if (eff && withinPeriod(eff, filter)) {
+        gameSessions++;
+        const key = eff.slice(0, 7);
+        monthly[key] = (monthly[key] || 0) + 1;
+        if (Number.isFinite(Number(entry.hours)) && Number(entry.hours) > 0) {
+          gameHours += Number(entry.hours);
+        }
+        playedInPeriod = true;
+      }
+    });
+    const u = toDateStr(g.updatedAt);
+    if (!playedInPeriod && g.status === "completado" && u && withinPeriod(u, filter)) {
+      playedInPeriod = true;
+    }
+    if (g.status === "completado") {
+      // Un juego completado cuenta en el periodo si la ÚLTIMA sesión
+      // terminada cae en el periodo (el momento de completado es el fin
+      // de la última partida); fallback a updatedAt si no hay sesiones.
+      const finishedDates = (g.playLog || [])
+        .map((entry) => toDateStr(entry.finishedAt))
+        .filter(Boolean)
+        .sort();
+      const lastFinished = finishedDates[finishedDates.length - 1];
+      if ((lastFinished && withinPeriod(lastFinished, filter)) || (u && withinPeriod(u, filter))) {
+        gamesCompleted++;
+      }
+    }
+    if (playedInPeriod) {
+      (g.genres || []).forEach((gen) => {
+        const t = String(gen).trim();
+        if (t) playedGenres.add(t);
+      });
+      (g.platforms || []).forEach((plat) => {
+        const t = String(plat).trim();
+        if (t) playedPlatforms.add(t);
+      });
+    }
+    if (playedInPeriod) gamesPlayed++;
+    playedGenres.forEach((gen) => {
+      genreCounts[gen] = (genreCounts[gen] || 0) + 1;
+    });
+    playedPlatforms.forEach((plat) => {
+      platformCounts[plat] = (platformCounts[plat] || 0) + 1;
+    });
+  });
+
   const statusCounts = {};
-  [...allItems.movies, ...allItems.tv, ...allItems.books].forEach((i) => {
+  [...allItems.movies, ...allItems.tv, ...allItems.books, ...allItems.games].forEach((i) => {
     statusCounts[i.status] = (statusCounts[i.status] || 0) + 1;
   });
 
-  return { moviesWatched, episodesWatched, seriesCompleted, booksRead, monthly, statusCounts };
+  return {
+    moviesWatched,
+    episodesWatched,
+    seriesCompleted,
+    booksRead,
+    gamesPlayed,
+    gamesCompleted,
+    gameSessions,
+    gameHours,
+    genreCounts,
+    platformCounts,
+    monthly,
+    statusCounts,
+  };
+}
+
+// Formatea horas a "X h" o "X,Y h" (coma decimal, 1 decimal); si no es
+// un número finito muestra "0 h".
+function formatHours(h) {
+  if (!Number.isFinite(h)) return "0 h";
+  const rounded = Math.round(h * 10) / 10;
+  if (Number.isInteger(rounded)) return `${rounded} h`;
+  return `${String(rounded).replace(".", ",")} h`;
 }
 
 function renderStats(filter, ctx) {
@@ -108,6 +211,10 @@ function renderStats(filter, ctx) {
     <div class="stat-tile"><span class="stat-tile__value">${stats.episodesWatched}</span><span class="stat-tile__label">Episodios vistos</span></div>
     <div class="stat-tile"><span class="stat-tile__value">${stats.seriesCompleted}</span><span class="stat-tile__label">Series completadas</span></div>
     <div class="stat-tile"><span class="stat-tile__value">${stats.booksRead}</span><span class="stat-tile__label">Libros leídos</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.gamesPlayed}</span><span class="stat-tile__label">Juegos jugados</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.gamesCompleted}</span><span class="stat-tile__label">Juegos completados</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${stats.gameSessions}</span><span class="stat-tile__label">Sesiones de juego</span></div>
+    <div class="stat-tile"><span class="stat-tile__value">${formatHours(stats.gameHours)}</span><span class="stat-tile__label">Horas jugadas</span></div>
   `;
 
   if (typeof Chart === "undefined") return;
@@ -145,6 +252,52 @@ function renderStats(filter, ctx) {
       ],
     },
     options: { responsive: true },
+  });
+
+  // Top 6 de géneros y plataformas de los juegos jugados en el periodo
+  // (barras horizontales; paleta de variables de tema, sin hex).
+  function topN(counts, n = 6) {
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, n);
+  }
+  const PALETTE = ["--teal-reel", "--ochre-spine", "--stamp", "--ink-soft", "--ochre-spine-dark"];
+  const colorAt = (i) =>
+    getComputedStyle(document.documentElement).getPropertyValue(PALETTE[i % PALETTE.length]).trim();
+
+  const genreEntries = topN(stats.genreCounts);
+  const platformEntries = topN(stats.platformCounts);
+  const genreCtx = document.getElementById("chart-genres");
+  const platformCtx = document.getElementById("chart-platforms");
+  if (genreChart) genreChart.destroy();
+  genreChart = new Chart(genreCtx, {
+    type: "bar",
+    data: {
+      labels: genreEntries.map(([k]) => k),
+      datasets: [
+        {
+          label: "Juegos",
+          data: genreEntries.map(([, v]) => v),
+          backgroundColor: genreEntries.map((_, i) => colorAt(i)),
+        },
+      ],
+    },
+    options: { indexAxis: "y", responsive: true, plugins: { legend: { display: false } } },
+  });
+  if (platformChart) platformChart.destroy();
+  platformChart = new Chart(platformCtx, {
+    type: "bar",
+    data: {
+      labels: platformEntries.map(([k]) => k),
+      datasets: [
+        {
+          label: "Juegos",
+          data: platformEntries.map(([, v]) => v),
+          backgroundColor: platformEntries.map((_, i) => colorAt(i)),
+        },
+      ],
+    },
+    options: { indexAxis: "y", responsive: true, plugins: { legend: { display: false } } },
   });
 }
 

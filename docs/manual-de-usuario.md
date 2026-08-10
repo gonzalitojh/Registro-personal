@@ -397,7 +397,10 @@ En la ficha del videojuego:
 En la ficha ves todas tus sesiones de juego: fecha de inicio → fecha de
 fin (o «jugando» si está en curso). Puedes **editar las fechas** y
 **«Quitar»** una sesión del historial. Las rejugadas aparecen como
-sesiones adicionales.
+sesiones adicionales. Cada sesión tiene además un campo opcional de
+**horas** (cuántas horas dedicaste en esa partida, en pasos de media
+hora); ese campo se usa para la estadística de **horas jugadas** de tu
+perfil (sección 14.1).
 
 ## 8. Cómo buscar
 
@@ -685,16 +688,25 @@ que pedías.
 
 ### 14.1 Estadísticas
 
-Cuatro cifras: **Películas vistas, Episodios vistos, Series completadas y
-Libros leídos**. El selector de periodo te permite verlas de **Siempre**,
+Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
+Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
+Horas jugadas**. El selector de periodo te permite verlas de **Siempre**,
 **Este año**, **Este mes** o un **rango personalizado** (elige las fechas
 «Desde» y «Hasta»).
 
-Debajo hay dos gráficas:
+Un videojuego cuenta como **jugado** si tiene una sesión dentro del
+periodo (cada sesión cuenta una vez, por su fecha de fin o, si aún está
+en curso, por su fecha de inicio); las **horas jugadas** son la suma de
+las horas anotadas en las sesiones del periodo, y las **sesiones de
+juego** cuentan esas mismas sesiones del periodo.
 
-- **Actividad por mes**: barras con lo que viste/leíste cada mes.
+Debajo hay cinco gráficas:
+
+- **Actividad por mes**: barras con lo que viste/leíste/jugaste cada mes.
 - **Estados actuales**: qué parte de tu registro está pendiente, en curso,
-  completado, en pausa o abandonado.
+  completado, en pausa o abandonado (incluye también los videojuegos).
+- **Géneros**: los 6 géneros más jugados en el periodo.
+- **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
 ### 14.2 Amigos
 
