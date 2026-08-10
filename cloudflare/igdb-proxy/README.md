@@ -30,8 +30,10 @@ navegador.
     nombre).
   - **No commitees ni pushees** esos cambios del `.gitignore` ni el
     `wrangler.jsonc`: no forman parte de la app. (Lo que sí es normal es
-    que wrangler cree una carpeta `.wrangler/` de trabajo: tampoco se
-    sube; tu `.gitignore` local se encarga.)
+    que wrangler cree una carpeta `.wrangler/` de trabajo: puedes
+    conservar en tu `.gitignore` local las líneas que añadió `wrangler
+    init` para que no aparezca en `git status`; tampoco se sube a
+    GitHub.)
 
 ## 1. Obtener las credenciales de Twitch (IGDB)
 
