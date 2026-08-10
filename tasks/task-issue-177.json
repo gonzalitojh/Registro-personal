@@ -1,7 +1,7 @@
 {
   "title": "Revisión de textos de estados",
   "description": "Asegura que todos los sitios en los que aparecen estados de videojuegos, ponen _jugado_ en lugar de _visto_ o cualquier otra variante de estado. El término para cada ítem es diferente. Por ejemplo en la búsqueda en el catálogo aparece _Marcar visto_ en lugar de _Marcar jugado_.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "En la búsqueda en el catálogo, el botón de alta directa como completado muestra el término correcto según el tipo: «Marcar jugado» para videojuegos, «Marcar leído» para libros y «Marcar visto» para películas/series.",
     "Los estados del botón durante/tras el flujo («Marcando…», final «Jugado»/«Leído»/«Visto», restauración) usan el término del tipo correspondiente.",
@@ -23,5 +23,13 @@
     "number": 177,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/177",
     "title": "Revisión de textos de estados"
+  },
+  "pr": {
+    "number": 179,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/179",
+    "title": "fix: textos de estado por tipo — «Marcar jugado» para videojuegos (issue #177)",
+    "branch": "fix/issue-177-textos-estados",
+    "commit": "4ff5e67",
+    "closes": "#177"
   }
 }
