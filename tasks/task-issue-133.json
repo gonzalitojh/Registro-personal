@@ -1,7 +1,7 @@
 {
   "title": "Arreglo de los episodios de las series",
   "description": "Dos problemas en la lista de episodios por temporada de una serie (issue #133):\n\n1. Visualización en móviles incorrecta: se ve el título en vertical en muchos casos. Se debería ver el título y la valoración de la comunidad en una línea, y la valoración propia y la fecha de última visualización en la siguiente. Si el título es largo puede ocupar más de una línea, pero debe quedar centrado verticalmente con la valoración de la comunidad.\n\n2. Un episodio debe poder volver a marcarse como visto sin esperar a completar la serie. Al presionar el botón de visto cuando el episodio ya está marcado, preguntar al usuario si lo ha visto de nuevo o si desea desmarcarlo. En el propio botón de visto, mostrar el número de visualizaciones del episodio en lugar de un tick cuando se haya visto más de una vez.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "En móvil (~360 px) y tablet (~768 px), cada episodio de la lista muestra el título y la valoración de la comunidad en una misma línea (el título puede ocupar varias líneas si es largo, centrado verticalmente con la valoración de la comunidad) y en la línea siguiente la valoración propia y la fecha de última visualización.",
     "Ningún título de episodio se muestra en vertical (no hay modo de escritura vertical) y no hay scroll horizontal ni textos desbordados a 360/768/1280 px.",
@@ -58,5 +58,13 @@
     "related_issue": "#133",
     "manual_usuario": "docs/manual-de-usuario.md §4.3 actualizado: bullet «Volver a ver un episodio» (diálogo, fecha a hoy, +1 contador, casilla con nº de veces en lugar de ✓); verificado sin inconsistencias",
     "readme": "sin cambios (cambio de UI ya documentado en manual y ADR)"
+  },
+  "pr": {
+    "number": 168,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/168",
+    "title": "[feature] Arreglo de los episodios de las series: layout 2 líneas y re-visionado",
+    "branch": "feature/issue-133-episodios-series",
+    "commit": "362a150",
+    "closes": "#133"
   }
 }
