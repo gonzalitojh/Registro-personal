@@ -515,7 +515,6 @@ input, textarea, select { font-size: 16px; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .episode-row__num {
@@ -1102,6 +1101,29 @@ input, textarea, select { font-size: 16px; }
   opacity: 1;
 }
 
+/* Contador de visualizaciones (issue #133): con times > 1 el
+   círculo muestra el nº de veces en lugar del tick */
+.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+  content: attr(data-count);
+  opacity: 1;
+  border: none;
+  transform: none;
+  width: auto;
+  height: auto;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--paper);
+}
+
 .episode-row__future {
   color: var(--stamp-dark);
   font-style: italic;
@@ -1113,10 +1135,22 @@ input, textarea, select { font-size: 16px; }
    Valoración por episodio
    ========================================================= */
 
+/* Segunda fila del episodio (issue #133): fecha y valoración, alineadas
+   con el checkbox (mismo sangrado que usaba antes .episode-rating). */
+.episode-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-left: 30px;
+}
+.episode-row__meta .episode-date {
+  flex-shrink: 0;
+}
+
 .episode-rating {
   display: flex;
   gap: 0.15rem;
-  padding-left: 30px;
 }
 
 .episode-rating__star {
@@ -1333,6 +1367,14 @@ input, textarea, select { font-size: 16px; }
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 1.1rem;
+}
+
+/* Cuerpo del diálogo de acciones de episodio ya visto (issue #133) */
+.eam-body {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 

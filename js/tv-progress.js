@@ -2,18 +2,23 @@
 // Progreso de una serie a partir de:
 // - seasonsMeta: temporadas y nº de episodios, obtenidos en vivo de TMDB
 // - watched: datos por episodio del visionado actual, con forma
-//   { "1": { "1": { date: "2026-01-05", rating: 4 }, "2": {...} }, "2": {...} }
-//   (temporada -> episodio -> { fecha en la que se vio, valoración 1-5 o null })
+//   { "1": { "1": { date: "2026-01-05", rating: 4, times: 2 }, "2": {...} }, "2": {...} }
+//   (temporada -> episodio -> { fecha de la última vez que se vio,
+//   valoración 1-5 o null, veces visto con 1 por defecto })
 // No depende del DOM ni de Firebase: es pura lógica, reutilizable
 // tanto desde ui.js (para refrescar la vista al vuelo) como desde
 // app.js (para decidir qué guardar).
 // =============================================================
 
 // Compatibilidad con datos antiguos: antes cada episodio guardaba solo
-// la fecha como texto plano ("2026-01-05"), sin objeto ni valoración.
+// la fecha como texto plano ("2026-01-05"), sin objeto ni valoración,
+// y el campo times (nº de veces visto) no existía (issue #133).
+// Normaliza la entrada al formato { date, rating, times } sin mutar el
+// original: los objetos que ya tienen times se devuelven tal cual.
 export function normalizeEntry(entry) {
   if (!entry) return null;
-  if (typeof entry === "string") return { date: entry, rating: null };
+  if (typeof entry === "string") return { date: entry, rating: null, times: 1 };
+  if (entry.date && entry.times == null) return { ...entry, times: 1 };
   return entry;
 }
 
@@ -80,28 +85,48 @@ export function computeProgress(seasonsMeta, watched) {
 }
 
 // dateOrNull: fecha "YYYY-MM-DD" para marcar visto, o null para desmarcar.
-// Si ya tenía una valoración puesta, se conserva.
+// Si ya tenía una valoración o un contador de visualizaciones, se conservan.
 export function setEpisodeDate(watched, seasonNumber, episodeNumber, dateOrNull) {
   const key = String(seasonNumber);
   const seasonMap = { ...((watched && watched[key]) || {}) };
   const epKey = String(episodeNumber);
   if (dateOrNull) {
     const existing = normalizeEntry(seasonMap[epKey]) || {};
-    seasonMap[epKey] = { date: dateOrNull, rating: existing.rating ?? null };
+    seasonMap[epKey] = {
+      date: dateOrNull,
+      rating: existing.rating ?? null,
+      times: existing.times || 1,
+    };
   } else {
     delete seasonMap[epKey];
   }
   return { ...(watched || {}), [key]: seasonMap };
 }
 
+// Marca un episodio YA visto como visto de nuevo: conserva la valoración
+// y suma 1 al contador de visualizaciones (issue #133).
+export function markEpisodeSeenAgain(watched, seasonNumber, episodeNumber, date) {
+  const key = String(seasonNumber);
+  const seasonMap = { ...((watched && watched[key]) || {}) };
+  const epKey = String(episodeNumber);
+  const existing = normalizeEntry(seasonMap[epKey]) || {};
+  seasonMap[epKey] = {
+    date,
+    rating: existing.rating ?? null,
+    times: (existing.times || 1) + 1,
+  };
+  return { ...(watched || {}), [key]: seasonMap };
+}
+
 // Solo se puede valorar un episodio que ya esté marcado como visto.
+// El contador de visualizaciones se conserva al re-valorar (issue #133).
 export function setEpisodeRating(watched, seasonNumber, episodeNumber, rating) {
   const key = String(seasonNumber);
   const seasonMap = { ...((watched && watched[key]) || {}) };
   const epKey = String(episodeNumber);
   const existing = normalizeEntry(seasonMap[epKey]);
   if (!existing || !existing.date) return { ...(watched || {}), [key]: seasonMap };
-  seasonMap[epKey] = { date: existing.date, rating };
+  seasonMap[epKey] = { date: existing.date, rating, times: existing.times || 1 };
   return { ...(watched || {}), [key]: seasonMap };
 }
 
@@ -112,7 +137,11 @@ export function setSeasonWatched(watched, seasonNumber, episodeCount, allWatched
   if (allWatched) {
     for (let ep = 1; ep <= episodeCount; ep++) {
       const existing = normalizeEntry(previous[String(ep)]);
-      seasonMap[String(ep)] = { date, rating: existing ? existing.rating : null };
+      seasonMap[String(ep)] = {
+        date,
+        rating: existing ? existing.rating : null,
+        times: existing ? existing.times || 1 : 1,
+      };
     }
   }
   return { ...(watched || {}), [key]: seasonMap };
