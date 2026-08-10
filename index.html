@@ -283,6 +283,8 @@
                     aria-selected="false" aria-controls="friend-panel-tv" data-friend-tab="tv">Series</button>
             <button type="button" class="friend-subtab" role="tab" id="friend-tab-books"
                     aria-selected="false" aria-controls="friend-panel-books" data-friend-tab="books">Libros</button>
+            <button type="button" class="friend-subtab" role="tab" id="friend-tab-games"
+                    aria-selected="false" aria-controls="friend-panel-games" data-friend-tab="games">Videojuegos</button>
           </div>
 
           <div class="friend-tabpanel" id="friend-panel-movies" role="tabpanel" aria-labelledby="friend-tab-movies">
@@ -316,6 +318,18 @@
               <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
             </div>
             <div id="friend-books" class="library-grid"></div>
+          </div>
+
+          <div class="friend-tabpanel hidden" id="friend-panel-games" role="tabpanel" aria-labelledby="friend-tab-games">
+            <div class="friend-filters" role="group" aria-label="Filtrar videojuegos por estado" data-tab="games">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="en_curso" aria-pressed="false">Jugando</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Jugado</button>
+              <button type="button" class="friend-chip" data-status="standby" aria-pressed="false">Standby</button>
+              <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
+            </div>
+            <div id="friend-games" class="library-grid"></div>
           </div>
         </div>
       </section>

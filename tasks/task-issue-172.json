@@ -1,0 +1,29 @@
+{
+  "title": "Pestaña de videojuegos en amigos",
+  "description": "Incluye la pestaña de videojuegos en la vista de amigos. La sección de amigos del perfil muestra el registro de otro usuario en modo solo lectura organizado por pestañas (Películas, Series, Libros — ADR-048). Los videojuegos existen como categoría propia del producto desde la issue #47 (colección games en Firestore, pestaña en Ocio, etc.), pero el detalle de amigo aún no los muestra; el manual (sección 14.2) documenta explícitamente que la pestaña de Videojuegos aún no está disponible ahí. Hay que añadir la subpestaña Videojuegos con sus chips de filtro por estado (Todos / Pendiente / Jugando / Jugado / Standby / Abandonado, coherentes con ocio/videojuegos.html) y cargar los items de tipo game del amigo desde Firestore.",
+  "status": "created",
+  "acceptance_criteria": [
+    "El detalle de amigo muestra una subpestaña nueva «Videojuegos» junto a Películas, Series y Libros.",
+    "La subpestaña tiene chips de filtro por estado: Todos, Pendiente, Jugando, Jugado, Standby y Abandonado (mismos estados que ocio/videojuegos.html).",
+    "Al abrir un amigo se cargan sus videojuegos (colección games, tipo game) y se renderizan con el grid de tarjetas de solo lectura existente.",
+    "El cambio de pestaña a Videojuegos y el filtrado por estado funcionan sin re-consultar Firestore (mismo patrón data-driven del ADR-048).",
+    "Reset de pestaña y filtros al reabrir un amigo (incluido el filtro de games).",
+    "ARIA completo en la nueva pestaña y chips (tablist/tab/tabpanel, aria-selected, aria-pressed).",
+    "Sin scroll horizontal en 360/768/1280 px; la 4ª pestaña envuelve correctamente en móvil (flex-wrap).",
+    "El manual de usuario (sección 14.2 Amigos) se actualiza: ya no dice que la pestaña de Videojuegos no está disponible, y describe sus filtros."
+  ],
+  "definition_of_done": [
+    "Planificación realizada.",
+    "Implementación completada (index.html, js/profile.js y manual de usuario).",
+    "Validación por QA contra criterios de aceptación y defensa (a11y, responsividad, 4 modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR-068 creado documentando la decisión (con 'Related issue: #172').",
+    "PR contra dev SIN keyword de cierre creada por el publisher, con estado de la issue a status: needs-review y task file en 'review'.",
+    "Issue #172 label updated to its final state."
+  ],
+  "issue": {
+    "number": 172,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/172",
+    "title": "Pestaña de videojuegos en amigos"
+  }
+}
