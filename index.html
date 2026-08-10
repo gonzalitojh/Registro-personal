@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260839" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260839" />
+  <link rel="stylesheet" href="css/styles.css?v=20260901" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260901" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -422,6 +422,15 @@
     </div>
   </div>
 
+  <!-- Diálogo de acciones de un episodio ya visto (issue #133) -->
+  <div id="episode-actions-modal" class="modal modal--top hidden">
+    <div class="modal__backdrop" id="episode-actions-modal-backdrop"></div>
+    <div class="modal__card modal__card--small" role="dialog" aria-modal="true" aria-label="Episodio ya visto">
+      <button id="episode-actions-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="episode-actions-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Buscador global: el input vive en la cabecera (search-bar-wrap) y
        los resultados se muestran en el dropdown #global-search-results
        anclado bajo la barra (js/global-search.js). -->
@@ -434,7 +443,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260839"></script>
+  <script type="module" src="js/app.js?v=20260901"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

@@ -204,6 +204,12 @@ Para cada episodio puedes:
   estrenado, la web te preguntará antes si quieres marcarlo igualmente.
   Si lo marcas por equivocación, la ventana de valoración ofrece
   **«Deshacer»** y el episodio vuelve a estar sin marcar.
+- **Volver a ver un episodio**: si el episodio ya está marcado como visto
+  y pulsas su casilla, la web te preguntará si **lo has visto de nuevo** o
+  si quieres **desmarcarlo**. Si eliges «Lo he visto de nuevo», la fecha de
+  última visualización pasa a hoy y el contador del episodio suma uno.
+  Cuando un episodio se ha visto más de una vez, su casilla muestra el
+  **número de veces** en lugar de la marca ✓.
 - **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
 - **Valorarlo** con estrellas, una vez visto (más en [sección 10](#10-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.

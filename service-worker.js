@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260839',
-  './css/ocio.css?v=20260839',
-  './js/app.js?v=20260839',
+  './css/styles.css?v=20260901',
+  './css/ocio.css?v=20260901',
+  './js/app.js?v=20260901',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -61,6 +61,7 @@ const STATIC_ASSETS = [
   './js/activity-feed.js',
   './js/export-backup.js',
   './js/export-ics.js',
+  './js/episode-actions-modal.js',
   './js/focus-utils.js',
   './js/global-search.js',
   './js/settings.js',
@@ -68,9 +69,9 @@ const STATIC_ASSETS = [
   './js/auto-hide-nav.js',
   './js/push.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260839',
-  './ocio/peliculas.html?v=20260839',
-  './ocio/libros.html?v=20260839',
+  './ocio/series.html?v=20260901',
+  './ocio/peliculas.html?v=20260901',
+  './ocio/libros.html?v=20260901',
 ];
 
 // -------------------------------------------------------------
