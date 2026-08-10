@@ -48,7 +48,7 @@ Tabla de una vista (detalle en las secciones 4 y 7; todas las cifras son
 
 | Criterio (usuario medio, valores por día) | A0 statu quo | A1 solo id + usuario | A2 híbrido (propuesto) | A3 solo local | A4 proxy/caché central |
 |---|---|---|---|---|---|
-| Llamadas a APIs | ~445 | ~3.500-6.700 (según pestañas navegadas; colapso UX, rompe offline) | **~125** | 0 (pero rompe todo lo social) | ~125 + backend |
+| Llamadas a APIs | ~445 | ~5.000-6.700 (con uso social; colapso UX, rompe offline) | **~125** | 0 (pero rompe todo lo social) | ~125 + backend |
 | Escrituras Firestore | ~120 | ~20 | **~35** | 0 | ~35 |
 | Lecturas Firestore | ~10.100 | ~10.100 (mismo nº de docs) | ~10.100 | _n/a_ | ~10.100 |
 | Almacenamiento (480 docs) | ~2,2 MB | ~0,45 MB | ~0,9 MB | _n/a_ | ~0,9 MB |
@@ -236,7 +236,7 @@ Qué lee cada consumidor del documento (y con qué dependencia de red):
 | Feed de actividad | `js/profile.js:587-630` (`loadActivityFeed`), `js/activity-feed.js:40-202` (`buildFriendFeed`) | `watchLog`, `watched`, `history`, `readLog`, `playLog`, `status`, `updatedAt`, `pages`, `progress` | solo Firestore |
 | Exportación ICS | `js/export-ics.js:120-197` (`collectUpcomingEvents`) | `nextEpisodeToAir`, `releaseDate`, `title`, `overview`, `playLog`, `status`, `awaitingRelease` | no |
 | Backup/restore | `js/export-backup.js:29-93` (`exportBackup`), `:100-240` (`importBackup`) | **documentos completos** (metadatos incluidos) | solo Firestore |
-| Estadísticas | `js/profile.js:207-217` (`computeStats`→tiles, gráficas) | `watchLog`, `watched`, `readLog`, `playLog`, `status`, `genres`, `platforms`, `timesCompleted` | no (ctx en memoria) |
+| Estadísticas | `js/profile.js:72` (`computeStats`), consumida en `js/profile.js:207-217` (`renderStats`→tiles, gráficas) | `watchLog`, `watched`, `readLog`, `playLog`, `status`, `genres`, `platforms`, `timesCompleted` | no (ctx en memoria) |
 | Ordenación y filtros | `js/sorting.js:20-145` (`getSortDate`, `isItemUnreleased`, `applySort`), `js/app.js:115-121` | `watchLog`, `lastWatchedAt`, `readLog`, `playLog`, `releasedNoticedAt`, `releaseDate`, `nextEpisode`, `awaitingRelease` | no |
 | Edición manual de metadatos | `js/ui.js:739-778` (`openEditModal`), `saveMeta` en `modal-handlers.js` | título, año, autor, páginas, portada (campos editables) | Firestore |
 | Búsqueda «Añadir resto de la saga» | `js/api-movies.js:166-185` (`getCollectionDetails`) | `collectionId`, `collectionName` del documento | sí, al pulsar el botón |
@@ -280,7 +280,7 @@ todas cifras **estimadas**):
 - **Escrituras Firestore por usuario y día**: ~100 de la pasada (películas
   ~10 %, series ~65 % con `nextEpisodeToAir`/`seasonAirDates`,
   libros ~15 %, juegos ~0) + ~20 de acciones del usuario ≈ **~120**
-  (≈ 3 % del tope diario entre los 3 usuarios).
+  (≈ 1,8 % del tope diario entre los 3 usuarios: 360 de 20.000).
 - **Lecturas Firestore por usuario y día**: ~486 por carga de app (4
   subcolecciones suscritas + perfil + notificaciones; `onSnapshot`,
   `js/db.js:79-94`) × 5 aperturas ≈ 2.430 + vistas de amigo (2 × 1.920 =
@@ -349,7 +349,7 @@ las tarjetas — `renderGrid`/`renderList` pintan el array completo,
   la ficha sin red; echa abajo la PWA y el «guard diario sin red» de los
   juegos (`js/daily-check.js:429-433`).
 - **Rompe/degrada consumidores locales**: ordenación por actividad y bloqueo
-  (`js/sorting.js:81-107`), estadísticas (`js/profile.js:207-217`), ICS
+  (`js/sorting.js:81-107`), estadísticas (`js/profile.js:72`, `:207-217`), ICS
   (`js/export-ics.js:120-197`) y feed dependen de fechas y logs guardados
   (esos sí se mantendrían), pero el orden alfabético/año requeriría
   `title`/`year` en vivo.
@@ -458,8 +458,8 @@ Cuatro variantes sobre la pasada diaria, evaluadas sobre el mismo esquema A2:
 | A5-d: pasada diaria solo campos de notificación | Igual que A5-a pero pidiendo solo lo necesario (en TMDB, `append_to_response` mínimo). | ~70 (igual) | es en la práctica A5-a; las llamadas no se pueden reducir más por ítem (TMDB no tiene endpoint de fechas lite) |
 
 **Conclusión de A5**: A5-a es la variante recomendada: conserva el 100 % del
-sistema de avisos actual con ~85 % menos llamadas API y ~80 % menos
-escrituras que A0.
+sistema de avisos actual con ~85 % menos llamadas API (~445 → ~70) y ~70 %
+menos escrituras que A0 (~120 → ~35).
 
 ---
 
@@ -518,7 +518,9 @@ Diez criterios, con su métrica y dirección de bondad:
   de libros `/works/` sin sinopsis) → 15+40+10+5 = **~70**.
 - `EscriturasFirestore(A0) = ~0,1·P+0,65·S+0,15·B+0,1·G + 20` (acciones de
   usuario) → 30+65+7+0+20 ≈ **~120**.
-- `EscriturasFirestore(A2+A5-a) = ~0,05·P+0,2·S+0,02·B + 20` ≈ **~35**.
+- `EscriturasFirestore(A2+A5-a) = ~0,02·P+0,1·S+0,02·B + 20` (2 % de
+  películas/juegos con revalidación en ficha, 10 % de series) → 6+10+1+20 =
+  37 ≈ **~35** (redondeo; ahorro frente a A0 ≈ **-70 %** en ambos casos).
 - `LecturasFirestore = (4 colecciones+perfil+campana)·L + V·4colecciones·N +
   F·(M-1)·4colecciones·N` → (486)·5 + 2·1.920 + 1·3.840 ≈ **~10.100**
   (idéntico en A0 y A2: no depende de los campos, sino del nº de documentos).
@@ -533,6 +535,12 @@ medio por tipo según el Anexo A.1; nombre de usuario medio en negrita):
 | **Medio (300/100/50/30)** | **480** | **~2,2 MB** | **~0,9 MB** | **~445** | **~125** | **~30.300** |
 | Grande (1000/300/150/100) | 1.550 | ~7,4 MB | ~3,1 MB | ~1.470 | ~390 | ~107.000 (requeriría plan de pago o reducir suscripciones) |
 
+*Nota: las llamadas A2+A5-a de la tabla asumen que las fichas abiertas al
+día (D) escalan con la biblioteca (≈7 % de los ítems; D = 20 → ~105 en el
+perfil grande, D ≈ 6 en el pequeño), igual que la pasada mínima; con D fijo
+en 20 las cifras serían ~47 (pequeño) y ~73 (grande), y las conclusiones no
+cambian.*
+
 ---
 
 ## 7. Evaluación comparativa
@@ -545,7 +553,7 @@ medio; supuestos de la sección 6; ▲ bueno, ● aceptable, ▼ malo):
 | C1 Lecturas Firestore | ● ~10.100/día/usuario (61 % del tope con M=3) | ● idéntico (no reduce lecturas) | ● idéntico | ▼ n/a (no compartido) | ● idéntico |
 | C2 Escrituras | ▼ ~120/día | ▲ ~20 (pero con coste C4) | ▲ ~35 | ▲ 0 (pero C7 roto) | ▲ ~35 |
 | C3 Almacenamiento | ▼ ~2,2 MB/usuario | ▲ ~0,45 MB | ▲ ~0,9 MB | — | ▲ ~0,9 MB |
-| C4 Llamadas API | ▼ ~445/día | ▼▼ ~3.500-6.700/día + **picos 300 por pestaña de películas y 960 por amigo** | ▲ ~125/día, sin picos | ▲ 0 (degradación social) | ▲ ~125/día |
+| C4 Llamadas API | ▼ ~445/día | ▼▼ ~5.000-6.700/día + **picos 300 por pestaña de películas y 960 por amigo** | ▲ ~125/día, sin picos | ▲ 0 (degradación social) | ▲ ~125/día |
 | C5 Latencia | ▲ tarjetas y fichas instantáneas | ▼▼ pestañas 15-23 s, juegos 7,5 s mínimos | ▲ tarjetas instantáneas; ficha ~0,3-1 s | ▲ | ▲ |
 | C6 Offline | ▲ tarjetas + fichas visitadas (SW) | ▼ sin tarjetas offline | ▲ tarjetas + fichas visitadas | ▼ solo dispositivo local | ▲ |
 | C7 Amigos/feed | ▲ solo Firestore | ▼▼ M×N llamadas por visita | ▲ solo Firestore | ▼▼ roto | ▲ |
@@ -752,9 +760,9 @@ trabajo para una issue de implementación posterior:
 | **3 usuarios** | **~6,6 MB (0,6 % del GiB)** | **~2,7 MB (0,3 %)** | **~1,3 MB (0,1 %)** |
 
 Conclusiones del anexo: el almacenamiento **nunca es el cuello de botella**
-(≈ 0,3-0,6 % del 1 GiB de Spark incluso en el escenario grande de la sección
-6); el cuello de botella real son las lecturas (C1, sección 7) y el
-ratio llamadas-API/usuarios (C4).
+(≈ 0,6 % del GiB con los 3 usuarios medios y ≈ 2,2 % en el escenario grande
+de la sección 6); el cuello de botella real son las lecturas (C1, sección 7)
+y el ratio llamadas-API/usuarios (C4).
 
 ### A.2 Desglose de llamadas por escenario (un usuario, día normal)
 
@@ -765,7 +773,12 @@ ratio llamadas-API/usuarios (C4).
 | Abrir 1 amigo (V=2) | 4 colecciones del amigo | 0 | 2×960 ≈ **1.920** | 0 (solo Firestore) |
 | Feed (F=1) | 4 colecciones × (M-1) | 0 | 1×1.920 ≈ **1.920** | 0 |
 | Pasada diaria | avisos + curado | **~445** (TMDB+OL) | ~410 (igual, no ahorra avisos) | ~70 (solo pending + en curso) |
-| **Total** | | **~445** | **~3.500-6.700** | **~125** |
+| **Total** | | **~445** | **~5.000-6.700** | **~125** |
+
+*El rango de A1 refleja el uso social del día: sin abrir amigos ni feed el
+mínimo baja a ~1.200-2.900 (solo pestañas + fichas + pasada), pero el caso
+normal del perfil de la sección 6 (V=2 amigos y F=1 feed) cae en
+~5.000-6.700.*
 
 Todas las cifras de este anexo son estimaciones construidas sobre los
 supuestos de la sección 6; la app no dispone de telemetría para medirlas.
