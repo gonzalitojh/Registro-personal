@@ -367,7 +367,7 @@ proxy propio). Los resultados traen portada, año, sinopsis, plataformas,
 valoración de la comunidad y más datos.
 
 - Pulsa **«Añadir»** para añadirlo (el botón pasa a «Añadido»).
-- Pulsa **«Marcar visto»** para añadirlo **ya marcado como jugado** (se
+- Pulsa **«Marcar jugado»** para añadirlo **ya marcado como jugado** (se
   registra la sesión con la fecha de hoy) y **valorarlo al momento**: se
   abre la ventana de estrellas para puntuarlo. Si pulsas **«Deshacer»**
   en esa ventana, el videojuego se elimina de tu registro.
@@ -427,11 +427,13 @@ igual). Para cada resultado:
 
 - Pulsa **«Añadir»** para añadirlo directamente (el botón pasa a
   «Añadido»).
-- Pulsa **«Marcar visto»** para añadirlo **ya marcado como visto**
-  (las películas quedan vistas con la fecha de hoy, las series con
-  **todos los episodios de todas sus temporadas**, los libros como
-  leídos y los videojuegos como jugados) y **valorarlo al momento**: se
-  abre la ventana de estrellas para puntuarlo (en las series, una sola
+- Pulsa el botón de marcar para añadirlo **ya completado** y **valorarlo
+  al momento**: el botón usa el término de cada tipo — **«Marcar visto»**
+  en películas y series, **«Marcar leído»** en libros y **«Marcar
+  jugado»** en videojuegos. Las películas quedan vistas con la fecha de
+  hoy, las series con **todos los episodios de todas sus temporadas**,
+  los libros como leídos y los videojuegos como jugados; se abre la
+  ventana de estrellas para puntuarlo (en las series, una sola
   valoración para la serie en su conjunto). Si en esa ventana pulsas
   **«Deshacer»**, el título se elimina de tu registro. Si la película
   aún no está estrenada, o la serie tiene temporadas sin estrenar, la

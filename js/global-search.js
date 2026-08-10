@@ -30,7 +30,7 @@ import {
   existingBookKeys,
   isBookAlreadyAdded,
 } from "./search.js";
-import { MEDIA_ICONS } from "./constants.js";
+import { MEDIA_ICONS, seenActionLabels } from "./constants.js";
 // ---- Estado interno ----
 
 let isOpen = false;
@@ -259,7 +259,7 @@ function renderExternalSection(group, query) {
       <button type="button" class="global-search__item-add btn btn--small${g.accent}" data-add-index="${index}" ${added ? "disabled" : ""}>
         ${added ? "Añadido" : "Añadir"}
       </button>
-      ${added ? "" : `<button type="button" class="global-search__item-seen btn btn--small" data-seen-index="${index}">Marcar visto</button>`}
+      ${added ? "" : `<button type="button" class="global-search__item-seen btn btn--small" data-seen-index="${index}">${seenActionLabels(item.type).action}</button>`}
     </div>`;
     flatResults.push({ kind: "external", type: item.type, item, group });
   }
@@ -405,8 +405,9 @@ function renderResults(results, query) {
     });
 
     // Enter y Space para activar el resultado. Si el foco está en un
-    // botón de la fila (Añadir / Marcar visto), se deja pasar el evento
-    // para que sea el botón quien active su propia acción (issue #115).
+    // botón de la fila (Añadir / Marcar visto/leído/jugado), se deja
+    // pasar el evento para que sea el botón quien active su propia
+    // acción (issue #115).
     el.addEventListener("keydown", (e) => {
       if (e.target !== el) return;
       if (e.key === "Enter" || e.key === " ") {
@@ -435,9 +436,10 @@ function renderResults(results, query) {
     });
   });
 
-  // Botones «Marcar visto» de los resultados del catálogo (issue #115):
-  // alta directa como visto + valoración al momento. Durante el flujo
-  // se deshabilita también el «Añadir» de la fila para evitar dobles
+  // Botones «Marcar visto»/«Marcar leído»/«Marcar jugado» de los
+  // resultados del catálogo (issues #115 y #177): alta directa como
+  // completado + valoración al momento. Durante el flujo se
+  // deshabilita también el «Añadir» de la fila para evitar dobles
   // altas; si el flujo se aborta o se deshace, ambos se restauran.
   resultsEl.querySelectorAll(".global-search__item-seen").forEach((btn) => {
     btn.addEventListener("click", (e) => {
@@ -445,6 +447,7 @@ function renderResults(results, query) {
       const idx = parseInt(btn.dataset.seenIndex, 10);
       const entry = flatResults[idx];
       if (!entry || entry.kind !== "external") return;
+      const labels = seenActionLabels(entry.item.type);
       const row = btn.closest(".global-search__item");
       const addBtn = row ? row.querySelector(".global-search__item-add") : null;
       if (addBtn) addBtn.disabled = true;
@@ -454,10 +457,10 @@ function renderResults(results, query) {
         if (!btn.isConnected) return;
         if (ok) {
           btn.disabled = true;
-          btn.textContent = "Visto";
+          btn.textContent = labels.done;
         } else {
           btn.disabled = false;
-          btn.textContent = "Marcar visto";
+          btn.textContent = labels.action;
           if (addBtn && addBtn.isConnected) addBtn.disabled = false;
         }
       });

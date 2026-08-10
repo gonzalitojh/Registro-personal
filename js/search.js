@@ -13,6 +13,7 @@ import { addItem, updateItem, deleteItem } from "./db.js";
 import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
 import { searchGames as apiSearchGames, getGameDetails } from "./api-games.js";
+import { seenActionLabels } from "./constants.js";
 import { isUnreleasedDate, unreleasedConfirmMessage } from "./release.js";
 import { todayISO } from "./dates.js";
 import { computeProgress, markAllSeasonsWatched } from "./tv-progress.js";
@@ -217,12 +218,13 @@ export async function handleAdd(item, btn, ctx) {
 
 /* ---------- Alta directa como visto desde el catálogo (issue #115) ---------- */
 
-// Restaura el botón «Marcar visto» a su estado inicial (tras abortar,
-// fallar o deshacer el flujo de alta como visto).
-function restoreSeenBtn(btn) {
+// Restaura el botón «Marcar visto» (o «Marcar leído»/«Marcar jugado» según
+// el tipo, issue #177) a su estado inicial (tras abortar, fallar o deshacer
+// el flujo de alta como visto).
+function restoreSeenBtn(btn, type) {
   if (!btn) return;
   btn.disabled = false;
-  btn.textContent = "Marcar visto";
+  btn.textContent = seenActionLabels(type).action;
 }
 
 // Da de alta el ítem como visto y abre la ventana de valoración al
@@ -307,13 +309,13 @@ async function doAddBookSeen(item, btn, ctx, choices) {
     // del botón se fija aquí mismo, como hace el listener del dropdown.
     if (ok) {
       btn.disabled = true;
-      btn.textContent = "Visto";
+      btn.textContent = seenActionLabels("book").done;
     } else {
-      restoreSeenBtn(btn);
+      restoreSeenBtn(btn, "book");
     }
     return ok;
   } catch (err) {
-    restoreSeenBtn(btn);
+    restoreSeenBtn(btn, "book");
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
   }
@@ -387,7 +389,7 @@ export async function handleAddSeen(item, btn, ctx) {
         doneToast: `«${item.title}» añadido y marcado como jugado.`,
       });
     } catch (err) {
-      restoreSeenBtn(btn);
+      restoreSeenBtn(btn, "game");
       ui.showToast("No se pudo añadir: " + err.message);
       return false;
     }
@@ -415,7 +417,7 @@ export async function handleAddSeen(item, btn, ctx) {
         title: item.title,
       });
       if (msg && !window.confirm(msg)) {
-        restoreSeenBtn(btn);
+        restoreSeenBtn(btn, "movie");
         return false;
       }
 
@@ -457,7 +459,7 @@ export async function handleAddSeen(item, btn, ctx) {
     }
     if (!seasonsMeta.length) {
       ui.showToast(`No se pudo marcar «${item.title}»: no se pudieron obtener sus temporadas.`);
-      restoreSeenBtn(btn);
+      restoreSeenBtn(btn, "tv");
       return false;
     }
 
@@ -466,7 +468,7 @@ export async function handleAddSeen(item, btn, ctx) {
     if (unreleasedSeasons.length) {
       const msg = `«${item.title}» · ${unreleasedSeasons.length} de ${seasonsMeta.length} temporadas aún no están estrenadas. ¿Marcarlas todas igualmente como vistas?`;
       if (!window.confirm(msg)) {
-        restoreSeenBtn(btn);
+        restoreSeenBtn(btn, "tv");
         return false;
       }
     }
@@ -515,7 +517,7 @@ export async function handleAddSeen(item, btn, ctx) {
       doneToast: `«${item.title}» añadida y marcada como vista.`,
     });
   } catch (err) {
-    restoreSeenBtn(btn);
+    restoreSeenBtn(btn, item.type);
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
   }
