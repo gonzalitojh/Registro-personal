@@ -1,0 +1,30 @@
+{
+  "title": "Ocultar secciones (y pestañas) desde Ajustes",
+  "description": "En los ajustes se deben poder ocultar secciones e incluso pestañas de las secciones. Actualmente solo hay una sección (ocio), pero próximamente habrá más. Si solo se tiene visible una sección, la barra lateral de navegación no tendría sentido y para esos casos se sustituiría por un botón para acceder a los ajustes.",
+  "status": "created",
+  "acceptance criteria": [
+    "Nueva tarjeta «Secciones y pestañas» en Ajustes (perfil → Ajustes) con un interruptor por sección (hoy: Ocio) y un interruptor por pestaña de cada sección (Series, Películas, Libros), generados desde un registro central (extensible a secciones futuras).",
+    "Ocultar una pestaña la retira de la barra de pestañas y de la navegación; la pestaña activa cae a la primera visible y las URLs (#/ocio/series, ...) que apunten a una pestaña oculta abren la primera visible normalizando el hash.",
+    "Ocultar una sección la retira de la barra lateral de navegación. Con solo una sección visible, la barra lateral (☰) se sustituye por un botón que abre Ajustes; al volver a haber más de una sección visible, la barra lateral reaparece.",
+    "Guardas: no se puede ocultar la última sección ni la última pestaña visible de una sección (el interruptor queda deshabilitado con una nota explicativa).",
+    "Las preferencias persisten en localStorage (mi-registro-settings) y se sincronizan con Firestore en preferences (como las notificaciones), con debounce.",
+    "La nueva UI se ve correctamente en los cuatro modos de tema (oscuro, negro puro, claro, blanco puro) y en móvil/tablet/ordenador sin scroll horizontal (AGENTS.md).",
+    "docs/manual-de-usuario.md actualizado: qué se puede ocultar, dónde, y el comportamiento de la barra lateral ↔ botón de Ajustes.",
+    "ADR con la decisión de diseño (registro de secciones/pestañas, guardas, sustitución de la barra lateral) que incluya «Related issue: #97».",
+    "PR contra dev SIN keyword de cierre; label de la issue a status: needs-review tras crear la PR."
+  ],
+  "definition of done": [
+    "Planificación realizada (análisis y diseño registrado).",
+    "Implementación completa y funcional según los criterios de aceptación.",
+    "Validación QA superada (aceptación + bordes: ocultar todo, URLs ocultas, recarga, atrás/adelante).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR escrito y manual de usuario actualizado.",
+    "PR creada contra dev sin keyword de cierre y task file en status review.",
+    "Issue #97 con label actualizada a su estado final (needs-review tras la PR; done al fusionar en dev vía issues-done-on-dev.yml)."
+  ],
+  "issue": {
+    "number": 97,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/97",
+    "title": "Ocultar secciones"
+  }
+}
