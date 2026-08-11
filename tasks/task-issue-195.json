@@ -1,0 +1,19 @@
+{
+  "title": "Correos permitidos: eliminar js/allowed-emails.js (firestore.rules como única fuente de verdad)",
+  "description": "Issue #195: Esta web solo debe estar disponible para los emails habilitados y requiere inicio de sesión a través de Google. Estos correos se han especificado como Regla en la firestore y, a parte, se encuentran en el archivo _allowed-emails.js_. Teniendo en cuenta que los correos están ya registrados en Firebase y que el inicio de sesión es obligatorio, ¿Es necesario mantener también los correos en ese archivo de JavaScript? Se pide explicar el motivo de que exista dicho archivo y, si es posible, eliminarlo, cambiando lo que sea necesario para que el funcionamiento siga siendo el esperado, pero que únicamente se encuentren los correos en la regla de Firebase que actualizaría el usuario manualmente.",
+  "status": "created",
+  "acceptance_criteria": [
+    "El archivo js/allowed-emails.js deja de existir y ninguna referencia a él (imports, precache del service worker, README, config.js) permanece en el código.",
+    "La única lista de correos permitidos vive en firestore.rules (función isAllowedUser), que el usuario actualiza manualmente y publica en Firebase console.",
+    "El funcionamiento esperado se mantiene: quien no está en la lista recibe el aviso «Tu correo no está en la lista de invitados. Pide que te añadan.» y se le cierra la sesión; quien sí está, entra con normalidad.",
+    "El conjunto de correos actualmente habilitados no se reduce: los 4 correos que estaban en allowed-emails.js siguen permitidos en firestore.rules.",
+    "Se explica el motivo por el que existía el archivo (documentación/ADR).",
+    "README.md y docs/manual-de-usuario.md quedan actualizados al nuevo mecanismo (un solo sitio donde se editan los correos)."
+  ],
+  "definition_of_done": "Planificación realizada, implementación completada, validación QA superada, escaneo de seguridad sin hallazgos HIGH, ADR documentado (con «Related issue: #195»), PR creada contra dev sin keyword de cierre, issue #195 con label actualizado a su estado final.",
+  "issue": {
+    "number": 195,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/195",
+    "title": "Correos permitidos"
+  }
+}
