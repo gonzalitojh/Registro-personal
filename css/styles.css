@@ -2960,9 +2960,17 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 [data-theme="black"] .supermarket-chip {
-  background: var(--ink);
+  background: var(--ink-raised);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
+}
+
+/* Foco de teclado visible en los chips (issue #224): el input está
+   oculto, así que el anillo se dibuja sobre el label contenedor.
+   Mismo color que el resto de :focus-visible del catálogo. */
+.supermarket-chip:focus-within {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 /* Etiqueta de supermercado no interactiva (mismo aspecto que el chip
