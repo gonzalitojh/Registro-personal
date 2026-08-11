@@ -22,8 +22,12 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/220",
     "title": "Estética pestaña menú"
   },
-  "note": "QA PASS, seguridad PASS, ADR-083 creado (docs/adr-083-pestana-menu-estetica-ocio.md, Related issue: #220). Pendiente: PR contra content/issue-64-seccion-recetas.",
+  "note": "Iteración (comentario 2026-08-11): botones «+ Receta» con colores de píldora; bump PWA 20260913; ADR-083 actualizado. QA PASS, seguridad PASS. PR #222 actualizada contra content/issue-64-seccion-recetas.",
   "pr": {
+    "number": 222,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/222"
+  },
+  "previousPr": {
     "number": 222,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/222",
     "title": "style: estética píldora de la pestaña Menú (issue #220)",
