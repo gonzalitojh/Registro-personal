@@ -79,7 +79,8 @@ por `PLACEHOLDER_COVER` las `<img>` con las clases:
 
 `item-card__cover`, `list-row__cover`, `modal-detail__cover`,
 `rating-modal__cover`, `rec-card__cover`, `saga-row__cover`,
-`activity-event__cover`.
+`activity-event__cover` y `cover-picker__item-cover` (miniaturas del
+selector de portadas de ediciones de libro, `openBookConfirmModal`).
 
 - **Guarda de bucle**: si `img.src` empieza por `"data:"` (ya es el
   placeholder) no se reasigna.
@@ -194,5 +195,11 @@ por `PLACEHOLDER_COVER` las `<img>` con las clases:
   interno, regla 3).
 - Escaneo de seguridad: PASS **sin hallazgos HIGH/MEDIUM**.
 - Sin CSS nuevo; `PLACEHOLDER_COVER` es un asset existente.
+- **Iteración (comentario de 2026-08-11)**: re-validación completa —
+  QA 19/19 + 16/16 PASS (render-guard y fallback con harness propio),
+  escaneo de seguridad PASS sin hallazgos, y cobertura del fallback
+  ampliada a las miniaturas del selector de portadas de ediciones de
+  libro (`cover-picker__item-cover`), que el primer QA detectó sin
+  clase (hallazgo de severidad baja, preexistente en `dev`).
 
 Related issue: #191 — https://github.com/gonzalitojh/Registro-personal/issues/191

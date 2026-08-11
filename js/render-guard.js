@@ -43,6 +43,9 @@ export const RENDERED_FIELDS = [
   "watchLog",
   "readLog",
   "playLog",
+  // Nota: "type" se lee en progressLine/quickActionLabel/sorting pero es
+  // INVARIANTE por colección (cada grupo vive en su propia colección y
+  // addItem lo fija al crear), así que no necesita entrar en la firma.
 ];
 
 // Firma estable de un grupo: JSON de los campos renderizados, en el
