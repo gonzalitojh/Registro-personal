@@ -128,7 +128,7 @@ async function openMovieItem(item, ctx) {
     } catch {
       recommendations = [];
     }
-    existingIds = new Set(ctx.getItemsByGroup("movies").map((m) => m.externalId));
+    existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
   ui.openMovieModal(item, {
@@ -258,7 +258,7 @@ async function openSagaSelector(item, ctx) {
     }
 
     const existingIds = new Set(
-      ctx.getItemsByGroup("movies").map((m) => m.externalId)
+      (await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId)
     );
 
     const missingMovies = collection.parts.filter(
@@ -514,7 +514,7 @@ async function openTvItem(item, ctx) {
     } catch {
       recommendations = [];
     }
-    existingIds = new Set(ctx.getItemsByGroup("tv").map((t) => t.externalId));
+    existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
   }
 
   ui.openTvModal(item, seasonsMeta, progress, {

@@ -109,17 +109,23 @@ function generateIcsString(events) {
   * Recopila los próximos eventos (episodios de series y estrenos de
   * películas) a partir de los datos del usuario.
   *
+  * Los grupos se leen de Firestore bajo demanda (getItemsOnce) y no
+  * del estado en memoria (issue #178): con el lazy loading por
+  * pestaña, un grupo que el usuario no ha visitado aún no está
+  * suscrito y la exportación se quedaría sin esos eventos.
+  *
   * @param {Object} ctx - Contexto de la aplicación
   * @param {boolean} includeMovies - Incluir estrenos de películas
   * @param {boolean} includeTv - Incluir próximos episodios de series
-  * @returns {Array<{uid:string, dtstart:string, summary:string, description?:string}>}
+  * @returns {Promise<Array<{uid:string, dtstart:string, summary:string, description?:string}>>}
   */
-function collectUpcomingEvents(ctx, includeMovies, includeTv) {
+async function collectUpcomingEvents(ctx, includeMovies, includeTv) {
   const events = [];
   const today = todayISO();
+  const user = ctx.getCurrentUser();
 
   if (includeTv) {
-    const tvSeries = ctx.getItemsByGroup("tv") || [];
+    const tvSeries = (user && (await ctx.getItemsOnce(user.uid, "tv"))) || [];
     for (const item of tvSeries) {
       const episode = item.nextEpisodeToAir;
       if (!episode || !episode.airDate) continue;
@@ -141,7 +147,7 @@ function collectUpcomingEvents(ctx, includeMovies, includeTv) {
   }
 
   if (includeMovies) {
-    const movies = ctx.getItemsByGroup("movies") || [];
+    const movies = (user && (await ctx.getItemsOnce(user.uid, "movie"))) || [];
     for (const item of movies) {
       // Incluir películas pendientes o con awaitingRelease, que tengan fecha futura
       const isPending = item.status === "pendiente" || item.awaitingRelease === true;
@@ -187,7 +193,7 @@ export async function downloadIcs(ctx, options = {}) {
   ui.showToast("Preparando calendario…");
 
   try {
-    const events = collectUpcomingEvents(ctx, includeMovies, includeTv);
+    const events = await collectUpcomingEvents(ctx, includeMovies, includeTv);
 
     if (events.length === 0) {
       ui.showToast("No hay estrenos próximos que exportar.");
