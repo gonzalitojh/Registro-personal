@@ -16,6 +16,7 @@ import {
   INGREDIENT_CATEGORIES,
   ALERGEN_TAGS,
   MEAL_TYPES,
+  SUPERMARKETS,
   normalizeIngredientName,
   normalizeUnit,
   mergeTags,
@@ -575,6 +576,35 @@ function setupIngredientFilter() {
 
 // ---------- Modal de ingrediente (issue #218) ----------
 
+// Unidades disponibles para la cantidad del paquete (issue #224); la
+// primera opción vacía («—») significa sin especificar.
+const PACKAGE_UNITS = ["", "g", "Kg", "mL", "L", "unidades"];
+
+// Chips de supermercados (issue #224): las mismas etiquetas en el alta
+// y en el detalle. `selected` son los ids marcados (en el alta, nada).
+function supermarketChipsHtml(selected = []) {
+  return SUPERMARKETS.map((s) => {
+    const checked = selected.includes(s.id);
+    return `<label class="supermarket-chip supermarket-chip--${s.id}${checked ? " is-checked" : ""}" data-supermercado="${s.id}">
+      <input type="checkbox" value="${s.id}"${checked ? " checked" : ""} />
+      <span>${escapeHtml(s.label)}</span>
+    </label>`;
+  }).join("");
+}
+
+// Fila «Cantidad del paquete» (número + unidad, issue #224): los ids
+// son los mismos en el alta y en el detalle para reutilizar lecturas.
+function packageQtyRowHtml(ing = {}) {
+  const cantidad = ing.paqueteCantidad ?? "";
+  const unidad = ing.paqueteUnidad || "";
+  return `<div class="ingredient-modal__qty-row">
+    <input type="number" id="ing-modal-paquete" min="0" step="any" placeholder="Cantidad" value="${escapeHtml(cantidad)}" />
+    <select id="ing-modal-unidad" aria-label="Unidad de la cantidad del paquete">
+      ${PACKAGE_UNITS.map((u) => `<option value="${escapeHtml(u)}"${u === unidad ? " selected" : ""}>${u === "" ? "—" : escapeHtml(u)}</option>`).join("")}
+    </select>
+  </div>`;
+}
+
 // Abre el modal de ingrediente: con id = detalle ampliado (categoría,
 // recetas que lo usan, eliminar); sin id = alta manual.
 function openIngredientModal(id) {
@@ -627,6 +657,16 @@ function ingredientDetailHtml(ing) {
         ${optionsFor("ingrediente", ing.categoriaId)}
       </select>
     </div>
+    <div class="ingredient-modal__field">
+      <label>Supermercados</label>
+      <div class="ingredient-modal__chips">
+        ${supermarketChipsHtml(ing.supermercados || [])}
+      </div>
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-paquete">Cantidad del paquete</label>
+      ${packageQtyRowHtml(ing)}
+    </div>
     ${usedRecipes.length ? `<p class="ingredient-modal__used">Usada en ${usedRecipes.length}
       ${usedRecipes.length === 1 ? "receta" : "recetas"}:
       ${usedRecipes.map((r) =>
@@ -654,6 +694,16 @@ function ingredientNewHtml() {
         ${optionsFor("ingrediente", "")}
       </select>
     </div>
+    <div class="ingredient-modal__field">
+      <label>Supermercados</label>
+      <div class="ingredient-modal__chips">
+        ${supermarketChipsHtml()}
+      </div>
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-paquete">Cantidad del paquete</label>
+      ${packageQtyRowHtml()}
+    </div>
     <p class="ingredient-modal__cat-hint">Si el ingrediente ya está en el catálogo, no se añadirá otra vez.</p>
     <div class="ingredient-modal__actions">
       <button type="button" class="btn btn--small" data-ing-close>Cancelar</button>
@@ -674,6 +724,54 @@ function bindIngredientModalHandlers(content, ingredient) {
       console.error("No se pudo actualizar la categoría:", err);
     }
   });
+
+  // Supermercados (issue #224): la marca visual cambia al instante en
+  // el alta y en el detalle; el guardado inmediato solo aplica en el
+  // detalle (patrón del cambio de categoría). El array de ids se
+  // recalcula entero y se envía como array completo nuevo.
+  content.querySelectorAll(".ingredient-modal__chips").forEach((chips) => {
+    chips.addEventListener("change", async (e) => {
+      const label = e.target.closest("[data-supermercado]");
+      if (!label) return;
+      label.classList.toggle("is-checked", e.target.checked);
+      if (!ingredient) return;
+      try {
+        const ids = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
+        await ctx.updateIngredient(currentUser, ingredient.id, { supermercados: ids });
+        showToast("Supermercados actualizados.");
+      } catch (err) {
+        console.error("No se pudo actualizar los supermercados:", err);
+      }
+    });
+  });
+
+  // Cantidad del paquete en el detalle (issue #224): guardado inmediato
+  // al dejar el campo (patrón de la categoría). Vacío = sin cantidad;
+  // valores inválidos o negativos se descartan (se revierte a vacío).
+  if (ingredient) {
+    content.querySelector("#ing-modal-paquete")?.addEventListener("change", async (e) => {
+      let value = e.target.value === "" ? null : Number(e.target.value);
+      if (value !== null && (!Number.isFinite(value) || value < 0)) {
+        e.target.value = "";
+        value = null;
+      }
+      try {
+        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteCantidad: value });
+        showToast("Cantidad de paquete actualizada.");
+      } catch (err) {
+        console.error("No se pudo actualizar la cantidad de paquete:", err);
+      }
+    });
+
+    content.querySelector("#ing-modal-unidad")?.addEventListener("change", async (e) => {
+      try {
+        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteUnidad: e.target.value });
+        showToast("Unidad actualizada.");
+      } catch (err) {
+        console.error("No se pudo actualizar la unidad:", err);
+      }
+    });
+  }
 
   // Links «Usada en»: abren la receta en modo lectura; el modal de
   // ingrediente se cierra antes (ambos comparten z-index).
@@ -713,8 +811,15 @@ function bindIngredientModalHandlers(content, ingredient) {
       return;
     }
     const categoriaId = content.querySelector("#ing-modal-categoria-nueva").value;
+    // Campos opcionales (issue #224): supermercados marcados (array de
+    // ids) y cantidad del paquete (número, vacío → null; unidad).
+    const supermercados = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
+    const qtyRaw = content.querySelector("#ing-modal-paquete").value;
+    const qtyNum = qtyRaw === "" ? null : Number(qtyRaw);
+    const paqueteCantidad = qtyNum !== null && Number.isFinite(qtyNum) && qtyNum >= 0 ? qtyNum : null;
+    const paqueteUnidad = content.querySelector("#ing-modal-unidad").value;
     try {
-      await ctx.addIngredient(currentUser, { nombre, categoriaId });
+      await ctx.addIngredient(currentUser, { nombre, categoriaId, supermercados, paqueteCantidad, paqueteUnidad });
       closeIngredientModal();
       showToast("Ingrediente añadido al catálogo.");
     } catch (err) {
