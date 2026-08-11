@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260913" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260913" />
+  <link rel="stylesheet" href="css/styles.css?v=20260914" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260914" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -520,7 +520,7 @@
             <circle cx="19" cy="21" r="1" />
             <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
           </svg>
-          <span>Lista de la compra</span>
+          <span>Compra</span>
         </button>
       </div>
     </nav>
@@ -602,10 +602,10 @@
         </div>
       </section>
 
-      <!-- Pestaña Lista de la compra: cálculo automático desde el
-           menú + ítems extra manuales. js/shopping-list.js. -->
+      <!-- Pestaña Compra (la lista de la compra): cálculo automático
+           desde el menú + ítems extra manuales. js/shopping-list.js. -->
       <section id="panel-shopping-tab" class="hidden" role="tabpanel" aria-labelledby="panel-shopping-tab-heading">
-        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Lista de la compra</h2>
+        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Compra</h2>
         <div class="shopping-toolbar">
           <span id="shopping-week-label" class="menu-week-label"></span>
           <button type="button" id="btn-add-extra-item" class="btn btn--primary btn--small">+ Ítem extra</button>
@@ -677,7 +677,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260913"></script>
+  <script type="module" src="js/app.js?v=20260914"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
