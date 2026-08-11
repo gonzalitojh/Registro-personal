@@ -3276,7 +3276,7 @@ body.is-back-to-top-visible .back-to-top {
 /* Checkboxes de la lista de la compra (marcar comprado) y del form
    de ítem extra con el acento de la pestaña (--stamp, rojo), mismo
    patrón que .saga-row input[type="checkbox"] en Ocio: accent-color
-   nativo + tamaño fijo. --stamp (#a63b2e) da check blanco ≈6.6:1 en
+   nativo + tamaño fijo. --stamp (#a63b2e) da check blanco ≈6.4:1 en
    Oscuro y en la familia clara; en negro puro pasa a --stamp-dark
    (#cf6655, umbral gráfico 3:1 sobre negro, patrón de ocio.css). */
 .shopping-line__main input[type="checkbox"],
