@@ -84,7 +84,6 @@ export function setupRecipes(opts) {
   ctx = opts?.ctx || null;
   onRecipeDeleted = opts?.onRecipeDeleted || null;
 
-  document.getElementById("btn-close-recipes").addEventListener("click", closeRecipesView);
   document.getElementById("btn-new-recipe").addEventListener("click", () => openRecipeModal());
   document.getElementById("btn-toggle-ingredients").addEventListener("click", toggleIngredientsCatalog);
   document.getElementById("recipes-search-input").addEventListener("input", (e) => {
@@ -184,13 +183,15 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
   }
 }
 
-function closeRecipesView() {
-  document.getElementById("recipes-view").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  navigate("series");
-}
-
 // ---------- Pestaña Recetas: listado ----------
+
+// Búsqueda de recetas para el buscador global de la cabecera
+// (issue #206): la búsqueda superior se acota a la sección activa,
+// así que desde Recetas filtra el listado local. Reutiliza el filtro
+// de la pestaña (nombre, ingrediente y etiqueta).
+export function searchRecipes(query) {
+  return filterRecipes(recipes, query.trim().toLowerCase());
+}
 
 function renderRecipesList() {
   const container = document.getElementById("recipes-list");

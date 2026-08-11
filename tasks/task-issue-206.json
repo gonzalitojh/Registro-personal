@@ -1,0 +1,29 @@
+{
+  "title": "Navegación por secciones (issue #206)",
+  "description": "La navegación de la web debe mantenerse en todas las secciones: barra lateral de navegación, barra superior de búsqueda (que solo buscaría dentro de la sección) y botón del perfil. Eliminar por tanto el botón hacia atrás y el título de la sección.\n\nBase del trabajo: rama `content/issue-64-seccion-recetas`. Crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a `dev`), según instrucción explícita de la issue.\n\nSecciones afectadas: Ocio (#app, ya tiene la cabecera completa), Perfil (#profile-view, hoy con flecha de volver + título «Tu perfil»), Recetas (#recipes-view, hoy con flecha de volver + título «Recetas»).\n\nPlan: (1) mover la cabecera (hamburguesa/sidebar + búsqueda + campana + perfil) fuera de #app para que sea global, visible en todas las secciones y oculta solo en la pantalla de acceso; (2) eliminar #btn-close-profile, #btn-close-recipes y los h1.app-title; (3) acotar la búsqueda superior a la sección actual (ocio → pelis/series/libros/juegos + catálogo; perfil → amigos; recetas → recetas), con placeholder por sección; (4) ajustar CSS (padding-top de profile-view/recipes-view para la cabecera fija, sticky de recipes-view__header, eliminar .app-title muerto); (5) bump PWA; (6) manual de usuario + ADR.",
+  "status": "created",
+  "acceptance criteria": [
+    "La barra lateral de navegación (hamburguesa) está disponible en Ocio, Perfil y Recetas.",
+    "La barra superior de búsqueda está disponible en todas las secciones y solo busca dentro de la sección actual (ocio: colecciones + catálogo; perfil: amigos; recetas: recetas).",
+    "El botón del perfil (avatar/menú) está disponible en todas las secciones.",
+    "Eliminados el botón hacia atrás y el título de la sección en Perfil y Recetas.",
+    "La cabecera global permanece oculta en la pantalla de acceso (sin sesión).",
+    "Responsividad: sin scroll horizontal a 360/768/1280 px y sin texto desbordado.",
+    "Los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro) muestran la cabecera y los contenidos con contraste correcto.",
+    "El manual de usuario refleja la navegación global y la búsqueda por sección (regla 3 AGENTS.md)."
+  ],
+  "definition of done": [
+    "Planificación completada y aprobada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA: criterios de aceptación verificados (incluye responsividad y 4 modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado con 'Related issue: #206'.",
+    "PR creada contra `content/issue-64-seccion-recetas` (NO dev, instrucción explícita de la issue) SIN keyword de cierre; task file subido con status 'review' + bloque pr.",
+    "Issue #206 label actualizada a su estado final (status: needs-review al crear la PR)."
+  ],
+  "issue": {
+    "number": 206,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/206",
+    "title": "Navegación por secciones"
+  }
+}

@@ -925,13 +925,6 @@ button {
   font-weight: 600;
 }
 
-.app-title {
-  font-family: var(--font-display);
-  font-size: 1.7rem;
-  font-weight: 600;
-  margin: 0;
-}
-
 .user-badge {
   display: flex;
   align-items: center;
@@ -959,9 +952,6 @@ button {
   .app-header__top {
     gap: 0.5rem;
     flex-wrap: nowrap;
-  }
-  .app-title {
-    font-size: 1.45rem;
   }
   .user-badge {
     gap: 0.4rem;
@@ -1590,7 +1580,10 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
   max-width: 980px;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 4rem;
+  /* Padding superior: hueco para la cabecera global fija (--header-h)
+     + 1rem de aire (issue #206: la cabecera ahora es global y visible
+     también en Perfil). */
+  padding: calc(var(--header-h) + 1rem) 1.25rem 4rem;
 }
 
 .profile-view__header {
@@ -2507,7 +2500,9 @@ body.is-back-to-top-visible .back-to-top {
 /* --- Vista y cabecera (patrón profile-view) --- */
 
 .recipes-view {
-  padding: 0 1rem 4rem;
+  /* Padding superior: hueco para la cabecera global fija (--header-h)
+     + 1rem de aire (issue #206). */
+  padding: calc(var(--header-h) + 1rem) 1rem 4rem;
   max-width: 72rem;
   margin: 0 auto;
   width: 100%;
@@ -2515,7 +2510,9 @@ body.is-back-to-top-visible .back-to-top {
 
 .recipes-view__header {
   position: sticky;
-  top: 0;
+  /* Se pega bajo la cabecera global (issue #206): top: var(--header-h)
+     en vez de 0 para no quedar tapado por ella. */
+  top: var(--header-h);
   z-index: 30;
   background: var(--ink);
   display: flex;
@@ -2526,13 +2523,8 @@ body.is-back-to-top-visible .back-to-top {
   flex-wrap: wrap;
 }
 
-.recipes-view__header .app-title {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
 .recipes-view__header .profile-subtabs {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 /* --- Barra de herramientas de la pestaña Recetas --- */

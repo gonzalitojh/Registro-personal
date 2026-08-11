@@ -486,6 +486,9 @@ async function init() {
   let recipesApi = null;
   const router = initRouter({
     onRoute: (route) => {
+      // Búsqueda superior acotada a la sección (issue #206): el
+      // placeholder de la barra refleja dónde busca el usuario.
+      ui.setSearchSection(route.section);
       if (route.section === "perfil") {
         // Ruta de perfil: abre la sección pedida (profile.js decide
         // el render y, si viene con uid, el detalle del amigo).
