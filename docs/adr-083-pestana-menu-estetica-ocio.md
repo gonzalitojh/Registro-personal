@@ -106,7 +106,7 @@ Decisiones clave del rediseño:
   primary para la acción principal); la clase `.btn--pill` queda
   reutilizable para futuros controles; el botón dinámico y el estático
   nunca divergen visualmente.
-- **Neutras**: bump de versión PWA (invalida la caché de `20260911`
+- **Neutras**: bump de versión PWA (invalida la caché de `20260912`
   para propagar el nuevo CSS); el botón dinámico vuelve a
   `btn--primary btn--small` cuando `renderWeeklyRecipes` lo
   reconstruye, pero el usuario no percibe cambio de comportamiento; el
@@ -121,5 +121,24 @@ Decisiones clave del rediseño:
   nivel de página (el scroll interno del grid del menú sigue permitido).
   Seguridad PASS: sin hallazgos (las claves Firebase/TMDB/GB son
   preexistentes y públicas por diseño).
+
+## Actualización (iteración, comentario del 2026-08-11)
+
+La primera pasada dejó los botones «+ Receta» de cada comida con radio
+y borde de píldora pero **sin fondo ni color propio** (heredaban el del
+texto), por lo que se veían con estética distinta al resto de botones
+de la pestaña. El usuario pidió: *«los botones de añadir receta en cada
+día deberían tener los mismos colores que el resto de botones»*.
+
+Decisión de esta iteración: `.menu-meal__add` adopta exactamente los
+colores de `.btn--pill` — fondo `--ink-raised`, texto `--paper`, borde
+1px `--paper-alpha-30`, hover `--paper-alpha-10` — y en la familia
+clara el texto pasa a `--ink` (con hover `--ink-alpha-10`) mediante el
+mismo patrón de overrides agrupados `[data-theme="light"/"white"]` ya
+usado para `.btn--pill` (en negro puro no hace falta override: los
+valores base ya son correctos). El tamaño se mantiene `btn--small`
+porque el resto de métricas (radio 999px, etc.) ya eran de píldora.
+Bump PWA `20260912 → 20260913` para propagar el nuevo CSS a los
+clientes con caché.
 
 Related issue: #220
