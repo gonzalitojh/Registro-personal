@@ -1,7 +1,7 @@
 {
   "title": "No carga de las portadas",
   "description": "En la sección de películas, al valorar una película, las portadas han dejado de cargarse. En alguna ocasión han parpadeado, pero hasta que no se ha cerrado la web y vuelto a abrir no han cargado. Luego se ha aprobado en el resto de pestañas, a ver si pasaba lo mismo, y tras probar en libros, en la sección de series, las portadas parpadeaban muy rápidamente sin cargar correctamente. Corrige esta anomalía, y explícame el motivo.\n\nCausa raíz identificada: cada snapshot de Firestore (se dispara con CUALQUIER escritura, incluida la valoración y la pasada diaria de metadatos) vuelca el innerHTML del grid/lista completo (js/app.js renderLibraryFor → js/ui.js renderGrid/renderList). Cada volcado destruye los <img loading=\"lazy\"> en vuelo y Chrome cancela sus cargas; si llegan varios snapshots en ráfaga (guardado de valoración + ack del servidor + refresco diario en segundo plano), las portadas se cancelan una y otra vez y nunca completan (parpadeo incluido) hasta reiniciar la web. Además, las portadas de la biblioteca no tienen fallback al placeholder (a diferencia de la búsqueda global, issue #149), así que un error real (403/404/abortada) deja la imagen rota para siempre.",
-  "status": "validated",
+  "status": "documented",
   "acceptance criteria": [
     "Tras valorar una película (acción rápida o modal de detalle), las portadas de la biblioteca siguen cargándose correctamente sin parpadeo ni pérdida de cargas.",
     "Un snapshot de Firestore que no cambia datos visibles (p. ej. solo updatedAt, o metadatos no renderizados) NO re-renderiza la biblioteca: se evita el volcado de innerHTML que cancela los <img loading=\"lazy\"> en vuelo.",
