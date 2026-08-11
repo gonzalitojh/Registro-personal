@@ -107,6 +107,10 @@ const COVER_IMG_CLASSES = [
   "rec-card__cover",
   "saga-row__cover",
   "activity-event__cover",
+  // Miniaturas del selector de portadas de ediciones de libro
+  // (openBookConfirmModal): si la URL candidata falla, también caen al
+  // placeholder en lugar de quedar rotas.
+  "cover-picker__item-cover",
 ];
 
 // Fallback de portadas (issue #191): el evento "error" NO burbujea,
@@ -2050,7 +2054,7 @@ export function openBookConfirmModal(item, { onConfirm, onCancel }) {
             .map(
               (url, i) => `
             <button type="button" class="cover-picker__item ${i === 0 ? "is-selected" : ""}" data-index="${i}">
-              <img src="${url}" alt="Edición ${i + 1}" loading="lazy" />
+              <img class="cover-picker__item-cover" src="${url}" alt="Edición ${i + 1}" loading="lazy" />
             </button>`
             )
             .join("")}
