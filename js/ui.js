@@ -97,8 +97,10 @@ export const PLACEHOLDER_COVER =
 
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
 // se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
-// defecto. El timer se limpia al cerrar sesión.
-export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros, videojuegos o amigos...";
+// defecto. El timer se limpia al cerrar sesión. El placeholder por
+// defecto ya no menciona a los amigos: la búsqueda se acota a la
+// sección (issue #206) y solo se restaura en la pantalla de acceso.
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros y videojuegos...";
 const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
 const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
 let searchPlaceholderTimer = null;

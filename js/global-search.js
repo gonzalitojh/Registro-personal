@@ -45,11 +45,14 @@ let cachedProfiles = null;
 let profilePromise = null;
 let searchCtx = null;
 
-// Flag de reapertura suprimida (issue #206): al abrir el modal de una
-// receta desde el dropdown se reenfoca el input de búsqueda; el foco
-// vuelve a él al cerrar el modal y no debe reabrirse el dropdown. El
-// flag se limpia al consumirse en el propio focus event.
-let suppressReopenOnFocus = false;
+// Contador de focus suprimidos (issue #206): al abrir el modal de una
+// receta desde el dropdown se arma con 2 — uno para el focus
+// programático de navigateTo y otro para el reenfoque que hace
+// closeRecipeModal al cerrar el modal — para que el dropdown no se
+// reabra solo en ninguno de los dos momentos. El contador llega a 0
+// con los dos focus y la barra vuelve a abrirse con el siguiente
+// focus manual.
+let suppressFocusCount = 0;
 
 // Estado de la búsqueda externa (catálogo API), por grupo.
 // externalCache[group] = { query, items, source } | null (solo si la
@@ -402,8 +405,9 @@ function renderResults(results, query) {
         newFlat.push({ kind: "collection", type: "friend", item: entry, group: key });
       } else if (key === "recipes") {
         // Resultado de receta (issue #206): abre el modal de la receta
-        // en modo solo lectura.
-        const cover = entry.fotoUrl || "";
+        // en modo solo lectura. La portada pasa por safeCoverUrl como
+        // la de los ítems de ocio (placeholder si falta o es inválida).
+        const cover = safeCoverUrl(entry.fotoUrl);
         const metaParts = [];
         if (Number(entry.porciones)) {
           metaParts.push(`${entry.porciones} ${Number(entry.porciones) === 1 ? "porción" : "porciones"}`);
@@ -652,11 +656,12 @@ function navigateTo(result) {
   }
 
   // Resultado de receta (issue #206): abre el modal de la receta en
-  // modo solo lectura. El foco vuelve al input al cerrarlo; el flag
-  // evita que el dropdown se reabra solo (lo consume el focus event).
+  // modo solo lectura. Se arma el contador de focus suprimidos: el
+  // focus programático y el reenfoque de cierre del modal no deben
+  // reabrir el dropdown.
   if (result.kind === "recipe") {
     closeGlobalSearch();
-    suppressReopenOnFocus = true;
+    suppressFocusCount = 2;
     input.focus();
     openRecipeModal(result.item, { readOnly: true });
     return;
@@ -707,8 +712,10 @@ function openGlobalSearch() {
   // input; si ya estaba enfocado, el focus event no se repite.
   if (document.activeElement !== input) input.focus();
 
-  // Cachear perfiles de amigos al abrir
-  if (!cachedProfiles && searchCtx) {
+  // Cachear perfiles de amigos al abrir. Solo en Perfil: la búsqueda
+  // de Ocio y Recetas ya no usa amigos (issue #206) y no hay que
+  // pagar la lectura de perfiles en cada sección.
+  if (!cachedProfiles && searchCtx && currentSection() === "perfil") {
     if (!profilePromise) {
       profilePromise = searchCtx.getAllUserProfiles().then((profiles) => {
         cachedProfiles = profiles;
@@ -818,13 +825,13 @@ export function setupGlobalSearch(ctx) {
   // ---- Eventos ----
 
   // Abrir al hacer focus o click en el input (el click cubre el caso
-  // de volver a pulsar una barra ya enfocada). Si suppressReopenOnFocus
-  // está activo (issue #206: reenfoque tras cerrar el modal de una
-  // receta), el focus event solo consume el flag y no reabre el
-  // dropdown.
+  // de volver a pulsar una barra ya enfocada). Si quedan focus
+  // suprimidos (issue #206: focus programático y reenfoque tras
+  // cerrar el modal de una receta), el focus event solo consume el
+  // contador y no reabre el dropdown.
   input.addEventListener("focus", () => {
-    if (suppressReopenOnFocus) {
-      suppressReopenOnFocus = false;
+    if (suppressFocusCount > 0) {
+      suppressFocusCount -= 1;
       return;
     }
     openGlobalSearch();
@@ -965,8 +972,9 @@ async function performSearch(ctx) {
   // Nueva búsqueda: invalidar búsquedas externas en curso
   searchSeq++;
 
-  // Amigos desde la caché
-  if (!cachedProfiles) {
+  // Amigos desde la caché (solo en Perfil: la búsqueda se acota a la
+  // sección activa, issue #206)
+  if (!cachedProfiles && currentSection() === "perfil") {
     if (!profilePromise) {
       profilePromise = ctx.getAllUserProfiles().then((profiles) => {
         cachedProfiles = profiles;

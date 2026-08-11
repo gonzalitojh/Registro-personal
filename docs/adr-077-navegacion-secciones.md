@@ -68,9 +68,12 @@ ADR-076):
      barra se adaptan a la sección (`ui.setSearchSection()` se llama
      desde el `onRoute` de `app.js`).
 4. **Foco tras abrir una receta**: al abrir el modal de receta desde el
-   dropdown se reenfoca el input de búsqueda con un flag de un solo
-   uso (`suppressReopenOnFocus`) que el propio `focus` event consume,
-   para que al cerrar el modal el dropdown no se reabra solo.
+   dropdown se reenfoca el input de búsqueda con un **contador de focus
+   suprimidos** (`suppressFocusCount`, armado con 2): uno para el focus
+   programático de la apertura y otro para el reenfoque que hace
+   `closeRecipeModal` al cerrar el modal, de modo que el dropdown no se
+   reabra solo en ninguno de los dos momentos y la barra recupere su
+   comportamiento normal con el siguiente focus manual.
 5. **Ajustes CSS**: `padding-top: calc(var(--header-h) + 1rem)` en
    `.profile-view` y `.recipes-view` (hueco para la cabecera fija
    global, mismo patrón que `.app`); el header pegajoso de Recetas
