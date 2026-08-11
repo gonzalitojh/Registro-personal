@@ -1,7 +1,7 @@
 {
   "title": "Mejora de visualización pestaña de ingredientes",
   "description": "La pestaña de ingredientes debe tener una estética más similar a las pestañas de la sección de ocio. Arriba un botón para añadir ingredientes nuevos junto a un desplegable para filtrar por categorías (se deben poder seleccionar varios y todos por defecto) y otro desplegable para ordenar. Al mostrarlos, dividirlos por categorías. Las tarjetas de cada ingrediente deben mostrar el nombre nada más. Al pulsar sobre ellas se muestra una ventana con la información ampliada.\n\nNota del flujo: la base de trabajo es la rama content/issue-64-seccion-recetas; se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "security-cleared",
   "acceptance criteria": [
     "La pestaña de ingredientes tiene una barra superior estilo ocio: botón para añadir ingrediente nuevo, desplegable de filtro por categorías (multiselección, todas seleccionadas por defecto) y desplegable de ordenación.",
     "El catálogo se muestra dividido por categorías.",
