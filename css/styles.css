@@ -2811,12 +2811,23 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .ingredient-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0 0 0.5rem;
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.ingredient-group__icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .ingredient-grid {

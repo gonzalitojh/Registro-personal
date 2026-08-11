@@ -17,6 +17,8 @@ import {
   ALERGEN_TAGS,
   MEAL_TYPES,
   SUPERMARKETS,
+  CUSTOM_CATEGORY_ICON,
+  UNCATEGORIZED_ICON,
   normalizeIngredientName,
   normalizeUnit,
   mergeTags,
@@ -364,7 +366,9 @@ function renderIngredientsCatalog() {
 
   // Agrupación por categoría (patrón de la lista de la compra): las
   // predefinidas en su orden, las personalizadas presentes en los datos
-  // por orden alfabético de etiqueta y «Sin categoría» al final.
+  // por orden alfabético de etiqueta y «Sin categoría» al final. Cada
+  // título lleva su icono (issue #224): el de la categoría predefinida,
+  // el genérico de etiqueta para las propias y el de «Sin categoría».
   const groups = new Map();
   INGREDIENT_CATEGORIES.forEach((c) => groups.set(c.id, []));
   groups.set("", []);
@@ -383,20 +387,20 @@ function renderIngredientsCatalog() {
       const items = groups.get(c.id);
       if (!items?.length) return "";
       return `<section class="ingredient-group">
-        <h3 class="ingredient-group__title">${escapeHtml(c.label)}</h3>
+        <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${c.icon}</span>${escapeHtml(c.label)}</h3>
         <div class="ingredient-grid">
           ${items.map((ing) => ingredientCardHtml(ing)).join("")}
         </div>
       </section>`;
     }).join("")}
     ${customGroupIds.map((id) => `<section class="ingredient-group">
-      <h3 class="ingredient-group__title">${escapeHtml(tagLabel("ingrediente", id))}</h3>
+      <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${CUSTOM_CATEGORY_ICON}</span>${escapeHtml(tagLabel("ingrediente", id))}</h3>
       <div class="ingredient-grid">
         ${groups.get(id).map((ing) => ingredientCardHtml(ing)).join("")}
       </div>
     </section>`).join("")}
     ${groups.get("").length ? `<section class="ingredient-group">
-      <h3 class="ingredient-group__title">Sin categoría</h3>
+      <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${UNCATEGORIZED_ICON}</span>Sin categoría</h3>
       <div class="ingredient-grid">
         ${groups.get("").map((ing) => ingredientCardHtml(ing)).join("")}
       </div>
