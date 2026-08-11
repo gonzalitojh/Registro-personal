@@ -540,8 +540,15 @@ La pestaña **«Ingredientes»** muestra el catálogo de ingredientes de tu
 cuenta, agrupados **por categorías**. Se rellena solo con los que usas
 en tus recetas, y también puedes añadir ingredientes a mano con el
 botón **«+ Nuevo ingrediente»** (arriba a la izquierda): escribe el
-nombre y elige la categoría (si el ingrediente ya existe, no se añade
-otra vez).
+nombre y elige la categoría. También puedes rellenar, si quieres, los
+**supermercados** donde se puede comprar (Lidl, Aldi, Mercadona, Día,
+Carrefour y El Corte Inglés, cada uno con su etiqueta de color) y la
+**cantidad del paquete** (número y unidad: g, Kg, mL, L, unidades).
+
+Los ingredientes se guardan y muestran **tal y como los escribes**, con
+sus mayúsculas y tildes. Si escribes uno que ya existe (aunque lo
+escribas con otras mayúsculas o sin tildes), no se añade otra vez: se
+conserva la primera vez que lo escribiste.
 
 Sobre la lista tienes un control:
 
@@ -556,10 +563,15 @@ Sobre la lista tienes un control:
 
 Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
 una ventana con la información ampliada: la **categoría** (puedes
-cambiarla ahí mismo; la lista de la compra se agrupa por ella), **en
-qué recetas se usa** (pulsa el nombre de una receta para abrirla en
-modo lectura) y un botón **«Eliminar»** para quitarlo del catálogo
-(no afecta a las recetas que lo usan).
+cambiarla ahí mismo; la lista de la compra se agrupa por ella), los
+**supermercados** donde se puede comprar (las etiquetas de color de
+Lidl, Aldi, Mercadona, Día, Carrefour y El Corte Inglés) y la
+**cantidad del paquete** (número y unidad). Las tres se cambian en la
+misma ventana, igual que la categoría: el cambio se guarda en el
+momento. La ventana también indica **en qué recetas se usa** (pulsa el
+nombre de una receta para abrirla en modo lectura) y tiene un botón
+**«Eliminar»** para quitarlo del catálogo (no afecta a las recetas que
+lo usan).
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
 pestañas](#16-ajustes) igual que el resto.

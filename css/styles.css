@@ -2927,6 +2927,103 @@ body.is-back-to-top-visible .back-to-top {
   margin-top: 1rem;
 }
 
+/* Supermercados y cantidad del paquete del ingrediente (issue #224):
+   chips de selección en el alta y el detalle, con color de marca por
+   supermercado. Los colores de marca están hardcodeados A PROPÓSITO
+   (AGENTS.md §4.4): son colores corporativos idénticos en los 4 modos
+   de tema; solo los chips desmarcados usan variables (--paper-dim,
+   --paper-line, --ink) y por eso necesitan override en negro puro. */
+
+.ingredient-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.supermarket-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--paper-dim);
+  border: 1px solid var(--paper-line);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.supermarket-chip input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+}
+
+[data-theme="black"] .supermarket-chip {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+/* Etiqueta de supermercado no interactiva (mismo aspecto que el chip
+   marcado; queda lista para vistas de solo lectura). */
+.supermarket-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Colores de marca hardcodeados A PROPÓSITO (AGENTS.md §4.4): son los
+   colores corporativos de cada supermercado, no variables de tema, y
+   deben verse igual en los 4 modos. Contraste AA verificado: texto
+   blanco sobre #0050AA, #002B5C, #A50F26, #004E9F y #00543F; texto
+   negro sobre el amarillo #FFCB05 de Mercadona. */
+.supermarket-chip--lidl.is-checked,
+.supermarket-tag--lidl { background: #0050AA; border-color: #0050AA; color: #fff; }
+.supermarket-chip--aldi.is-checked,
+.supermarket-tag--aldi { background: #002B5C; border-color: #002B5C; color: #fff; }
+.supermarket-chip--mercadona.is-checked,
+.supermarket-tag--mercadona { background: #FFCB05; border-color: #FFCB05; color: #000; }
+.supermarket-chip--dia.is-checked,
+.supermarket-tag--dia { background: #A50F26; border-color: #A50F26; color: #fff; }
+.supermarket-chip--carrefour.is-checked,
+.supermarket-tag--carrefour { background: #004E9F; border-color: #004E9F; color: #fff; }
+.supermarket-chip--el_corte_ingles.is-checked,
+.supermarket-tag--el_corte_ingles { background: #00543F; border-color: #00543F; color: #fff; }
+
+/* Fila «Cantidad del paquete» (issue #224): el número ocupa el resto
+   del ancho y la unidad un ancho fijo; en móvil envuelve en dos filas
+   para que la unidad no se quede corta ni desborde. */
+.ingredient-modal__qty-row {
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ingredient-modal__qty-row input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.ingredient-modal__qty-row select {
+  flex: 0 0 auto;
+  width: 8rem;
+}
+
+@media (max-width: 480px) {
+  .ingredient-modal__qty-row {
+    flex-wrap: wrap;
+  }
+  .ingredient-modal__qty-row select {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
 /* --- Menú semanal --- */
 
 .menu-toolbar {
