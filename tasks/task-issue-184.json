@@ -1,0 +1,37 @@
+{
+  "title": "Estudio información TMDB",
+  "description": "La issue #184 pide un ESTUDIO (sin implementar nada) de toda la información que se puede extraer de la API de TMDB, organizada por secciones/endpoints, con el objetivo de saber hasta dónde puede llegar la idea de montar una especie de IMDB/TMDB dentro de la web: consultar mucha más información sobre películas, series, actores, directores, etc. El entregable es documentación (documento de estudio + ADR), no código. Contexto de la app: web 100 % cliente (Firebase Hosting, vanilla JS, sin backend), que ya usa TMDB para películas/series (ADR-006, ADR-007): búsqueda, detalles (duración, sinopsis, género, reparto, director), temporadas/episodios, colecciones/sagas, watch providers y valoraciones de la comunidad. Tipo de la issue corregido a 'type: content' (era 'type: question', no contemplado en el esquema del proyecto).",
+  "status": "review",
+  "acceptance criteria": [
+    "Documento de estudio que catalogue TODA la información extraíble de la API de TMDB organizada por secciones (películas, series, personas, búsqueda, discover, trending, colecciones, redes, empresas, proveedores de visionado, credenciales, etc.)",
+    "Para cada sección: endpoints disponibles, campos principales que devuelven y utilidad potencial para una web tipo IMDB/TMDB",
+    "Evaluación de viabilidad: qué se puede montar en la web actual (100 % cliente, sin backend) y qué requeriría infraestructura nueva (proxy, backend, API keys adicionales)",
+    "Consideración de límites: rate limits, autenticación, CORS, costes y términos de uso de TMDB",
+    "Conclusión clara del estudio con recomendación de alcance",
+    "ADR documentando el estudio y su conclusión, con 'Related issue: #184'",
+    "No se implementa nada de código (solo documentación)",
+    "DoD SDD: planificación, implementación (redacción), validación QA, escaneo de seguridad, ADR, PR contra dev sin keyword de cierre"
+  ],
+  "definition of done": [
+    "Documento de estudio completo en docs/ (estilo de docs/estudio-viabilidad-scraper-goodreads.md)",
+    "ADR en docs/adr-074-*.md con estado, contexto, decisión/conclusión y 'Related issue: #184'",
+    "Validación QA superada (aceptación + DoD)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "PR contra dev (nunca main) sin keyword de cierre",
+    "Issue #184 label actualizada a su estado final (needs-review al crear PR)",
+    "Task file actualizado (status review + bloque pr) subido a la rama"
+  ],
+  "issue": {
+    "number": 184,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/184",
+    "title": "Estudio información TMDB"
+  },
+  "pr": {
+    "number": 190,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/190",
+    "title": "docs: estudio información TMDB — factible montar un IMDB/TMDB desde el cliente, alcance por fases (issue #184)",
+    "branch": "docs/issue-184-estudio-informacion-tmdb",
+    "commit": "0fad02c",
+    "closes": "#184"
+  }
+}

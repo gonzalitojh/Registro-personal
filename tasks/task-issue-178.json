@@ -1,0 +1,43 @@
+{
+  "title": "Carga de página: lazy loading por pestaña, animación de carga y corregir render inicial",
+  "description": "Issue #178: En la carga de la página, en la pantalla de inicio de sesión, se muestra la barra de búsqueda y pestañas (y filtros) que luego se ocultan y se vuelven a mostrar al iniciar sesión. Tras el login se muestran los filtros de las 4 pestañas juntos mientras cargan los datos y, tras cargar, se muestra correctamente. Se debería mostrar una animación de carga de datos mientras están cargando. Si se recarga la web, se muestran todas las pestañas una encima de otra, todas juntas. Las pestañas deberían ser independientes, cargándose solo al acceder a esa propia pestaña (lazy loading) para evitar una carga excesivamente grande de datos al cargar todas a la vez. Esto también debería aplicar a la pantalla de inicio, la de ajustes y todas las ventanas del perfil.",
+  "status": "review",
+  "acceptance_criteria": [
+    "En la pantalla de inicio de sesión no se muestran ni la barra de búsqueda, ni las pestañas, ni los filtros.",
+    "Tras iniciar sesión no se muestran los filtros de las 4 pestañas juntos: cada pestaña solo muestra su contenido al activarla.",
+    "Mientras una pestaña carga sus datos se muestra una animación/indicador de carga, no contenido vacío ni filtros sin datos.",
+    "Al recargar la web no aparecen todas las pestañas superpuestas: solo la pestaña activa se muestra correctamente.",
+    "Las pestañas cargan sus datos de forma independiente (lazy) al acceder a cada una, no todas a la vez al cargar la página.",
+    "El lazy loading aplica también a la pantalla de inicio, ajustes y todas las ventanas del perfil (y a la vista 'ocio' si aplica)."
+  ],
+  "definition_of_done": "Planificación realizada, implementación completada, validación QA superada, escaneo de seguridad sin hallazgos HIGH, ADR documentado, PR creada contra dev sin keyword de cierre, issue #178 con label actualizado a su estado final.",
+  "issue": {
+    "number": 178,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/178",
+    "title": "Carga de página"
+  },
+  "plan": {
+    "bugs": [
+      "A: app.js onRoute (~295) destapa #app sin sesión → flash de UI en login",
+      "B/C: applyTabVisibility (app.js 255-262) hace toggle(hidden,false) en paneles visibles → destapa los 3-4 paneles a la vez; registro SECTION_REGISTRY sin videojuegos",
+      "D: loadOcioPartials carga los 4 partials siempre; 4 suscripciones Firestore simultáneas; sin spinner de carga"
+    ],
+    "fixes": [
+      "onRoute ocio: activar panel siempre, pero solo destapar #app si currentUser",
+      "applyTabVisibility: solo añadir hidden a paneles con pestaña oculta, nunca quitarla",
+      "settings.js: añadir videojuegos al SECTION_REGISTRY.ocio.tabs",
+      "Lazy partials: cargar solo el panel activo al arranque y bajo demanda en activatePanel; re-wire de listeners (filtros/sort/view) por panel cargado",
+      "Lazy suscripciones: ensureGroupSubscribed(panelKey) en activatePanel/tras login; refactor a función genérica subscribeGroup",
+      "daily-check: leer con getItemsOnce en vez de estado en memoria (desacopla del lazy); maybeTriggerDailyCheck una vez tras login",
+      "Spinner de carga .panel-loading en cada panel (index.html + antepuesto en loadOcioPartial); ocultarlo en renderLibraryFor",
+      "renderLibraryFor: early return si grid no existe (partial aún no cargado); repintar al cargar partial",
+      "CSS spinner con variables de tema (4 modos) + role=status",
+      "Manual de usuario: actualizar 'tres pestañas' y describir carga perezosa"
+    ]
+  },
+  "pr": {
+    "number": 193,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/193",
+    "title": "fix: carga perezosa por pestaña, indicador de carga y corrección del flash en login (issue #178)"
+  }
+}

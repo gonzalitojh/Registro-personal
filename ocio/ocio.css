@@ -32,6 +32,14 @@ input, textarea, select { font-size: 16px; }
   color: var(--paper);
 }
 
+.btn--accent-games {
+  background: var(--games);
+  color: var(--paper);
+}
+.btn--accent-games:hover {
+  background: var(--games-dark);
+}
+
 /* =========================================================
    Modal de confirmación al añadir libro (cover picker +
    description selector)
@@ -169,6 +177,22 @@ input, textarea, select { font-size: 16px; }
   padding: 1.4rem 0.2rem;
   border-top: 1px dashed var(--paper-alpha-20);
   margin-top: 0.6rem;
+}
+
+/* Línea de atribución al final de cada biblioteca (p. ej. datos de
+   videojuegos vía IGDB en ocio/videojuegos.html). */
+.library-credit {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  margin: 0.8rem 0 0;
+  text-align: right;
+}
+.library-credit a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+}
+.library-credit a:hover {
+  color: var(--ink);
 }
 
 /* Ficha / entrada de la biblioteca, con borde perforado tipo ticket */
@@ -618,6 +642,17 @@ input, textarea, select { font-size: 16px; }
   font-size: 1rem;
   color: var(--ink);
   flex: 1 1 108px;
+  min-width: 0;
+}
+
+.log-row input[type="number"] {
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--ink);
+  flex: 0 1 4.5rem;
+  width: 4.5rem;
   min-width: 0;
 }
 
@@ -1619,6 +1654,51 @@ input, textarea, select { font-size: 16px; }
 }
 
 /* =========================================================
+   Plataformas jugables de videojuegos (IGDB)
+   ========================================================= */
+
+.game-platforms {
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.game-platforms__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.game-platforms__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sin white-space: nowrap a propósito: nombres largos como
+   "PC (Microsoft Windows)" deben poder partirse (responsividad) */
+.game-platform {
+  display: inline-flex;
+  align-items: center;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* =========================================================
    Recomendaciones TMDB (contenido similar)
    ========================================================= */
 
@@ -1809,7 +1889,8 @@ input, textarea, select { font-size: 16px; }
 [data-theme="black"] .view-toggle__btn.is-active,
 [data-theme="black"] .list-row__content,
 [data-theme="black"] .saga-list,
-[data-theme="black"] .watch-provider {
+[data-theme="black"] .watch-provider,
+[data-theme="black"] .game-platform {
   background: var(--ink-raised);
   color: var(--paper);
   border: 1px solid var(--paper-alpha-20);
@@ -1884,6 +1965,7 @@ input, textarea, select { font-size: 16px; }
 [data-theme="black"] .log-add-row input[type="date"],
 [data-theme="black"] .log-add-row input[type="text"],
 [data-theme="black"] .log-row input[type="date"],
+[data-theme="black"] .log-row input[type="number"],
 [data-theme="black"] .episode-row input.episode-date,
 [data-theme="black"] .manual-form .field-group input {
   color: var(--paper);
@@ -1919,6 +2001,10 @@ input, textarea, select { font-size: 16px; }
 }
 [data-theme="black"] .btn--accent-books:hover {
   background: var(--ochre-spine-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .btn--accent-games:hover {
+  background: var(--games-dark);
   color: var(--ink);
 }
 

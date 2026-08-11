@@ -6,6 +6,7 @@
 
 import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
+import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
 import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
@@ -13,6 +14,7 @@ import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
+import { getGameDetails } from "./api-games.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
@@ -28,7 +30,7 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
       title: item.title,
       coverUrl: item.coverUrl,
       communityRating: item.communityRating ?? null,
-      communityLabel: "TMDB",
+      communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
       onSave: async (rating) => {
         await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
@@ -126,7 +128,7 @@ async function openMovieItem(item, ctx) {
     } catch {
       recommendations = [];
     }
-    existingIds = new Set(ctx.getItemsByGroup("movies").map((m) => m.externalId));
+    existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
   ui.openMovieModal(item, {
@@ -256,7 +258,7 @@ async function openSagaSelector(item, ctx) {
     }
 
     const existingIds = new Set(
-      ctx.getItemsByGroup("movies").map((m) => m.externalId)
+      (await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId)
     );
 
     const missingMovies = collection.parts.filter(
@@ -339,6 +341,67 @@ function openBookItem(item, ctx) {
     onSaveMeta: saveMeta(item, "book", ctx),
     onDelete: confirmDelete(item, "book", ctx),
     onEdit: editHandlerFor(item, "book", reopen, ctx),
+  });
+}
+
+async function openGameItem(item, ctx) {
+  const reopen = () => openGameItem(item, ctx);
+  async function persist(newLog) {
+    const status = statusFromPlayLog(newLog);
+    await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, { playLog: newLog, status });
+    item.playLog = newLog;
+    item.status = status;
+  }
+
+  // Tráiler de IGDB (extra no crítico): los juegos añadidos antes de
+  // existir esta consulta no traen trailerUrl guardado; se pide al
+  // abrir la ficha y se persiste fuego-y-olvido. Si falla, el modal
+  // se abre igualmente (mismo espíritu que los watch providers).
+  if (item.externalId && !item.trailerUrl) {
+    try {
+      const details = await getGameDetails(item.externalId);
+      if (details.trailerUrl) {
+        item.trailerUrl = details.trailerUrl;
+        await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
+          trailerUrl: details.trailerUrl,
+        });
+      }
+    } catch (err) {
+      // no bloqueamos la apertura del modal
+    }
+  }
+
+  ui.openGameModal(item, {
+    onStartPlay: (date) => persist(startPlay(item.playLog, date)),
+    onFinishPlay: async (date) => {
+      const prevLog = item.playLog;
+      const prevStatus = item.status;
+      await persist(finishPlay(item.playLog, date));
+      // Deshacer (issue #136): restaura el playLog y el status previos.
+      // El status se restaura LITERAL al capturado (no al recomputado
+      // del log) por si el usuario lo tenía en un estado manual.
+      await maybeOpenItemRatingWindow(item, ctx, "game", {
+        communityLabel: "IGDB",
+        onUndo: async () => {
+          await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
+            playLog: prevLog,
+            status: prevStatus,
+          });
+          item.playLog = prevLog;
+          item.status = prevStatus;
+        },
+      });
+    },
+    onUpdateEntry: (index, changes) => persist(updatePlayEntry(item.playLog, index, changes)),
+    onRemoveEntry: (index) => persist(removePlayEntry(item.playLog, index)),
+    onSetStatus: async (newStatusOrNull) => {
+      const status = newStatusOrNull || statusFromPlayLog(item.playLog);
+      await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, { status });
+      item.status = status;
+    },
+    onSaveMeta: saveMeta(item, "game", ctx),
+    onDelete: confirmDelete(item, "game", ctx),
+    onEdit: editHandlerFor(item, "game", reopen, ctx),
   });
 }
 
@@ -451,7 +514,7 @@ async function openTvItem(item, ctx) {
     } catch {
       recommendations = [];
     }
-    existingIds = new Set(ctx.getItemsByGroup("tv").map((t) => t.externalId));
+    existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
   }
 
   ui.openTvModal(item, seasonsMeta, progress, {
@@ -551,6 +614,7 @@ async function openTvItem(item, ctx) {
 export function openItem(item, ctx) {
   if (item.type === "tv") openTvItem(item, ctx);
   else if (item.type === "movie") openMovieItem(item, ctx);
+  else if (item.type === "game") openGameItem(item, ctx);
   else openBookItem(item, ctx);
 }
 

@@ -1,0 +1,36 @@
+{
+  "title": "Consistencia en la información de videojuegos",
+  "description": "Se ha detectado que las ventanas de información de los videojuegos no tienen exactamente la misma información (teniendo en cuenta que son diferentes productos) que películas o series. Por ejemplo, no tiene la valoración de la comunidad en la ventana (solo en la tarjeta reducida) o enlace al trailer (si la API lo proporciona). Además, me gustaría (si es posible) que las plataformas jugables de un juego (PC, Nintendo Switch...) se vea de forma más visual, más parecido a las plataformas de streaming en las que se pueden encontrar películas y series.",
+  "status": "review",
+  "acceptance criteria": [
+    "La ventana de información del videojuego muestra la valoración de la comunidad (la misma que aparece en la tarjeta reducida), en formato visual coherente con las ventanas de películas/series.",
+    "La ventana de información del videojuego muestra un enlace al tráiler cuando la API (IGDB) lo proporciona, en formato coherente con los tráilers de películas/series.",
+    "Las plataformas jugables del juego (PC, Nintendo Switch, PlayStation, Xbox...) se muestran de forma más visual, similar a como se muestran las plataformas de streaming en películas/series (badges/chips, no texto plano).",
+    "El resto de la información de la ventana de videojuegos queda coherente con las de películas/series (teniendo en cuenta que son productos distintos).",
+    "Se mantiene la responsividad (sin scroll horizontal, sin texto cortado) y la visualización correcta en los cuatro modos de tema.",
+    "El manual de usuario refleja los cambios visibles para el usuario."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect).",
+    "Implementación en ocio/videojuegos.html, js/api-games.js, js/game-log.js y CSS (según plan).",
+    "Validado por QA contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos de severidad HIGH.",
+    "ADR documentando la decisión (con 'Related issue: #171').",
+    "Manual de usuario actualizado si procede.",
+    "PR contra dev SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #171 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 171,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/171",
+    "title": "Consistencia en la información de videojuegos"
+  },
+  "pr": {
+    "number": 180,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/180",
+    "title": "[feature] Consistencia en la información de videojuegos — valoración IGDB, tráiler y plataformas como chips",
+    "branch": "content/issue-171-consistencia-info-videojuegos",
+    "commit": "8a4a01c",
+    "closes": "#171"
+  }
+}

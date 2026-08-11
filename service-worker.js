@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260901',
-  './css/ocio.css?v=20260901',
-  './js/app.js?v=20260901',
+  './css/styles.css?v=20260904',
+  './css/ocio.css?v=20260904',
+  './js/app.js?v=20260904',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -57,6 +57,8 @@ const STATIC_ASSETS = [
   './js/allowed-emails.js',
   './js/api-books.js',
   './js/api-movies.js',
+  './js/api-games.js',
+  './js/game-log.js',
   './js/sw-register.js',
   './js/activity-feed.js',
   './js/export-backup.js',
@@ -69,9 +71,10 @@ const STATIC_ASSETS = [
   './js/auto-hide-nav.js',
   './js/push.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260901',
-  './ocio/peliculas.html?v=20260901',
-  './ocio/libros.html?v=20260901',
+  './ocio/series.html?v=20260904',
+  './ocio/peliculas.html?v=20260904',
+  './ocio/libros.html?v=20260904',
+  './ocio/videojuegos.html?v=20260904',
 ];
 
 // -------------------------------------------------------------
@@ -289,6 +292,12 @@ self.addEventListener('fetch', (event) => {
 
   // ---- Cache First: portadas de Open Library ----
   if (url.hostname === 'covers.openlibrary.org') {
+    event.respondWith(cacheFirst(event.request));
+    return;
+  }
+
+  // ---- Cache First: imágenes de IGDB (portadas) ----
+  if (url.hostname === 'images.igdb.com') {
     event.respondWith(cacheFirst(event.request));
     return;
   }

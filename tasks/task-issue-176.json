@@ -1,0 +1,35 @@
+{
+  "title": "Exportación ICS de videojuegos",
+  "description": "Incluye los videojuegos en la exportación ICS de fechas de lanzamiento. La exportación .ics (js/export-ics.js) ya incluye los próximos episodios de series y los estrenos de películas pendientes (ADR-014); ahora debe incluir también los lanzamientos de videojuegos pendientes (releaseDate futura, sin historial de juego), reutilizando el flag awaitingRelease introducido en la issue #175.",
+  "status": "review",
+  "acceptance criteria": [
+    "La exportación .ics incluye los videojuegos del usuario con fecha de lanzamiento futura y no jugados (pendientes de lanzamiento).",
+    "Los videojuegos ya jugados o con fecha de lanzamiento pasada/sin fecha NO aparecen en la exportación.",
+    "El evento de videojuego lleva su UID propio (tipo game), DTSTART con la fecha de lanzamiento y SUMMARY descriptivo («Lanzamiento: título»).",
+    "Series y películas se siguen exportando igual que antes (sin regresiones).",
+    "Si no hay nada que exportar, el toast informativo sigue funcionando.",
+    "La experiencia del usuario queda documentada en el manual (texto de la tarjeta de Ajustes y manual §15)."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect).",
+    "Implementación realizada (micro-commits).",
+    "Validación contra aceptación y DoD (qa-reviewer).",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado si procede (documentation-sync).",
+    "PR creada contra dev sin keyword de cierre (publisher).",
+    "Task file actualizado con estado final y bloque pr.",
+    "Issue #176 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 176,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/176",
+    "title": "Exportación ICS de videojuegos"
+  },
+  "pr": {
+    "number": 188,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/188",
+    "title": "[feature] Videojuegos en la exportación ICS (issue #176)",
+    "branch": "feat/issue-176-export-ics-videojuegos",
+    "commit": "d5b5585"
+  }
+}

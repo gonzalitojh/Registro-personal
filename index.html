@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mi Registro — pelis, series y libros</title>
-  <meta name="description" content="Registro personal de películas, series y libros." />
+  <title>Mi Registro — pelis, series, libros y videojuegos</title>
+  <meta name="description" content="Registro personal de películas, series, libros y videojuegos." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
   <link rel="apple-touch-icon" href="resources/icon.png">
@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260901" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260901" />
+  <link rel="stylesheet" href="css/styles.css?v=20260904" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260904" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -74,6 +74,19 @@
           </svg>
         </button>
 
+        <!-- Botón engranaje (issue #97): sustituye a la barra lateral
+             ☰ cuando solo hay una sección visible (decide sidebar.js).
+             Abre Ajustes directamente, como la entrada pinned de la
+             barra lateral. Sale oculto por defecto. -->
+        <button type="button" class="icon-btn hidden" id="btn-header-settings"
+                aria-label="Abrir ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+
         <!-- Búsqueda global: input en la cabecera + dropdown de resultados
              anclado bajo la barra (js/global-search.js) -->
         <div class="search-bar-wrap">
@@ -81,7 +94,7 @@
             id="global-search-input"
             type="search"
             class="global-search__input"
-            placeholder="Buscar películas, series, libros o amigos..."
+            placeholder="Buscar películas, series, libros, videojuegos o amigos..."
             autocomplete="off"
             aria-label="Buscar en todo tu registro"
           />
@@ -144,23 +157,41 @@
     </header>
 
     <main id="main-content" tabindex="-1">
-      <!-- El contenido de cada pestaña vive en ocio/*.html y lo inyecta
-           app.js con fetch() dentro de estas tres secciones. -->
+      <!-- El contenido de cada pestaña vive en ocio/*.html y lo
+           inyecta app.js con fetch() bajo demanda (lazy, issue #178)
+           dentro de estas cuatro secciones. El marcador .panel-loading
+           se muestra mientras el panel no tiene datos pintados. -->
       <section id="panel-tv" class="panel" role="tabpanel" aria-labelledby="tab-tv" data-type-group="tv" data-ocio-src="ocio/series.html" aria-live="polite" aria-atomic="true">
-        <p class="empty-state">Cargando…</p>
+        <div class="panel-loading" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Cargando…</span>
+        </div>
       </section>
 
       <section id="panel-movies" class="panel hidden" role="tabpanel" aria-labelledby="tab-movies" data-type-group="movies" data-ocio-src="ocio/peliculas.html" aria-live="polite" aria-atomic="true">
-        <p class="empty-state">Cargando…</p>
+        <div class="panel-loading" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Cargando…</span>
+        </div>
       </section>
 
       <section id="panel-books" class="panel hidden" role="tabpanel" aria-labelledby="tab-books" data-type-group="books" data-ocio-src="ocio/libros.html" aria-live="polite" aria-atomic="true">
-        <p class="empty-state">Cargando…</p>
+        <div class="panel-loading" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Cargando…</span>
+        </div>
+      </section>
+
+      <section id="panel-games" class="panel hidden" role="tabpanel" aria-labelledby="tab-games" data-type-group="games" data-ocio-src="ocio/videojuegos.html" aria-live="polite" aria-atomic="true">
+        <div class="panel-loading" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Cargando…</span>
+        </div>
       </section>
     </main>
 
-    <!-- Barra de pestañas fija (issue #79): Series, Películas y
-         Libros. En móvil (≤768px) fija en la parte baja de la
+    <!-- Barra de pestañas fija (issue #79): Series, Películas, Libros
+         y Videojuegos. En móvil (≤768px) fija en la parte baja de la
          pantalla; en PC y tablet (≥768px) fija bajo la cabecera
          superior. En ambos casos el scroll solo mueve el contenido
          de cada panel. Cada pestaña tiene su propio color de
@@ -190,11 +221,19 @@
           </svg>
           <span>Libros</span>
         </button>
+        <button class="tab tab--games" id="tab-games" role="tab" aria-selected="false" data-panel="panel-games" aria-controls="panel-games">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="6" width="20" height="12" rx="6" />
+            <path d="M6 11h4M8 9v4" />
+            <path d="M15.5 11h.01M17.5 13h.01" />
+          </svg>
+          <span>Videojuegos</span>
+        </button>
       </div>
     </nav>
 
     <footer class="app-footer">
-      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books
+      Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books · Datos de videojuegos vía IGDB (igdb.com)
     </footer>
   </div>
 
@@ -240,6 +279,14 @@
             <h3>Estados actuales</h3>
             <canvas id="chart-status"></canvas>
           </div>
+          <div class="chart-card">
+            <h3>Géneros</h3>
+            <canvas id="chart-genres"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Plataformas</h3>
+            <canvas id="chart-platforms"></canvas>
+          </div>
         </div>
       </section>
 
@@ -258,6 +305,8 @@
                     aria-selected="false" aria-controls="friend-panel-tv" data-friend-tab="tv">Series</button>
             <button type="button" class="friend-subtab" role="tab" id="friend-tab-books"
                     aria-selected="false" aria-controls="friend-panel-books" data-friend-tab="books">Libros</button>
+            <button type="button" class="friend-subtab" role="tab" id="friend-tab-games"
+                    aria-selected="false" aria-controls="friend-panel-games" data-friend-tab="games">Videojuegos</button>
           </div>
 
           <div class="friend-tabpanel" id="friend-panel-movies" role="tabpanel" aria-labelledby="friend-tab-movies">
@@ -292,6 +341,18 @@
             </div>
             <div id="friend-books" class="library-grid"></div>
           </div>
+
+          <div class="friend-tabpanel hidden" id="friend-panel-games" role="tabpanel" aria-labelledby="friend-tab-games">
+            <div class="friend-filters" role="group" aria-label="Filtrar videojuegos por estado" data-tab="games">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="en_curso" aria-pressed="false">Jugando</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Jugado</button>
+              <button type="button" class="friend-chip" data-status="standby" aria-pressed="false">Standby</button>
+              <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
+            </div>
+            <div id="friend-games" class="library-grid"></div>
+          </div>
         </div>
       </section>
 
@@ -317,6 +378,12 @@
         </div>
 
         <div class="settings-card">
+          <h3>Secciones y pestañas</h3>
+          <p class="settings-desc">Elige qué secciones y pestañas quieres ver. Ocultar algo no borra tus datos: solo lo quita de la vista.</p>
+          <div id="sections-visibility-list"></div>
+        </div>
+
+        <div class="settings-card">
           <h3>Notificaciones</h3>
           <p class="settings-desc">Controla qué tipo de notificaciones quieres recibir.</p>
           <div class="settings-row">
@@ -337,6 +404,13 @@
             <label for="notif-series-premiere">Estrenos de series</label>
             <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-series-premiere" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <label for="notif-game-release">Estrenos de videojuegos</label>
+            <label class="switch" aria-hidden="true">
+              <input type="checkbox" id="notif-game-release" class="switch__input" checked />
               <span class="switch__slider"></span>
             </label>
           </div>
@@ -376,7 +450,7 @@
           <button type="button" class="btn btn--accent-books" id="btn-import-backup">
             Importar copia de seguridad
           </button>
-          <p class="settings-desc">Descarga un archivo .ics con los próximos episodios de tus series y estrenos de películas pendientes, para importarlo en Google Calendar, Apple Calendar u otras aplicaciones.</p>
+          <p class="settings-desc">Descarga un archivo .ics con los próximos episodios de tus series, los estrenos de películas pendientes y los lanzamientos de tus videojuegos, para importarlo en Google Calendar, Apple Calendar u otras aplicaciones.</p>
           <button type="button" class="btn btn--accent-media" id="btn-export-ics">
             Exportar calendario (.ics)
           </button>
@@ -424,7 +498,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260901"></script>
+  <script type="module" src="js/app.js?v=20260904"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

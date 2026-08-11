@@ -41,10 +41,11 @@ export async function exportBackup(ctx) {
     const profile = await ctx.getUserProfile(uid);
 
     // Obtener todos los items mediante getItemsOnce (lectura única)
-    const [movies, series, books] = await Promise.all([
+    const [movies, series, books, games] = await Promise.all([
       ctx.getItemsOnce(uid, "movie"),
       ctx.getItemsOnce(uid, "tv"),
       ctx.getItemsOnce(uid, "book"),
+      ctx.getItemsOnce(uid, "game"),
     ]);
 
     // Obtener notificaciones
@@ -66,6 +67,7 @@ export async function exportBackup(ctx) {
         movies,
         series,
         books,
+        games,
         notifications,
       },
     };
@@ -131,7 +133,7 @@ export function importBackup(ctx) {
         return;
       }
 
-      const { profile, movies, series, books, notifications } = backup.data;
+      const { profile, movies, series, books, games, notifications } = backup.data;
       const uid = user.uid;
       let restored = 0;
       let errors = 0;
@@ -190,6 +192,20 @@ export function importBackup(ctx) {
           } catch (e) {
             errors++;
             console.warn("Error restaurando libro:", item.title, e);
+          }
+        }
+      }
+
+      // Restaurar videojuegos
+      if (Array.isArray(games)) {
+        for (const item of games) {
+          try {
+            const { id, ...data } = item;
+            await ctx.addItem(uid, "game", data);
+            restored++;
+          } catch (e) {
+            errors++;
+            console.warn("Error restaurando videojuego:", item.title, e);
           }
         }
       }

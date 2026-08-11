@@ -12,6 +12,8 @@
 import { addItem, updateItem, deleteItem } from "./db.js";
 import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta, searchMovies as apiSearchMovies, searchTv as apiSearchTv } from "./api-movies.js";
 import { searchBooks as apiSearchBooks, getOpenLibraryDescription } from "./api-books.js";
+import { searchGames as apiSearchGames, getGameDetails } from "./api-games.js";
+import { seenActionLabels } from "./constants.js";
 import { isUnreleasedDate, unreleasedConfirmMessage } from "./release.js";
 import { todayISO } from "./dates.js";
 import { computeProgress, markAllSeasonsWatched } from "./tv-progress.js";
@@ -19,12 +21,13 @@ import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import * as ui from "./ui.js";
 
 // Búsqueda en el catálogo de un grupo (stateless: solo devuelve
-// datos, sin tocar el DOM). group: "movies" | "tv" | "books".
+// datos, sin tocar el DOM). group: "movies" | "tv" | "books" | "games".
 // Devuelve { items, hasMore, source } (source solo para libros:
 // "googlebooks" | "openlibrary").
 export async function searchExternal(group, query, page = 1) {
   if (group === "movies") return apiSearchMovies(query, page);
   if (group === "tv") return apiSearchTv(query, page);
+  if (group === "games") return apiSearchGames(query, page);
   // Libros: siempre en español (la casilla "Solo en español" se
   // eliminó en la issue #82).
   return apiSearchBooks(query, page, null, true);
@@ -101,6 +104,22 @@ async function doAddBook(item, btn, ctx, choices) {
 export async function handleAdd(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return;
 
+  // Defensa en profundidad contra duplicados con lazy loading (issue
+  // #178): el grupo puede no estar aún cargado en memoria (pestaña no
+  // visitada) y el botón «Añadir» haberse mostrado igualmente. Antes
+  // de añadir se comprueba por externalId con una lectura que cae a
+  // Firestore si el estado en memoria no está completo.
+  if (item.externalId) {
+    const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+    const group = typeToGroup[item.type] || "movies";
+    const resolved = await ctx.getGroupItemsResolved(group);
+    if (resolved.some((i) => i.externalId === item.externalId)) {
+      btn.disabled = false;
+      ui.showToast(`«${item.title}» ya está en tu registro.`);
+      return false;
+    }
+  }
+
   // Para libros con múltiples portadas o sinopsis, abrir modal de
   // selección antes de añadir.
   if (
@@ -121,6 +140,44 @@ export async function handleAdd(item, btn, ctx) {
       coverUrl: item.coverUrl,
       description: item.description || "",
     });
+  }
+
+  // --- Videojuegos (IGDB vía proxy) ---
+  if (item.type === "game") {
+    btn.disabled = true;
+    btn.textContent = "Añadiendo…";
+    try {
+      const draft = {
+        externalId: item.externalId,
+        type: "game",
+        title: item.title,
+        year: item.year || "",
+        coverUrl: item.coverUrl || null,
+        status: "pendiente",
+        rating: null,
+        notes: "",
+        playLog: [],
+      };
+      try {
+        const details = await getGameDetails(item.externalId);
+        Object.assign(draft, details);
+        if (!draft.coverUrl) draft.coverUrl = item.coverUrl || null;
+        // Guarda obligatoria de releaseDate truthy: isUnreleasedDate(null)
+        // devuelve true y un juego sin fecha quedaría awaitingRelease para
+        // siempre (no hay refresco diario que lo resuelva).
+        if (details.releaseDate && isUnreleasedDate(details.releaseDate)) draft.awaitingRelease = true;
+      } catch (err) {
+        // no bloqueamos el alta si este paso extra falla
+      }
+      await addItem(ctx.getCurrentUser().uid, "game", draft);
+      ui.showToast(`«${item.title}» añadido a tu registro.`);
+      return true;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Añadir";
+      ui.showToast("No se pudo añadir: " + err.message);
+      return false;
+    }
   }
 
   // --- Películas / series (sin cambios) ---
@@ -181,12 +238,13 @@ export async function handleAdd(item, btn, ctx) {
 
 /* ---------- Alta directa como visto desde el catálogo (issue #115) ---------- */
 
-// Restaura el botón «Marcar visto» a su estado inicial (tras abortar,
-// fallar o deshacer el flujo de alta como visto).
-function restoreSeenBtn(btn) {
+// Restaura el botón «Marcar visto» (o «Marcar leído»/«Marcar jugado» según
+// el tipo, issue #177) a su estado inicial (tras abortar, fallar o deshacer
+// el flujo de alta como visto).
+function restoreSeenBtn(btn, type) {
   if (!btn) return;
   btn.disabled = false;
-  btn.textContent = "Marcar visto";
+  btn.textContent = seenActionLabels(type).action;
 }
 
 // Da de alta el ítem como visto y abre la ventana de valoración al
@@ -201,7 +259,7 @@ async function openSeenRating(uid, type, ref, opts) {
       title: opts.title,
       coverUrl: opts.coverUrl,
       communityRating: opts.communityRating ?? null,
-      communityLabel: "TMDB",
+      communityLabel: opts.communityLabel || "TMDB",
       initialRating: null,
       onSave: async (rating) => {
         await updateItem(uid, type, ref.id, { rating });
@@ -271,13 +329,13 @@ async function doAddBookSeen(item, btn, ctx, choices) {
     // del botón se fija aquí mismo, como hace el listener del dropdown.
     if (ok) {
       btn.disabled = true;
-      btn.textContent = "Visto";
+      btn.textContent = seenActionLabels("book").done;
     } else {
-      restoreSeenBtn(btn);
+      restoreSeenBtn(btn, "book");
     }
     return ok;
   } catch (err) {
-    restoreSeenBtn(btn);
+    restoreSeenBtn(btn, "book");
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
   }
@@ -291,6 +349,23 @@ async function doAddBookSeen(item, btn, ctx, choices) {
 // false = abortado, error o deshecho.
 export async function handleAddSeen(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return false;
+
+  // Defensa en profundidad contra duplicados con lazy loading (issue
+  // #178): el grupo puede no estar aún cargado en memoria (pestaña no
+  // visitada) y el botón «Marcar visto/leído/jugado» haberse mostrado
+  // igualmente. Antes de añadir se comprueba por externalId con una
+  // lectura que cae a Firestore si el estado en memoria no está
+  // completo.
+  if (item.externalId) {
+    const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+    const group = typeToGroup[item.type] || "movies";
+    const resolved = await ctx.getGroupItemsResolved(group);
+    if (resolved.some((i) => i.externalId === item.externalId)) {
+      restoreSeenBtn(btn, item.type);
+      ui.showToast(`«${item.title}» ya está en tu registro.`);
+      return false;
+    }
+  }
 
   // Para libros con múltiples portadas o sinopsis, abrir modal de
   // selección antes de añadir (mismo predicado que handleAdd). No se
@@ -315,6 +390,49 @@ export async function handleAddSeen(item, btn, ctx) {
     });
   }
 
+  // --- Videojuegos (IGDB vía proxy) ---
+  if (item.type === "game") {
+    btn.disabled = true;
+    btn.textContent = "Marcando…";
+    try {
+      const draft = {
+        externalId: item.externalId,
+        type: "game",
+        title: item.title,
+        year: item.year || "",
+        coverUrl: item.coverUrl || null,
+        status: "completado",
+        rating: null,
+        notes: "",
+        playLog: [{ startedAt: todayISO(), finishedAt: todayISO() }],
+        awaitingRelease: false,
+      };
+      let details = {};
+      try {
+        details = await getGameDetails(item.externalId);
+        Object.assign(draft, details);
+        // IGDB puede devolver cover null: no pisar la
+        // portada del resultado de búsqueda (mismo patrón que TMDB).
+        draft.coverUrl = draft.coverUrl || item.coverUrl;
+      } catch (err) {
+        // no bloqueamos el alta si este paso extra falla
+      }
+
+      const ref = await addItem(ctx.getCurrentUser().uid, "game", draft);
+      return await openSeenRating(ctx.getCurrentUser().uid, "game", ref, {
+        title: item.title,
+        coverUrl: item.coverUrl,
+        communityRating: details.communityRating ?? null,
+        communityLabel: "IGDB",
+        doneToast: `«${item.title}» añadido y marcado como jugado.`,
+      });
+    } catch (err) {
+      restoreSeenBtn(btn, "game");
+      ui.showToast("No se pudo añadir: " + err.message);
+      return false;
+    }
+  }
+
   // --- Películas / series ---
   btn.disabled = true;
   btn.textContent = "Marcando…";
@@ -337,7 +455,7 @@ export async function handleAddSeen(item, btn, ctx) {
         title: item.title,
       });
       if (msg && !window.confirm(msg)) {
-        restoreSeenBtn(btn);
+        restoreSeenBtn(btn, "movie");
         return false;
       }
 
@@ -379,7 +497,7 @@ export async function handleAddSeen(item, btn, ctx) {
     }
     if (!seasonsMeta.length) {
       ui.showToast(`No se pudo marcar «${item.title}»: no se pudieron obtener sus temporadas.`);
-      restoreSeenBtn(btn);
+      restoreSeenBtn(btn, "tv");
       return false;
     }
 
@@ -388,7 +506,7 @@ export async function handleAddSeen(item, btn, ctx) {
     if (unreleasedSeasons.length) {
       const msg = `«${item.title}» · ${unreleasedSeasons.length} de ${seasonsMeta.length} temporadas aún no están estrenadas. ¿Marcarlas todas igualmente como vistas?`;
       if (!window.confirm(msg)) {
-        restoreSeenBtn(btn);
+        restoreSeenBtn(btn, "tv");
         return false;
       }
     }
@@ -437,7 +555,7 @@ export async function handleAddSeen(item, btn, ctx) {
       doneToast: `«${item.title}» añadida y marcada como vista.`,
     });
   } catch (err) {
-    restoreSeenBtn(btn);
+    restoreSeenBtn(btn, item.type);
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
   }
@@ -471,6 +589,15 @@ export async function enrichSearchItem(item) {
       return {};
     }
   }
+  // Videojuego: datos ampliados de IGDB (sinopsis, plataformas,
+  // desarrolladores, Metacritic, ESRB...).
+  if (item.type === "game") {
+    try {
+      return await getGameDetails(item.externalId);
+    } catch (err) {
+      return {};
+    }
+  }
   // Libro: solo sinopsis, y únicamente para fuentes Open Library
   // ("/works/...") que aún no la traigan en el resultado de búsqueda.
   if (item.externalId && item.externalId.startsWith("/works/") && !item.description) {
@@ -486,12 +613,14 @@ export async function enrichSearchItem(item) {
 // Abre la vista previa de un resultado de búsqueda. Recalcula `added`
 // con el estado actual del ctx como defensa frente a cambios entre el
 // render y el click (el grupo se mapea a plural porque ctx usa las
-// claves "movies"/"tv"/"books").
+// claves "movies"/"tv"/"books"/"games").
 export function openSearchPreviewFromResults(item, added, ctx) {
+  const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+  const group = typeToGroup[item.type] || "movies";
   const currentAdded =
     item.type === "book"
       ? isBookAlreadyAdded(item, existingIdsFor("books", ctx), existingBookKeys(ctx))
-      : existingIdsFor(item.type === "movie" ? "movies" : "tv", ctx).has(item.externalId);
+      : existingIdsFor(group, ctx).has(item.externalId);
 
   ui.openSearchPreviewModal(item, {
     added: currentAdded,
@@ -536,7 +665,11 @@ export async function handleManualAdd(type, data, ctx) {
     draft.timesCompleted = 0;
     draft.history = [];
     draft.manualEpisodeCount = data.episodeCount || 10;
+  } else if (type === "game") {
+    draft.progress = null;
+    draft.playLog = [];
   } else {
+    // Libros
     draft.progress = null;
     draft.readLog = [];
   }

@@ -10,7 +10,7 @@
 // Versión de despliegue/caché. Se incrementa con scripts/bump-version.sh
 // y se usa para versionar las URLs de los assets (?v=...) de modo que
 // cada deploy invalide las cachés del service worker y del navegador.
-export const APP_VERSION = '20260901';
+export const APP_VERSION = '20260904';
 
 // Configuración de tu proyecto de Firebase
 // (Firebase console → Configuración del proyecto → Tus apps → SDK)
@@ -36,3 +36,15 @@ export const TMDB_API_KEY = "f23a198de513705e5970b196de181edb";
 // Si la usas, restríngela por referrer HTTP a tu dominio de GitHub Pages
 // desde Google Cloud Console → Credenciales.
 export const GOOGLE_BOOKS_API_KEY = "AIzaSyAQ0NCW84ldhfmUboMo3ErylgkqexygYZM";
+
+// URL pública de tu Cloudflare Worker, proxy de IGDB (Twitch).
+// IGDB no tiene CORS y su Client Secret no puede exponerse en una SPA:
+// el Worker guarda los secretos y reenvía las peticiones a IGDB.
+// IMPORTANTE: pon aquí la URL EXACTA que imprime `wrangler deploy`
+// (formato https://igdb-proxy.<tu-subdominio>.workers.dev). Si pones
+// una URL que no existe, la búsqueda de videojuegos fallará.
+// Despliega el Worker y configura los secretos siguiendo
+// cloudflare/igdb-proxy/README.md, y pon aquí su URL.
+// Sin valor (""), la búsqueda de videojuegos muestra un aviso claro
+// («Falta IGDB_PROXY_URL…») y el resto de la app funciona igual.
+export const IGDB_PROXY_URL = "https://igdb-proxy.gonzalojh596.workers.dev";
