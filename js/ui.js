@@ -1185,6 +1185,7 @@ function renderPlayLogRows(playLog) {
               ? `<input type="date" class="play-finish" data-index="${index}" value="${entry.finishedAt}" />`
               : `<span class="log-row__playing">jugando</span>`
           }
+          <input type="number" class="play-hours" data-index="${index}" value="${entry.hours ?? ""}" min="0" step="0.5" placeholder="h" aria-label="Horas" />
           <button type="button" class="btn btn--small btn--danger play-remove" data-index="${index}">Quitar</button>
         </div>`
       )
@@ -1392,6 +1393,25 @@ export function openGameModal(item, callbacks) {
     input.addEventListener("change", async () => {
       if (!input.value) return;
       await onUpdateEntry(Number(input.dataset.index), { finishedAt: input.value });
+      rerender();
+    });
+  });
+
+  // Horas de una sesión: vacío se persiste como null (nunca undefined,
+  // Firestore lanza con updateDoc), valores inválidos se ignoran y el
+  // resto se redondea a 1 decimal (issue #174).
+  content.querySelectorAll(".play-hours").forEach((input) => {
+    input.addEventListener("change", async () => {
+      const value = input.value;
+      if (value === "") {
+        await onUpdateEntry(Number(input.dataset.index), { hours: null });
+        rerender();
+        return;
+      }
+      const h = Number(value);
+      if (!Number.isFinite(h) || h < 0) return;
+      const rounded = Math.round(h * 10) / 10;
+      await onUpdateEntry(Number(input.dataset.index), { hours: rounded });
       rerender();
     });
   });
@@ -2386,6 +2406,8 @@ function eventIcon(type) {
     series_episodes: "📺",
     book_started: "📖",
     book_finished: "📚",
+    game_started: "🎮",
+    game_finished: "🏆",
   };
   return icons[type] || "📌";
 }

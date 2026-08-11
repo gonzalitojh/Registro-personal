@@ -104,6 +104,22 @@ async function doAddBook(item, btn, ctx, choices) {
 export async function handleAdd(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return;
 
+  // Defensa en profundidad contra duplicados con lazy loading (issue
+  // #178): el grupo puede no estar aún cargado en memoria (pestaña no
+  // visitada) y el botón «Añadir» haberse mostrado igualmente. Antes
+  // de añadir se comprueba por externalId con una lectura que cae a
+  // Firestore si el estado en memoria no está completo.
+  if (item.externalId) {
+    const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+    const group = typeToGroup[item.type] || "movies";
+    const resolved = await ctx.getGroupItemsResolved(group);
+    if (resolved.some((i) => i.externalId === item.externalId)) {
+      btn.disabled = false;
+      ui.showToast(`«${item.title}» ya está en tu registro.`);
+      return false;
+    }
+  }
+
   // Para libros con múltiples portadas o sinopsis, abrir modal de
   // selección antes de añadir.
   if (
@@ -146,6 +162,10 @@ export async function handleAdd(item, btn, ctx) {
         const details = await getGameDetails(item.externalId);
         Object.assign(draft, details);
         if (!draft.coverUrl) draft.coverUrl = item.coverUrl || null;
+        // Guarda obligatoria de releaseDate truthy: isUnreleasedDate(null)
+        // devuelve true y un juego sin fecha quedaría awaitingRelease para
+        // siempre (no hay refresco diario que lo resuelva).
+        if (details.releaseDate && isUnreleasedDate(details.releaseDate)) draft.awaitingRelease = true;
       } catch (err) {
         // no bloqueamos el alta si este paso extra falla
       }
@@ -330,6 +350,23 @@ async function doAddBookSeen(item, btn, ctx, choices) {
 export async function handleAddSeen(item, btn, ctx) {
   if (!ctx.getCurrentUser()) return false;
 
+  // Defensa en profundidad contra duplicados con lazy loading (issue
+  // #178): el grupo puede no estar aún cargado en memoria (pestaña no
+  // visitada) y el botón «Marcar visto/leído/jugado» haberse mostrado
+  // igualmente. Antes de añadir se comprueba por externalId con una
+  // lectura que cae a Firestore si el estado en memoria no está
+  // completo.
+  if (item.externalId) {
+    const typeToGroup = { movie: "movies", tv: "tv", book: "books", game: "games" };
+    const group = typeToGroup[item.type] || "movies";
+    const resolved = await ctx.getGroupItemsResolved(group);
+    if (resolved.some((i) => i.externalId === item.externalId)) {
+      restoreSeenBtn(btn, item.type);
+      ui.showToast(`«${item.title}» ya está en tu registro.`);
+      return false;
+    }
+  }
+
   // Para libros con múltiples portadas o sinopsis, abrir modal de
   // selección antes de añadir (mismo predicado que handleAdd). No se
   // espera: el resultado llega vía doAddBookSeen.
@@ -368,6 +405,7 @@ export async function handleAddSeen(item, btn, ctx) {
         rating: null,
         notes: "",
         playLog: [{ startedAt: todayISO(), finishedAt: todayISO() }],
+        awaitingRelease: false,
       };
       let details = {};
       try {

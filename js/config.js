@@ -24,10 +24,11 @@ export const firebaseConfig = {
     measurementId: "G-HH7JJYF8SR"
   };
 
-  // La lista de quién puede entrar vive en su propio archivo:
-// ver js/allowed-emails.js
+  // La lista de quién puede entrar vive ÚNICAMENTE en la regla
+  // isAllowedUser() de firestore.rules (issue #195): se eliminó
+  // js/allowed-emails.js, que la duplicaba.
 
-// Clave de la API de TMDB (gratuita, no comercial)
+  // Clave de la API de TMDB (gratuita, no comercial)
 // Consíguela en https://www.themoviedb.org/settings/api
 export const TMDB_API_KEY = "f23a198de513705e5970b196de181edb";
 

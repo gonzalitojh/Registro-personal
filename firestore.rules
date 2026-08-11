@@ -9,10 +9,17 @@ rules_version = '2';
 //     (para la sección de Amigos).
 //   - Las notificaciones son privadas: cada uno solo ve las suyas.
 //
-// IMPORTANTE: la lista de abajo debe coincidir exactamente con la
-// de js/allowed-emails.js. Si añades o quitas un correo, cámbialo
-// en los dos sitios y vuelve a pegar este archivo completo en
-// Firebase console → Firestore Database → Reglas → Publicar.
+// IMPORTANTE (issue #195): este archivo es la ÚNICA fuente de verdad
+// para la lista de correos autorizados (se eliminó js/allowed-emails.js,
+// que la duplicaba y se desincronizaba). La web comprueba el acceso
+// contra estas reglas al iniciar sesión: quien no esté en la lista de
+// abajo recibe el aviso «Tu correo no está en la lista de invitados» y
+// se le cierra la sesión.
+//
+// Para añadir o quitar un amigo: edita SOLO la lista de isAllowedUser()
+// de abajo y vuelve a pegar este archivo completo en Firebase console →
+// Firestore Database → Reglas → Publicar. No hay ningún otro sitio
+// donde mantener correos.
 // =============================================================
 
 service cloud.firestore {
@@ -22,7 +29,8 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email in [
         "gonzalojh596@gmail.com",
         "djoserralozanopinilla@gmail.com",
-        "antoniolopeznoriega01@gmail.com"
+        "antoniolopeznoriega01@gmail.com",
+        "josemcrespo98@gmail.com"
       ];
     }
 

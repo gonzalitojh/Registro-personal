@@ -59,7 +59,8 @@ pero todos pueden verse entre sí (en modo lectura).
 **Importante:** solo pueden entrar los correos que estén en la lista de
 invitados. Si tu correo no está en la lista, la web te lo dirá
 (*«Tu correo no está en la lista de invitados. Pide que te añadan.»*) y no
-podrás entrar. Pídele a quien administre la web que te añada.
+podrás entrar. Pídele a quien administre la web que te añada (solo tiene
+que actualizar la lista en las reglas de seguridad de Firebase).
 
 La primera vez que entras se crea tu cuenta automáticamente, con tu nombre
 y tu foto de Google. Para salir, pulsa tu foto (arriba a la derecha) y
@@ -72,10 +73,10 @@ Nada más entrar verás:
 - **Arriba, la cabecera**:
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
     deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
-    devuelve a las pestañas de Series, Películas y Libros, y, en la
-    parte de abajo, **«Ajustes»**, que abre la sección de ajustes de tu
-    perfil (más en [sección 14](#14-ajustes)). Se cierra pulsando fuera,
-    la ✕, la tecla **Esc** o la propia entrada. Si en
+    devuelve a las pestañas de Series, Películas, Libros y Videojuegos,
+    y, en la parte de abajo, **«Ajustes»**, que abre la sección de
+    ajustes de tu perfil (más en [sección 14](#14-ajustes)). Se cierra
+    pulsando fuera, la ✕, la tecla **Esc** o la propia entrada. Si en
     [Ajustes → Secciones y pestañas](#14-ajustes) dejas solo **una
     sección visible**, la barra lateral se sustituye por un botón
     **engranaje ⚙** en la cabecera que abre directamente Ajustes; en
@@ -109,6 +110,14 @@ Nada más entrar verás:
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
 directamente su barra de herramientas.
+
+**Cada pestaña carga sus datos al abrirla por primera vez.** Cuando
+entras, la web solo pide la información de la pestaña en la que estás.
+Al abrir una pestaña que no habías visitado, verás un breve indicador
+de **«Cargando…»** (con una animación) mientras llegan sus datos; a
+partir de ese momento, cada vez que vuelvas a esa pestaña aparece todo
+al instante. Así la web no tiene que pedir los cuatro registros a la
+vez cada vez que entras.
 
 Al entrar por primera vez aterrizas en **Series**, con el filtro **«Viendo»**
 activo y en vista de lista — el uso más habitual.
@@ -398,7 +407,10 @@ En la ficha del videojuego:
 En la ficha ves todas tus sesiones de juego: fecha de inicio → fecha de
 fin (o «jugando» si está en curso). Puedes **editar las fechas** y
 **«Quitar»** una sesión del historial. Las rejugadas aparecen como
-sesiones adicionales.
+sesiones adicionales. Cada sesión tiene además un campo opcional de
+**horas** (cuántas horas dedicaste en esa partida, en pasos de media
+hora); ese campo se usa para la estadística de **horas jugadas** de tu
+perfil (sección 14.1).
 
 ## 8. Recetas
 
@@ -744,6 +756,7 @@ día) de:
 
 - **Estrenos de películas**: ««Título» ya se ha estrenado (fecha).»
 - **Estrenos de series**: ««Título» ya se ha estrenado.»
+- **Estrenos de videojuegos**: ««Título» ya está a la venta (fecha).»
 - **Nuevos episodios**: «Nuevo episodio disponible de «Título»: T2E5.»
 
 La campana muestra un **número con las no leídas**. Al abrirla, las
@@ -792,30 +805,40 @@ que pedías.
 
 ### 15.1 Estadísticas
 
-Cuatro cifras: **Películas vistas, Episodios vistos, Series completadas y
-Libros leídos**. El selector de periodo te permite verlas de **Siempre**,
+Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
+Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
+Horas jugadas**. El selector de periodo te permite verlas de **Siempre**,
 **Este año**, **Este mes** o un **rango personalizado** (elige las fechas
 «Desde» y «Hasta»).
 
-Debajo hay dos gráficas:
+Un videojuego cuenta como **jugado** si tiene una sesión dentro del
+periodo (cada sesión cuenta una vez, por su fecha de fin o, si aún está
+en curso, por su fecha de inicio); las **horas jugadas** son la suma de
+las horas anotadas en las sesiones del periodo, y las **sesiones de
+juego** cuentan esas mismas sesiones del periodo.
 
-- **Actividad por mes**: barras con lo que viste/leíste cada mes.
+Debajo hay cinco gráficas:
+
+- **Actividad por mes**: barras con lo que viste/leíste/jugaste cada mes.
 - **Estados actuales**: qué parte de tu registro está pendiente, en curso,
-  completado, en pausa o abandonado.
+  completado, en pausa o abandonado (incluye también los videojuegos).
+- **Géneros**: los 6 géneros más jugados en el periodo.
+- **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
 ### 15.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
 lista no sea interminable, el registro se organiza **por pestañas**:
-**Películas, Series y Libros** (una a la vez, igual que en tu propio
-perfil; la pestaña de **Videojuegos** aún no está disponible aquí).
+**Películas, Series, Libros y Videojuegos** (una a la vez, igual que en
+tu propio perfil).
 
 Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
 interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
 en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
-en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
-Así no tienes que hacer scroll largo.
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**;
+en **videojuegos**, **Todos, Pendiente, Jugando, Jugado, Standby o
+Abandonado**. Así no tienes que hacer scroll largo.
 
 Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
 vuelves a la lista de amigos y entras de nuevo en un amigo, se
@@ -828,7 +851,8 @@ sus valoraciones episodio a episodio ni sus historiales completos.
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
-«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…».
+«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…»,
+«Está jugando…», «Terminó de jugar…».
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
@@ -855,25 +879,26 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   Tu elección se guarda automáticamente y se mantiene la próxima vez
   que entres.
 - **Secciones y pestañas**: elige qué secciones y pestañas de la web
-  ves. Hoy hay una sola sección, **«Ocio»**, con sus tres pestañas
-  (**Series**, **Películas** y **Libros**); en el futuro se añadirán
-  más secciones y aparecerán aquí con sus pestañas. Al **ocultar una
-  pestaña**, desaparece de la barra de pestañas y de la vista: tus
-  datos, avisos y actualizaciones siguen funcionando igual, solo deja
-  de verse. Al **ocultar una sección**, desaparece de la barra lateral
-  de navegación; si solo dejas **una sección visible**, la barra
-  lateral (☰) se sustituye por un botón **engranaje ⚙** en la cabecera
-  que abre Ajustes directamente, y vuelve a aparecer cuando tengas más
-  de una sección visible. Siempre queda al menos una sección y una
-  pestaña de cada sección visible: el interruptor de la última que
-  quedaría se muestra apagado (gris) y no se puede tocar, con una nota
-  explicativa. Ocultar algo **no borra tus datos**: solo lo quita de
-  la vista, y puedes volver a mostrarlo cuando quieras. Los cambios se
-  guardan solos.
+  ves. Hoy hay una sola sección, **«Ocio»**, con sus cuatro pestañas
+  (**Series**, **Películas**, **Libros** y **Videojuegos**); en el
+  futuro se añadirán más secciones y aparecerán aquí con sus pestañas.
+  Al **ocultar una pestaña**, desaparece de la barra de pestañas y de
+  la vista: tus datos, avisos y actualizaciones siguen funcionando
+  igual, solo deja de verse. Al **ocultar una sección**, desaparece de
+  la barra lateral de navegación; si solo dejas **una sección
+  visible**, la barra lateral (☰) se sustituye por un botón
+  **engranaje ⚙** en la cabecera que abre Ajustes directamente, y
+  vuelve a aparecer cuando tengas más de una sección visible. Siempre
+  queda al menos una sección y una pestaña de cada sección visible: el
+  interruptor de la última que quedaría se muestra apagado (gris) y no
+  se puede tocar, con una nota explicativa. Ocultar algo **no borra
+  tus datos**: solo lo quita de la vista, y puedes volver a mostrarlo
+  cuando quieras. Los cambios se guardan solos.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series
   - Estrenos de series
+  - Estrenos de videojuegos
   - Actividad de amigos
   - **Notificaciones en el dispositivo**: si la activas, los avisos
     anteriores también llegan como **notificaciones del sistema** (en la
@@ -898,9 +923,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     exportaras antes. **Añade** lo que falte a lo que ya tienes: no
     reemplaza ni borra nada.
   - **Exportar calendario (.ics)**: descarga un archivo con los **próximos
-    episodios de tus series y los estrenos pendientes de películas**, para
-    importarlo en Google Calendar, Apple Calendar o similar y tener todos
-    los estrenos en tu agenda.
+    episodios de tus series, los estrenos pendientes de películas y los
+    lanzamientos pendientes de tus videojuegos**, para importarlo en Google
+    Calendar, Apple Calendar o similar y tener todos los estrenos en tu
+    agenda.
 
 ## 17. ¿Cuándo se actualizan los datos?
 
@@ -911,12 +937,14 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Esa misma comprobación diaria **rellena la información que falte** en tus
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo
-  ya lo tiene). Los videojuegos no se actualizan solos: su información
+  ya lo tiene). Con los videojuegos no pasa eso: su información
   (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
-  momento de añadirlos y no hay comprobación diaria de novedades para
-  ellos. Un caso aparte: al abrir la ficha de un videojuego, si IGDB
-  tiene tráiler, se guarda en ese momento (los juegos siguen sin
-  actualizarse solos).
+  momento de añadirlos y no se vuelve a pedir. La comprobación diaria
+  sí se ocupa de sus **lanzamientos**: si uno de tus videojuegos con
+  fecha de lanzamiento conocida sale a la venta, te llega el aviso
+  correspondiente (los juegos sin fecha no tienen nada que avisar). Un
+  caso aparte: al abrir la ficha de un videojuego, si IGDB tiene
+  tráiler, se guarda en ese momento.
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante
@@ -957,8 +985,9 @@ anotaciones y cambios necesitan conexión a internet.
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien
-administra la web lo hace en dos sitios: la lista de la web y las reglas
-de seguridad).
+administra la web lo hace en las reglas de seguridad de Firebase: la
+lista de `isAllowedUser()` en `firestore.rules`, que hay que publicar
+después en Firebase console).
 
 **Al buscar libros aparece «Error 503» o tarda mucho**
 Es un fallo puntual del servidor de libros, no tuyo: la web reintenta

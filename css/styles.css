@@ -2461,6 +2461,45 @@ body.is-back-to-top-visible .back-to-top {
 
 
 /* =========================================================
+   Indicador de carga de los paneles de Ocio (issue #178)
+   ---------------------------------------------------------
+   Cada pestaña carga su contenido (HTML y datos) la primera
+   vez que se abre (lazy loading); mientras tanto se muestra
+   este marcador, que renderLibraryFor retira al pintar.
+   Colores con variables de tema: texto y arco del spinner en
+   --ink-soft (legible en los cuatro modos: ≈6.2:1 sobre
+   oscuro/negro puro, ≈4.6:1 sobre claro/blanco puro; AA) y
+   pista del arco con --ink-alpha-XX de la misma familia, que
+   en negro puro se invierte a tinta clara automáticamente —
+   no hacen falta overrides por familia. No se usan colores
+   hardcodeados.
+   ========================================================= */
+
+.panel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.2rem 1rem;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.spinner {
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 auto;
+  border: 3px solid var(--ink-alpha-15);
+  border-top-color: var(--ink-soft);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================================
    Sección de recetas (issue #64): Recetas, Menú y Lista de
    la compra. Vista de primer nivel hermana de profile-view.
    ========================================================= */
