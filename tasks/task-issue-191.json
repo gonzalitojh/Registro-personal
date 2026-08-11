@@ -26,7 +26,7 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/191",
     "title": "No carga de las portadas"
   },
-  "plan": "Plan aplicado: guarda de re-render por snapshot (js/render-guard.js, firma solo de campos renderizados + orden), syncGroup en los 4 onChange de app.js, reset en logout, fallback de portadas al placeholder con listener de captura global (patrón issue #149 extendido), bump 20260905 (ADR-019). Harness funcional: 22+12+5 PASS (render-guard, cover-fallback jsdom, simulate-churn 13→2 renders).",
+  "plan": "Plan aplicado: guarda de re-render por snapshot (js/render-guard.js, firma solo de campos renderizados + orden), syncGroup en los 4 onChange de app.js, reset en logout, fallback de portadas al placeholder con listener de captura global (patrón issue #149 extendido), bump 20260905 (ADR-019). Harness funcional: 22+12+5 PASS (render-guard, cover-fallback jsdom, simulate-churn 13→2 renders). Iteración 2026-08-11 (comentario del usuario): re-validación QA PASS (harness 19/19 + 16/16), seguridad PASS sin hallazgos; fallback ampliado a cover-picker__item-cover (miniaturas del selector de ediciones de libro) y nota de invariante type en render-guard.js; ADR-075 actualizado.",
   "pr": {
     "number": 192,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/192",
