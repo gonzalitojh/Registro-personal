@@ -13,11 +13,14 @@
 
 import { trapFocus } from "./focus-utils.js";
 import { closeGlobalSearch } from "./global-search.js";
+import { navigate, getLastRecipesTab } from "./router.js";
 
 // Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
 // "Ocio" es la web actual (pestañas Series / Películas / Libros);
 // al pulsarla se cierra el drawer, se hace scroll suave al top y se
 // vuelve a la primera pestaña sincronizando la URL (issue #59).
+// "Recetas" (issue #64) abre la nueva sección de recetas
+// (#/recetas, pestaña que quedó activa la última vez).
 // "Ajustes" (pinned) abre el perfil en la sección Ajustes: el
 // callback lo inyecta app.js vía setupSidebar({ onOpenSettings }).
 export const SECTIONS = [
@@ -47,6 +50,22 @@ export const SECTIONS = [
       // Volver a la primera pestaña (Series) sincronizando la URL:
       // el callback lo inyecta app.js vía setupSidebar({ onGoOcio }).
       if (onGoOcio) onGoOcio();
+    },
+  },
+  {
+    id: "recetas",
+    label: "Recetas",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 11h16a1.6 1.6 0 0 1 1.6 1.6V14A5.6 5.6 0 0 1 16 19.6H8A5.6 5.6 0 0 1 2.4 14v-1.4A1.6 1.6 0 0 1 4 11z" />
+      <path d="M2.5 12.3h19" />
+      <path d="M8.5 8.5h7" />
+      <path d="M7.5 5.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0" />
+    </svg>`,
+    onClick: () => {
+      // Abrir la sección Recetas sincronizando la URL: vuelve a la
+      // pestaña que quedó activa la última vez (issue #64).
+      navigate({ section: "recetas", tab: getLastRecipesTab() });
     },
   },
   {

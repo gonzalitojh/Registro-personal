@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mi Registro — pelis, series, libros y videojuegos</title>
-  <meta name="description" content="Registro personal de películas, series, libros y videojuegos." />
+  <title>Mi Registro — pelis, series, libros, videojuegos y recetas</title>
+  <meta name="description" content="Registro personal de películas, series, libros, videojuegos y recetas." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
   <link rel="apple-touch-icon" href="resources/icon.png">
@@ -456,6 +456,96 @@
           </button>
         </div>
       </section>
+    </div>
+  </div>
+
+  <!-- Vista de recetas (issue #64): registra recetas, planifica el
+       menú semanal y genera la lista de la compra. Hermana de
+       profile-view: vista de primer nivel, fuera de #app. -->
+  <div id="recipes-view" class="recipes-view hidden" role="main" aria-label="Vista de recetas">
+    <div class="recipes-view__header">
+      <button type="button" class="icon-btn" id="btn-close-recipes" aria-label="Volver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+      </button>
+      <h1 class="app-title">Recetas</h1>
+      <div class="profile-subtabs" role="tablist" aria-label="Secciones de recetas">
+        <button type="button" class="profile-subtab is-active" role="tab" aria-selected="true" aria-controls="panel-recipes-tab" data-recipes-tab="recetas">Recetas</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="panel-menu-tab" data-recipes-tab="menu">Menú</button>
+        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="panel-shopping-tab" data-recipes-tab="compra">Lista de la compra</button>
+      </div>
+    </div>
+
+    <div class="recipes-view__body">
+      <!-- Pestaña Recetas: lista de recetas con búsqueda + catálogo
+           de ingredientes (toggle). El contenido lo renderiza
+           js/recipes.js. -->
+      <section id="panel-recipes-tab" role="tabpanel" aria-labelledby="panel-recipes-tab-heading">
+        <h2 id="panel-recipes-tab-heading" class="visually-hidden">Recetas</h2>
+        <div class="recipes-toolbar">
+          <input id="recipes-search-input" class="recipes-search-input" type="search"
+                 placeholder="Buscar por nombre, ingrediente o etiqueta…"
+                 autocomplete="off" aria-label="Buscar recetas" />
+          <div class="recipes-toolbar__actions">
+            <button type="button" id="btn-toggle-ingredients" class="btn btn--outline btn--small"
+                    aria-pressed="false">Ingredientes</button>
+            <button type="button" id="btn-new-recipe" class="btn btn--primary btn--small">
+              + Nueva receta
+            </button>
+          </div>
+        </div>
+        <div id="recipes-list" aria-live="polite"></div>
+        <div id="ingredients-catalog" class="ingredients-catalog hidden"></div>
+        <datalist id="recipe-ingredients-datalist"></datalist>
+      </section>
+
+      <!-- Pestaña Menú semanal: rejilla día × comida, comensales y
+           recetas a la semana. El contenido lo renderiza js/menu.js. -->
+      <section id="panel-menu-tab" class="hidden" role="tabpanel" aria-labelledby="panel-menu-tab-heading">
+        <h2 id="panel-menu-tab-heading" class="visually-hidden">Menú semanal</h2>
+        <div class="menu-toolbar">
+          <button type="button" id="menu-prev-week" class="btn btn--small" aria-label="Semana anterior">←</button>
+          <span id="menu-week-label" class="menu-week-label"></span>
+          <button type="button" id="menu-next-week" class="btn btn--small" aria-label="Semana siguiente">→</button>
+          <label class="menu-comensales" for="menu-comensales">
+            Comensales
+            <input type="number" id="menu-comensales" min="1" max="99" inputmode="numeric" />
+          </label>
+          <button type="button" id="menu-delete-week" class="btn btn--small btn--danger"
+                  aria-label="Borrar el menú de esta semana">Borrar semana</button>
+        </div>
+        <div id="menu-grid" class="menu-grid"></div>
+        <div class="menu-weekly">
+          <h3>Recetas a la semana</h3>
+          <p class="menu-weekly__hint">Se añaden una vez y NO se multiplican por los comensales
+            (p. ej. pan para los desayunos, una masa de pizza para toda la semana).</p>
+          <button type="button" id="btn-add-weekly-recipe" class="btn btn--small">
+            + Añadir receta a la semana
+          </button>
+          <div id="menu-weekly-list"></div>
+        </div>
+      </section>
+
+      <!-- Pestaña Lista de la compra: cálculo automático desde el
+           menú + ítems extra manuales. js/shopping-list.js. -->
+      <section id="panel-shopping-tab" class="hidden" role="tabpanel" aria-labelledby="panel-shopping-tab-heading">
+        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Lista de la compra</h2>
+        <div class="shopping-toolbar">
+          <span id="shopping-week-label" class="menu-week-label"></span>
+          <button type="button" id="btn-add-extra-item" class="btn btn--small">+ Ítem extra</button>
+        </div>
+        <div id="shopping-extra-form" class="shopping-extra-form hidden"></div>
+        <div id="shopping-list" class="shopping-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal de receta (issue #64): alta / edición / importación
+       desde URL. El contenido lo renderiza js/recipes.js. -->
+  <div id="recipe-modal" class="modal hidden">
+    <div class="modal__backdrop" id="recipe-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Receta">
+      <button id="recipe-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="recipe-modal-content"></div>
     </div>
   </div>
 

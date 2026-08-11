@@ -69,6 +69,11 @@ const STATIC_ASSETS = [
   './js/sidebar.js',
   './js/auto-hide-nav.js',
   './js/push.js',
+  // Sección de recetas (issue #64)
+  './js/recipes-data.js',
+  './js/recipes.js',
+  './js/menu.js',
+  './js/shopping-list.js',
   './resources/icon.png',
   './ocio/series.html?v=20260905',
   './ocio/peliculas.html?v=20260905',

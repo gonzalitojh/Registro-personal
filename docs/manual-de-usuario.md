@@ -18,18 +18,19 @@ en la web. Léelo por secciones según lo que necesites.
 5. [Películas](#5-películas)
 6. [Libros](#6-libros)
 7. [Videojuegos](#7-videojuegos)
-8. [Cómo buscar](#8-cómo-buscar)
-9. [Organizar y ordenar tu registro](#9-organizar-y-ordenar-tu-registro)
-10. [La ficha de cada película, serie, libro o videojuego](#10-la-ficha-de-cada-película-serie-libro-o-videojuego)
-11. [Valoraciones con estrellas](#11-valoraciones-con-estrellas)
-12. [Acciones rápidas](#12-acciones-rápidas)
-13. [Notificaciones](#13-notificaciones)
-14. [Tu perfil](#14-tu-perfil)
-15. [Ajustes](#15-ajustes)
-16. [¿Cuándo se actualizan los datos?](#16-cuándo-se-actualizan-los-datos)
-17. [Privacidad](#17-privacidad)
-18. [Instalar la web en tu teléfono](#18-instalar-la-web-en-tu-teléfono)
-19. [Problemas frecuentes](#19-problemas-frecuentes)
+8. [Recetas](#8-recetas)
+9. [Cómo buscar](#9-cómo-buscar)
+10. [Organizar y ordenar tu registro](#10-organizar-y-ordenar-tu-registro)
+11. [La ficha de cada película, serie, libro o videojuego](#11-la-ficha-de-cada-película-serie-libro-o-videojuego)
+12. [Valoraciones con estrellas](#12-valoraciones-con-estrellas)
+13. [Acciones rápidas](#13-acciones-rápidas)
+14. [Notificaciones](#14-notificaciones)
+15. [Tu perfil](#15-tu-perfil)
+16. [Ajustes](#16-ajustes)
+17. [¿Cuándo se actualizan los datos?](#17-cuándo-se-actualizan-los-datos)
+18. [Privacidad](#18-privacidad)
+19. [Instalar la web en tu teléfono](#19-instalar-la-web-en-tu-teléfono)
+20. [Problemas frecuentes](#20-problemas-frecuentes)
 
 ---
 
@@ -411,9 +412,115 @@ sesiones adicionales. Cada sesión tiene además un campo opcional de
 hora); ese campo se usa para la estadística de **horas jugadas** de tu
 perfil (sección 14.1).
 
-## 8. Cómo buscar
+## 8. Recetas
 
-### 8.1 Buscar en el catálogo
+La sección **Recetas** (en la barra lateral, junto a «Ocio») te permite
+guardar tus recetas, planificar el menú de la semana y generar la lista
+de la compra automáticamente. Tiene tres pestañas: **Recetas**, **Menú**
+y **Lista de la compra**.
+
+### 8.1 Tus recetas
+
+En la pestaña «Recetas» ves tus recetas en tarjetas. Con **«+ Nueva
+receta»** creas una con:
+
+- **Nombre** (obligatorio) y descripción.
+- **Porciones**: cuántas raciones salen (se usa para calcular la lista
+  de la compra).
+- **Foto**: una dirección (URL) de imagen.
+- **Enlaces de referencia**: la web de donde sacaste la receta, uno por
+  línea.
+- **Ingredientes**: nombre, cantidad, unidad (g, ml, unidades…) y
+  categoría (Frutas y verduras, Carnes, Pescado, Lácteos, Legumbres,
+  Despensa, Especias, Dulces, Hogar, Bebidas, Congelados u Otros).
+  Puedes añadir tantas filas como quieras.
+- **Instrucciones**: los pasos, en orden.
+- **Etiquetas de alérgenos** (Sin gluten, Vegetariano, Vegano, Sin
+  lactosa, Sin frutos secos, Sin huevo) y **tipo de comida** (Entrante,
+  Plato de cuchara, Plato principal, Masas y panes, Postres y dulces,
+  Salsas y guarniciones, Desayunos, Bebidas). Marca los que apliquen.
+
+En los desplegables de categorías y etiquetas puedes **crear etiquetas
+propias**: escribe el nombre en el campo «Nueva etiqueta propia…» y
+pulsa «Añadir». Las etiquetas propias se guardan en tu cuenta y aparecen
+marcadas como «(propia)».
+
+Con el buscador encuentras recetas **por nombre, por ingrediente** (por
+ejemplo «huevo» muestra todas las recetas que lo usan) y **por
+etiqueta** (por ejemplo «vegetariano»).
+
+El botón **«Ingredientes»** abre el catálogo de ingredientes de tu
+cuenta: se rellena solo con los que usas en tus recetas y te permite
+asignarles la categoría (la lista de la compra se agrupa por ella).
+También muestra en qué recetas se usa cada ingrediente.
+
+Con **«Ver»** abres la receta en modo lectura; con **«Editar»** la
+modificas; con **«Eliminar»** la borras (se quita del menú y de la
+lista de la compra).
+
+### 8.2 Importar una receta desde una web
+
+En el formulario de nueva receta hay una casilla **«Importar desde una
+URL»**: pega el enlace de la receta y pulsa «Importar». Si la web lo
+permite, se rellenan solos el nombre, la foto y la descripción. Muchas
+webs bloquean esta lectura desde otra página: en ese caso solo se
+guarda la URL.
+
+En cualquier caso, una receta importada queda **marcada con el
+distintivo «Revisar»** (borde naranja y etiqueta), para que la abras,
+completes los datos que falten y la guardes sin revisar cuando esté
+lista.
+
+### 8.3 El menú semanal
+
+En la pestaña **«Menú»** planificas la semana. Con las flechas eliges
+la semana; con **«Comensales»** indicas cuántas personas comen. Con
+**«Borrar semana»** vacías por completo el menú de la semana que
+tengas a la vista (se te pedirá confirmación).
+
+En cada día (Lunes a Domingo) y comida (Desayuno, Almuerzo, Cena)
+pulsas **«+ Receta»** y eliges una de tus recetas. Puedes añadir
+**varias recetas en la misma comida**: cada persona puede comer una
+opción distinta. Quita una receta con la ✕ de su etiqueta.
+
+En **«Recetas a la semana»** añades recetas que se preparan una vez
+para toda la semana (por ejemplo, **pan para los desayunos**): se
+añaden una vez y **no se multiplican por los comensales**. Quita una
+con «Quitar».
+
+Para marcar una receta como «ya hecha» (para que **no** entre en la
+lista de la compra), exclúyela desde la lista de la compra (ver 8.4).
+
+### 8.4 La lista de la compra
+
+La pestaña **«Lista de la compra»** calcula sola lo que necesitas
+comprar para el menú de la semana: cada ingrediente de cada receta se
+multiplica por (comensales ÷ porciones de la receta). Por ejemplo, una
+receta de 4 porciones con 200 g de arroz, para 2 comensales, pedirá
+100 g. Las recetas «a la semana» se apuntan con su cantidad fija.
+
+- Las líneas se **agrupan por categoría** (Frutas, Carnes, Despensa…).
+- Marca la casilla de una línea para tacharla cuando la cojas en el
+  supermercado.
+- Con **«+ Ítem extra»** añades cosas a mano: ingredientes que falten,
+  cosas para congelar, **productos de limpieza y otros objetos no
+  comestibles** (marca «No es comestible»). Los ítems extra llevan una
+  ✕ para quitarlos.
+- Si una receta del menú ya la tienes hecha o no necesitas comprar sus
+  ingredientes, **exclúyela**: al pie de la lista aparecen las recetas
+  excluidas y puedes volver a incluirlas pulsando su nombre. También se
+  indican en el menú (tachadas).
+
+### 8.5 Datos y sincronización
+
+Las recetas, el catálogo de ingredientes, las etiquetas propias y los
+menús se guardan en tu cuenta y se sincronizan en tiempo real entre
+tus dispositivos, igual que el resto de la web. Los menús de semanas
+anteriores se conservan.
+
+## 9. Cómo buscar
+
+### 9.1 Buscar en el catálogo
 
 Todo se busca desde la **barra de búsqueda de la cabecera**
 (también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
@@ -472,7 +579,7 @@ Si una portada no se puede cargar (imagen rota o bloqueada por la web
 que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
 el resultado sigue funcionando igual.
 
-### 8.2 Buscar en tu registro
+### 9.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
 **Cmd+K** en Mac, o **/**) también busca a la vez en lo que ya tienes
@@ -489,7 +596,7 @@ de momento verás el aviso de que pronto podrás ver su perfil.
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
 
-### 8.3 Añadir manualmente
+### 9.3 Añadir manualmente
 
 Si un título no aparece en el catálogo, usa el enlace
 **«¿No la encuentras? Añadir manualmente»** que aparece al final de los
@@ -504,7 +611,7 @@ resultados de catálogo del buscador. Rellena:
 Los títulos añadidos manualmente no tienen datos automáticos (fechas de
 episodios, sinopsis...), pero se comportan igual que el resto en tu lista.
 
-## 9. Organizar y ordenar tu registro
+## 10. Organizar y ordenar tu registro
 
 En la barra de cada biblioteca tienes:
 
@@ -539,7 +646,7 @@ Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
 en rojo con el texto tachado.
 
-## 10. La ficha de cada película, serie, libro o videojuego
+## 11. La ficha de cada película, serie, libro o videojuego
 
 Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
 verás:
@@ -577,7 +684,7 @@ tus notas de episodios** (ver sección 11).
 En los videojuegos, la ficha incluye además el **historial de sesiones de
 juego** (más en [sección 7.4](#74-historial-de-sesiones)).
 
-## 11. Valoraciones con estrellas
+## 12. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**:
 
@@ -609,9 +716,9 @@ solo mientras la ventana está abierta.
 En tu lista, cada título muestra tus estrellas (★) y la nota de la
 comunidad.
 
-## 12. Acciones rápidas
+## 13. Acciones rápidas
 
-### 12.1 El botón grande de cada fila
+### 13.1 El botón grande de cada fila
 
 En la vista de **lista**, cada título tiene un botón grande con la acción
 más probable:
@@ -622,7 +729,7 @@ más probable:
 - **Libro**: «Empezar ✓», «Terminar ✓» o «Releer ↺».
 - **Videojuego**: «Empezar ✓», «Terminar ✓» o «Rejugar ↺».
 
-### 12.2 Deslizar en el móvil
+### 13.2 Deslizar en el móvil
 
 En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
@@ -634,7 +741,7 @@ cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
 series en pausa o abandonadas no funciona: la web te avisa de que la
 abras para retomarla.
 
-### 12.3 Deshacer un borrado
+### 13.3 Deshacer un borrado
 
 Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
 instante: aparece el aviso ««Título» se eliminará…» con un botón
@@ -642,7 +749,7 @@ instante: aparece el aviso ««Título» se eliminará…» con un botón
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
 
-## 13. Notificaciones
+## 14. Notificaciones
 
 El **icono de campana** de la cabecera te avisa (solo dentro de la web, una vez al
 día) de:
@@ -665,7 +772,7 @@ avisos aparecen también como **notificación del sistema** (en la pantalla
 del teléfono o en el escritorio) cuando la web está abierta pero no la
 estás mirando.
 
-## 14. Tu perfil
+## 15. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
 elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
@@ -676,7 +783,7 @@ dispositivo (móvil, tablet u ordenador).
 En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas, Libros o Videojuegos) que tenías abierta.
 Tu perfil tiene cuatro secciones:
 
-### 14.0 Compartir direcciones de tu perfil
+### 15.0 Compartir direcciones de tu perfil
 
 Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
 cada sección del perfil tiene su propia dirección web, que termina en
@@ -696,7 +803,7 @@ Entrar con una dirección de perfil sin sesión iniciada abre primero la
 pantalla de entrada; al iniciar sesión, la web te lleva a la sección
 que pedías.
 
-### 14.1 Estadísticas
+### 15.1 Estadísticas
 
 Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
 Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
@@ -718,7 +825,7 @@ Debajo hay cinco gráficas:
 - **Géneros**: los 6 géneros más jugados en el periodo.
 - **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
-### 14.2 Amigos
+### 15.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
@@ -740,7 +847,7 @@ vuelves a la lista de amigos y entras de nuevo en un amigo, se
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
 sus valoraciones episodio a episodio ni sus historiales completos.
 
-### 14.3 Actividad
+### 15.3 Actividad
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
@@ -749,11 +856,11 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 14.4 Ajustes
+### 15.4 Ajustes
 
 Se explica completo en la [sección 15](#15-ajustes).
 
-## 15. Ajustes
+## 16. Ajustes
 
 Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
@@ -821,7 +928,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     Calendar, Apple Calendar o similar y tener todos los estrenos en tu
     agenda.
 
-## 16. ¿Cuándo se actualizan los datos?
+## 17. ¿Cuándo se actualizan los datos?
 
 - **Una vez al día**, al abrir la web, se comprueba automáticamente si ha
   pasado algo: estrenos de tus películas y series pendientes, episodios
@@ -848,7 +955,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   problemas de conexión. Reintentando…» mientras lo hace; normalmente
   no tienes que hacer nada.
 
-## 17. Privacidad
+## 18. Privacidad
 
 - **Tu registro es tuyo**: solo tú puedes editar tus películas, series,
   libros, videojuegos y notas.
@@ -860,7 +967,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Los ajustes de notificaciones se guardan en tu dispositivo y también en
   tu cuenta.
 
-## 18. Instalar la web en tu teléfono
+## 19. Instalar la web en tu teléfono
 
 Mi Registro funciona como una web normal, pero también se puede **instalar**
 para que se comporte como una aplicación:
@@ -874,7 +981,7 @@ Una vez instalada, tendrás su icono en tu pantalla. La web funciona
 aunque estés sin conexión para **ver lo que ya está cargado**; las
 anotaciones y cambios necesitan conexión a internet.
 
-## 19. Problemas frecuentes
+## 20. Problemas frecuentes
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien
