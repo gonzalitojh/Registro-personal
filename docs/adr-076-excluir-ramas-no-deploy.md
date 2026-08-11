@@ -41,8 +41,6 @@ Estado del código verificado en el momento de la decisión:
   rama**: cualquier exclusión que viva solo en el trigger no cubriría ni el
   re-despliegue manual ni el borrado de una rama.
 
-Related issue: #198 — https://github.com/gonzalitojh/Registro-personal/issues/198
-
 ## Decisión
 
 **Excluir del despliegue las ramas cuyo nombre empieza por el prefijo
