@@ -1170,11 +1170,10 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--ink);
 }
 
-/* Etiquetas largas de pestaña (p. ej. «Lista de la compra» en
-   Recetas, issue #208): el texto envuelve dentro del ancho de la
-   pestaña en lugar de desbordarla; nunca se trunca (AGENTS.md:
-   sin texto fuera de pantalla). Inofensivo para las etiquetas
-   cortas de Ocio. */
+/* Etiquetas largas de pestaña (issue #208, p. ej. «Ingredientes» en
+   Recetas): el texto envuelve dentro del ancho de la pestaña en
+   lugar de desbordarla; nunca se trunca (AGENTS.md: sin texto fuera
+   de pantalla). Inofensivo para las etiquetas cortas de Ocio. */
 .tabs--bar .tab span {
   max-width: 100%;
   overflow-wrap: break-word;
@@ -3274,6 +3273,20 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-10);
 }
 
+/* Checkboxes de la lista de la compra (marcar comprado) y del form
+   de ítem extra con el acento de la pestaña (--stamp, rojo), mismo
+   patrón que .saga-row input[type="checkbox"] en Ocio: accent-color
+   nativo + tamaño fijo. --stamp (#a63b2e) da check blanco ≈6.6:1 en
+   Oscuro y en la familia clara; en negro puro pasa a --stamp-dark
+   (#cf6655, umbral gráfico 3:1 sobre negro, patrón de ocio.css). */
+.shopping-line__main input[type="checkbox"],
+.shopping-extra-form__check input[type="checkbox"] {
+  accent-color: var(--stamp);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .shopping-excluded {
   margin-top: 0.5rem;
   font-size: 0.8rem;
@@ -3699,3 +3712,11 @@ body.is-back-to-top-visible .back-to-top {
    override: la base ya funciona en negro puro. */
 [data-theme="black"] .shopping-extra-form__row input,
 [data-theme="black"] .shopping-extra-form__row select { background: var(--ink); }
+
+/* Checkboxes de la lista de la compra en negro puro: el acento rojo
+   pasa a la variante clara (--stamp-dark #cf6655) para mantener el
+   umbral gráfico 3:1 sobre negro (patrón de episode-checkbox). */
+[data-theme="black"] .shopping-line__main input[type="checkbox"],
+[data-theme="black"] .shopping-extra-form__check input[type="checkbox"] {
+  accent-color: var(--stamp-dark);
+}
