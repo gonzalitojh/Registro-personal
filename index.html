@@ -543,10 +543,9 @@
 
       <!-- Pestaña Ingredientes (issue #209): catálogo de ingredientes,
            extraído de la pestaña Recetas. Estética tipo Ocio (issue
-           #218): barra de herramientas con alta manual, filtro por
-           categorías (multiselección, todas por defecto) y ordenación;
-           el contenido lo renderiza js/recipes.js
-           (renderIngredientsCatalog). -->
+           #218): barra de herramientas con alta manual y filtro por
+           categorías (multiselección, todas por defecto); el contenido
+           lo renderiza js/recipes.js (renderIngredientsCatalog). -->
       <section id="panel-ingredients-tab" class="hidden" role="tabpanel" aria-labelledby="panel-ingredients-tab-heading">
         <h2 id="panel-ingredients-tab-heading" class="visually-hidden">Ingredientes</h2>
         <div class="ingredients-toolbar">
@@ -564,13 +563,6 @@
             </button>
             <div id="ingredient-filter-panel" class="ingredients-filter__panel hidden"></div>
           </div>
-          <label class="visually-hidden" for="ingredient-sort">Ordenar ingredientes</label>
-          <select id="ingredient-sort" class="sort-select">
-            <option value="az">Alfabético A-Z</option>
-            <option value="za">Alfabético Z-A</option>
-            <option value="recent">Recientes añadidos</option>
-            <option value="used">Más usadas</option>
-          </select>
         </div>
         <div id="ingredients-catalog" class="ingredients-catalog"></div>
       </section>

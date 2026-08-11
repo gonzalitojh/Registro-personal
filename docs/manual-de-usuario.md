@@ -543,7 +543,7 @@ botón **«+ Nuevo ingrediente»** (arriba a la izquierda): escribe el
 nombre y elige la categoría (si el ingrediente ya existe, no se añade
 otra vez).
 
-Sobre la lista tienes dos controles:
+Sobre la lista tienes un control:
 
 - **Filtro por categorías**: un desplegable con una casilla por
   categoría, todas marcadas por defecto. Desmarca las que no quieras
@@ -553,9 +553,6 @@ Sobre la lista tienes dos controles:
   para que veas qué está seleccionado y la lista se actualiza sola.
   Con la casilla **«Todas»** marcas o desmarcas todas de una vez. Los
   ingredientes **sin categoría** se muestran siempre.
-- **Ordenar**: un desplegable para ordenar la lista por **alfabeto
-  (A-Z o Z-A)**, **recientes añadidos** o **más usadas** (las que
-  aparecen en más recetas).
 
 Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
 una ventana con la información ampliada: la **categoría** (puedes

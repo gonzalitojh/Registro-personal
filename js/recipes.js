@@ -43,11 +43,11 @@ let customTags = [];
 // vive en su propia pestaña, así que se re-renderiza solo si está a la
 // vista cuando llegan datos nuevos.
 let currentTab = "recetas";
-// Estado del catálogo de ingredientes (issue #218): ordenación activa y
-// categorías seleccionadas en el filtro (todas por defecto). El flag
-// de "tocado" evita que las categorías propias recién cargadas rompan
-// la selección hecha por el usuario.
-let ingredientSort = "az";
+// Estado del catálogo de ingredientes (issue #218): categorías
+// seleccionadas en el filtro (todas por defecto). El flag de "tocado"
+// evita que las categorías propias recién cargadas rompan la selección
+// hecha por el usuario. (El selector de ordenación se eliminó en la
+// issue #224: el catálogo se muestra siempre en orden alfabético.)
 let ingredientFilterTouched = false;
 let activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
 let ingredientModalCleanup = null;
@@ -75,7 +75,6 @@ export function resetRecipesData() {
   ingredients = [];
   customTags = [];
   currentTab = "recetas";
-  ingredientSort = "az";
   ingredientFilterTouched = false;
   activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
   closeIngredientModal();
@@ -125,10 +124,6 @@ export function setupRecipes(opts) {
 
   // Barra de herramientas del catálogo de ingredientes (issue #218).
   document.getElementById("btn-new-ingredient").addEventListener("click", () => openIngredientModal(null));
-  document.getElementById("ingredient-sort").addEventListener("change", (e) => {
-    ingredientSort = e.target.value;
-    renderIngredientsCatalog();
-  });
   setupIngredientFilter();
 
   // Delegación de acciones de las cards de ingredientes: la tarjeta es
@@ -329,7 +324,7 @@ function tagLabel(scope, id) {
 // ---------- Catálogo de ingredientes (pestaña «Ingredientes», issue #209 / #218) ----------
 
 // Índice de recetas por ingrediente (recetas que usan cada uno). Se usa
-// en el render, en la ordenación «Más usadas» y en el modal de detalle.
+// en el modal de detalle («Usada en»).
 function getUsageIndex() {
   const byName = new Map();
   recipes.forEach((r) => {
@@ -346,8 +341,7 @@ function renderIngredientsCatalog() {
   const container = document.getElementById("ingredients-catalog");
   if (!container) return;
 
-  const byName = getUsageIndex();
-  const sorted = [...ingredients].sort((a, b) => compareIngredients(a, b, byName));
+  const sorted = [...ingredients].sort(compareIngredients);
   if (!sorted.length) {
     container.innerHTML = `<p class="empty-state">El catálogo de ingredientes se rellena solo: cada vez que guardas una
       receta con ingredientes, aparecen aquí para poder asignarles una categoría (y se usan para la lista de la compra).
@@ -408,22 +402,11 @@ function renderIngredientsCatalog() {
     </section>` : ""}`;
 }
 
-// Comparador de ingredientes según el orden activo (issue #218). Todos
-// los modos terminan con tie-break determinista (nombre, luego id).
-function compareIngredients(a, b, byName) {
-  let diff = 0;
-  if (ingredientSort === "za") {
-    diff = b.nombre.localeCompare(a.nombre, "es");
-  } else if (ingredientSort === "recent") {
-    diff = (b.addedAt?.toMillis?.() || 0) - (a.addedAt?.toMillis?.() || 0);
-  } else if (ingredientSort === "used") {
-    const usedA = byName.get(normalizeIngredientName(a.nombre))?.size || 0;
-    const usedB = byName.get(normalizeIngredientName(b.nombre))?.size || 0;
-    diff = usedB - usedA;
-  } else {
-    diff = a.nombre.localeCompare(b.nombre, "es");
-  }
-  return diff || a.nombre.localeCompare(b.nombre, "es") || a.id.localeCompare(b.id);
+// Comparador del catálogo: orden alfabético A-Z (es) con tie-break
+// determinista por id. (El selector de ordenación se eliminó en la
+// issue #224 y solo existe este orden.)
+function compareIngredients(a, b) {
+  return a.nombre.localeCompare(b.nombre, "es") || a.id.localeCompare(b.id);
 }
 
 // Tarjeta del catálogo: muestra únicamente el nombre (issue #218); la
