@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260911" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260911" />
+  <link rel="stylesheet" href="css/styles.css?v=20260912" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260912" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -580,14 +580,14 @@
       <section id="panel-menu-tab" class="hidden" role="tabpanel" aria-labelledby="panel-menu-tab-heading">
         <h2 id="panel-menu-tab-heading" class="visually-hidden">Menú semanal</h2>
         <div class="menu-toolbar">
-          <button type="button" id="menu-prev-week" class="btn btn--small" aria-label="Semana anterior">←</button>
+          <button type="button" id="menu-prev-week" class="btn btn--pill" aria-label="Semana anterior">←</button>
           <span id="menu-week-label" class="menu-week-label"></span>
-          <button type="button" id="menu-next-week" class="btn btn--small" aria-label="Semana siguiente">→</button>
+          <button type="button" id="menu-next-week" class="btn btn--pill" aria-label="Semana siguiente">→</button>
           <label class="menu-comensales" for="menu-comensales">
             Comensales
             <input type="number" id="menu-comensales" min="1" max="99" inputmode="numeric" />
           </label>
-          <button type="button" id="menu-delete-week" class="btn btn--small btn--danger"
+          <button type="button" id="menu-delete-week" class="btn btn--pill btn--danger"
                   aria-label="Borrar el menú de esta semana">Borrar semana</button>
         </div>
         <div id="menu-grid" class="menu-grid"></div>
@@ -595,7 +595,7 @@
           <h3>Recetas a la semana</h3>
           <p class="menu-weekly__hint">Se añaden una vez y NO se multiplican por los comensales
             (p. ej. pan para los desayunos, una masa de pizza para toda la semana).</p>
-          <button type="button" id="btn-add-weekly-recipe" class="btn btn--small">
+          <button type="button" id="btn-add-weekly-recipe" class="btn btn--primary btn--small">
             + Añadir receta a la semana
           </button>
           <div id="menu-weekly-list"></div>
@@ -677,7 +677,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260911"></script>
+  <script type="module" src="js/app.js?v=20260912"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
