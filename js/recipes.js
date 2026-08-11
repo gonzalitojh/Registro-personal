@@ -547,9 +547,9 @@ function openIngredientModal(id) {
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
   ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
-  if (ingredient) {
-    const nameField = content.querySelector("#ing-modal-nombre");
-    nameField?.focus({ preventScroll: false });
+  // En el alta manual, foco directo al nombre para escribir ya.
+  if (!ingredient) {
+    content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
   }
 }
 
