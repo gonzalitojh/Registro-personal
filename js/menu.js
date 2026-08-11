@@ -274,7 +274,7 @@ function renderWeeklyRecipes(menu) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.id = "btn-add-weekly-recipe";
-    btn.className = "btn btn--small";
+    btn.className = "btn btn--primary btn--small";
     btn.textContent = "+ Añadir receta a la semana";
     btn.addEventListener("click", addWeeklyRecipe);
     list.insertAdjacentElement("beforebegin", btn);
