@@ -668,7 +668,7 @@ function bindIngredientModalHandlers(content, ingredient) {
   // Cambio de categoría en el detalle: inmediato + toast (como antes).
   content.querySelector("#ing-modal-categoria")?.addEventListener("change", async (e) => {
     try {
-      await ctx.updateIngredientCategory(currentUser, ingredient.id, e.target.value);
+      await ctx.updateIngredient(currentUser, ingredient.id, { categoriaId: e.target.value });
       showToast("Categoría actualizada.");
     } catch (err) {
       console.error("No se pudo actualizar la categoría:", err);
