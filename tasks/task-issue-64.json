@@ -1,0 +1,37 @@
+{
+  "title": "Nueva sección de recetas",
+  "description": "Implementar una nueva sección de recetas con su propio endpoint /recetas, incluida en la barra lateral de navegación (igual que la sección de ocio). Primera versión de la sección con:\n\n- Registrar recetas con ingredientes, porciones resultantes, instrucciones paso a paso, fotografías, enlaces de referencia.\n- Menú semanal pudiendo elegir varias opciones en cada comida (para más de una persona que no comen lo mismo) y elegir el número de comensales. Al menú se deben poder añadir recetas para la semana (p. ej. pan para los desayunos que no se haría cada ración individual).\n- Lista de la compra en base a las recetas seleccionadas: cálculo automático de lo que se necesita según los ingredientes de cada receta y las porciones que salen. Poder marcar recetas para que no se incluyan en la lista. Poder añadir cosas extra que no estén en el menú, eliminar cosas si ya se tiene el ingrediente, e incluir objetos no comestibles (productos de limpieza y otros).\n- Categorización de ingredientes según etiquetas: Frutas, verduras y hortalizas / Carnes y aves / Pescado y mariscos / Lácteos y huevos / Legumbres, cereales y harinas / Despensa y básicos / Especias, Hierbas y Condimentos / Aperitivos y dulces / Artículos del hogar.\n- Categorización de recetas por alérgenos (Sin gluten, Vegetariano, Vegano, Sin lactosa) y por tipo de comida (Entrante, Plato de cuchara, Plato principal, Masas y panes, Postres y dulces).\n- Búsqueda de ingredientes (recetas que los usen), recetas y categorías de ingredientes o recetas.\n- Pestañas: Recetas, Menú y Lista de la compra.\n- Base de datos: almacenar por un lado las recetas, por otro los ingredientes y por otro los menús (colecciones separadas bajo users/{uid}).\n- Revisar y ampliar las listas de categorías con etiquetas adicionales convenientes; el usuario debe poder añadir etiquetas nuevas (predefinidas para todos + personalizadas por usuario).\n- Añadir desde enlace web de una receta extrayendo los datos de la página, marcable como 'necesita revisión', editable después (extracción opcional si es viable).\n- Documentar cualquier otra idea útil con detalle.",
+  "status": "documented",
+  "plan": "Plan detallado elaborado por el master (el task-architect devolvió salida vacía en dos intentos): ver /tmp/opencode/plan64.md y el resumen en la descripción de la PR. Resumen: colecciones Firestore recipes/ingredients/menus/tags bajo users/{uid}; módulos js/recipes-data.js, js/recipes.js, js/menu.js, js/shopping-list.js; sección /recetas con tabs en router+sidebar+settings; modal de receta con importación desde URL (needsReview); lista de compra con factor comensales/porciones; 4 temas + responsividad; firestore.rules ampliado; manual de usuario.",
+  "acceptance criteria": [
+    "Existe una nueva sección 'Recetas' accesible desde la barra lateral de navegación (al mismo nivel que 'Ocio'), con el endpoint /recetas en la web.",
+    "La sección tiene tres pestañas: Recetas, Menú y Lista de la compra, navegables y con estado coherente al cambiar entre ellas.",
+    "Se pueden crear/editar/eliminar recetas con: nombre, ingredientes (nombre + cantidad + unidad + categoría), porciones resultantes, instrucciones paso a paso, fotografías (URL) y enlaces de referencia.",
+    "Se pueden crear/editar/eliminar un menú semanal: días de la semana, varias comidas por día, varias opciones de receta por comida, número de comensales, y recetas añadidas 'a la semana' que no escalan por ración (p. ej. pan).",
+    "La lista de la compra se calcula automáticamente a partir del menú: agrega cantidades por ingrediente según comensales y porciones de cada receta, respetando las recetas marcadas para excluir de la lista.",
+    "La lista de la compra permite añadir y eliminar ítems manuales extra (comestibles y no comestibles, p. ej. productos de limpieza).",
+    "Los ingredientes tienen categoría (entre las etiquetas dadas) y las recetas tienen etiquetas de alérgenos (Sin gluten, Vegetariano, Vegano, Sin lactosa) y tipo de comida (Entrante, Plato de cuchara, Plato principal, Masas y panes, Postres y dulces).",
+    "Las listas de categorías se revisan y amplían con nuevas etiquetas convenientes, documentadas en el ADR.",
+    "El usuario puede crear etiquetas personalizadas (guardadas por usuario) además de las predefinidas globales.",
+    "La búsqueda encuentra recetas por nombre/ingredientes/categorías y permite ver qué recetas usan un ingrediente concreto.",
+    "En Firestore se guardan colecciones separadas: recipes, ingredients y menus (bajo users/{uid}), con reglas coherentes con el patrón existente.",
+    "Extración desde URL de receta (si es viable): añadir una receta pegando un enlace, con los campos rellenados y marcada como 'necesita revisión'.",
+    "Responsividad: sin scroll horizontal en 360/768/1280 px, textos largos ajustados (AGENTS.md regla 2).",
+    "Visualización correcta en los 4 modos de tema (Oscuro, Negro puro, Claro, Blanco puro) (AGENTS.md regla 4).",
+    "El manual de usuario (docs/manual-de-usuario.md) documenta la nueva sección."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect) con arquitectura de datos, UI y módulos.",
+    "Implementación de la sección completa (HTML, CSS, JS, router, sidebar, Firestore).",
+    "Validado por QA contra los criterios de aceptación y la definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (secrets, credenciales, PII).",
+    "ADR documentando la decisión de arquitectura (con 'Related issue: #64').",
+    "PR contra dev SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #64 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 64,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/64",
+    "title": "Nueva sección de recetas"
+  }
+}

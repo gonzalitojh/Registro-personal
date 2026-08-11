@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260903',
-  './css/ocio.css?v=20260903',
-  './js/app.js?v=20260903',
+  './css/styles.css?v=20260905',
+  './css/ocio.css?v=20260905',
+  './js/app.js?v=20260905',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -70,11 +70,16 @@ const STATIC_ASSETS = [
   './js/sidebar.js',
   './js/auto-hide-nav.js',
   './js/push.js',
+  // Sección de recetas (issue #64)
+  './js/recipes-data.js',
+  './js/recipes.js',
+  './js/menu.js',
+  './js/shopping-list.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260903',
-  './ocio/peliculas.html?v=20260903',
-  './ocio/libros.html?v=20260903',
-  './ocio/videojuegos.html?v=20260903',
+  './ocio/series.html?v=20260905',
+  './ocio/peliculas.html?v=20260905',
+  './ocio/libros.html?v=20260905',
+  './ocio/videojuegos.html?v=20260905',
 ];
 
 // -------------------------------------------------------------

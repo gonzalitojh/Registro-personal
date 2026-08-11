@@ -6,6 +6,10 @@
 //   users/{uid}/books/{id}
 //   users/{uid}/games/{id}
 //   users/{uid}/notifications/{id}
+//   users/{uid}/recipes/{id}         (issue #64)
+//   users/{uid}/ingredients/{id}     (catálogo de ingredientes, #64)
+//   users/{uid}/menus/{id}           (menús semanales, #64)
+//   users/{uid}/tags/{id}            (etiquetas personalizadas, #64)
 // Además, users/{uid} (el propio documento, no una subcolección)
 // guarda un pequeño perfil con el email y la fecha del último aviso
 // de estrenos comprobado.
@@ -147,4 +151,159 @@ export async function markNotificationRead(uid, notificationId) {
 
 export async function deleteNotification(uid, notificationId) {
   return deleteDoc(doc(db, "users", uid, "notifications", notificationId));
+}
+
+/* ---------- Recetas (issue #64) ---------- */
+
+function recipesRef(uid) {
+  return collection(db, "users", uid, "recipes");
+}
+
+export function subscribeToRecipes(uid, onChange, onError) {
+  const q = query(recipesRef(uid), orderBy("addedAt", "desc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function addRecipe(uid, recipe) {
+  return addDoc(recipesRef(uid), {
+    ...recipe,
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateRecipe(uid, recipeId, changes) {
+  return updateDoc(doc(db, "users", uid, "recipes", recipeId), {
+    ...changes,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteRecipe(uid, recipeId) {
+  return deleteDoc(doc(db, "users", uid, "recipes", recipeId));
+}
+
+/* ---------- Ingredientes (catálogo, issue #64) ---------- */
+
+function ingredientsRef(uid) {
+  return collection(db, "users", uid, "ingredients");
+}
+
+export function subscribeToIngredients(uid, onChange, onError) {
+  const q = query(ingredientsRef(uid), orderBy("nombre", "asc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function addIngredient(uid, ingredient) {
+  return addDoc(ingredientsRef(uid), {
+    nombre: ingredient.nombre,
+    categoriaId: ingredient.categoriaId || "",
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateIngredientCategory(uid, ingredientId, categoriaId) {
+  return updateDoc(doc(db, "users", uid, "ingredients", ingredientId), {
+    categoriaId,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteIngredient(uid, ingredientId) {
+  return deleteDoc(doc(db, "users", uid, "ingredients", ingredientId));
+}
+
+/* ---------- Etiquetas personalizadas (issue #64) ---------- */
+
+function tagsRef(uid) {
+  return collection(db, "users", uid, "tags");
+}
+
+export function subscribeToTags(uid, onChange, onError) {
+  const q = query(tagsRef(uid));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function addTag(uid, tag) {
+  return addDoc(tagsRef(uid), {
+    ...tag,
+    addedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteTag(uid, tagId) {
+  return deleteDoc(doc(db, "users", uid, "tags", tagId));
+}
+
+/* ---------- Menús semanales (issue #64) ---------- */
+
+function menusRef(uid) {
+  return collection(db, "users", uid, "menus");
+}
+
+export function subscribeToMenus(uid, onChange, onError) {
+  const q = query(menusRef(uid), orderBy("semanaInicio", "desc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+// Crea un documento de menú y devuelve la referencia (con el id nuevo).
+export async function addMenu(uid, menu) {
+  return addDoc(menusRef(uid), {
+    ...menu,
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Sobrescribe los campos del menú (los arrays/días se guardan enteros).
+export async function updateMenu(uid, menuId, menu) {
+  return updateDoc(doc(db, "users", uid, "menus", menuId), {
+    ...menu,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteMenu(uid, menuId) {
+  return deleteDoc(doc(db, "users", uid, "menus", menuId));
 }

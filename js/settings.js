@@ -18,8 +18,8 @@ const DEFAULT_SETTINGS = {
     friend_activity: true,
     device_push: false,
   },
-  visibleSections: { ocio: true },
-  visibleTabs: { series: true, peliculas: true, libros: true },
+  visibleSections: { ocio: true, recetas: true },
+  visibleTabs: { series: true, peliculas: true, libros: true, recetas: true, menu: true, compra: true },
 };
 
 // Registro central de secciones y pestañas de la web (issue #97).
@@ -36,6 +36,14 @@ export const SECTION_REGISTRY = {
       series: { label: "Series", panelId: "panel-tv" },
       peliculas: { label: "Películas", panelId: "panel-movies" },
       libros: { label: "Libros", panelId: "panel-books" },
+    },
+  },
+  recetas: {
+    label: "Recetas",
+    tabs: {
+      recetas: { label: "Recetas", panelId: "panel-recipes-tab" },
+      menu: { label: "Menú", panelId: "panel-menu-tab" },
+      compra: { label: "Lista de la compra", panelId: "panel-shopping-tab" },
     },
   },
 };
