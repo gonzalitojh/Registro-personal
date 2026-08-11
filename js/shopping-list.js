@@ -479,10 +479,20 @@ function excludedRecipesNote() {
 
 // ---------- Eliminar ítems (swipe hacia la izquierda, issue #225) ----------
 
+// Serializa las escrituras de la lista de la compra (issue #225):
+// dos eliminaciones rápidas consecutivas leían ambas el mismo
+// itemsEliminados previo y la segunda sobrescribía a la primera.
+let mutationQueue = Promise.resolve();
+function enqueueMutation(fn) {
+  mutationQueue = mutationQueue.then(fn, fn);
+  return mutationQueue;
+}
+
 // Aplica la eliminación a las semanas seleccionadas y ofrece
 // deshacer. Ítems de recetas → itemsEliminados (dejan de calcularse
 // en esas semanas); ítems extra → se quitan de itemsExtra de las
-// semanas donde estaban.
+// semanas donde estaban. La clave solo se marca en las semanas que
+// realmente contienen el ítem.
 async function deleteLine(key) {
   const lines = computeLines([...selectedWeeks]);
   const line = lines.get(key);
@@ -490,62 +500,71 @@ async function deleteLine(key) {
   const isExtra = line.origen === "extra";
   const snapshots = []; // para el deshacer
 
-  for (const weekStart of [...selectedWeeks]) {
-    const data = getMenuDataByWeek(weekStart);
-    if (!data.hasDoc) continue;
-    if (isExtra) {
-      const rest = (data.itemsExtra || []).filter(
-        (item) => `${normalizeIngredientName(item.nombre)}|${normalizeUnit(item.unidad)}` !== key
-      );
-      if (rest.length === (data.itemsExtra || []).length) continue;
-      snapshots.push({ weekStart, extraBefore: data.itemsExtra || [] });
-      await updateMenuWeek(weekStart, { itemsExtra: rest }, { create: false });
-    } else {
-      if ((data.itemsEliminados || []).includes(key)) continue;
-      snapshots.push({ weekStart, eliminadosBefore: data.itemsEliminados || [] });
-      await updateMenuWeek(weekStart, { itemsEliminados: [...(data.itemsEliminados || []), key] }, { create: false });
+  await enqueueMutation(async () => {
+    for (const weekStart of [...selectedWeeks]) {
+      const data = getMenuDataByWeek(weekStart);
+      if (!data.hasDoc) continue;
+      if (isExtra) {
+        const rest = (data.itemsExtra || []).filter(
+          (item) => `${normalizeIngredientName(item.nombre)}|${normalizeUnit(item.unidad)}` !== key
+        );
+        if (rest.length === (data.itemsExtra || []).length) continue;
+        snapshots.push({ weekStart, extraBefore: data.itemsExtra || [] });
+        await updateMenuWeek(weekStart, { itemsExtra: rest }, { create: false });
+      } else {
+        if ((data.itemsEliminados || []).includes(key)) continue;
+        if (!computeLines([weekStart]).has(key)) continue;
+        snapshots.push({ weekStart, eliminadosBefore: data.itemsEliminados || [] });
+        await updateMenuWeek(weekStart, { itemsEliminados: [...(data.itemsEliminados || []), key] }, { create: false });
+      }
     }
-  }
+  });
 
   if (!snapshots.length) return;
   renderShoppingList();
-  const { hide } = showUndoToast(line.nombre, async () => {
-    for (const s of snapshots) {
-      const fields = {};
-      if (s.extraBefore !== undefined) fields.itemsExtra = s.extraBefore;
-      if (s.eliminadosBefore !== undefined) fields.itemsEliminados = s.eliminadosBefore;
-      await updateMenuWeek(s.weekStart, fields, { create: false });
-    }
-    renderShoppingList();
-    hide();
+  const { hide } = showUndoToast(line.nombre, () => {
+    enqueueMutation(async () => {
+      for (const s of snapshots) {
+        const fields = {};
+        if (s.extraBefore !== undefined) fields.itemsExtra = s.extraBefore;
+        if (s.eliminadosBefore !== undefined) fields.itemsEliminados = s.eliminadosBefore;
+        await updateMenuWeek(s.weekStart, fields, { create: false });
+      }
+      renderShoppingList();
+      hide();
+    });
   });
 }
 
 // Vuelve a incluir un ítem quitado: elimina su clave de
 // itemsEliminados en las semanas seleccionadas que lo tengan.
 async function restoreKey(key) {
-  for (const weekStart of [...selectedWeeks]) {
-    const data = getMenuDataByWeek(weekStart);
-    if (!data.hasDoc) continue;
-    const rest = (data.itemsEliminados || []).filter((k) => k !== key);
-    if (rest.length !== (data.itemsEliminados || []).length) {
-      await updateMenuWeek(weekStart, { itemsEliminados: rest }, { create: false });
+  await enqueueMutation(async () => {
+    for (const weekStart of [...selectedWeeks]) {
+      const data = getMenuDataByWeek(weekStart);
+      if (!data.hasDoc) continue;
+      const rest = (data.itemsEliminados || []).filter((k) => k !== key);
+      if (rest.length !== (data.itemsEliminados || []).length) {
+        await updateMenuWeek(weekStart, { itemsEliminados: rest }, { create: false });
+      }
     }
-  }
+  });
   renderShoppingList();
   showToast("Ítem de vuelta en la lista.");
 }
 
 // Vuelve a incluir una receta excluida en las semanas seleccionadas.
 async function includeRecipe(recipeId) {
-  for (const weekStart of [...selectedWeeks]) {
-    const data = getMenuDataByWeek(weekStart);
-    if (!data.hasDoc) continue;
-    const rest = (data.recetasExcluidasCompra || []).filter((id) => id !== recipeId);
-    if (rest.length !== (data.recetasExcluidasCompra || []).length) {
-      await updateMenuWeek(weekStart, { recetasExcluidasCompra: rest }, { create: false });
+  await enqueueMutation(async () => {
+    for (const weekStart of [...selectedWeeks]) {
+      const data = getMenuDataByWeek(weekStart);
+      if (!data.hasDoc) continue;
+      const rest = (data.recetasExcluidasCompra || []).filter((id) => id !== recipeId);
+      if (rest.length !== (data.recetasExcluidasCompra || []).length) {
+        await updateMenuWeek(weekStart, { recetasExcluidasCompra: rest }, { create: false });
+      }
     }
-  }
+  });
   renderShoppingList();
   showToast("Receta de vuelta en la lista.");
 }
@@ -614,12 +633,23 @@ function attachLineSwipe(wrap, content) {
 
   wrap.addEventListener(
     "touchend",
-    () => {
+    (e) => {
       const offset = Math.max(SWIPE_OPEN, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
       snap(offset < SWIPE_OPEN / 2);
+      // Click fantasma (issue #225): tras un gesto horizontal el
+      // navegador sintetiza un click al soltar el dedo, que caería
+      // sobre el checkbox/stepper de la fila desplazada y los
+      // activaría sin querer. Suprimirlo aquí evita esos eventos
+      // sintéticos; los toques deliberados (p. ej. pulsar
+      // «Eliminar») son gestos nuevos con deltaX ≈ 0 y no se ven
+      // afectados. El listener es no-pasivo solo para poder hacer
+      // preventDefault en el touchend (no bloquea el scroll).
+      if (lock === "horizontal" && Math.abs(deltaX) > lockThreshold) {
+        e.preventDefault();
+      }
       resetGesture();
     },
-    { passive: true }
+    { passive: false }
   );
 
   wrap.addEventListener(
@@ -681,11 +711,15 @@ async function addExtraItem() {
   };
   try {
     // El ítem extra se añade a todas las semanas seleccionadas: la
-    // lista de la compra es multi-semana (issue #225).
-    for (const weekStart of [...selectedWeeks]) {
-      const data = getMenuDataByWeek(weekStart);
-      await updateMenuWeek(weekStart, { itemsExtra: [...(data.itemsExtra || []), item] }, { create: true });
-    }
+    // lista de la compra es multi-semana (issue #225). La escritura
+    // va por la cola de mutaciones (issue #225) para no pisar
+    // eliminaciones o añadidos casi simultáneos.
+    await enqueueMutation(async () => {
+      for (const weekStart of [...selectedWeeks]) {
+        const data = getMenuDataByWeek(weekStart);
+        await updateMenuWeek(weekStart, { itemsExtra: [...(data.itemsExtra || []), item] }, { create: true });
+      }
+    });
     showToast("Ítem añadido a la lista.");
     showingExtraForm = false;
     form.classList.add("hidden");

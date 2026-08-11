@@ -3284,6 +3284,17 @@ body.is-back-to-top-visible .back-to-top {
   pointer-events: none;
 }
 
+/* Foco de teclado visible en los chips (issue #225): el input está
+   oculto, así que el outline va al label cuando recibe el foco. */
+.shopping-week-chip:focus-within {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+[data-theme="black"] .shopping-week-chip:focus-within {
+  outline-color: var(--teal-reel-dark);
+}
+
 /* Fila de la lista: envoltorio con el fondo rojo del swipe debajo.
    El contenido (superficie normal) se desplaza a la izquierda al
    deslizar (issue #225) o en hover/foco en escritorio. */
@@ -3406,11 +3417,13 @@ body.is-back-to-top-visible .back-to-top {
 
 .shopping-line__stepper {
   flex-shrink: 0;
-  width: 1.4rem;
-  height: 1.4rem;
+  /* ≥ 24 px de área táctil (WCAG 2.2 AA, 2.5.8): 1.5rem */
+  width: 1.5rem;
+  height: 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   background: none;
   border: 1px solid var(--paper-alpha-30);
   border-radius: var(--radius);
@@ -3441,14 +3454,19 @@ body.is-back-to-top-visible .back-to-top {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--stamp);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0 0.1rem;
+  /* Rojo claro para texto sobre fondo oscuro (issue #225): el --stamp
+     (#a63b2e ≈ 2,6:1) no llega a AA 4,5:1; #cf6655 ≈ 5,7:1 sobre
+     --ink-raised. En negro puro coincide con --stamp-dark; en la
+     familia clara se oscurece al --stamp (6,4:1 sobre blanco). */
+  color: #cf6655;
 }
 
-[data-theme="black"] .shopping-line__pkgreset {
-  color: var(--stamp-dark);
+[data-theme="light"] .shopping-line__pkgreset,
+[data-theme="white"] .shopping-line__pkgreset {
+  color: var(--stamp);
 }
 
 .shopping-line__detail {
@@ -3473,14 +3491,16 @@ body.is-back-to-top-visible .back-to-top {
   background: none;
   border: none;
   padding: 0;
-  color: var(--stamp);
   text-decoration: underline;
   cursor: pointer;
   font-size: 0.8rem;
+  /* Mismo rojo claro que .shopping-line__pkgreset (AA sobre oscuro). */
+  color: #cf6655;
 }
 
-[data-theme="black"] .shopping-deleted__btn {
-  color: var(--stamp-dark);
+[data-theme="light"] .shopping-deleted__btn,
+[data-theme="white"] .shopping-deleted__btn {
+  color: var(--stamp);
 }
 
 .shopping-excluded {
