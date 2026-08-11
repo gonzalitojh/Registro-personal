@@ -1,4 +1,4 @@
-# ADR-084: Estética tipo Ocio de la pestaña de Lista de la compra — botones píldora y controles coherentes (issue #221)
+# ADR-084: Estética tipo Ocio de la pestaña de Compra (antes «Lista de la compra») — botones píldora, controles y checkboxes coherentes (issue #221)
 
 ## Estado
 Aceptado
@@ -92,15 +92,17 @@ Decisiones clave del rediseño:
 4. **PWA**: bump de versión `20260911 → 20260913` en `index.html`
    (`?v=`), `js/config.js` (`APP_VERSION`) y `service-worker.js`
    (`STATIC_ASSETS`). Se evita `20260912`, ya usado por la PR #222.
-5. **Manual de usuario**: sin cambios — precedente de la issue #220
-   (ADR-083): la sección 8.4 describe solo funcionalidad (cálculo,
-   marcar comprado, ítems extra, excluir recetas), no estética; el
-   cambio es puramente visual de botones y controles y no altera nada a
-   nivel de comportamiento.
+5. **Manual de usuario**: sin cambios en la primera iteración —
+   precedente de la issue #220 (ADR-083): la sección 8.4 describe solo
+   funcionalidad (cálculo, marcar comprado, ítems extra, excluir
+   recetas), no estética; el cambio es puramente visual de botones y
+   controles y no altera nada a nivel de comportamiento. En la
+   iteración posterior sí se actualiza (renombrado de la pestaña, ver
+   abajo).
 6. **PR contra `content/issue-64-seccion-recetas`**: excepción puntual
    y explícita a la regla de AGENTS.md §1 (PRs siempre contra `dev`),
    solicitada por el usuario en la issue #221; la rama de trabajo
-   `wip/issue-221` se creó a partir de esa base.
+   `style/issue-221-pestana-lista-compra` se creó a partir de esa base.
 
 ## Consecuencias
 
@@ -129,5 +131,72 @@ Decisiones clave del rediseño:
   preexistente en la familia oscura (no introducido en este cambio).
   Seguridad PASS: cambios 100 % presentacionales, `escapeHtml` intacto
   y service worker solo con bump de versión.
+
+## Iteración (2026-08-11): checkboxes y renombrado de la pestaña
+
+Comentario nuevo del usuario en la issue #221: (1) las checkboxes
+también deben tener colores y estilos como la web; (2) el nombre de la
+pestaña, «Lista de la compra», es demasiado largo y se ve feo en la
+barra de pestañas — pedía algo más simple que ocupe una sola fila
+(«Compra», «Carrito», «Cesta»…).
+
+### Decisiones de la iteración
+
+1. **Renombrado a «Compra»**: se elige el término más corto y neutro
+   (6 letras frente a «Ingredientes», 12, que ya cabe en una fila en
+   móvil). «Carrito» suena a comercio electrónico y «Cesta» es más
+   regional; «Compra» preserva la continuidad semántica con el
+   concepto existente «la lista de la compra» (sección 8.4 del manual
+   y `#shopping-week-label` siguen usando ese término). Se actualiza
+   el label de la pestaña en `index.html` (botón y `h2`
+   `visually-hidden`, manteniendo el `id` y el `aria-labelledby`) y el
+   label de Ajustes → Secciones y pestañas en `js/settings.js`
+   (`SECTION_REGISTRY.recetas.compra.label`); el token interno
+   `data-recipes-tab="compra"` y el `panelId` no cambian.
+2. **Checkboxes con `accent-color` nativo**: mismo patrón que
+   `.saga-row input[type="checkbox"]` de Ocio (ocio.css): `accent-color`
+   + 18×18 px + `flex-shrink: 0`, con el acento de la pestaña
+   `--stamp` (rojo). Se descarta el checkbox visual custom de
+   episodios (`.episode-checkbox-wrap`/`-visual`, círculo + check)
+   porque exigiría tocar el render de `js/shopping-list.js` para meter
+   el span visual y rehacer la accesibilidad; el `accent-color` nativo
+   mantiene el `aria-label` existente y el foco del navegador. Aplica
+   a los dos checkboxes de la pestaña: el de «marcar comprado» de cada
+   línea (`.shopping-line__main input[type="checkbox"]`) y el de «No es
+   comestible» del form de ítem extra (`.shopping-extra-form__check
+   input[type="checkbox"]`).
+3. **Cuatro temas**: el base con `--stamp` (#a63b2e) da check blanco
+   ≈6.4:1 en Oscuro y en la familia clara (sin override necesario);
+   en negro puro `--stamp` sobre negro queda clavado en ≈3.1:1 (límite
+   gráfico), así que el override agrupado `[data-theme="black"]` pasa
+   el acento a `--stamp-dark` (#cf6655, ≈5.4:1 sobre negro), siguiendo
+   el patrón del override de negro puro del `episode-checkbox` de Ocio.
+4. **Manual de usuario**: se actualizan las 5 menciones de la pestaña
+   como nombre («Compra» en las secciones 3, 8, 8.4 y 16); el concepto
+   «la lista de la compra» en minúscula, el título de la sección 8.4 y
+   el `#shopping-week-label` se mantienen con el término completo.
+5. **PWA**: bump `20260913 → 20260914` (nuevo valor, distinto del
+   `20260912` de la PR #222 y del `20260913` anterior).
+
+### Consecuencias de la iteración
+
+- **Positivas**: la pestaña «Compra» ocupa una sola fila en móvil
+  (~360 px) sin wrap; los checkboxes quedan a la altura del resto de la
+  web (mismo patrón que Ocio) con el acento rojo de la pestaña y
+  contraste AA/gráfico en los cuatro temas; el manual queda coherente
+  con la interfaz (regla AGENTS.md §3).
+- **Neutras**: sin cambios funcionales — `js/shopping-list.js` no se
+  toca (la delegación de `input[type=checkbox][data-bought]` y el
+  toggle de `is-bought` siguen intactos); el comentario CSS de
+  «etiquetas largas de pestaña» se actualiza porque su ejemplo
+  («Lista de la compra») ya no existe como etiqueta.
+- **Negativas**: ninguna conocida. QA PASS (los 7 criterios de la
+  iteración: checkboxes con acento, «Compra» en una fila sin
+  referencias visibles al nombre viejo, cuatro temas con contraste,
+  sin cambios funcionales, responsividad 360/768/1280 px, manual
+  coherente y bump distinto de 20260912/20260913); hallazgos solo
+  informativos (redondeo del contraste en un comentario CSS, ya
+  corregido). Seguridad PASS: 0 HIGH; la iteración es 100 %
+  presentacional/textual (CSS, labels y bump de versión).
 
 Related issue: #221
