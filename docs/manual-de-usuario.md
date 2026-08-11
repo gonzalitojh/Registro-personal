@@ -180,7 +180,9 @@ En **Recetas** la cabecera y su barra de pestañas (Recetas, Menú,
 Lista de la compra) **siempre están visibles**: el auto-ocultado al
 desplazarse solo ocurre en las listas de **Ocio**. En **tu perfil** no
 hay cabecera global: tiene su propia cabecera con la flecha de volver
-y las pestañas en la misma fila.
+y las pestañas en la misma fila. La flecha de volver del perfil te
+lleva de vuelta a la sección desde la que entraste, **Ocio** o
+**Recetas**, con la pestaña que tenías activa.
 
 Si sigues bajando y los filtros de la lista (estado, orden y vista)
 quedan también fuera de la pantalla, verás un pequeño botón redondeado
@@ -818,8 +820,9 @@ El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
 En tu perfil **no aparece la cabecera global** (barra lateral,
 búsqueda y botón de perfil): arriba tienes la **flecha de volver** y
-las pestañas de tu perfil en la misma fila. La flecha te devuelve a
-la última pestaña de Ocio en la que estabas.
+las pestañas de tu perfil en la misma fila. La flecha te devuelve a la
+sección **Ocio** o **Recetas** desde la que entraste al perfil, con la
+pestaña que tenías activa.
 Tu perfil tiene cuatro secciones:
 
 ### 15.0 Compartir direcciones de tu perfil
