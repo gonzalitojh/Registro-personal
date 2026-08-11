@@ -35,6 +35,11 @@ export const RENDERED_FIELDS = [
   "nextEpisodeAirDate",
   "nextEpisodeToAir",
   "seasonAirDates",
+  // releasedNoticedAt y addedAt no se pintan, pero SÍ afectan al orden
+  // visible (sorting.js getSortDate/getActivityOrAddedTime: el orden
+  // «añadido» por defecto y «fecha»), así que forman parte de la firma.
+  "releasedNoticedAt",
+  "addedAt",
   "watchLog",
   "readLog",
   "playLog",
