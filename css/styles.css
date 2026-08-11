@@ -2756,13 +2756,14 @@ body.is-back-to-top-visible .back-to-top {
 
 /* En móvil el panel se ancla al viewport (patrón .profile-dropdown):
    si el toolbar envuelve en varias filas, el ancla al botón podría
-   dejar el panel fuera del ancho visible. */
+   dejar el panel fuera del ancho visible. Solo cuenta la cabecera
+   (--tabs-bar-h se omite: en móvil la barra de pestañas está abajo). */
 @media (max-width: 767px) {
   .ingredients-filter__panel {
     position: fixed;
     left: 1rem;
     right: 1rem;
-    top: calc(var(--header-h) + var(--tabs-bar-h) + 0.75rem);
+    top: calc(var(--header-h) + 0.75rem);
     width: auto;
     max-width: none;
   }

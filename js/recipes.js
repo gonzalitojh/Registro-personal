@@ -47,7 +47,6 @@ let currentTab = "recetas";
 // categorías seleccionadas en el filtro (todas por defecto).
 let ingredientSort = "az";
 let activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
-let ingredientModalId = null;
 let ingredientModalCleanup = null;
 let modalCleanup = null;
 let editingRecipeId = null;
@@ -534,7 +533,6 @@ function setupIngredientFilter() {
 function openIngredientModal(id) {
   const modal = document.getElementById("ingredient-modal");
   const content = document.getElementById("ingredient-modal-content");
-  ingredientModalId = id || null;
   const ingredient = id ? ingredients.find((i) => i.id === id) : null;
 
   modal.querySelector(".modal__card").setAttribute(
@@ -562,7 +560,6 @@ function closeIngredientModal() {
     ingredientModalCleanup = null;
   }
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
-  ingredientModalId = null;
 }
 
 function ingredientDetailHtml(ing) {
