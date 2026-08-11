@@ -1,9 +1,10 @@
 // =============================================================
 // Exportación de calendario de estrenos a formato .ics (iCalendar).
 // Genera un archivo compatible con RFC 5545 que incluye los
-// próximos episodios de series en emisión y/o las fechas de
-// estreno de películas pendientes, para importar en Google
-// Calendar, Apple Calendar y otros.
+// próximos episodios de series en emisión, las fechas de estreno
+// de películas pendientes y los lanzamientos pendientes de
+// videojuegos, para importar en Google Calendar, Apple Calendar
+// y otros.
 // =============================================================
 
 import { todayISO } from "./dates.js";
@@ -106,8 +107,9 @@ function generateIcsString(events) {
 // ---------- Recopilación de datos ----------
 
 /**
-  * Recopila los próximos eventos (episodios de series y estrenos de
-  * películas) a partir de los datos del usuario.
+  * Recopila los próximos eventos (episodios de series, estrenos de
+  * películas y lanzamientos de videojuegos) a partir de los datos
+  * del usuario.
   *
   * Los grupos se leen de Firestore bajo demanda (getItemsOnce) y no
   * del estado en memoria (issue #178): con el lazy loading por
@@ -117,9 +119,10 @@ function generateIcsString(events) {
   * @param {Object} ctx - Contexto de la aplicación
   * @param {boolean} includeMovies - Incluir estrenos de películas
   * @param {boolean} includeTv - Incluir próximos episodios de series
+  * @param {boolean} includeGames - Incluir lanzamientos de videojuegos
   * @returns {Promise<Array<{uid:string, dtstart:string, summary:string, description?:string}>>}
   */
-async function collectUpcomingEvents(ctx, includeMovies, includeTv) {
+async function collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames) {
   const events = [];
   const today = todayISO();
   const user = ctx.getCurrentUser();
@@ -166,6 +169,33 @@ async function collectUpcomingEvents(ctx, includeMovies, includeTv) {
     }
   }
 
+  if (includeGames) {
+    const games = (user && (await ctx.getItemsOnce(user.uid, "game"))) || [];
+    for (const item of games) {
+      // Pendiente de lanzamiento: fecha futura y sin historial de juego.
+      // Criterio directo (issue #176): no se confía solo en awaitingRelease,
+      // quick-actions.js/modal-handlers.js no lo limpian al marcar un juego
+      // como jugado (ver daily-check.js), así que el playLog es la fuente
+      // de verdad para excluir juegos ya jugados. Los juegos manuales no
+      // tienen releaseDate y quedan fuera por la primera guarda.
+      if (!item.releaseDate) continue;
+      if (item.releaseDate < today) continue;
+      if (item.playLog && item.playLog.length) continue;
+
+      const dtstart = formatIcsDate(item.releaseDate);
+      if (!dtstart) continue; // defensa: fecha no parseable
+
+      events.push({
+        uid: generateUid("game", item.id),
+        dtstart,
+        summary: `Lanzamiento: ${item.title}`,
+        description: item.overview
+          ? item.overview.slice(0, 250)
+          : `Lanzamiento del videojuego ${item.title} el ${item.releaseDate}.`,
+      });
+    }
+  }
+
   // Ordenar por fecha
   events.sort((a, b) => a.dtstart.localeCompare(b.dtstart));
 
@@ -178,7 +208,7 @@ async function collectUpcomingEvents(ctx, includeMovies, includeTv) {
   * Genera y descarga el archivo .ics.
   *
   * @param {Object} ctx - Contexto de la aplicación
-  * @param {{includeMovies?:boolean, includeTv?:boolean}} options
+  * @param {{includeMovies?:boolean, includeTv?:boolean, includeGames?:boolean}} options
   */
 export async function downloadIcs(ctx, options = {}) {
   const user = ctx.getCurrentUser();
@@ -189,11 +219,12 @@ export async function downloadIcs(ctx, options = {}) {
 
   const includeMovies = options.includeMovies !== false;
   const includeTv = options.includeTv !== false;
+  const includeGames = options.includeGames !== false;
 
   ui.showToast("Preparando calendario…");
 
   try {
-    const events = await collectUpcomingEvents(ctx, includeMovies, includeTv);
+const events = await collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames);
 
     if (events.length === 0) {
       ui.showToast("No hay estrenos próximos que exportar.");
@@ -233,6 +264,6 @@ export function setupExportIcs(ctx) {
   if (!btn) return;
 
   btn.addEventListener("click", () => {
-    downloadIcs(ctx, { includeMovies: true, includeTv: true });
+    downloadIcs(ctx, { includeMovies: true, includeTv: true, includeGames: true });
   });
 }

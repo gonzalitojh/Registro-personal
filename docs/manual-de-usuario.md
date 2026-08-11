@@ -405,7 +405,10 @@ En la ficha del videojuego:
 En la ficha ves todas tus sesiones de juego: fecha de inicio → fecha de
 fin (o «jugando» si está en curso). Puedes **editar las fechas** y
 **«Quitar»** una sesión del historial. Las rejugadas aparecen como
-sesiones adicionales.
+sesiones adicionales. Cada sesión tiene además un campo opcional de
+**horas** (cuántas horas dedicaste en esa partida, en pasos de media
+hora); ese campo se usa para la estadística de **horas jugadas** de tu
+perfil (sección 14.1).
 
 ## 8. Cómo buscar
 
@@ -645,6 +648,7 @@ día) de:
 
 - **Estrenos de películas**: ««Título» ya se ha estrenado (fecha).»
 - **Estrenos de series**: ««Título» ya se ha estrenado.»
+- **Estrenos de videojuegos**: ««Título» ya está a la venta (fecha).»
 - **Nuevos episodios**: «Nuevo episodio disponible de «Título»: T2E5.»
 
 La campana muestra un **número con las no leídas**. Al abrirla, las
@@ -693,30 +697,40 @@ que pedías.
 
 ### 14.1 Estadísticas
 
-Cuatro cifras: **Películas vistas, Episodios vistos, Series completadas y
-Libros leídos**. El selector de periodo te permite verlas de **Siempre**,
+Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
+Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
+Horas jugadas**. El selector de periodo te permite verlas de **Siempre**,
 **Este año**, **Este mes** o un **rango personalizado** (elige las fechas
 «Desde» y «Hasta»).
 
-Debajo hay dos gráficas:
+Un videojuego cuenta como **jugado** si tiene una sesión dentro del
+periodo (cada sesión cuenta una vez, por su fecha de fin o, si aún está
+en curso, por su fecha de inicio); las **horas jugadas** son la suma de
+las horas anotadas en las sesiones del periodo, y las **sesiones de
+juego** cuentan esas mismas sesiones del periodo.
 
-- **Actividad por mes**: barras con lo que viste/leíste cada mes.
+Debajo hay cinco gráficas:
+
+- **Actividad por mes**: barras con lo que viste/leíste/jugaste cada mes.
 - **Estados actuales**: qué parte de tu registro está pendiente, en curso,
-  completado, en pausa o abandonado.
+  completado, en pausa o abandonado (incluye también los videojuegos).
+- **Géneros**: los 6 géneros más jugados en el periodo.
+- **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
 ### 14.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
 lista no sea interminable, el registro se organiza **por pestañas**:
-**Películas, Series y Libros** (una a la vez, igual que en tu propio
-perfil; la pestaña de **Videojuegos** aún no está disponible aquí).
+**Películas, Series, Libros y Videojuegos** (una a la vez, igual que en
+tu propio perfil).
 
 Bajo cada pestaña hay **filtros por estado** para ver solo lo que te
 interesa: en **películas** puedes elegir **Todos, Pendiente o Vista**;
 en **series**, **Todos, Pendiente, Viendo, Vista, Standby o Abandonada**;
-en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**.
-Así no tienes que hacer scroll largo.
+en **libros**, **Todos, Pendiente, Leyendo, Leído, Standby o Abandonado**;
+en **videojuegos**, **Todos, Pendiente, Jugando, Jugado, Standby o
+Abandonado**. Así no tienes que hacer scroll largo.
 
 Al cambiar de pestaña se **mantiene el filtro** que habías elegido. Si
 vuelves a la lista de amigos y entras de nuevo en un amigo, se
@@ -729,7 +743,8 @@ sus valoraciones episodio a episodio ni sus historiales completos.
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
-«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…».
+«Completó la serie…», «Está leyendo… (Pág. X de Y)», «Terminó de leer…»,
+«Está jugando…», «Terminó de jugar…».
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
@@ -775,6 +790,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   - Estrenos de películas
   - Nuevos episodios de series
   - Estrenos de series
+  - Estrenos de videojuegos
   - Actividad de amigos
   - **Notificaciones en el dispositivo**: si la activas, los avisos
     anteriores también llegan como **notificaciones del sistema** (en la
@@ -799,9 +815,10 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     exportaras antes. **Añade** lo que falte a lo que ya tienes: no
     reemplaza ni borra nada.
   - **Exportar calendario (.ics)**: descarga un archivo con los **próximos
-    episodios de tus series y los estrenos pendientes de películas**, para
-    importarlo en Google Calendar, Apple Calendar o similar y tener todos
-    los estrenos en tu agenda.
+    episodios de tus series, los estrenos pendientes de películas y los
+    lanzamientos pendientes de tus videojuegos**, para importarlo en Google
+    Calendar, Apple Calendar o similar y tener todos los estrenos en tu
+    agenda.
 
 ## 16. ¿Cuándo se actualizan los datos?
 
@@ -812,12 +829,14 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Esa misma comprobación diaria **rellena la información que falte** en tus
   fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
   con datos incompletos, al día siguiente estará completo (si el catálogo
-  ya lo tiene). Los videojuegos no se actualizan solos: su información
+  ya lo tiene). Con los videojuegos no pasa eso: su información
   (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
-  momento de añadirlos y no hay comprobación diaria de novedades para
-  ellos. Un caso aparte: al abrir la ficha de un videojuego, si IGDB
-  tiene tráiler, se guarda en ese momento (los juegos siguen sin
-  actualizarse solos).
+  momento de añadirlos y no se vuelve a pedir. La comprobación diaria
+  sí se ocupa de sus **lanzamientos**: si uno de tus videojuegos con
+  fecha de lanzamiento conocida sale a la venta, te llega el aviso
+  correspondiente (los juegos sin fecha no tienen nada que avisar). Un
+  caso aparte: al abrir la ficha de un videojuego, si IGDB tiene
+  tráiler, se guarda en ese momento.
 - El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
 - Los datos de episodios y plataformas de streaming se recuerdan durante

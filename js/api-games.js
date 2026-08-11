@@ -118,6 +118,18 @@ function yearFromTimestamp(ts) {
   return Number.isNaN(d.getTime()) ? "" : String(d.getFullYear());
 }
 
+// Fecha de lanzamiento en formato canónico "YYYY-MM-DD" con partes de
+// fecha LOCALES: toISOString() usaría UTC y desviaría un día cerca de
+// medianoche (mismo criterio local que yearFromTimestamp).
+function dateFromTimestamp(ts) {
+  if (!ts) return null;
+  const d = new Date(ts * 1000);
+  if (Number.isNaN(d.getTime())) return null;
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 function coverUrl(imageId) {
   return imageId
     ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg`
@@ -135,6 +147,7 @@ function mapGameResult(r) {
     type: "game",
     title: r.name,
     year: yearFromTimestamp(r.first_release_date),
+    releaseDate: dateFromTimestamp(r.first_release_date),
     coverUrl: coverUrl(r.cover && r.cover.image_id),
     overview: r.summary || "",
     genres: (r.genres || []).map((g) => g.name),
@@ -209,6 +222,7 @@ export async function getGameDetails(id) {
     communityRating: toCommunityRating(r),
     coverUrl: coverUrl(r.cover && r.cover.image_id),
     year: yearFromTimestamp(r.first_release_date),
+    releaseDate: dateFromTimestamp(r.first_release_date),
     trailerUrl: await getGameTrailerUrl(id),
   };
 }

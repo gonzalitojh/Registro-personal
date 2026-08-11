@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
     movie_release: true,
     new_episode: true,
     series_premiere: true,
+    game_release: true,
     friend_activity: true,
     device_push: false,
   },
@@ -175,6 +176,7 @@ export function renderSettings(ctx) {
     "notif-movie-release": "movie_release",
     "notif-new-episode": "new_episode",
     "notif-series-premiere": "series_premiere",
+    "notif-game-release": "game_release",
     "notif-friend-activity": "friend_activity",
     "notif-device": "device_push",
   };
@@ -321,6 +323,7 @@ function wireNotificationToggles(ctx) {
     "notif-movie-release": "movie_release",
     "notif-new-episode": "new_episode",
     "notif-series-premiere": "series_premiere",
+    "notif-game-release": "game_release",
     "notif-friend-activity": "friend_activity",
   };
 

@@ -8,6 +8,8 @@
 // no vacío (overview/arrays no vacíos, communityRating != null, ...);
 // si la API devuelve vacío/null se conserva lo guardado. Excepción:
 // nextEpisodeToAir se sobrescribe siempre (comportamiento histórico).
+// En videojuegos no hay refresco de metadatos (la pasada no consulta
+// IGDB): solo se avisa del lanzamiento con los datos guardados.
 // También soporta sincronización manual forzada (syncNow) con
 // cooldown de 30 minutos persistido en profile.lastManualSyncAt.
 // =============================================================
@@ -429,6 +431,43 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
       }
     });
     if (aborted) return { aborted: true };
+
+    // Videojuegos: aviso de lanzamiento con los datos guardados (sin
+    // red, IGDB no se consulta en la pasada). Se revisan todos los no
+    // manuales. Fail-open: un error de escritura no aborta la pasada ni
+    // cuenta como fallo de API (mismo patrón que el bloque de series
+    // manuales).
+    const games = getItemsByGroup("games").filter((g) => !g.manual);
+    for (const g of games) {
+      if (aborted) break;
+      try {
+        const updates = {};
+
+        // Backfill del flag para juegos guardados antes de la issue
+        // #175 (sin awaitingRelease). La guarda releaseDate truthy es
+        // OBLIGATORIA: sin fecha no hay lanzamiento que esperar.
+        if (!g.awaitingRelease && g.releaseDate && isUnreleasedDate(g.releaseDate) && !(g.playLog && g.playLog.length)) {
+          updates.awaitingRelease = true;
+        }
+
+        // Aviso de lanzamiento. La guarda del playLog es necesaria:
+        // quick-actions.js y modal-handlers.js no limpian awaitingRelease
+        // al marcar como jugado.
+        if (prefs.game_release !== false && g.awaitingRelease && g.releaseDate && g.releaseDate <= today && !(g.playLog && g.playLog.length)) {
+          await addNotification(user.uid, {
+            message: `«${g.title}» ya está a la venta (${formatDateEs(g.releaseDate)}).`,
+          });
+          updates.awaitingRelease = false;
+          updates.releasedNoticedAt = today;
+        }
+
+        if (Object.keys(updates).length) {
+          await updateItem(user.uid, "game", g.id, updates);
+        }
+      } catch (err) {
+        console.error("No se pudo comprobar el lanzamiento de", g.title, err);
+      }
+    }
 
     try {
       await upsertUserProfile(user.uid, { lastReleaseCheckAt: today });

@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260903" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260903" />
+  <link rel="stylesheet" href="css/styles.css?v=20260904" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260904" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -279,6 +279,14 @@
             <h3>Estados actuales</h3>
             <canvas id="chart-status"></canvas>
           </div>
+          <div class="chart-card">
+            <h3>Géneros</h3>
+            <canvas id="chart-genres"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Plataformas</h3>
+            <canvas id="chart-platforms"></canvas>
+          </div>
         </div>
       </section>
 
@@ -297,6 +305,8 @@
                     aria-selected="false" aria-controls="friend-panel-tv" data-friend-tab="tv">Series</button>
             <button type="button" class="friend-subtab" role="tab" id="friend-tab-books"
                     aria-selected="false" aria-controls="friend-panel-books" data-friend-tab="books">Libros</button>
+            <button type="button" class="friend-subtab" role="tab" id="friend-tab-games"
+                    aria-selected="false" aria-controls="friend-panel-games" data-friend-tab="games">Videojuegos</button>
           </div>
 
           <div class="friend-tabpanel" id="friend-panel-movies" role="tabpanel" aria-labelledby="friend-tab-movies">
@@ -330,6 +340,18 @@
               <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
             </div>
             <div id="friend-books" class="library-grid"></div>
+          </div>
+
+          <div class="friend-tabpanel hidden" id="friend-panel-games" role="tabpanel" aria-labelledby="friend-tab-games">
+            <div class="friend-filters" role="group" aria-label="Filtrar videojuegos por estado" data-tab="games">
+              <button type="button" class="friend-chip is-active" data-status="todos" aria-pressed="true">Todos</button>
+              <button type="button" class="friend-chip" data-status="pendiente" aria-pressed="false">Pendiente</button>
+              <button type="button" class="friend-chip" data-status="en_curso" aria-pressed="false">Jugando</button>
+              <button type="button" class="friend-chip" data-status="completado" aria-pressed="false">Jugado</button>
+              <button type="button" class="friend-chip" data-status="standby" aria-pressed="false">Standby</button>
+              <button type="button" class="friend-chip" data-status="abandonado" aria-pressed="false">Abandonado</button>
+            </div>
+            <div id="friend-games" class="library-grid"></div>
           </div>
         </div>
       </section>
@@ -386,6 +408,13 @@
             </label>
           </div>
           <div class="settings-row">
+            <label for="notif-game-release">Estrenos de videojuegos</label>
+            <label class="switch" aria-hidden="true">
+              <input type="checkbox" id="notif-game-release" class="switch__input" checked />
+              <span class="switch__slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
             <label for="notif-friend-activity">Actividad de amigos</label>
             <label class="switch" aria-hidden="true">
               <input type="checkbox" id="notif-friend-activity" class="switch__input" checked />
@@ -421,7 +450,7 @@
           <button type="button" class="btn btn--accent-books" id="btn-import-backup">
             Importar copia de seguridad
           </button>
-          <p class="settings-desc">Descarga un archivo .ics con los próximos episodios de tus series y estrenos de películas pendientes, para importarlo en Google Calendar, Apple Calendar u otras aplicaciones.</p>
+          <p class="settings-desc">Descarga un archivo .ics con los próximos episodios de tus series, los estrenos de películas pendientes y los lanzamientos de tus videojuegos, para importarlo en Google Calendar, Apple Calendar u otras aplicaciones.</p>
           <button type="button" class="btn btn--accent-media" id="btn-export-ics">
             Exportar calendario (.ics)
           </button>
@@ -469,7 +498,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260903"></script>
+  <script type="module" src="js/app.js?v=20260904"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
