@@ -1,7 +1,7 @@
 {
   "title": "Mejoras en lista de la compra",
   "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLa pestaña de lista de la compra, debe permitir la selección de varias semanas y que se sumen los ingredientes totales.\n\nAdemás, para aquellos ingredientes que tengan almacenada unidad de medida y cantidad (implementado en la issue #224), se deben comparar para dar la cantidad en paquetes. Es decir, si necesito 550 gramos de harina y la harina está marcada en 1 Kg, en la lista debería aparecer 1 paquete o si necesito 2,5 Kg, en la lista debería aparecer 3 paquetes. Además, debería permitir al usuario modificar esa cantidad, por ejemplo si tengo un poco de sobra y me puedo ahorrar un paquete o si quiero comprar de más para tener de sobra. Si el producto no tiene cantidad marcada, se mostrará lo que se necesite.\n\nAdemás, también se debe poder eliminar un ítem de la lista de la compra, desplazándolo hacia la izquierda.",
-  "status": "validated",
+  "status": "security-cleared",
   "acceptance criteria": [
     "La lista de la compra permite seleccionar varias semanas a la vez y suma los ingredientes totales de las semanas seleccionadas.",
     "Los ingredientes con cantidad y unidad de paquete almacenadas (issue #224: paqueteCantidad/paqueteUnidad del catálogo) muestran la cantidad en paquetes redondeada al alza (550 g con paquete de 1 Kg → 1 paquete; 2,5 Kg → 3 paquetes), comparando unidades compatibles (g/Kg, mL/L, unidades).",

@@ -472,7 +472,7 @@ function excludedRecipesNote() {
   if (!excluded.length) return "";
   return `<div class="shopping-excluded">
     <p>Recetas fuera de la lista (marcadas como ya hechas en el menú):
-      ${excluded.map((r) => `<button type="button" class="shopping-excluded__btn" data-exclude-recipe="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}
+      ${excluded.map((r) => `<button type="button" class="shopping-excluded__btn" data-exclude-recipe="${escapeHtml(r.id)}">${escapeHtml(r.nombre)}</button>`).join(", ")}
     </p>
   </div>`;
 }
