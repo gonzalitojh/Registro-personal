@@ -44,19 +44,11 @@ Decisiones clave del rediseño:
    por el usuario: si no se ha tocado el filtro, las propias se suman
    al conjunto por defecto.
  3. **«Sin categoría» no es filtrable**: los ingredientes sin categoría
-    se muestran siempre (son el cubo de entrada al que se les asigna la
-    categoría desde el modal) y su grupo va **al final** de la lista.
- 3-bis. **Filtro en vivo** (iteración tras comentario de la issue
-    #218): el filtro se aplica y los ítems se colorean **a medida que
-    se seleccionan**, sin esperar al cierre del panel. Los checkboxes
-    nativos están ocultos (`opacity: 0`) y la única señal visual es la
-    clase `is-checked` del label, así que el manejador `change`
-    sincroniza esa clase (y el estado oculto del input) al instante
-    para todas las casillas, tomando `activeCategoryFilter` como fuente
-    de verdad — cubre también el caso de marcar «Todas», que deja los
-    inputs de categorías sin tocar. El catálogo se re-renderiza en cada
-    cambio; el panel no se re-renderiza al marcar para no perder el
-    foco.
+   se muestran siempre (son el cubo de entrada al que se les asigna la
+   categoría desde el modal) y su grupo va **al final** de la lista.
+   *(Iteración 2026-08-11 — ver «Actualización» al final: el filtro se
+   aplica y colorea en vivo, a medida que se selecciona, no al cerrar
+   el panel.)*
 4. **Agrupación por categorías**: patrón de la lista de la compra
    (`shopping-list.js`): predefinidas en su orden, personalizadas
    presentes en los datos por orden alfabético de etiqueta y «Sin
@@ -104,15 +96,15 @@ Decisiones clave del rediseño:
    `ingredientFilterTouched`, `ingredientModalCleanup`), helpers
    `getUsageIndex()` / `compareIngredients()` /
    `ingredientFilterCategoryIds()` / `ingredientFilterAllChecked()`,
-    `renderIngredientsCatalog()` reescrito (contador + grupos + grid de
-    tarjetas + empty states diferenciados), `renderIngredientFilter()` /
-    `updateIngredientFilterLabel()` / `syncIngredientFilterAll()` /
-    `syncIngredientFilterItems()` (iteración: marca visual en vivo de
-    cada casilla desde `activeCategoryFilter`) /
-    `closeIngredientFilterPanel()` / `setupIngredientFilter()` (toggle +
-    click-fuera + Escape con limpieza del listener; en `change`:
-    actualiza el Set, sincroniza las marcas `is-checked` y re-renderiza
-    el catálogo al momento), y el modal
+   `renderIngredientsCatalog()` reescrito (contador + grupos + grid de
+   tarjetas + empty states diferenciados), `renderIngredientFilter()` /
+   `updateIngredientFilterLabel()` / `syncIngredientFilterAll()` /
+   `syncIngredientFilterItems()` (iteración: marca visual en vivo de
+   cada casilla desde `activeCategoryFilter`) /
+   `closeIngredientFilterPanel()` / `setupIngredientFilter()` (toggle +
+   click-fuera + Escape con limpieza del listener; en `change`:
+   actualiza el Set, sincroniza las marcas `is-checked` y re-renderiza
+   el catálogo al momento), y el modal
    `openIngredientModal()` / `closeIngredientModal()` /
    `ingredientDetailHtml()` / `ingredientNewHtml()` /
    `bindIngredientModalHandlers()` (cambio de categoría inmediato,
