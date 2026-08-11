@@ -373,6 +373,12 @@ export function isRecipeExcluded(recipeId) {
   return (activeMenu().recetasExcluidasCompra || []).includes(recipeId);
 }
 
+// Semana activa del menú (offset). La lista de la compra la usa para
+// arrancar su selección en la misma semana que el menú (issue #225).
+export function getActiveWeekOffset() {
+  return weekOffset;
+}
+
 // Datos del menú activo para la lista de la compra: devuelve
 // { semanaInicio, comensales, dias, recetasPorSemana, recetasExcluidasCompra }.
 export function getActiveMenuData() {

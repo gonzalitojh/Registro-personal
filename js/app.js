@@ -59,7 +59,7 @@ import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
 import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.js";
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
-import { setupShoppingList } from "./shopping-list.js";
+import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
 
 // ---------- Estado ----------
 
@@ -645,6 +645,7 @@ async function init() {
       // mostrarse al siguiente si entra otra cuenta.
       resetRecipesData();
       resetMenuData();
+      resetShoppingListState();
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya

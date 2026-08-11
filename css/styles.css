@@ -3245,26 +3245,133 @@ body.is-back-to-top-visible .back-to-top {
   gap: 0.35rem;
 }
 
-.shopping-line {
+/* Chips de selección de semanas (issue #225): mismo patrón que
+   .recipe-form__chip — input oculto + estado en el label. */
+.shopping-week-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.shopping-week-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--ink-raised);
+  border: 1px solid var(--paper-alpha-20);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.shopping-week-chip.is-checked {
+  background: var(--teal-reel);
+  border-color: var(--teal-reel);
+  color: var(--white);
+}
+
+[data-theme="black"] .shopping-week-chip.is-checked {
+  background: var(--teal-reel-dark);
+  border-color: var(--teal-reel-dark);
+  color: var(--ink);
+}
+
+.shopping-week-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fila de la lista: envoltorio con el fondo rojo del swipe debajo.
+   El contenido (superficie normal) se desplaza a la izquierda al
+   deslizar (issue #225) o en hover/foco en escritorio. */
+.shopping-line-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  /* Fondo del swipe: rojo de peligro (--stamp, comentado por ser el
+     mismo acento de .btn--danger; en negro puro se aclara a
+     --stamp-dark para mantener contraste AA con el texto). */
+  background: var(--stamp);
+  touch-action: pan-y;
+}
+
+.shopping-line__swipe-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.shopping-line__del {
+  width: 88px;
+  border: none;
+  background: transparent;
+  color: var(--white);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+[data-theme="black"] .shopping-line-wrap {
+  background: var(--stamp-dark);
+}
+
+[data-theme="black"] .shopping-line__del {
+  color: var(--ink);
+}
+
+.shopping-line__content {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.88rem;
   padding: 0.35rem 0.3rem;
   border-radius: var(--radius);
+  background: var(--ink-raised);
+  transition: transform 0.2s ease;
 }
 
-.shopping-line:hover {
+.shopping-line-wrap.is-dragging .shopping-line__content {
+  transition: none;
+}
+
+/* En escritorio (dispositivo con hover) el «Eliminar» se revela al
+   pasar el ratón; por teclado lo gestiona el JS (focus del botón,
+   clase .is-revealed) para no interferir con el foco del checkbox. */
+@media (hover: hover) {
+  .shopping-line-wrap:hover .shopping-line__content {
+    transform: translateX(-88px);
+  }
+}
+
+.shopping-line-wrap.is-revealed .shopping-line__content {
+  transform: translateX(-88px);
+}
+
+.shopping-line-wrap:hover .shopping-line__content {
   background: var(--paper-alpha-10);
 }
 
-.shopping-line.is-bought .shopping-line__name,
-.shopping-line.is-bought .shopping-line__qty {
+[data-theme="light"] .shopping-line-wrap:hover .shopping-line__content,
+[data-theme="white"] .shopping-line-wrap:hover .shopping-line__content {
+  background: var(--ink-alpha-10);
+}
+
+.shopping-line-wrap.is-bought .shopping-line__name,
+.shopping-line-wrap.is-bought .shopping-line__pkgcount,
+.shopping-line-wrap.is-bought .shopping-line__qty--plain,
+.shopping-line-wrap.is-bought .shopping-line__detail {
   text-decoration: line-through;
   opacity: 0.55;
 }
 
-.shopping-line--hogar {
+.shopping-line-wrap--hogar .shopping-line__content {
   border-left: 3px solid var(--ochre-spine);
 }
 
@@ -3284,17 +3391,96 @@ body.is-back-to-top-visible .back-to-top {
 
 .shopping-line__qty {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
   color: var(--ink-soft);
   font-size: 0.8rem;
+  white-space: nowrap;
 }
 
-.shopping-line__remove {
+.shopping-line__pkgcount {
+  font-weight: 600;
+  color: inherit;
+}
+
+.shopping-line__stepper {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shopping-line__stepper:hover {
+  background: var(--paper-alpha-10);
+  color: var(--paper);
+}
+
+[data-theme="light"] .shopping-line__stepper,
+[data-theme="white"] .shopping-line__stepper {
+  border-color: var(--ink-alpha-20);
+  color: var(--ink-soft);
+}
+
+[data-theme="light"] .shopping-line__stepper:hover,
+[data-theme="white"] .shopping-line__stepper:hover {
+  background: var(--ink-alpha-10);
+  color: var(--ink);
+}
+
+.shopping-line__pkgreset {
   flex-shrink: 0;
   background: none;
   border: none;
   color: var(--stamp);
   cursor: pointer;
   font-size: 0.85rem;
+  padding: 0 0.1rem;
+}
+
+[data-theme="black"] .shopping-line__pkgreset {
+  color: var(--stamp-dark);
+}
+
+.shopping-line__detail {
+  flex-shrink: 0;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.shopping-deleted {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.shopping-deleted p {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.shopping-deleted__btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--stamp);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+[data-theme="black"] .shopping-deleted__btn {
+  color: var(--stamp-dark);
 }
 
 .shopping-excluded {
@@ -3636,6 +3822,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .menu-weekly__hint,
 [data-theme="black"] .menu-weekly__empty,
 [data-theme="black"] .shopping-line__qty,
+[data-theme="black"] .shopping-line__detail,
+[data-theme="black"] .shopping-deleted,
 [data-theme="black"] .shopping-excluded,
 [data-theme="black"] .shopping-hint,
 [data-theme="black"] .menu-comensales,
@@ -3725,10 +3913,10 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-10);
 }
 
-[data-theme="black"] .shopping-line:hover {
+[data-theme="black"] .shopping-line-wrap:hover .shopping-line__content {
   background: var(--paper-alpha-10);
 }
 
-[data-theme="black"] .shopping-line--hogar {
+[data-theme="black"] .shopping-line-wrap--hogar .shopping-line__content {
   border-left-color: var(--ochre-spine);
 }
