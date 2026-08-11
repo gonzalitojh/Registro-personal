@@ -517,18 +517,42 @@ lista de la compra), exclúyela desde la lista de la compra (ver 8.4).
 ### 8.4 La lista de la compra
 
 La pestaña **«Lista de la compra»** calcula sola lo que necesitas
-comprar para el menú de la semana: cada ingrediente de cada receta se
-multiplica por (comensales ÷ porciones de la receta). Por ejemplo, una
-receta de 4 porciones con 200 g de arroz, para 2 comensales, pedirá
-100 g. Las recetas «a la semana» se apuntan con su cantidad fija.
+comprar: cada ingrediente de cada receta se multiplica por
+(comensales ÷ porciones de la receta). Por ejemplo, una receta de 4
+porciones con 200 g de arroz, para 2 comensales, pedirá 100 g. Las
+recetas «a la semana» se apuntan con su cantidad fija.
 
+- **Varias semanas a la vez**: bajo la barra superior hay unos chips
+  con las fechas de las semanas. Marca los que quieras (al menos uno)
+  y la lista **suma los ingredientes** de todas las semanas
+  seleccionadas; con las flechas ← y → ves las semanas anteriores o
+  siguientes. Mientras no toques los chips, la lista sigue la semana
+  que tengas abierta en el Menú.
 - Las líneas se **agrupan por categoría** (Frutas, Carnes, Despensa…).
 - Marca la casilla de una línea para tacharla cuando la cojas en el
   supermercado.
+- **Cantidad en paquetes**: si un ingrediente tiene marcada la
+  **cantidad del paquete** en su ficha (ver 8.5), la lista compara lo
+  que necesitas con el paquete y lo redondea al alza: si necesitas
+  550 g de harina y la harina se vende en paquetes de 1 Kg, aparecerá
+  «1 paquete»; si necesitas 2,5 Kg, «3 paquetes». Junto a la cantidad
+  se indica lo que necesitas en total (p. ej. «· 550 g»). Puedes
+  **ajustar los paquetes** con los botones − y + (¿te sobra harina de
+  la semana pasada? quita un paquete; ¿quieres tener de sobra? añade
+  uno) y el ajuste se guarda en ese dispositivo; el botón ↺ vuelve al
+  cálculo automático. Si el ingrediente no tiene cantidad de paquete
+  (o las unidades no se pueden comparar), se muestra lo que necesites.
+- **Quitar un ítem**: desliza una línea **hacia la izquierda** (en el
+  móvil) o pulsa **«Eliminar»** (en ordenador) para quitarla de la
+  lista; puedes deshacerlo en el aviso que aparece al momento. Los
+  ítems de recetas dejan de calcularse en las semanas marcadas (al pie
+  de la lista aparece «Quitados de la lista» y puedes volver a
+  incluirlos pulsando su nombre).
 - Con **«+ Ítem extra»** añades cosas a mano: ingredientes que falten,
   cosas para congelar, **productos de limpieza y otros objetos no
-  comestibles** (marca «No es comestible»). Los ítems extra llevan una
-  ✕ para quitarlos.
+  comestibles** (marca «No es comestible»). El ítem se añade a todas
+  las semanas seleccionadas y se quita igual que el resto (deslizando
+  o con «Eliminar»).
 - Si una receta del menú ya la tienes hecha o no necesitas comprar sus
   ingredientes, **exclúyela**: al pie de la lista aparecen las recetas
   excluidas y puedes volver a incluirlas pulsando su nombre. También se
