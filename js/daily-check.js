@@ -217,7 +217,7 @@ async function ensureNextEpisodeAirDate(show, fresh, getSeasonEpisodes) {
 export async function checkForUpdates(ctx, { force = false } = {}) {
   const {
     getCurrentUser,
-    getItemsByGroup,
+    getItemsOnce,
     updateItem,
     addNotification,
     upsertUserProfile,
@@ -249,9 +249,15 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
       return { aborted: false };
     }
 
-    const allMovies = getItemsByGroup("movies");
-    const allTv = getItemsByGroup("tv");
-    const allBooks = getItemsByGroup("books");
+    // Lectura puntual de cada grupo (issue #178): las pestañas ya no
+    // se suscriben todas al entrar (lazy loading), así que el estado
+    // en memoria puede no estar completo. Se lee de Firestore bajo
+    // demanda. Los videojuegos no participan en la pasada diaria.
+    const [allMovies, allTv, allBooks] = await Promise.all([
+      getItemsOnce(user.uid, "movie"),
+      getItemsOnce(user.uid, "tv"),
+      getItemsOnce(user.uid, "book"),
+    ]);
     const prefs = getNotificationPrefs();
 
     // Fallos consecutivos: si se encadenan demasiados (p.ej. API caída),

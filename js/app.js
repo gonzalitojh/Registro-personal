@@ -56,10 +56,10 @@ const activeFilters = { movies: "todos", tv: "en_curso", books: "todos", games: 
 const activeSort = { movies: "añadido", tv: "añadido", books: "añadido", games: "añadido" };
 const viewMode = { movies: "grid", tv: "list", books: "grid", games: "grid" };
 
-let moviesReady = false;
-let tvReady = false;
-let booksReady = false;
-let gamesReady = false;
+// Flags de snapshot recibido por grupo (lazy loading, issue #178):
+// ya no condicionan la comprobación diaria (lee de Firestore con
+// getItemsOnce), solo el repintado cuando un partial llega tarde.
+const groupReady = { movies: false, tv: false, books: false, games: false };
 let checksTriggered = false;
 
 // ---------- Contexto para módulos ----------
@@ -68,6 +68,23 @@ function createCtx() {
   return {
     getCurrentUser: () => currentUser,
     getItemsByGroup: (group) => allItems[group] || [],
+    // Lectura de un grupo que nunca falla por lazy loading (issue
+    // #178): si el estado en memoria está completo (snapshot recibido)
+    // se devuelve tal cual; si no (pestaña aún no visitada), se lee
+    // puntualmente de Firestore. Lo usan los checks de duplicados
+    // (alta desde la búsqueda global, recomendaciones del modal).
+    getGroupItemsResolved: async (group) => {
+      if (groupReady[group]) return allItems[group] || [];
+      if (currentUser && GROUP_CONFIG[group]) {
+        try {
+          return await getItemsOnce(currentUser.uid, GROUP_CONFIG[group].type);
+        } catch {
+          // fallback: si la lectura puntual falla, se usa lo que haya
+          // en memoria (puede estar vacío: es un chequeo best-effort).
+        }
+      }
+      return allItems[group] || [];
+    },
     getAllItems: () => allItems,
     getNotifications: () => notifications,
     updateItem,
@@ -112,20 +129,33 @@ const GRID_IDS = {
 
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
+  const gridEl = document.getElementById(gridId);
+  // El partial del grupo aún no se ha cargado (lazy, issue #178):
+  // no hay nada que pintar; al terminar la carga, loadOcioPartial
+  // vuelve a llamar aquí si el grupo ya tiene snapshot.
+  if (!gridEl) return;
+  // Los datos (o el estado vacío) sustituyen al marcador de carga
+  // del panel. Se usa querySelector: el panel solo puede tener un
+  // .panel-loading (el que antepone loadOcioPartial al inyectar).
+  const panelEl = gridEl.closest(".panel");
+  panelEl?.querySelector(".panel-loading")?.remove();
   let items = applyFilter(itemsByGroup(group), activeFilters[group]);
   items = applySort(items, activeSort[group]);
   const ctx = createCtx();
-  ui.renderLibrary(document.getElementById(gridId), document.getElementById(emptyId), items, viewMode[group], {
+  ui.renderLibrary(gridEl, document.getElementById(emptyId), items, viewMode[group], {
     onOpen: (item) => openItem(item, ctx),
     onQuickAction: (item, btn) => quickAction(item, btn, ctx),
   });
 }
 
 function maybeTriggerDailyCheck() {
-  if (moviesReady && tvReady && booksReady && gamesReady && !checksTriggered) {
-    checksTriggered = true;
-    checkForUpdates(createCtx());
-  }
+  if (checksTriggered) return;
+  checksTriggered = true;
+  // Fire-and-forget con catch defensivo: daily-check lee de
+  // Firestore (getItemsOnce) y un fallo no debe romper el flujo.
+  checkForUpdates(createCtx()).catch((err) => {
+    console.error("No se pudo completar la comprobación diaria:", err);
+  });
 }
 
 function stopAllSubscriptions() {
@@ -135,22 +165,137 @@ function stopAllSubscriptions() {
   unsubscribeNotifications = null;
 }
 
-// ---------- Carga de parciales ----------
+// ---------- Suscripciones a Firestore (lazy, issue #178) ----------
 
-async function loadOcioPartials() {
-  const sections = document.querySelectorAll("[data-ocio-src]");
-  await Promise.all(
-    Array.from(sections).map(async (section) => {
-      try {
-        const res = await fetch(section.dataset.ocioSrc + "?v=" + APP_VERSION);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        section.innerHTML = await res.text();
-      } catch (err) {
-        section.innerHTML = `<p class="empty-state">No se pudo cargar esta sección (${section.dataset.ocioSrc}). Comprueba que estás sirviendo la web desde un servidor (no abriendo el archivo directamente) y recarga la página.</p>`;
-        console.error("No se pudo cargar", section.dataset.ocioSrc, err);
-      }
-    })
-  );
+// Config por grupo: tipo en Firestore y mensaje de error del toast.
+const GROUP_CONFIG = {
+  movies: { type: "movie", error: "No se pudieron cargar tus películas." },
+  tv: { type: "tv", error: "No se pudieron cargar tus series." },
+  books: { type: "book", error: "No se pudieron cargar tus libros." },
+  games: { type: "game", error: "No se pudieron cargar tus videojuegos." },
+};
+
+// Suscripción genérica de un grupo. Se envuelve con subscribeWithRetry
+// (issue #147): si al entrar falla una suscripción por un error
+// transitorio, se reintenta sola con backoff en lugar de dejar la
+// biblioteca vacía hasta cerrar y volver a abrir la web.
+function subscribeGroup(uid, groupKey) {
+  const cfg = GROUP_CONFIG[groupKey];
+  if (!cfg || unsubscribeItems[groupKey]) return;
+  unsubscribeItems[groupKey] = subscribeWithRetry({
+    subscribe: ({ onChange, onError }) =>
+      subscribeToItems(uid, cfg.type, onChange, onError),
+    onChange: (items) => {
+      allItems[groupKey] = items;
+      groupReady[groupKey] = true;
+      renderLibraryFor(groupKey);
+      refreshExternalResults(createCtx());
+    },
+    onError: () => ui.showToast(cfg.error),
+    onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+  });
+}
+
+// Arranca la suscripción del grupo si no está ya activa (requiere
+// sesión). La comprobación diaria ya no depende de esto: daily-check
+// lee de Firestore con getItemsOnce.
+function ensureGroupSubscribed(groupKey) {
+  if (!currentUser || unsubscribeItems[groupKey]) return;
+  subscribeGroup(currentUser.uid, groupKey);
+}
+
+// ---------- Carga de parciales (lazy, issue #178) ----------
+
+// Grupo de datos asociado a cada panel de Ocio (la suscripción de
+// cada grupo solo arranca cuando se activa su pestaña por primera vez).
+const PANEL_TO_GROUP = {
+  "panel-tv": "tv",
+  "panel-movies": "movies",
+  "panel-books": "books",
+  "panel-games": "games",
+};
+
+// Partial ya inyectado por panel: cada pestaña carga su HTML solo la
+// primera vez que se activa; las siguientes activaciones no re-fetch.
+const loadedPartials = new Set();
+
+// Marcador de carga de un panel (issue #178). Se antepone al
+// contenido de cada partial al inyectarlo, de modo que el indicador
+// persiste mientras el snapshot del grupo no llega; renderLibraryFor
+// lo retira al pintar datos (o el estado vacío).
+function panelLoadingHtml() {
+  return `
+    <div class="panel-loading" role="status" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Cargando…</span>
+    </div>`;
+}
+
+// Wiring de los controles de un panel (filtros, orden y vista).
+// Se ejecuta al inyectar cada partial (el guard de loadedPartials
+// garantiza que cada panel se wirea una sola vez). Reemplaza al
+// querySelectorAll global del arranque: antes solo cubría los
+// partials ya inyectados y no servía para el lazy loading.
+function wirePanelControls(panelEl) {
+  const filters = panelEl.querySelector(".filter-chips");
+  if (filters) {
+    const scope = filters.dataset.scope;
+    filters.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        filters.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        activeFilters[scope] = chip.dataset.status;
+        renderLibraryFor(scope);
+      });
+    });
+  }
+
+  const sortSelect = panelEl.querySelector(".sort-select");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      activeSort[sortSelect.dataset.scope] = sortSelect.value;
+      renderLibraryFor(sortSelect.dataset.scope);
+    });
+  }
+
+  const viewToggle = panelEl.querySelector(".view-toggle");
+  if (viewToggle) {
+    const scope = viewToggle.dataset.scope;
+    viewToggle.querySelectorAll(".view-toggle__btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        viewToggle.querySelectorAll(".view-toggle__btn").forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        viewMode[scope] = btn.dataset.view;
+        renderLibraryFor(scope);
+      });
+    });
+  }
+}
+
+// Carga bajo demanda del partial de un panel (ocio/*.html). No hace
+// nada si el panel ya se cargó. Tras inyectar el HTML, wirea sus
+// controles y, si el grupo ya tiene snapshot (llegó antes que el
+// HTML), pinta la biblioteca de inmediato; si no, renderLibraryFor
+// lo hará cuando llegue el snapshot (o el loading queda visible).
+async function loadOcioPartial(panelEl) {
+  if (!panelEl || loadedPartials.has(panelEl.id)) return;
+  loadedPartials.add(panelEl.id);
+  const src = panelEl.dataset.ocioSrc;
+  try {
+    const res = await fetch(src + "?v=" + APP_VERSION);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+    panelEl.innerHTML = panelLoadingHtml() + html;
+    wirePanelControls(panelEl);
+    const group = panelEl.dataset.typeGroup;
+    if (group && groupReady[group]) renderLibraryFor(group);
+  } catch (err) {
+    // Se retira del set de cargados para reintentar en la siguiente
+    // activación (p. ej. tras arreglar el origen del fallo).
+    loadedPartials.delete(panelEl.id);
+    panelEl.innerHTML = `<p class="empty-state">No se pudo cargar esta sección (${src}). Comprueba que estás sirviendo la web desde un servidor (no abriendo el archivo directamente) y recarga la página.</p>`;
+    console.error("No se pudo cargar", src, err);
+  }
 }
 
 // ---------- Tema (modos claro / oscuro / negro puro / blanco puro) ----------
@@ -187,8 +332,6 @@ async function init() {
   setTheme(getSavedTheme());
   syncThemeToSettings(getSavedTheme());
 
-  await loadOcioPartials();
-
   const ctx = createCtx();
 
   // Pestañas de Ocio y enrutamiento (issue #59): cada pestaña tiene
@@ -205,6 +348,9 @@ async function init() {
     "panel-books": document.getElementById("panel-books"),
     "panel-games": document.getElementById("panel-games"),
   };
+  // Panel de Ocio actualmente activo (lo usa watchAuthState tras el
+  // login para saber qué pestaña debe cargar partial y suscripción).
+  let activePanelId = null;
 
   function activatePanel(panelId, { moveFocus = false } = {}) {
     // Pestañas ocultas por el usuario (issue #97): si la pestaña
@@ -236,6 +382,18 @@ async function init() {
       activeTab.setAttribute("aria-selected", "true");
     }
     panels[targetId].classList.remove("hidden");
+    activePanelId = targetId;
+
+    // Lazy loading (issue #178): el partial del panel solo se carga
+    // la primera vez que se activa, y la suscripción de su grupo solo
+    // arranca si hay sesión (tras el login, watchAuthState se
+    // encarga del grupo de la pestaña activa si esta activación fue
+    // previa a la sesión).
+    const activeGroup = PANEL_TO_GROUP[targetId];
+    if (activeGroup) {
+      loadOcioPartial(panels[targetId]);
+      if (currentUser) ensureGroupSubscribed(activeGroup);
+    }
 
     if (moveFocus) {
       // Mover foco al título de la sección activa (solo por clic manual).
@@ -256,9 +414,19 @@ async function init() {
     Object.entries(SECTION_REGISTRY.ocio.tabs).forEach(([tabKey, tab]) => {
       const tabEl = document.querySelector(`.tab[data-panel="${tab.panelId}"]`);
       if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      // El panel visible lo controla en exclusiva activatePanel: aquí
+      // solo se AÑADE hidden a las pestañas ocultas, nunca se quita
+      // (un toggle con false destapaba todos los paneles visibles a
+      // la vez; issue #178).
       const panelEl = panels[tab.panelId];
-      if (panelEl) panelEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Si la pestaña activa quedó oculta, caer a la primera visible
+    // (el mismo guard de activatePanel, issue #97): sin esto el área
+    // de contenido quedaría en blanco al ocultar la pestaña activa.
+    if (activePanelId && !isTabVisible(keyForPanel(activePanelId))) {
+      activatePanel(getFirstVisibleTabPanel("ocio") || "panel-tv");
+    }
   }
 
   // Refresco completo de la navegación tras un cambio de visibilidad
@@ -292,8 +460,11 @@ async function init() {
         // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
         activatePanel(route.panelId);
+        // Sin sesión, #app permanece oculta (pantalla de acceso): no
+        // destapar la interfaz ni sus controles. Al entrar, ui.showApp
+        // la muestra (issue #178).
+        if (currentUser) document.getElementById("app").classList.remove("hidden");
       }
     },
   });
@@ -316,40 +487,11 @@ async function init() {
     });
   });
 
-  // Filtros, orden, búsqueda en lista, vista
-  document.querySelectorAll(".filter-chips").forEach((group) => {
-    const scope = group.dataset.scope;
-    group.querySelectorAll(".chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        group.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
-        chip.classList.add("is-active");
-        activeFilters[scope] = chip.dataset.status;
-        renderLibraryFor(scope);
-      });
-    });
-  });
-
-  document.querySelectorAll(".sort-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      activeSort[select.dataset.scope] = select.value;
-      renderLibraryFor(select.dataset.scope);
-    });
-  });
-
-  document.querySelectorAll(".view-toggle").forEach((toggle) => {
-    const scope = toggle.dataset.scope;
-    toggle.querySelectorAll(".view-toggle__btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        toggle.querySelectorAll(".view-toggle__btn").forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-        viewMode[scope] = btn.dataset.view;
-        renderLibraryFor(scope);
-      });
-    });
-  });
-
   // Módulos especializados. profileApi (declarado antes del router
-  // para su uso en onRoute) se asigna aquí.
+  // para su uso en onRoute) se asigna aquí. El wiring de los
+  // controles de cada panel (filtros, orden, vista) ya no se hace
+  // aquí: lo ejecuta wirePanelControls al inyectar cada partial
+  // (lazy loading, issue #178).
   setupModalCloseListeners();
   setupNotifications(ctx);
   profileApi = setupProfile(ctx);
@@ -380,10 +522,10 @@ async function init() {
   // Suscripciones en tiempo real
   watchAuthState(async (user) => {
     stopAllSubscriptions();
-    moviesReady = false;
-    tvReady = false;
-    booksReady = false;
-    gamesReady = false;
+    groupReady.movies = false;
+    groupReady.tv = false;
+    groupReady.books = false;
+    groupReady.games = false;
     checksTriggered = false;
 
     if (!user) {
@@ -395,6 +537,16 @@ async function init() {
       notifications = [];
       cleanupSettings();
       resetDevicePush();
+      // Restaurar el indicador de carga en los paneles con partial ya
+      // inyectado (issue #178): renderLibraryFor lo retiró al pintar
+      // los datos; al cerrar sesión y volver a entrar, las
+      // suscripciones arrancan de nuevo y el «Cargando…» debe
+      // reaparecer hasta el primer snapshot.
+      Object.values(panels).forEach((p) => {
+        if (p && loadedPartials.has(p.id) && !p.querySelector(".panel-loading")) {
+          p.insertAdjacentHTML("afterbegin", panelLoadingHtml());
+        }
+      });
       ui.showAuthScreen();
       return;
     }
@@ -425,65 +577,23 @@ async function init() {
       console.error("No se pudo guardar el perfil de usuario:", err);
     }
 
-    // Suscripciones en tiempo real. Se envuelven con subscribeWithRetry
-    // (issue #147): si al entrar falla una suscripción por un error
-    // transitorio, se reintenta sola con backoff en lugar de dejar la
-    // biblioteca vacía hasta cerrar y volver a abrir la web.
-    unsubscribeItems.movies = subscribeWithRetry({
-      subscribe: ({ onChange, onError }) =>
-        subscribeToItems(user.uid, "movie", onChange, onError),
-      onChange: (items) => {
-        allItems.movies = items;
-        moviesReady = true;
-        renderLibraryFor("movies");
-        refreshExternalResults(createCtx());
-        maybeTriggerDailyCheck();
-      },
-      onError: () => ui.showToast("No se pudieron cargar tus películas."),
-      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
-    });
+    // Suscripciones en tiempo real, lazy por pestaña (issue #178):
+    // solo arranca la del grupo de la pestaña activa de Ocio; las
+    // demás se suscriben al activar su pestaña (activatePanel →
+    // ensureGroupSubscribed). Cada suscripción se envuelve con
+    // subscribeWithRetry (issue #147): si al entrar falla por un
+    // error transitorio, se reintenta sola con backoff en lugar de
+    // dejar la biblioteca vacía hasta cerrar y volver a abrir la web.
+    // El partial de la pestaña activa también se asegura aquí (la
+    // activación pudo ocurrir sin sesión o con ruta ajena al router).
+    const panelId = activePanelId && panels[activePanelId] ? activePanelId : (getFirstVisibleTabPanel("ocio") || "panel-tv");
+    loadOcioPartial(panels[panelId]);
+    ensureGroupSubscribed(PANEL_TO_GROUP[panelId] || "tv");
 
-    unsubscribeItems.tv = subscribeWithRetry({
-      subscribe: ({ onChange, onError }) =>
-        subscribeToItems(user.uid, "tv", onChange, onError),
-      onChange: (items) => {
-        allItems.tv = items;
-        tvReady = true;
-        renderLibraryFor("tv");
-        refreshExternalResults(createCtx());
-        maybeTriggerDailyCheck();
-      },
-      onError: () => ui.showToast("No se pudieron cargar tus series."),
-      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
-    });
-
-    unsubscribeItems.books = subscribeWithRetry({
-      subscribe: ({ onChange, onError }) =>
-        subscribeToItems(user.uid, "book", onChange, onError),
-      onChange: (items) => {
-        allItems.books = items;
-        booksReady = true;
-        renderLibraryFor("books");
-        refreshExternalResults(createCtx());
-        maybeTriggerDailyCheck();
-      },
-      onError: () => ui.showToast("No se pudieron cargar tus libros."),
-      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
-    });
-
-    unsubscribeItems.games = subscribeWithRetry({
-      subscribe: ({ onChange, onError }) =>
-        subscribeToItems(user.uid, "game", onChange, onError),
-      onChange: (items) => {
-        allItems.games = items;
-        gamesReady = true;
-        renderLibraryFor("games");
-        refreshExternalResults(createCtx());
-        maybeTriggerDailyCheck();
-      },
-      onError: () => ui.showToast("No se pudieron cargar tus videojuegos."),
-      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
-    });
+    // Comprobación diaria: una vez por sesión. Ya no espera a que
+    // lleguen las suscripciones de los cuatro grupos (daily-check
+    // lee de Firestore bajo demanda con getItemsOnce).
+    maybeTriggerDailyCheck();
 
     // Notificaciones: mismo reintento, pero en silencio (como su onError
     // actual, que no molestaba). El badge se rellena cuando el reintento

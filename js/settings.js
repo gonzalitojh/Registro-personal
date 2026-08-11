@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS = {
     device_push: false,
   },
   visibleSections: { ocio: true },
-  visibleTabs: { series: true, peliculas: true, libros: true },
+  visibleTabs: { series: true, peliculas: true, libros: true, videojuegos: true },
 };
 
 // Registro central de secciones y pestañas de la web (issue #97).
@@ -37,6 +37,7 @@ export const SECTION_REGISTRY = {
       series: { label: "Series", panelId: "panel-tv" },
       peliculas: { label: "Películas", panelId: "panel-movies" },
       libros: { label: "Libros", panelId: "panel-books" },
+      videojuegos: { label: "Videojuegos", panelId: "panel-games" },
     },
   },
 };

@@ -6,8 +6,9 @@
 // (location.hash) y nunca location.pathname.
 //
 // Dos grandes «secciones» de la web:
-//   - Ocio: las tres pestañas de la biblioteca
-//     (#/ocio/series, #/ocio/peliculas, #/ocio/libros).
+//   - Ocio: las cuatro pestañas de la biblioteca
+//     (#/ocio/series, #/ocio/peliculas, #/ocio/libros,
+//     #/ocio/videojuegos).
 //   - Perfil: Estadísticas, Amigos (con id por amigo), Actividad y
 //     Ajustes (#/perfil/...). El antiguo token «datos» sobrevive
 //     como alias de Ajustes (issue #135).
@@ -148,7 +149,7 @@ export function parseHash(hash = location.hash) {
   if (segments.length === 1) {
     return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true };
   }
-  // #/ocio/<clave>: solo valen las tres claves conocidas.
+  // #/ocio/<clave>: solo valen las cuatro claves conocidas.
   if (segments.length === 2 && KEY_TO_PANEL[segments[1]]) {
     return { section: "ocio", key: segments[1], panelId: KEY_TO_PANEL[segments[1]] };
   }

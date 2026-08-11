@@ -111,18 +111,24 @@ function generateIcsString(events) {
   * películas y lanzamientos de videojuegos) a partir de los datos
   * del usuario.
   *
+  * Los grupos se leen de Firestore bajo demanda (getItemsOnce) y no
+  * del estado en memoria (issue #178): con el lazy loading por
+  * pestaña, un grupo que el usuario no ha visitado aún no está
+  * suscrito y la exportación se quedaría sin esos eventos.
+  *
   * @param {Object} ctx - Contexto de la aplicación
   * @param {boolean} includeMovies - Incluir estrenos de películas
   * @param {boolean} includeTv - Incluir próximos episodios de series
   * @param {boolean} includeGames - Incluir lanzamientos de videojuegos
-  * @returns {Array<{uid:string, dtstart:string, summary:string, description?:string}>}
+  * @returns {Promise<Array<{uid:string, dtstart:string, summary:string, description?:string}>>}
   */
-function collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames) {
+async function collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames) {
   const events = [];
   const today = todayISO();
+  const user = ctx.getCurrentUser();
 
   if (includeTv) {
-    const tvSeries = ctx.getItemsByGroup("tv") || [];
+    const tvSeries = (user && (await ctx.getItemsOnce(user.uid, "tv"))) || [];
     for (const item of tvSeries) {
       const episode = item.nextEpisodeToAir;
       if (!episode || !episode.airDate) continue;
@@ -144,7 +150,7 @@ function collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames) {
   }
 
   if (includeMovies) {
-    const movies = ctx.getItemsByGroup("movies") || [];
+    const movies = (user && (await ctx.getItemsOnce(user.uid, "movie"))) || [];
     for (const item of movies) {
       // Incluir películas pendientes o con awaitingRelease, que tengan fecha futura
       const isPending = item.status === "pendiente" || item.awaitingRelease === true;
@@ -164,7 +170,7 @@ function collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames) {
   }
 
   if (includeGames) {
-    const games = ctx.getItemsByGroup("games") || [];
+    const games = (user && (await ctx.getItemsOnce(user.uid, "game"))) || [];
     for (const item of games) {
       // Pendiente de lanzamiento: fecha futura y sin historial de juego.
       // Criterio directo (issue #176): no se confía solo en awaitingRelease,
@@ -218,7 +224,7 @@ export async function downloadIcs(ctx, options = {}) {
   ui.showToast("Preparando calendario…");
 
   try {
-    const events = collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames);
+const events = await collectUpcomingEvents(ctx, includeMovies, includeTv, includeGames);
 
     if (events.length === 0) {
       ui.showToast("No hay estrenos próximos que exportar.");
