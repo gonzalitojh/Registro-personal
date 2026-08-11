@@ -15,6 +15,12 @@
 //   - Recetas (issue #64): Recetas, Menú y Lista de la compra
 //     (#/recetas, #/recetas/menu, #/recetas/compra).
 //
+// Además de las memorias por sección (lastOcioKey, lastRecipesTab),
+// el router guarda la última sección de primer nivel visitada
+// (lastSection, issue #213): es la que usa la flecha de volver del
+// perfil para regresar a Ocio o Recetas según de dónde viniera el
+// usuario, no siempre a Ocio.
+//
 // El resto de hashes (p. ej. #main-content del skip-link) se
 // considera ajeno al router y se ignora sin tocar el estado.
 // =============================================================
@@ -225,6 +231,16 @@ export function getLastRecipesTab() {
   return RECIPES_TAB_TO_PANEL[lastRecipesTab] ? lastRecipesTab : RECIPES_DEFAULT_TAB;
 }
 
+// Memoria de la última sección de primer nivel (ocio | recetas) de la
+// sesión: la flecha de volver del perfil regresa a esa sección (issue
+// #213). Las rutas de perfil NO la actualizan a propósito: solo las
+// secciones de contenido dejan rastro al entrar en el perfil.
+let lastSection = "ocio";
+
+export function getLastSection() {
+  return lastSection || "ocio";
+}
+
 // Cambia al hash de un objetivo. target puede ser:
 //   - string: clave de Ocio (retrocompatibilidad, "series").
 //   - objeto { section:"perfil", profileSection, uid? } (o de Ocio).
@@ -253,8 +269,13 @@ export function initRouter({ onRoute }) {
   // de perfil que pedía la recarga).
   function applyRoute(route = parseHash()) {
     if (!route?.section) return; // ajenos: no tocar el estado
-    if (route.section === "ocio") lastOcioKey = route.key || DEFAULT_KEY;
-    if (route.section === "recetas") lastRecipesTab = route.tab || RECIPES_DEFAULT_TAB;
+    if (route.section === "ocio") {
+      lastSection = "ocio";
+      lastOcioKey = route.key || DEFAULT_KEY;
+    } else if (route.section === "recetas") {
+      lastSection = "recetas";
+      lastRecipesTab = route.tab || RECIPES_DEFAULT_TAB;
+    }
     if (route.default || route.invalid) {
       history.replaceState(null, "", canonicalHashFor(route));
     }
@@ -293,6 +314,7 @@ export function initRouter({ onRoute }) {
     recipesHashFor,
     getLastOcioKey,
     getLastRecipesTab,
+    getLastSection,
     navigate,
     destroy: () => window.removeEventListener("hashchange", handleHashChange),
   };
