@@ -540,11 +540,16 @@ async function init() {
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
-        // la muestra (issue #178).
+        // la muestra (issue #178). REGRESIÓN (issue #208): la fusión de
+        // content/issue-64-seccion-recetas re-introdujo un
+        // classList.remove("hidden") incondicional sobre #app que
+        // destapaba la barra de pestañas sobre la pantalla de acceso
+        // (y el resto de la interfaz) hasta que Firebase resolvía la
+        // sesión. La única vía de destapar #app es ui.showApp tras el
+        // login: este remove condicional es el único permitido.
         if (currentUser) document.getElementById("app").classList.remove("hidden");
       }
     },
