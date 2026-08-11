@@ -84,7 +84,7 @@ Nada más entrar verás:
     en cuanto vuelvas a tener más de una sección visible, la barra
     lateral reaparece.
   - **Barra de búsqueda** (en el centro): busca **dentro de la sección
-    en la que estés** (más en [sección 8](#8-cómo-buscar)). Al entrar,
+    en la que estés** (más en [sección 9](#9-cómo-buscar)). Al entrar,
     la barra muestra brevemente el nombre de la web —**«Mi Registro»**—
     y a los pocos segundos pasa al texto de la sección: «Buscar
     películas, series, libros y videojuegos...» en Ocio, «Buscar
@@ -131,12 +131,12 @@ Cada pestaña se divide en dos zonas:
 
 - **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
   por estado, ordenar y cambiar la vista entre cuadrícula y lista
-  (más en [sección 9](#9-organizar-y-ordenar-tu-registro)).
+  (más en [sección 10](#10-organizar-y-ordenar-tu-registro)).
 - **Debajo**: la lista de tus títulos de ese tipo.
 
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
-(más en [sección 8](#8-cómo-buscar)).
+(más en [sección 9](#9-cómo-buscar)).
 
 ### 3.1 Compartir direcciones y volver a las pestañas
 
@@ -216,7 +216,7 @@ pierde nada.
    resultado: se abrirá una vista previa con los detalles.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
-aparece **«Añadir manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+aparece **«Añadir manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -296,7 +296,7 @@ Igual que con las series: escribe el título en la **barra de búsqueda
 de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
 el resultado que quieras, o usa la vista previa pulsando sobre la fila.
 Si no la encuentras, al final de los resultados aparece **«Añadir
-manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -339,7 +339,7 @@ Si el libro tiene varias ediciones, la web te deja **elegir portada y
 sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
 se muestra como «Añadido». Si no lo encuentras, al final de los
 resultados aparece **«Añadir manualmente»**
-(más en [sección 8.3](#83-añadir-manualmente)).
+(más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -395,7 +395,7 @@ valoración de la comunidad y más datos.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Si no lo encuentras, al final de los resultados aparece **«Añadir
-  manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+  manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 7.3 Empezar y terminar partidas
 
@@ -578,7 +578,7 @@ igual). Para cada resultado:
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
   **«¿No la encuentras? Añadir manualmente…»**
-  (más en [sección 8.3](#83-añadir-manualmente)).
+  (más en [sección 9.3](#93-añadir-manualmente)).
 
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
