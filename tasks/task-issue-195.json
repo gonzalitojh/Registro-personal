@@ -1,7 +1,7 @@
 {
   "title": "Correos permitidos: eliminar js/allowed-emails.js (firestore.rules como única fuente de verdad)",
   "description": "Issue #195: Esta web solo debe estar disponible para los emails habilitados y requiere inicio de sesión a través de Google. Estos correos se han especificado como Regla en la firestore y, a parte, se encuentran en el archivo _allowed-emails.js_. Teniendo en cuenta que los correos están ya registrados en Firebase y que el inicio de sesión es obligatorio, ¿Es necesario mantener también los correos en ese archivo de JavaScript? Se pide explicar el motivo de que exista dicho archivo y, si es posible, eliminarlo, cambiando lo que sea necesario para que el funcionamiento siga siendo el esperado, pero que únicamente se encuentren los correos en la regla de Firebase que actualizaría el usuario manualmente.",
-  "status": "documented",
+  "status": "review",
   "acceptance_criteria": [
     "El archivo js/allowed-emails.js deja de existir y ninguna referencia a él (imports, precache del service worker, README, config.js) permanece en el código.",
     "La única lista de correos permitidos vive en firestore.rules (función isAllowedUser), que el usuario actualiza manualmente y publica en Firebase console.",
@@ -15,5 +15,13 @@
     "number": 195,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/195",
     "title": "Correos permitidos"
+  },
+  "pr": {
+    "number": 196,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/196",
+    "title": "refactor: correos permitidos solo en firestore.rules (issue #195)",
+    "branch": "refactor/issue-195-correos-permitidos",
+    "commit": "3b0e492",
+    "closes": "#195"
   }
 }
