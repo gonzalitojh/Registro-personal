@@ -10,6 +10,8 @@
 #                                    todas las ramas no-default y a la raíz
 #   - Cada rama no-default         → _site/dev/<ruta-saneada-de-rama>/
 #                                    (incluida dev → _site/dev/dev/)
+#   - Ramas con prefijo 'no-deploy/' → EXCLUIDAS del despliegue (issue #198):
+#     no se extraen ni se enlazan en el hub
 #   - Un .nojekyll por carpeta     → Pages no aplica Jekyll y sirve tal cual
 #                                    (raíz, hub y cada carpeta de rama).
 #
@@ -35,6 +37,11 @@ fi
 #    prefijo 'refs/remotes/origin/' para filtrar de forma robusta el puntero
 #    HEAD (origin/HEAD), que en local aparece con formas distintas según la
 #    versión de git (origin/HEAD o simplemente origin).
+#    Ramas cuyo nombre empieza por NO_DEPLOY_PREFIX ("no-deploy/", issue #198):
+#    EXCLUIDAS del despliegue: no se extraen ni aparecen en el hub; solo se
+#    registran en el log. El filtro es solo de build: el workflow ya ignora
+#    los pushes a esas ramas (branches-ignore), pero workflow_dispatch y
+#    delete no admiten filtros y pasan por aquí.
 # -----------------------------------------------------------------------------
 mapfile -t BRANCHES < <(
   git for-each-ref --format='%(refname)' refs/remotes/origin \
@@ -42,11 +49,32 @@ mapfile -t BRANCHES < <(
     | grep -v '^HEAD$'
 )
 
-if [ "${#BRANCHES[@]}" -eq 0 ]; then
-  echo "::error::No se encontró ninguna rama en refs/remotes/origin/*. No se puede construir _site." >&2
-  exit 1
+NO_DEPLOY_PREFIX="no-deploy/"
+
+INCLUDED_BRANCHES=()
+EXCLUDED_BRANCHES=()
+for b in "${BRANCHES[@]}"; do
+  if [[ "${b}" == "${NO_DEPLOY_PREFIX}"* ]]; then
+    EXCLUDED_BRANCHES+=("${b}")
+  else
+    INCLUDED_BRANCHES+=("${b}")
+  fi
+done
+BRANCHES=("${INCLUDED_BRANCHES[@]}")
+
+if [ "${#EXCLUDED_BRANCHES[@]}" -gt 0 ]; then
+  echo "Ramas excluidas del despliegue (prefijo ${NO_DEPLOY_PREFIX}): ${EXCLUDED_BRANCHES[*]}"
 fi
-echo "Ramas detectadas: ${BRANCHES[*]}"
+
+if [ "${#BRANCHES[@]}" -eq 0 ]; then
+  if [ "${#EXCLUDED_BRANCHES[@]}" -gt 0 ]; then
+    echo "::warning::Todas las ramas tienen el prefijo ${NO_DEPLOY_PREFIX}: solo se desplegará la rama por defecto en la raíz."
+  else
+    echo "::error::No se encontró ninguna rama en refs/remotes/origin/*. No se puede construir _site." >&2
+    exit 1
+  fi
+fi
+echo "Ramas detectadas (se desplegarán): ${BRANCHES[*]}"
 
 # -----------------------------------------------------------------------------
 # 3) Rama por defecto: la que apunta origin/HEAD (normalmente main).
@@ -169,7 +197,7 @@ build_hub_index() {
     '<body>' \
     '  <main>' \
     '    <h1>Previews de ramas</h1>' \
-    '    <p>Cada rama no-default del repositorio tiene su preview bajo esta ruta. Usa el enlace de abajo para volver a la raíz (producción, main).</p>' \
+    '    <p>Las ramas no-default desplegadas tienen su preview bajo esta ruta. Usa el enlace de abajo para volver a la raíz (producción, main).</p>' \
     '    <ul>' \
     '      <li><a href="../">main — raíz (producción)</a></li>')"
 
