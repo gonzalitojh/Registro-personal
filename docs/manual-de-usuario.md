@@ -537,10 +537,29 @@ receta de 4 porciones con 200 g de arroz, para 2 comensales, pedirá
 ### 8.5 El catálogo de ingredientes
 
 La pestaña **«Ingredientes»** muestra el catálogo de ingredientes de tu
-cuenta: se rellena solo con los que usas en tus recetas y te permite
-asignarles la categoría (la lista de la compra se agrupa por ella).
-También muestra **en qué recetas se usa cada ingrediente**: pulsa el
-nombre de una receta para abrirla en modo lectura.
+cuenta, agrupados **por categorías**. Se rellena solo con los que usas
+en tus recetas, y también puedes añadir ingredientes a mano con el
+botón **«+ Nuevo ingrediente»** (arriba a la izquierda): escribe el
+nombre y elige la categoría (si el ingrediente ya existe, no se añade
+otra vez).
+
+Sobre la lista tienes dos controles:
+
+- **Filtro por categorías**: un desplegable con una casilla por
+  categoría, todas marcadas por defecto. Desmarca las que no quieras
+  ver; la etiqueta del botón indica cuántas categorías se están
+  mostrando. Con la casilla **«Todas»** marcas o desmarcas todas de
+  una vez. Los ingredientes **sin categoría** se muestran siempre.
+- **Ordenar**: un desplegable para ordenar la lista por **alfabeto
+  (A-Z o Z-A)**, **recientes añadidos** o **más usadas** (las que
+  aparecen en más recetas).
+
+Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
+una ventana con la información ampliada: la **categoría** (puedes
+cambiarla ahí mismo; la lista de la compra se agrupa por ella), **en
+qué recetas se usa** (pulsa el nombre de una receta para abrirla en
+modo lectura) y un botón **«Eliminar»** para quitarlo del catálogo
+(no afecta a las recetas que lo usan).
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
 pestañas](#16-ajustes) igual que el resto.
