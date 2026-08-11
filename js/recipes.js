@@ -436,7 +436,10 @@ function ingredientCardHtml(ing) {
 
 // Checkboxes del panel de filtro: «Todas» + las categorías (predefinidas
 // y propias del usuario). El panel se pinta solo al abrir; los cambios
-// posteriores solo alternan clases is-checked para no perder el foco.
+// posteriores solo alternan clases is-checked (sin re-render) para no
+// perder el foco y para que la marca visual sea inmediata (iteración
+// tras comentario de la issue #218: el filtro se aplica y se colorea a
+// medida que se selecciona, no al cerrar el panel).
 
 // Ids de todas las categorías visibles en el panel (predefinidas + propias).
 function ingredientFilterCategoryIds() {
@@ -495,6 +498,23 @@ function syncIngredientFilterAll() {
   all.classList.toggle("is-checked", checked);
   const input = all.querySelector("input");
   input.checked = checked;
+}
+
+// Marca visual de cada casilla en tiempo real (issue #218, iteración
+// tras comentario): el input está oculto (opacity: 0) y la única señal
+// de seleccionado es la clase is-checked del label, así que se alterna
+// en el momento de marcar/desmarcar, no al volver a abrir el panel.
+// La fuente de verdad es activeCategoryFilter, no input.checked: al
+// pulsar «Todas» el navegador solo actualiza ese input, los demás
+// quedarían desincronizados.
+function syncIngredientFilterItems() {
+  document.querySelectorAll("#ingredient-filter-panel .ingredients-filter__item").forEach((item) => {
+    const input = item.querySelector("input");
+    if (!input) return;
+    const checked = activeCategoryFilter.has(input.value);
+    item.classList.toggle("is-checked", checked);
+    input.checked = checked;
+  });
 }
 
 function closeIngredientFilterPanel() {
@@ -560,6 +580,10 @@ function setupIngredientFilter() {
     } else {
       activeCategoryFilter.delete(input.value);
     }
+    // Marca visual y filtro en vivo (issue #218, iteración): colorear
+    // lo seleccionado y aplicar el filtro a medida que se selecciona,
+    // no cuando se cierra el panel.
+    syncIngredientFilterItems();
     syncIngredientFilterAll();
     updateIngredientFilterLabel();
     renderIngredientsCatalog();
