@@ -1,9 +1,12 @@
 // =============================================================
-// Buscador Global — busca simultáneamente en películas, series,
-// libros, videojuegos y amigos. La barra de búsqueda vive en la cabecera
-// (#global-search-input dentro de .search-bar-wrap) y los resultados
-// se muestran en un dropdown anclado bajo ella (#global-search-results).
-// Se abre al hacer focus/click en el input, o con Ctrl+K / "/".
+// Buscador Global — busca SOLO dentro de la sección activa
+// (issue #206): en Ocio busca en películas, series, libros y
+// videojuegos (colección + catálogo API); en Perfil, en los amigos;
+// en Recetas, en las recetas. La barra de búsqueda vive en la
+// cabecera global (#global-search-input dentro de .search-bar-wrap)
+// y los resultados se muestran en un dropdown anclado bajo ella
+// (#global-search-results). Se abre al hacer focus/click en el
+// input, o con Ctrl+K / "/".
 //
 // NOTA (issue #46): el dropdown NO usa trapFocus. Sigue el patrón del
 // dropdown de notificaciones (cierre con Escape, clic fuera del
@@ -15,11 +18,13 @@
 // Books) se unifica en este dropdown. La parte alta del dropdown
 // tiene tres botones de tipo (Serie / Película / Libro); al pulsar
 // uno se busca en el catálogo y se muestra una sección "Catálogo · X"
-// con la fila «Añadir manualmente» al final.
+// con la fila «Añadir manualmente» al final. Solo visible en Ocio.
 // =============================================================
 
 import { openItem } from "./modal-handlers.js";
 import * as ui from "./ui.js";
+import { navigate, parseHash } from "./router.js";
+import { searchRecipes, openRecipeModal } from "./recipes.js";
 import {
   searchExternal,
   handleAdd,
@@ -39,6 +44,15 @@ let flatResults = [];
 let cachedProfiles = null;
 let profilePromise = null;
 let searchCtx = null;
+
+// Contador de focus suprimidos (issue #206): al abrir el modal de una
+// receta desde el dropdown se arma con 2 — uno para el focus
+// programático de navigateTo y otro para el reenfoque que hace
+// closeRecipeModal al cerrar el modal — para que el dropdown no se
+// reabra solo en ninguno de los dos momentos. El contador llega a 0
+// con los dos focus y la barra vuelve a abrirse con el siguiente
+// focus manual.
+let suppressFocusCount = 0;
 
 // Estado de la búsqueda externa (catálogo API), por grupo.
 // externalCache[group] = { query, items, source } | null (solo si la
@@ -108,6 +122,16 @@ function groupInfo(group) {
 
 // ---- Búsqueda ----
 
+// Sección activa (issue #206): ocio | perfil | recetas. La búsqueda
+// superior se acota a ella; por defecto (o ante errores) ocio.
+function currentSection() {
+  try {
+    return parseHash().section || "ocio";
+  } catch {
+    return "ocio";
+  }
+}
+
 function getSearchableText(item) {
   // Para libros, también buscar por autor
   const author = item.author || "";
@@ -147,12 +171,23 @@ function filterFriends(profiles, query) {
   });
 }
 
-// Resultados de la colección (películas/series/libros del usuario +
-// amigos cacheados), recortados al límite del dropdown. Síncrono:
-// lo usan performSearch, runExternalSearch y refreshExternalResults.
+// Resultados de la sección activa (issue #206):
+// - ocio    → colección (películas/series/libros/videojuegos del
+//             usuario), sin amigos: el buscador ya no es global.
+// - perfil  → solo amigos.
+// - recetas → solo recetas (filtro local, searchRecipes de recipes.js).
+// Síncrono: lo usan performSearch, runExternalSearch y
+// refreshExternalResults.
 function collectionResults(trimmed) {
   if (!searchCtx) {
-    return { movies: [], tv: [], books: [], games: [], friends: [] };
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  const section = currentSection();
+  if (section === "perfil") {
+    return { friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 6) };
+  }
+  if (section === "recetas") {
+    return { recipes: searchRecipes(trimmed).slice(0, 6) };
   }
   const allItems = searchCtx.getAllItems();
   return {
@@ -160,7 +195,6 @@ function collectionResults(trimmed) {
     tv: filterItems(allItems.tv || [], trimmed).slice(0, 5),
     books: filterItems(allItems.books || [], trimmed).slice(0, 5),
     games: filterItems(allItems.games || [], trimmed).slice(0, 5),
-    friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 3),
   };
 }
 
@@ -177,11 +211,14 @@ function statusClass(status) {
   return map[status] || "";
 }
 
-// Fila superior del dropdown con los botones de tipo (SIEMPRE visible).
+// Fila superior del dropdown con los botones de tipo (SIEMPRE visible
+// en Ocio; en Perfil y Recetas la búsqueda no usa catálogo externo y
+// no se renderizan, issue #206).
 // Cada botón lleva el icono SVG de su tipo (mismos SVGs que las pestañas)
 // y una clase modificadora --<key> que el CSS usa para colorear con el
 // acento de cada tipo (issue #134).
 function renderTypeButtons() {
+  if (currentSection() !== "ocio") return "";
   return `<div class="global-search__type-buttons">
     ${GROUPS.map(
       (g) => `<button type="button" class="global-search__type-btn global-search__type-btn--${g.key}${g.key === activeGroup ? " is-active" : ""}" data-group="${g.key}"><span class="global-search__type-icon" aria-hidden="true">${g.icon}</span>${g.label}</button>`
@@ -189,9 +226,20 @@ function renderTypeButtons() {
   </div>`;
 }
 
+// Texto del hint según la sección activa (issue #206).
+function sectionHintText() {
+  if (currentSection() === "perfil") {
+    return "Escribe al menos 2 caracteres para buscar en tus amigos.";
+  }
+  if (currentSection() === "recetas") {
+    return "Escribe al menos 2 caracteres para buscar en tus recetas.";
+  }
+  return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros y videojuegos.";
+}
+
 function hintHtml() {
   return renderTypeButtons() +
-    `<p class="global-search__hint">Escribe al menos 2 caracteres para buscar en tus películas, series, libros, videojuegos y amigos.</p>`;
+    `<p class="global-search__hint">${sectionHintText()}</p>`;
 }
 
 function renderHint() {
@@ -269,10 +317,10 @@ function renderExternalSection(group, query) {
 }
 
 function renderResults(results, query) {
-  const { movies = [], tv = [], books = [], games = [], friends = [] } = results;
+  const { movies = [], tv = [], books = [], games = [], friends = [], recipes = [] } = results;
   const trimmed = query.trim();
 
-  const hasAny = movies.length || tv.length || books.length || games.length || friends.length;
+  const hasAny = movies.length || tv.length || books.length || games.length || friends.length || recipes.length;
 
   if (!trimmed || trimmed.length < 2) {
     renderHint();
@@ -304,20 +352,26 @@ function renderResults(results, query) {
     books: "Libros",
     games: "Videojuegos",
     friends: "Amigos",
+    recipes: "Recetas",
   };
 
   // Iconos de grupo: series/películas/libros/videojuegos usan los
   // mismos SVGs que las pestañas (MEDIA_ICONS, coloreados por CSS con
-  // --<key>); amigos conserva su emoji (issue #134).
+  // --<key>); amigos conserva su emoji (issue #134) y recetas su
+  // plato (issue #206).
   const groupIcons = {
     movies: MEDIA_ICONS.movies,
     tv: MEDIA_ICONS.tv,
     books: MEDIA_ICONS.books,
     games: MEDIA_ICONS.games,
     friends: "👤",
+    recipes: "🍽️",
   };
 
-  const groupKeys = ["movies", "tv", "books", "games", "friends"];
+  // Solo los grupos de la sección activa (issue #206)
+  const section = currentSection();
+  const groupKeys =
+    section === "perfil" ? ["friends"] : section === "recetas" ? ["recipes"] : ["movies", "tv", "books", "games"];
   let html = renderTypeButtons();
   const newFlat = [];
   let globalIdx = 0;
@@ -327,8 +381,9 @@ function renderResults(results, query) {
     if (!items || !items.length) continue;
 
     // Solo los grupos de medio llevan modificador de color; friends no
-    // (su emoji es la "👤" y no necesita acento, issue #134).
-    html += `<div class="global-search__group-title${key === "friends" ? "" : ` global-search__group-title--${key}`}">
+    // (su emoji es la "👤" y no necesita acento, issue #134), y recipes
+    // tampoco (issue #206).
+    html += `<div class="global-search__group-title${key === "friends" || key === "recipes" ? "" : ` global-search__group-title--${key}`}">
       <span>${groupIcons[key]}</span>
       <span>${groupLabels[key]}</span>
       <span class="global-search__group-badge">${items.length}</span>
@@ -348,6 +403,27 @@ function renderResults(results, query) {
           </div>
         </div>`;
         newFlat.push({ kind: "collection", type: "friend", item: entry, group: key });
+      } else if (key === "recipes") {
+        // Resultado de receta (issue #206): abre el modal de la receta
+        // en modo solo lectura. La portada pasa por safeCoverUrl como
+        // la de los ítems de ocio (placeholder si falta o es inválida).
+        const cover = safeCoverUrl(entry.fotoUrl);
+        const metaParts = [];
+        if (Number(entry.porciones)) {
+          metaParts.push(`${entry.porciones} ${Number(entry.porciones) === 1 ? "porción" : "porciones"}`);
+        }
+        if (entry.ingredientes && entry.ingredientes.length) {
+          metaParts.push(`${entry.ingredientes.length} ingredientes`);
+        }
+        const meta = metaParts.join(" · ");
+        html += `<div class="global-search__item" data-global-idx="${globalIdx}" tabindex="0">
+          <img class="global-search__item-cover" src="${escapeHtml(cover)}" alt="" loading="lazy" />
+          <div class="global-search__item-info">
+            <div class="global-search__item-title" title="${escapeHtml(entry.nombre)}">${escapeHtml(entry.nombre)}</div>
+            <div class="global-search__item-meta" title="${escapeHtml(meta)}">${escapeHtml(meta)}</div>
+          </div>
+        </div>`;
+        newFlat.push({ kind: "recipe", type: "recipe", item: entry, group: key });
       } else {
         // Resultado de item (movie/tv/book/game)
         const cover = entry.coverUrl || "";
@@ -571,13 +647,27 @@ function navigateTo(result) {
     return;
   }
 
+  // Resultado de amigo (issue #206): el buscador del Perfil navega al
+  // detalle del amigo (misma ruta que la lista de amigos usa).
   if (result.type === "friend") {
-    ui.showToast(`Próximamente podrás ver el perfil de ${result.item.displayName || result.item.name || "tu amigo"}.`);
     closeGlobalSearch();
+    navigate({ section: "perfil", profileSection: "friends", uid: result.item.uid });
     return;
   }
 
-  // Es un item de la colección (movie/tv/book)
+  // Resultado de receta (issue #206): abre el modal de la receta en
+  // modo solo lectura. Se arma el contador de focus suprimidos: el
+  // focus programático y el reenfoque de cierre del modal no deben
+  // reabrir el dropdown.
+  if (result.kind === "recipe") {
+    closeGlobalSearch();
+    suppressFocusCount = 2;
+    input.focus();
+    openRecipeModal(result.item, { readOnly: true });
+    return;
+  }
+
+  // Es un item de la colección (movie/tv/book/game)
   const item = result.item;
   if (!searchCtx) {
     ui.showToast("Error: contexto no disponible.");
@@ -594,6 +684,13 @@ function navigateTo(result) {
 
 function openGlobalSearch() {
   if (isOpen) return;
+
+  // En el perfil la cabecera global está oculta (issue #206, iteración
+  // 2026-08-11): la búsqueda superior no está disponible allí. El
+  // guard evita que los atajos de teclado (Ctrl+K, "/") abran un
+  // dropdown huérfano bajo una cabecera invisible.
+  if (currentSection() === "perfil") return;
+
   isOpen = true;
 
   // Si el drawer lateral está abierto, cerrarlo primero: su backdrop
@@ -622,8 +719,10 @@ function openGlobalSearch() {
   // input; si ya estaba enfocado, el focus event no se repite.
   if (document.activeElement !== input) input.focus();
 
-  // Cachear perfiles de amigos al abrir
-  if (!cachedProfiles && searchCtx) {
+  // Cachear perfiles de amigos al abrir. Solo en Perfil: la búsqueda
+  // de Ocio y Recetas ya no usa amigos (issue #206) y no hay que
+  // pagar la lectura de perfiles en cada sección.
+  if (!cachedProfiles && searchCtx && currentSection() === "perfil") {
     if (!profilePromise) {
       profilePromise = searchCtx.getAllUserProfiles().then((profiles) => {
         cachedProfiles = profiles;
@@ -733,8 +832,17 @@ export function setupGlobalSearch(ctx) {
   // ---- Eventos ----
 
   // Abrir al hacer focus o click en el input (el click cubre el caso
-  // de volver a pulsar una barra ya enfocada)
-  input.addEventListener("focus", openGlobalSearch);
+  // de volver a pulsar una barra ya enfocada). Si quedan focus
+  // suprimidos (issue #206: focus programático y reenfoque tras
+  // cerrar el modal de una receta), el focus event solo consume el
+  // contador y no reabre el dropdown.
+  input.addEventListener("focus", () => {
+    if (suppressFocusCount > 0) {
+      suppressFocusCount -= 1;
+      return;
+    }
+    openGlobalSearch();
+  });
   input.addEventListener("click", openGlobalSearch);
 
   // Input con debounce
@@ -871,8 +979,9 @@ async function performSearch(ctx) {
   // Nueva búsqueda: invalidar búsquedas externas en curso
   searchSeq++;
 
-  // Amigos desde la caché
-  if (!cachedProfiles) {
+  // Amigos desde la caché (solo en Perfil: la búsqueda se acota a la
+  // sección activa, issue #206)
+  if (!cachedProfiles && currentSection() === "perfil") {
     if (!profilePromise) {
       profilePromise = ctx.getAllUserProfiles().then((profiles) => {
         cachedProfiles = profiles;

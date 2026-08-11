@@ -53,7 +53,7 @@ import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
-import { setupSidebar, renderSidebar } from "./sidebar.js";
+import { setupSidebar, renderSidebar, setActiveSection } from "./sidebar.js";
 import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
@@ -486,6 +486,33 @@ async function init() {
   let recipesApi = null;
   const router = initRouter({
     onRoute: (route) => {
+      // Búsqueda superior acotada a la sección (issue #206): el
+      // placeholder de la barra refleja dónde busca el usuario.
+      ui.setSearchSection(route.section);
+
+      // Cabecera global (issue #206, iteración 2026-08-11): en el
+      // perfil NO se muestra (el usuario prefiere la flecha de volver
+      // y las pestañas en la misma fila); en Ocio y Recetas sí. Con
+      // sesión iniciada solo (la pantalla de acceso la oculta siempre).
+      const appHeader = document.getElementById("app-header");
+      if (route.section === "perfil") {
+        appHeader?.classList.add("hidden");
+      } else if (currentUser) {
+        appHeader?.classList.remove("hidden");
+      }
+
+      // Marcado de la sección activa en la barra lateral (issue #206,
+      // iteración 2026-08-11): el marcado sigue a la ruta. En el
+      // perfil solo se marca «Ajustes» (entrada pinned) cuando se
+      // está en esa subsección; el resto del perfil no tiene entrada.
+      setActiveSection(
+        route.section === "perfil"
+          ? route.profileSection === "settings"
+            ? "settings"
+            : null
+          : route.section
+      );
+
       if (route.section === "perfil") {
         // Ruta de perfil: abre la sección pedida (profile.js decide
         // el render y, si viene con uid, el detalle del amigo).

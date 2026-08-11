@@ -88,6 +88,12 @@ export const SECTIONS = [
 let openSettings = null;
 let onGoOcio = null;
 
+// Sección activa para el marcado de la barra lateral (issue #206,
+// iteración 2026-08-11): antes el marcado estaba fijo en «Ocio» y no
+// cambiaba al navegar. La actualiza app.js vía setActiveSection en
+// cada cambio de ruta; renderSidebar la respeta al re-renderizar.
+let activeSection = "ocio";
+
 // Predicado de visibilidad de secciones, inyectado por app.js vía
 // setupSidebar({ isSectionVisible }) (issue #97): con solo una
 // sección visible la barra lateral no tiene sentido y se sustituye
@@ -224,10 +230,11 @@ export function renderSidebar() {
   // Render de las entradas a partir del array SECTIONS. Los ids son
   // literales controlados por este módulo (sin datos de usuario).
   // Solo se listan las secciones visibles; las pinned (p. ej.
-  // «Ajustes») van siempre al footer.
+  // «Ajustes») van siempre al footer. La sección activa (marcada con
+  // .is-active) la decide setActiveSection desde app.js.
   nav.innerHTML = SECTIONS.filter((s) => !s.pinned && isSectionVisible(s.id))
     .map(
-      (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
+      (s) => `<button type="button" class="app-sidebar__link${s.id === activeSection ? " is-active" : ""}"
                data-section="${s.id}">
         <span aria-hidden="true">${s.icon}</span>
         <span>${s.label}</span>
@@ -242,7 +249,7 @@ export function renderSidebar() {
   // contenido ocultable.)
   footer.innerHTML = SECTIONS.filter((s) => s.pinned)
     .map(
-      (s) => `<button type="button" class="app-sidebar__link"
+      (s) => `<button type="button" class="app-sidebar__link${s.id === activeSection ? " is-active" : ""}"
                data-section="${s.id}">
         <span aria-hidden="true">${s.icon}</span>
         <span>${s.label}</span>
@@ -251,4 +258,22 @@ export function renderSidebar() {
     .join("");
 
   updateHeaderNavButtons();
+}
+
+// Marca la entrada de la sección activa en la barra lateral (issue
+// #206, iteración 2026-08-11): al cambiar de sección (Ocio, Recetas
+// o Ajustes vía el perfil), el marcado .is-active debe moverse y no
+// quedar anclado a «Ocio». Lo llama app.js en el onRoute del router.
+// Recibe el id de sección del array SECTIONS (ocio, recetas,
+// settings) o null para no marcar ninguna (p. ej. en el perfil fuera
+// de Ajustes, que no tiene entrada propia en la barra).
+export function setActiveSection(sectionId) {
+  activeSection = sectionId || null;
+  // Aplicar el marcado sin re-renderizar: las entradas ya existentes
+  // conservan su estado; renderSidebar lo respeta al reconstruir.
+  [nav, footer].forEach((container) => {
+    container?.querySelectorAll(".app-sidebar__link").forEach((el) => {
+      el.classList.toggle("is-active", el.dataset.section === activeSection);
+    });
+  });
 }

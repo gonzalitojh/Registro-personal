@@ -70,31 +70,38 @@ elige **«Cerrar sesión»** en el menú que se despliega.
 
 Nada más entrar verás:
 
-- **Arriba, la cabecera**:
+- **Arriba, la cabecera** (visible en las secciones de **Ocio** y
+  **Recetas**; en **tu perfil no aparece**: allí tienes la flecha de
+  volver y las pestañas en la misma fila, ver
+  [sección 15](#15-tu-perfil); en la pantalla de acceso tampoco):
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
     deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
     devuelve a las pestañas de Series, Películas, Libros y Videojuegos,
-    y, en la parte de abajo, **«Ajustes»**, que abre la sección de
-    ajustes de tu perfil (más en [sección 14](#14-ajustes)). Se cierra
-    pulsando fuera, la ✕, la tecla **Esc** o la propia entrada. Si en
-    [Ajustes → Secciones y pestañas](#14-ajustes) dejas solo **una
-    sección visible**, la barra lateral se sustituye por un botón
-    **engranaje ⚙** en la cabecera que abre directamente Ajustes; en
-    cuanto vuelvas a tener más de una sección visible, la barra
+    **«Recetas»** y, en la parte de abajo, **«Ajustes»**, que abre la
+    sección de ajustes de tu perfil (más en [sección 14](#14-ajustes)).
+    Se cierra pulsando fuera, la ✕, la tecla **Esc** o la propia
+    entrada. Si en [Ajustes → Secciones y pestañas](#14-ajustes) dejas
+    solo **una sección visible**, la barra lateral se sustituye por un
+    botón **engranaje ⚙** en la cabecera que abre directamente Ajustes;
+    en cuanto vuelvas a tener más de una sección visible, la barra
     lateral reaparece.
-  - **Barra de búsqueda** (en el centro): la búsqueda global
-    (más en [sección 8](#8-cómo-buscar)). Al entrar, la barra muestra
-    brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
-    segundos pasa a «Buscar películas, series, libros, videojuegos o
-    amigos...».
+  - **Barra de búsqueda** (en el centro): busca **dentro de la sección
+    en la que estés** (más en [sección 9](#9-cómo-buscar)). Al entrar,
+    la barra muestra brevemente el nombre de la web —**«Mi Registro»**—
+    y a los pocos segundos pasa al texto de la sección: «Buscar
+    películas, series, libros y videojuegos...» en Ocio y «Buscar
+    recetas...» en Recetas.
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 13](#13-notificaciones)).
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
-      opción **«Cerrar sesión»**.
-  - La cabecera **se oculta al bajar por la lista y vuelve al subir**:
-    siempre está ahí cuando la necesitas
-    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
+      opción **«Cerrar sesión»**. Desde aquí entras y sales del perfil:
+      en la sección de Recetas no hay botón de «volver» — la navegación
+      siempre está en la cabecera.
+  - La cabecera **se oculta al bajar por las listas de Ocio y vuelve al
+    subir**: siempre está ahí cuando la necesitas
+    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)). En
+    Recetas se queda fija.
 - **Las pestañas**: **Series**, **Películas**, **Libros** y
   **Videojuegos**. En el **móvil** están en una barra fija en la parte
   inferior de la pantalla; en el **ordenador y la tablet**, en una barra
@@ -126,12 +133,12 @@ Cada pestaña se divide en dos zonas:
 
 - **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
   por estado, ordenar y cambiar la vista entre cuadrícula y lista
-  (más en [sección 9](#9-organizar-y-ordenar-tu-registro)).
+  (más en [sección 10](#10-organizar-y-ordenar-tu-registro)).
 - **Debajo**: la lista de tus títulos de ese tipo.
 
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
-(más en [sección 8](#8-cómo-buscar)).
+(más en [sección 9](#9-cómo-buscar)).
 
 ### 3.1 Compartir direcciones y volver a las pestañas
 
@@ -157,11 +164,16 @@ Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 
 ### 3.2 La cabecera y las pestañas al hacer scroll
 
-Al bajar por una lista (series, películas, libros o videojuegos), la
-barra de búsqueda de arriba y las pestañas se ocultan deslizándose hacia
-el borde de la pantalla, como si salieran de ella, para que la lista
-ocupe todo el espacio. En cuanto desplazas hacia arriba, vuelven a
-aparecer deslizándose desde su borde.
+Al bajar por una lista de **Ocio** (series, películas, libros o
+videojuegos), la barra de búsqueda de arriba y las pestañas se ocultan
+deslizándose hacia el borde de la pantalla, como si salieran de ella,
+para que la lista ocupe todo el espacio. En cuanto desplazas hacia
+arriba, vuelven a aparecer deslizándose desde su borde.
+
+En **Recetas** la cabecera **siempre está visible** (pasa lo mismo
+que con las pestañas: allí no hay barra de pestañas de Ocio que
+ocultar). En **tu perfil** no hay cabecera global: tiene su propia
+cabecera con la flecha de volver y las pestañas en la misma fila.
 
 Si sigues bajando y los filtros de la lista (estado, orden y vista)
 quedan también fuera de la pantalla, verás un pequeño botón redondeado
@@ -207,7 +219,7 @@ pierde nada.
    resultado: se abrirá una vista previa con los detalles.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
-aparece **«Añadir manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+aparece **«Añadir manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -287,7 +299,7 @@ Igual que con las series: escribe el título en la **barra de búsqueda
 de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
 el resultado que quieras, o usa la vista previa pulsando sobre la fila.
 Si no la encuentras, al final de los resultados aparece **«Añadir
-manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -330,7 +342,7 @@ Si el libro tiene varias ediciones, la web te deja **elegir portada y
 sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
 se muestra como «Añadido». Si no lo encuentras, al final de los
 resultados aparece **«Añadir manualmente»**
-(más en [sección 8.3](#83-añadir-manualmente)).
+(más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -386,7 +398,7 @@ valoración de la comunidad y más datos.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Si no lo encuentras, al final de los resultados aparece **«Añadir
-  manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+  manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 7.3 Empezar y terminar partidas
 
@@ -448,6 +460,10 @@ marcadas como «(propia)».
 Con el buscador encuentras recetas **por nombre, por ingrediente** (por
 ejemplo «huevo» muestra todas las recetas que lo usan) y **por
 etiqueta** (por ejemplo «vegetariano»).
+
+La **barra de búsqueda de la cabecera** también busca **dentro de tus
+recetas** (más en [sección 9.2](#92-buscar-en-tu-registro)): pulsa un
+resultado para abrir la receta en modo lectura.
 
 El botón **«Ingredientes»** abre el catálogo de ingredientes de tu
 cuenta: se rellena solo con los que usas en tus recetas y te permite
@@ -522,11 +538,14 @@ anteriores se conservan.
 
 ### 9.1 Buscar en el catálogo
 
-Todo se busca desde la **barra de búsqueda de la cabecera**
+Todo se busca desde la **barra de búsqueda de la cabecera** (en Ocio
+y en Recetas; en tu perfil no hay barra de búsqueda)
 (también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
-Al escribir el título (mínimo 2 caracteres) verás los resultados, y en
-la parte superior del panel hay cuatro botones, siempre visibles:
-**«Serie»**, **«Película»**, **«Libro»** y **«Videojuego»**. Pulsa el
+En la sección de **Ocio**, al escribir el título (mínimo 2 caracteres)
+verás los resultados, y en la parte superior del panel hay cuatro
+botones, siempre visibles: **«Serie»**, **«Película»**, **«Libro»** y
+**«Videojuego»** (en Recetas no aparecen: allí el buscador solo mira
+dentro de la sección). Pulsa el
 que corresponda para **buscar en el catálogo**:
 
 - Películas y series se buscan en **TMDB** (el mismo catálogo de
@@ -563,7 +582,7 @@ igual). Para cada resultado:
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
   **«¿No la encuentras? Añadir manualmente…»**
-  (más en [sección 8.3](#83-añadir-manualmente)).
+  (más en [sección 9.3](#93-añadir-manualmente)).
 
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
@@ -582,16 +601,21 @@ el resultado sigue funcionando igual.
 ### 9.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
-**Cmd+K** en Mac, o **/**) también busca a la vez en lo que ya tienes
-anotado: **películas, series, libros** (también por autor),
-**videojuegos** y en tus **amigos** (por nombre o correo).
+**Cmd+K** en Mac, o **/**) busca **solo dentro de la sección en la que
+estás** (está disponible en **Ocio** y en **Recetas**; en tu perfil no
+hay barra de búsqueda):
+
+- En **Ocio**: en lo que ya tienes anotado — **películas, series,
+  libros** (también por autor) y **videojuegos**.
+- En **Recetas**: en tus **recetas** (por nombre, ingrediente o
+  etiqueta). Al pulsar un resultado se abre la receta en modo lectura.
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
-desplegable** bajo ella con los resultados. Los resultados se agrupan con
-iconos: los mismos de las pestañas, cada uno en su color (series en verde,
-películas en rojo, libros en ocre, videojuegos en violeta) y el icono 👤
-para amigos. Pulsa un resultado para abrir su ficha; si pulsas un amigo,
-de momento verás el aviso de que pronto podrás ver su perfil.
+desplegable** bajo ella con los resultados. Los resultados se agrupan
+con iconos: los mismos de las pestañas, cada uno en su color (series en
+verde, películas en rojo, libros en ocre, videojuegos en violeta) y el
+icono 🍽️ para recetas. Pulsa un resultado para abrir su ficha (o la
+receta, según la sección).
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
 la **✕** que aparece dentro de la barra (que además borra lo escrito).
@@ -780,7 +804,10 @@ o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
 también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
-En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas, Libros o Videojuegos) que tenías abierta.
+En tu perfil **no aparece la cabecera global** (barra lateral,
+búsqueda y botón de perfil): arriba tienes la **flecha de volver** y
+las pestañas de tu perfil en la misma fila. La flecha te devuelve a
+la última pestaña de Ocio en la que estabas.
 Tu perfil tiene cuatro secciones:
 
 ### 15.0 Compartir direcciones de tu perfil

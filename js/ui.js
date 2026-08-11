@@ -97,11 +97,41 @@ export const PLACEHOLDER_COVER =
 
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
 // se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
-// defecto. El timer se limpia al cerrar sesión.
-export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros, videojuegos o amigos...";
+// defecto. El timer se limpia al cerrar sesión. El placeholder por
+// defecto ya no menciona a los amigos: la búsqueda se acota a la
+// sección (issue #206) y solo se restaura en la pantalla de acceso.
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros y videojuegos...";
 const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
 const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
 let searchPlaceholderTimer = null;
+
+// Placeholder y aria-label según la sección activa (issue #206): la
+// búsqueda superior se acota a la sección (Ocio / Perfil / Recetas).
+const SEARCH_PLACEHOLDER_BY_SECTION = {
+  ocio: "Buscar películas, series, libros y videojuegos...",
+  perfil: "Buscar amigos...",
+  recetas: "Buscar recetas...",
+};
+const SEARCH_ARIA_BY_SECTION = {
+  ocio: "Buscar en tu registro de ocio",
+  perfil: "Buscar en tus amigos",
+  recetas: "Buscar en tus recetas",
+};
+let currentSearchSection = "ocio";
+
+// Cambia el placeholder de la barra al navegar de sección (lo llama
+// el onRoute de app.js). Corta el placeholder animado de bienvenida:
+// si el usuario cambia de sección durante los 3.5 s, el de la sección
+// se muestra al momento.
+export function setSearchSection(section) {
+  currentSearchSection = SEARCH_PLACEHOLDER_BY_SECTION[section] ? section : "ocio";
+  const searchInput = getGlobalSearchInput();
+  if (!searchInput) return;
+  clearTimeout(searchPlaceholderTimer);
+  searchPlaceholderTimer = null;
+  searchInput.placeholder = SEARCH_PLACEHOLDER_BY_SECTION[currentSearchSection];
+  searchInput.setAttribute("aria-label", SEARCH_ARIA_BY_SECTION[currentSearchSection]);
+}
 
 function getGlobalSearchInput() {
   return document.getElementById("global-search-input");
@@ -116,20 +146,25 @@ export function showAuthScreen() {
 
   document.getElementById("auth-screen").classList.remove("hidden");
   document.getElementById("app").classList.add("hidden");
+  // Cabecera global (issue #206): solo es visible con sesión iniciada
+  document.getElementById("app-header")?.classList.add("hidden");
 }
 
 export function showApp(user) {
   document.getElementById("auth-screen").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
+  // Cabecera global visible en todas las secciones (issue #206)
+  document.getElementById("app-header")?.classList.remove("hidden");
   document.getElementById("user-avatar").src = user.photoURL || PLACEHOLDER_COVER;
 
-  // Placeholder animado: "Mi Registro" → placeholder por defecto
+  // Placeholder animado: "Mi Registro" → placeholder de la sección
   const searchInput = getGlobalSearchInput();
   if (searchInput) {
     clearTimeout(searchPlaceholderTimer);
     searchInput.placeholder = SEARCH_BRAND_PLACEHOLDER;
+    searchInput.setAttribute("aria-label", SEARCH_ARIA_BY_SECTION[currentSearchSection]);
     searchPlaceholderTimer = setTimeout(() => {
-      searchInput.placeholder = DEFAULT_SEARCH_PLACEHOLDER;
+      searchInput.placeholder = SEARCH_PLACEHOLDER_BY_SECTION[currentSearchSection];
       searchPlaceholderTimer = null;
     }, SEARCH_PLACEHOLDER_SWITCH_MS);
   }
