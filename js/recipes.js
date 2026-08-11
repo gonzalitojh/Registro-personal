@@ -699,13 +699,15 @@ function bindIngredientModalHandlers(content, ingredient) {
     }
   });
 
-  // Alta manual: nombre normalizado y sin duplicados.
+  // Alta manual: el nombre se guarda tal cual se escribió (tildes y
+  // mayúsculas, issue #224); la deduplicación sigue por nombre
+  // normalizado (sin tildes, minúsculas).
   content.querySelector("#ingredient-new-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const raw = content.querySelector("#ing-modal-nombre").value.trim();
     if (!raw) return;
-    const nombre = normalizeIngredientName(raw);
-    const exists = ingredients.some((i) => normalizeIngredientName(i.nombre) === nombre);
+    const nombre = raw;
+    const exists = ingredients.some((i) => normalizeIngredientName(i.nombre) === normalizeIngredientName(raw));
     if (exists) {
       showToast("Ese ingrediente ya existe en el catálogo.");
       return;
@@ -1035,6 +1037,10 @@ async function saveRecipeFromForm(content) {
 }
 
 // Añade al catálogo los ingredientes nuevos (los existentes no se tocan).
+// El catálogo conserva la primera grafía escrita (issue #224): el
+// nombre se guarda con sus tildes y mayúsculas tal cual vino en la
+// receta, mientras que la deduplicación sigue usando el nombre
+// normalizado (sin tildes, minúsculas).
 async function syncIngredientsCatalog(ingredientes) {
   const known = new Set(ingredients.map((i) => normalizeIngredientName(i.nombre)));
   for (const ing of ingredientes || []) {
@@ -1042,7 +1048,7 @@ async function syncIngredientsCatalog(ingredientes) {
     if (!name || known.has(name)) continue;
     known.add(name);
     try {
-      await ctx.addIngredient(currentUser, { nombre: name, categoriaId: ing.categoriaId || "" });
+      await ctx.addIngredient(currentUser, { nombre: ing.nombre.trim(), categoriaId: ing.categoriaId || "" });
     } catch (err) {
       console.error("No se pudo añadir el ingrediente al catálogo:", err);
     }
