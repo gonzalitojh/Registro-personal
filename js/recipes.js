@@ -68,6 +68,13 @@ export function getRecipes() {
   return recipes;
 }
 
+// Catálogo de ingredientes (users/{uid}/ingredients). La lista de la
+// compra (shopping-list.js) lo consulta para la cantidad por paquete
+// (issue #225): paqueteCantidad + paqueteUnidad (issue #224).
+export function getIngredients() {
+  return ingredients;
+}
+
 // Vacía el estado local (lo llama app.js al cerrar sesión, para que
 // los datos del usuario anterior no se muestren al siguiente).
 export function resetRecipesData() {

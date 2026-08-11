@@ -78,7 +78,13 @@ export function subscribeMenuData(uid, onChange, onError) {
 // ---------- Acceso al menú activo ----------
 
 function activeMenu() {
-  const weekStart = mondayISO(weekOffset);
+  return menuForWeek(mondayISO(weekOffset));
+}
+
+// Menú de una semana concreta (semanaInicio = lunes ISO). Si no hay
+// documento guardado se devuelve uno en memoria sin id (la lista de
+// la compra multi-semana lo usa para semanas sin datos: aportan 0).
+function menuForWeek(weekStart) {
   let menu = menus.find((m) => m.semanaInicio === weekStart);
   if (!menu) {
     menu = {
@@ -88,6 +94,7 @@ function activeMenu() {
       dias: emptyDias(),
       recetasPorSemana: [],
       recetasExcluidasCompra: [],
+      itemsEliminados: [],
     };
   }
   return menu;
@@ -130,13 +137,23 @@ async function deleteActiveMenu() {
 // un documento duplicado de la misma semana antes de que llegue el
 // snapshot de Firestore.
 async function updateActiveMenu(changes) {
-  const menu = { ...activeMenu(), ...changes };
+  await updateMenuWeek(activeMenu().semanaInicio, changes, { create: true });
+}
+
+// Igual que updateActiveMenu pero para una semana concreta (lista de
+// la compra multi-semana, issue #225). Con `create: false` solo se
+// actualiza si la semana ya tiene documento: eliminar ítems de una
+// semana vacía no debe crear un documento.
+export async function updateMenuWeek(weekStart, changes, { create = true } = {}) {
+  const menu = { ...menuForWeek(weekStart), ...changes };
   try {
     if (menu.id) {
       await ctx.updateMenu(currentUser, menu.id, menuDataOf(menu));
-    } else {
+    } else if (create) {
       const ref = await ctx.addMenu(currentUser, menuDataOf(menu));
       menu.id = ref.id;
+    } else {
+      return;
     }
     const idx = menus.findIndex((m) => m.id === menu.id);
     const fresh = { ...menuDataOf(menu), id: menu.id };
@@ -158,6 +175,10 @@ function menuDataOf(menu) {
     // Ítems extra de la lista de la compra: viven en el documento del
     // menú de la semana (shopping-list.js los consume y actualiza).
     itemsExtra: menu.itemsExtra || [],
+    // Ítems eliminados por el usuario desde la lista de la compra
+    // (issue #225): claves normalizadas «nombre|unidad» que ya no se
+    // calculan en esa semana.
+    itemsEliminados: menu.itemsEliminados || [],
   };
 }
 
@@ -355,7 +376,14 @@ export function isRecipeExcluded(recipeId) {
 // Datos del menú activo para la lista de la compra: devuelve
 // { semanaInicio, comensales, dias, recetasPorSemana, recetasExcluidasCompra }.
 export function getActiveMenuData() {
-  const menu = activeMenu();
+  return getMenuDataByWeek(activeMenu().semanaInicio);
+}
+
+// Datos de una semana concreta para la lista de la compra
+// multi-semana (issue #225): mismo shape que getActiveMenuData pero
+// para cualquier semana (con o sin documento guardado).
+export function getMenuDataByWeek(weekStart) {
+  const menu = menuForWeek(weekStart);
   return {
     semanaInicio: menu.semanaInicio,
     comensales: Number(menu.comensales) || 1,
@@ -363,6 +391,10 @@ export function getActiveMenuData() {
     recetasPorSemana: menu.recetasPorSemana || [],
     recetasExcluidasCompra: menu.recetasExcluidasCompra || [],
     itemsExtra: menu.itemsExtra || [],
+    itemsEliminados: menu.itemsEliminados || [],
+    // Semanas sin documento guardado: id null (para no crear docs al
+    // eliminar ítems de semanas vacías, issue #225).
+    hasDoc: Boolean(menu.id),
   };
 }
 
