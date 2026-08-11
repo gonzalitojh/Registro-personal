@@ -106,7 +106,7 @@ Decisiones clave del rediseño:
   primary para la acción principal); la clase `.btn--pill` queda
   reutilizable para futuros controles; el botón dinámico y el estático
   nunca divergen visualmente.
-- **Neutras**: bump de versión PWA (invalida la caché de `20260912`
+- **Neutras**: bump de versión PWA (invalida la caché de `20260911`
   para propagar el nuevo CSS); el botón dinámico vuelve a
   `btn--primary btn--small` cuando `renderWeeklyRecipes` lo
   reconstruye, pero el usuario no percibe cambio de comportamiento; el
