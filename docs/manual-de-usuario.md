@@ -102,17 +102,23 @@ Nada más entrar verás:
     subir**: siempre está ahí cuando la necesitas
     ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)). En
     Recetas se queda fija.
-- **Las pestañas**: **Series**, **Películas**, **Libros** y
-  **Videojuegos**. En el **móvil** están en una barra fija en la parte
-  inferior de la pantalla; en el **ordenador y la tablet**, en una barra
-  fija justo bajo la barra de búsqueda superior. Cada pestaña lleva un
-  icono y tiene su propio color: **Series en verde**, **Películas en
-  rojo**, **Libros en ocre** y **Videojuegos en violeta**. La pestaña
-  activa se marca con una franja de su color y un fondo claro. Pulsa una
-  pestaña para ver tu lista de ese tipo, con sus filtros y su orden. Como
-  la cabecera, la barra de pestañas se oculta al bajar por la lista y
+- **Las pestañas** (en la barra fija bajo la cabecera en el ordenador
+  y la tablet, o anclada abajo en el móvil): **Series**, **Películas**,
+  **Libros** y **Videojuegos**. Cada pestaña lleva un icono y tiene su
+  propio color: **Series en verde**, **Películas en rojo**, **Libros en
+  ocre** y **Videojuegos en violeta**. La pestaña activa se marca con
+  una franja de su color y un fondo claro. Pulsa una pestaña para ver
+  tu lista de ese tipo, con sus filtros y su orden. Como la cabecera,
+  la barra de pestañas de Ocio se oculta al bajar por la lista y
   reaparece al subir
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
+- **La sección de Recetas tiene su propia barra de pestañas, igual que
+  Ocio**: **Recetas en ocre**, **Menú en verde** y **Lista de la
+  compra en rojo**, cada una con su icono. Es fija de la misma manera
+  (abajo en el móvil, bajo la barra de búsqueda en ordenador y tableta)
+  y sus pestañas se pueden ocultar desde
+  [Ajustes → Secciones y pestañas](#16-ajustes) igual que las de Ocio
+  (más en [sección 8](#8-recetas)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
@@ -170,10 +176,11 @@ deslizándose hacia el borde de la pantalla, como si salieran de ella,
 para que la lista ocupe todo el espacio. En cuanto desplazas hacia
 arriba, vuelven a aparecer deslizándose desde su borde.
 
-En **Recetas** la cabecera **siempre está visible** (pasa lo mismo
-que con las pestañas: allí no hay barra de pestañas de Ocio que
-ocultar). En **tu perfil** no hay cabecera global: tiene su propia
-cabecera con la flecha de volver y las pestañas en la misma fila.
+En **Recetas** la cabecera y su barra de pestañas (Recetas, Menú,
+Lista de la compra) **siempre están visibles**: el auto-ocultado al
+desplazarse solo ocurre en las listas de **Ocio**. En **tu perfil** no
+hay cabecera global: tiene su propia cabecera con la flecha de volver
+y las pestañas en la misma fila.
 
 Si sigues bajando y los filtros de la lista (estado, orden y vista)
 quedan también fuera de la pantalla, verás un pequeño botón redondeado
@@ -428,8 +435,13 @@ perfil (sección 14.1).
 
 La sección **Recetas** (en la barra lateral, junto a «Ocio») te permite
 guardar tus recetas, planificar el menú de la semana y generar la lista
-de la compra automáticamente. Tiene tres pestañas: **Recetas**, **Menú**
-y **Lista de la compra**.
+de la compra automáticamente. Tiene tres pestañas — **Recetas**, **Menú**
+y **Lista de la compra** — en una barra fija **igual que las de Ocio**:
+abajo en el móvil y bajo la barra de búsqueda en el ordenador y la
+tableta, cada una con su icono y su color (**ocre**, **verde** y
+**rojo**). La pestaña activa se marca con una franja de su color. Puedes
+ocultarlas desde [Ajustes → Secciones y pestañas](#16-ajustes), igual
+que las de Ocio.
 
 ### 8.1 Tus recetas
 
@@ -906,21 +918,24 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   Tu elección se guarda automáticamente y se mantiene la próxima vez
   que entres.
 - **Secciones y pestañas**: elige qué secciones y pestañas de la web
-  ves. Hoy hay una sola sección, **«Ocio»**, con sus cuatro pestañas
-  (**Series**, **Películas**, **Libros** y **Videojuegos**); en el
-  futuro se añadirán más secciones y aparecerán aquí con sus pestañas.
-  Al **ocultar una pestaña**, desaparece de la barra de pestañas y de
-  la vista: tus datos, avisos y actualizaciones siguen funcionando
-  igual, solo deja de verse. Al **ocultar una sección**, desaparece de
-  la barra lateral de navegación; si solo dejas **una sección
-  visible**, la barra lateral (☰) se sustituye por un botón
-  **engranaje ⚙** en la cabecera que abre Ajustes directamente, y
-  vuelve a aparecer cuando tengas más de una sección visible. Siempre
-  queda al menos una sección y una pestaña de cada sección visible: el
-  interruptor de la última que quedaría se muestra apagado (gris) y no
-  se puede tocar, con una nota explicativa. Ocultar algo **no borra
-  tus datos**: solo lo quita de la vista, y puedes volver a mostrarlo
-  cuando quieras. Los cambios se guardan solos.
+  ves. Hoy hay dos secciones: **«Ocio»**, con sus cuatro pestañas
+  (**Series**, **Películas**, **Libros** y **Videojuegos**), y
+  **«Recetas»**, con sus tres pestañas (**Recetas**, **Menú** y
+  **Lista de la compra**). En el futuro se añadirán más secciones y
+  aparecerán aquí con sus pestañas. Al **ocultar una pestaña**,
+  desaparece de la barra de pestañas de su sección (la de Ocio o la
+  de Recetas) y de la vista: tus datos, avisos y actualizaciones
+  siguen funcionando igual, solo deja de verse. Al **ocultar una
+  sección**, desaparece de la barra lateral de navegación; si solo
+  dejas **una sección visible**, la barra lateral (☰) se sustituye
+  por un botón **engranaje ⚙** en la cabecera que abre Ajustes
+  directamente, y vuelve a aparecer cuando tengas más de una sección
+  visible. Siempre queda al menos una sección y una pestaña de cada
+  sección visible: el interruptor de la última que quedaría se muestra
+  apagado (gris) y no se puede tocar, con una nota explicativa.
+  Ocultar algo **no borra tus datos**: solo lo quita de la vista, y
+  puedes volver a mostrarlo cuando quieras. Los cambios se guardan
+  solos.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series

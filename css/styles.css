@@ -472,6 +472,12 @@
 [data-theme="black"] .tab--movies.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
 [data-theme="black"] .tab--books.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
 [data-theme="black"] .tab--games.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
+/* Pestañas de Recetas (issue #208): mismo patrón que las de Ocio,
+   reutilizando los acentos de la paleta con sus variantes claras
+   para el modo negro puro. */
+[data-theme="black"] .tab--recipes.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
+[data-theme="black"] .tab--menu.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
+[data-theme="black"] .tab--shopping.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
 
 /* Iconos de los títulos de grupo de la búsqueda global: acentos
    claros sobre el dropdown oscuro (en oscuro ya estaban sobre
@@ -1138,6 +1144,12 @@ body.is-back-to-top-visible .back-to-top {
 .tab--movies { --tab-accent: var(--stamp); }
 .tab--books { --tab-accent: var(--ochre-spine); }
 .tab--games { --tab-accent: var(--games); }
+/* Pestañas de Recetas (issue #208): acentos de la paleta existente
+   (ocre, verde y rojo), con sus variantes -dark para negro puro en
+   los overrides de [data-theme="black"] (mismo patrón que Ocio). */
+.tab--recipes { --tab-accent: var(--ochre-spine); }
+.tab--menu { --tab-accent: var(--teal-reel); }
+.tab--shopping { --tab-accent: var(--stamp); }
 
 .tab svg {
   display: block;
@@ -1154,6 +1166,16 @@ body.is-back-to-top-visible .back-to-top {
 }
 .tab.is-active svg {
   color: var(--ink);
+}
+
+/* Etiquetas largas de pestaña (p. ej. «Lista de la compra» en
+   Recetas, issue #208): el texto envuelve dentro del ancho de la
+   pestaña en lugar de desbordarla; nunca se trunca (AGENTS.md:
+   sin texto fuera de pantalla). Inofensivo para las etiquetas
+   cortas de Ocio. */
+.tabs--bar .tab span {
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 /* Escritorio (>768px): icono y nombre en la misma línea */
@@ -2502,30 +2524,26 @@ body.is-back-to-top-visible .back-to-top {
 
 .recipes-view {
   /* Padding superior: hueco para la cabecera global fija (--header-h)
-     + 1rem de aire (issue #206). */
-  padding: calc(var(--header-h) + 1rem) 1rem 4rem;
-  max-width: 72rem;
+     + 1rem de aire (issue #206). Padding inferior: hueco para la
+     barra de pestañas fija (--tabs-bar-h + margen seguro) + 1.5rem,
+     mismo patrón que .app (issue #208). */
+  padding: calc(var(--header-h) + 1rem) 1.25rem
+           calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  /* Ancho alineado con #app, la cabecera global y la barra de
+     pestañas (.tabs, max-width 980px): el contenido de Recetas ocupa
+     exactamente el mismo ancho que el de Ocio (issue #208). */
+  max-width: 980px;
   margin: 0 auto;
   width: 100%;
 }
 
-.recipes-view__header {
-  position: sticky;
-  /* Se pega bajo la cabecera global (issue #206): top: var(--header-h)
-     en vez de 0 para no quedar tapado por ella. */
-  top: var(--header-h);
-  z-index: 30;
-  background: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.8rem 0 0.6rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.recipes-view__header .profile-subtabs {
-  margin-left: 0;
+/* En PC y tablet (≥768px) la barra de pestañas también es fija, bajo
+   la cabecera: el padding superior acumula ambos huecos y el inferior
+   vuelve al original de 4rem (ya no hay barra abajo). */
+@media (min-width: 768px) {
+  .recipes-view {
+    padding: calc(var(--header-h) + var(--tabs-bar-h) + 1rem) 1.25rem 4rem;
+  }
 }
 
 /* --- Barra de herramientas de la pestaña Recetas --- */
@@ -3315,11 +3333,6 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* --- Overrides de la familia clara (Claro / Blanco puro) --- */
-
-[data-theme="light"] .recipes-view__header,
-[data-theme="white"] .recipes-view__header {
-  background: var(--paper);
-}
 
 [data-theme="light"] .recipes-search-input,
 [data-theme="white"] .recipes-search-input {

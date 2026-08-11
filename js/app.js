@@ -459,6 +459,18 @@ async function init() {
       const panelEl = panels[tab.panelId];
       if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Pestañas de Recetas (issue #208): la barra de pestañas de
+    // Recetas es ya del mismo componente que la de Ocio, así que las
+    // pestañas ocultas en Ajustes también salen de su barra. Los
+    // paneles de Recetas los re-togglea openRecipes al abrir la
+    // sección (con normalizeTabKey, que ya cae a la primera visible
+    // si la pedida está oculta), así que aquí solo se añade hidden.
+    Object.entries(SECTION_REGISTRY.recetas.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-recipes-tab="${tabKey}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = document.getElementById(tab.panelId);
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
+    });
     // Si la pestaña activa quedó oculta, caer a la primera visible
     // (el mismo guard de activatePanel, issue #97): sin esto el área
     // de contenido quedaría en blanco al ocultar la pestaña activa.
@@ -540,11 +552,16 @@ async function init() {
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
-        // la muestra (issue #178).
+        // la muestra (issue #178). REGRESIÓN (issue #208): la fusión de
+        // content/issue-64-seccion-recetas re-introdujo un
+        // classList.remove("hidden") incondicional sobre #app que
+        // destapaba la barra de pestañas sobre la pantalla de acceso
+        // (y el resto de la interfaz) hasta que Firebase resolvía la
+        // sesión. La única vía de destapar #app es ui.showApp tras el
+        // login: este remove condicional es el único permitido.
         if (currentUser) document.getElementById("app").classList.remove("hidden");
       }
     },

@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260907" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260907" />
+  <link rel="stylesheet" href="css/styles.css?v=20260908" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260908" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -472,15 +472,49 @@
        menú semanal y genera la lista de la compra. Hermana de
        profile-view: vista de primer nivel, fuera de #app. Sin botón de
        volver ni título (issue #206): la navegación vive en la cabecera
-       global. -->
+       global. Barra de pestañas propia tipo Ocio (issue #208): fija
+       abajo en móvil y bajo la cabecera global en ≥768px, con la misma
+       estructura que las pestañas de Ocio (ocultables en Ajustes). -->
   <div id="recipes-view" class="recipes-view hidden" role="main" aria-label="Vista de recetas">
-    <div class="recipes-view__header">
-      <div class="profile-subtabs" role="tablist" aria-label="Secciones de recetas">
-        <button type="button" class="profile-subtab is-active" role="tab" aria-selected="true" aria-controls="panel-recipes-tab" data-recipes-tab="recetas">Recetas</button>
-        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="panel-menu-tab" data-recipes-tab="menu">Menú</button>
-        <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="panel-shopping-tab" data-recipes-tab="compra">Lista de la compra</button>
+    <nav class="tabs--bar" aria-label="Secciones de recetas">
+      <div class="tabs" role="tablist" aria-label="Secciones de recetas">
+        <button class="tab tab--recipes is-active" role="tab" aria-selected="true"
+                aria-controls="panel-recipes-tab" data-recipes-tab="recetas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+            <line x1="6" x2="18" y1="17" y2="17" />
+          </svg>
+          <span>Recetas</span>
+        </button>
+        <button class="tab tab--menu" role="tab" aria-selected="false"
+                aria-controls="panel-menu-tab" data-recipes-tab="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path d="M8 14h.01" />
+            <path d="M12 14h.01" />
+            <path d="M16 14h.01" />
+            <path d="M8 18h.01" />
+            <path d="M12 18h.01" />
+          </svg>
+          <span>Menú</span>
+        </button>
+        <button class="tab tab--shopping" role="tab" aria-selected="false"
+                aria-controls="panel-shopping-tab" data-recipes-tab="compra">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8" cy="21" r="1" />
+            <circle cx="19" cy="21" r="1" />
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+          </svg>
+          <span>Lista de la compra</span>
+        </button>
       </div>
-    </div>
+    </nav>
 
     <div class="recipes-view__body">
       <!-- Pestaña Recetas: lista de recetas con búsqueda + catálogo
@@ -595,7 +629,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260907"></script>
+  <script type="module" src="js/app.js?v=20260908"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
