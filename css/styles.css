@@ -3047,10 +3047,17 @@ body.is-back-to-top-visible .back-to-top {
   flex-shrink: 0;
 }
 
+/* Botón «+ Receta» por comida (issue #220): mismos colores que la
+   píldora .btn--pill (fondo --ink-raised, texto --paper, borde
+   --paper-alpha-30, hover --paper-alpha-10) para que los botones de
+   añadir receta de cada día no destaquen con estética distinta al
+   resto de la pestaña. */
 .menu-meal__add {
   align-self: flex-start;
   border-radius: 999px;
   border-color: var(--paper-alpha-30);
+  background: var(--ink-raised);
+  color: var(--paper);
 }
 
 .menu-meal__add:hover {
@@ -3573,6 +3580,14 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .btn--pill:not(.btn--danger):hover,
 [data-theme="white"] .btn--pill:not(.btn--danger):hover {
   background: var(--ink-alpha-10);
+  color: var(--ink);
+}
+
+/* Botón «+ Receta» por comida en la familia clara: mismo patrón que
+   .btn--pill — el texto pasa a --ink sobre el fondo claro
+   (--ink-raised = blanco) y el hover a --ink-alpha-10. */
+[data-theme="light"] .menu-meal__add,
+[data-theme="white"] .menu-meal__add {
   color: var(--ink);
 }
 
