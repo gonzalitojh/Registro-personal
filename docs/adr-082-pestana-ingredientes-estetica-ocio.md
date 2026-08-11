@@ -43,9 +43,20 @@ Decisiones clave del rediseño:
    recién cargadas (suscripción asíncrona) rompan una selección hecha
    por el usuario: si no se ha tocado el filtro, las propias se suman
    al conjunto por defecto.
-3. **«Sin categoría» no es filtrable**: los ingredientes sin categoría
-   se muestran siempre (son el cubo de entrada al que se les asigna la
-   categoría desde el modal) y su grupo va **al final** de la lista.
+ 3. **«Sin categoría» no es filtrable**: los ingredientes sin categoría
+    se muestran siempre (son el cubo de entrada al que se les asigna la
+    categoría desde el modal) y su grupo va **al final** de la lista.
+ 3-bis. **Filtro en vivo** (iteración tras comentario de la issue
+    #218): el filtro se aplica y los ítems se colorean **a medida que
+    se seleccionan**, sin esperar al cierre del panel. Los checkboxes
+    nativos están ocultos (`opacity: 0`) y la única señal visual es la
+    clase `is-checked` del label, así que el manejador `change`
+    sincroniza esa clase (y el estado oculto del input) al instante
+    para todas las casillas, tomando `activeCategoryFilter` como fuente
+    de verdad — cubre también el caso de marcar «Todas», que deja los
+    inputs de categorías sin tocar. El catálogo se re-renderiza en cada
+    cambio; el panel no se re-renderiza al marcar para no perder el
+    foco.
 4. **Agrupación por categorías**: patrón de la lista de la compra
    (`shopping-list.js`): predefinidas en su orden, personalizadas
    presentes en los datos por orden alfabético de etiqueta y «Sin
@@ -93,11 +104,15 @@ Decisiones clave del rediseño:
    `ingredientFilterTouched`, `ingredientModalCleanup`), helpers
    `getUsageIndex()` / `compareIngredients()` /
    `ingredientFilterCategoryIds()` / `ingredientFilterAllChecked()`,
-   `renderIngredientsCatalog()` reescrito (contador + grupos + grid de
-   tarjetas + empty states diferenciados), `renderIngredientFilter()` /
-   `updateIngredientFilterLabel()` / `syncIngredientFilterAll()` /
-   `closeIngredientFilterPanel()` / `setupIngredientFilter()` (toggle +
-   click-fuera + Escape con limpieza del listener), y el modal
+    `renderIngredientsCatalog()` reescrito (contador + grupos + grid de
+    tarjetas + empty states diferenciados), `renderIngredientFilter()` /
+    `updateIngredientFilterLabel()` / `syncIngredientFilterAll()` /
+    `syncIngredientFilterItems()` (iteración: marca visual en vivo de
+    cada casilla desde `activeCategoryFilter`) /
+    `closeIngredientFilterPanel()` / `setupIngredientFilter()` (toggle +
+    click-fuera + Escape con limpieza del listener; en `change`:
+    actualiza el Set, sincroniza las marcas `is-checked` y re-renderiza
+    el catálogo al momento), y el modal
    `openIngredientModal()` / `closeIngredientModal()` /
    `ingredientDetailHtml()` / `ingredientNewHtml()` /
    `bindIngredientModalHandlers()` (cambio de categoría inmediato,
@@ -128,7 +143,10 @@ Decisiones clave del rediseño:
   orden, eliminar) sin perder ninguna funcionalidad previa (cambio de
   categoría y «Usada en» se conservan en el modal); las tarjetas
   despejan la lista de información; el modal propio aísla el cambio de
-  la lógica de Ocio (`#item-modal` intacto).
+  la lógica de Ocio (`#item-modal` intacto). Tras la iteración, el
+  filtro da **feedback inmediato**: la casilla se colorea y la lista se
+  actualiza en el momento de marcar/desmarcar, sin depender del cierre
+  del panel.
 - **Neutras**: el cambio de categoría y la consulta de recetas ahora
   requieren un clic más (modal) que antes (controles inline); los
   ingredientes sin categoría no se pueden ocultar con el filtro
@@ -140,5 +158,22 @@ Decisiones clave del rediseño:
   768 / 1280 px sin scroll horizontal) y los cuatro modos de tema; el
   escaneo de seguridad no encontró hallazgos (todos los datos de
   usuario pasan por `escapeHtml`).
+
+### Actualización 2026-08-11 (iteración): filtro en vivo
+
+El comentario de la issue #218 señalaba que, aunque el filtro
+funcionaba, «se colorea lo marcado al cerrarse» y no se sabía qué se
+había seleccionado: el manejador `change` solo sincronizaba la marca de
+«Todas»; los ítems individuales no alternaban su `is-checked` hasta
+volver a abrir el panel (y en móvil el panel tapa el catálogo, así que
+el filtro parecía aplicarse al cerrar). Se añade
+`syncIngredientFilterItems()`, que alterna la clase `is-checked` (y el
+estado del input oculto) de todas las casillas desde
+`activeCategoryFilter` en cada `change`, junto a la re-renderización
+del catálogo que ya existía. Resultado: la selección se colorea y el
+filtro se aplica **a medida que se selecciona**; cerrar el panel solo
+lo oculta, no aplica cambios pendientes. No hay cambios de CSS (las
+clases `is-checked` ya estaban estilizadas en los cuatro temas) ni de
+marcado HTML; se actualiza el manual §8.5.
 
 Related issue: #218
