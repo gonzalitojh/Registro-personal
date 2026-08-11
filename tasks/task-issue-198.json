@@ -1,0 +1,34 @@
+{
+  "title": "Excluir ramas del despliegue (prefijo no-deploy/)",
+  "description": "Issue #198: el usuario quiere excluir algunas ramas del despliegue que realiza la action deploy-all-branches. Por ejemplo, la rama `feat/issue-191-portadas-no-cargan` no quiere desplegarla (en principio no la va a mergear, pero la mantiene por si acaso). Propone renombrarla a `no-deploy/feat/issue-191-portadas-no-cargan` (o similar): TODAS las ramas que comiencen por `no-deploy/` quedarían excluidas del despliegue, evitando consumir recursos en desplegar algo que se va a quedar mucho tiempo ahí.\n\nContexto técnico relevante:\n- `scripts/build-pages-site.sh` lista TODAS las ramas remotas (git for-each-ref refs/remotes/origin) y extrae cada rama no-default en `_site/dev/<ruta-saneada>/` + hub index `_site/dev/index.html`.\n- `.github/workflows/deploy-all-branches.yml` se dispara con `on: push` SIN filtro de rama (el usuario revirtió a propósito en 1cd1061 la limitación del ADR-041 a main/dev), + workflow_dispatch + delete.\n- El commit 1cd1061 (2026-08-07) revirtió los triggers limitados del ADR-041: el workflow vuelve a dispararse en cada push de cualquier rama, por lo que un push a una rama no-deploy/* consumiría recursos aunque luego no se desplegara.",
+  "status": "review",
+  "acceptance criteria": [
+    "AC1: Las ramas cuyo nombre empieza por `no-deploy/` NO se despliegan: no se extraen en `_site/` ni aparecen en el hub de previews `/dev/index.html`.",
+    "AC2: Un push a una rama `no-deploy/*` NO dispara el workflow `deploy-all-branches` (no consume minutos de Actions); el resto de pushes sigue disparándolo.",
+    "AC3: El resto de ramas se despliega igual que antes: main en la raíz, ramas no-default en `/dev/<ruta>/`, hub regenerado con sus enlaces.",
+    "AC4: Los logs del build muestran las ramas excluidas por el prefijo `no-deploy/` (trazabilidad).",
+    "AC5: README (sección 6) documenta el prefijo de exclusión; ADR nuevo con 'Related issue: #198'.",
+    "AC6: Verificación local del script: con una ref remota `no-deploy/<x>` presente, `_site/dev/` no contiene su carpeta y el hub no la enlaza."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada (script build-pages-site.sh + workflow deploy-all-branches.yml + README si procede).",
+    "Validación QA: criterios de aceptación y DoD verificados (incluida prueba local del script con ref no-deploy/).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #198'.",
+    "PR contra dev SIN keyword de cierre; issue #198 con label actualizada a su estado final (cierre vía issues-done-on-dev al fusionar)."
+  ],
+  "issue": {
+    "number": 198,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/198",
+    "title": "Excluir ramas del despliegue"
+  },
+  "pr": {
+    "number": 205,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/205",
+    "title": "[refactor] Excluir ramas no-deploy/ del despliegue de Pages (issue #198)",
+    "branch": "refactor/issue-198-excluir-ramas-no-deploy",
+    "commit": "5602498",
+    "closes": "#198"
+  }
+}
