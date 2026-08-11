@@ -28,7 +28,6 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { APP_VERSION } from "./config.js";
 import { subscribeWithRetry } from "./retry.js";
 import { applySort } from "./sorting.js";
-import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
 
 // Módulos extraídos
@@ -551,10 +550,23 @@ async function init() {
       return;
     }
 
-    if (!ALLOWED_EMAILS.includes(user.email)) {
-      ui.setAuthError("Tu correo no está en la lista de invitados. Pide que te añadan.");
-      logout();
-      return;
+    // Acceso controlado SOLO por las reglas de Firestore (issue #195):
+    // la lista de correos autorizados vive únicamente en isAllowedUser()
+    // de firestore.rules (js/allowed-emails.js se eliminó: duplicaba la
+    // lista y se desincronizaba). Para saber si este usuario puede entrar,
+    // preguntamos a Firestore por su propio perfil: si las reglas lo
+    // rechazan (permission-denied), se le avisa y se le cierra la sesión.
+    // Cualquier otro error (p. ej. sin conexión) no bloquea la entrada:
+    // las suscripciones ya reintentan solas (issue #147).
+    try {
+      await getUserProfile(user.uid);
+    } catch (err) {
+      if (err?.code === "permission-denied") {
+        ui.setAuthError("Tu correo no está en la lista de invitados. Pide que te añadan.");
+        logout();
+        return;
+      }
+      console.error("No se pudo comprobar el acceso del usuario:", err);
     }
 
     currentUser = user;
