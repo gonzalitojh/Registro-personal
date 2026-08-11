@@ -93,6 +93,45 @@ export const PLACEHOLDER_COVER =
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
   );
 
+/* ---------- Fallback de portadas (issue #191) ---------- */
+
+// Clases de <img> de portada de la biblioteca, modales y feed de
+// actividad. Las de la búsqueda global (global-search__item-cover y
+// global-search__friend-avatar) las gestiona global-search.js (issue
+// #149) con su propio listener; aquí no se tocan.
+const COVER_IMG_CLASSES = [
+  "item-card__cover",
+  "list-row__cover",
+  "modal-detail__cover",
+  "rating-modal__cover",
+  "rec-card__cover",
+  "saga-row__cover",
+  "activity-event__cover",
+];
+
+// Fallback de portadas (issue #191): el evento "error" NO burbujea,
+// pero un listener en fase de CAPTURA del document sí recibe el error
+// de cualquier <img> descendiente, incluidas las que se re-renderizan
+// con innerHTML (mismo patrón que la issue #149). Ante un error real
+// (403/404 de hotlinking, red caída, carga abortada) la portada se
+// sustituye por PLACEHOLDER_COVER. Lo llama app.js en init() una sola
+// vez; el listener vive en document, así que sobrevive a los renders.
+export function setupCoverErrorFallback() {
+  document.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      if (!img.classList) return;
+      if (!COVER_IMG_CLASSES.some((cls) => img.classList.contains(cls))) return;
+      // Evitar bucle: si ya es el placeholder (data URI), no reasignar.
+      if (img.src.startsWith("data:")) return;
+      img.src = PLACEHOLDER_COVER;
+    },
+    true // capture: el evento "error" no burbujea
+  );
+}
+
 /* ---------- Pantallas ---------- */
 
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
