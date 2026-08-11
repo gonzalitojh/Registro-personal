@@ -9,11 +9,11 @@ import { STATUS_LABELS_NEUTRAL } from "./constants.js";
 import * as ui from "./ui.js";
 import { setupExportBackup } from "./export-backup.js";
 import { setupExportIcs } from "./export-ics.js";
-import { renderSettings } from "./settings.js";
+import { renderSettings, normalizeTabKey } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
 import { logout } from "./firebase.js";
 import { trapFocus } from "./focus-utils.js";
-import { navigate, parseHash } from "./router.js";
+import { navigate, parseHash, getLastOcioKey } from "./router.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -554,6 +554,20 @@ export function setupProfile(ctx) {
   document.getElementById("btn-profile-logout").addEventListener("click", () => {
     closeProfileDropdown();
     logout();
+  });
+
+  // Flecha de volver del perfil (issue #206, iteración 2026-08-11): el
+  // perfil vuelve a tener su cabecera propia con la flecha y las
+  // pestañas en la misma fila; la cabecera global no aparece aquí.
+  // Cierra la vista (toggle manual: cubre el caso de navegar sin
+  // cambiar el hash) y vuelve a la última pestaña de Ocio que
+  // estuviera activa (normalizada a la primera visible si esa pestaña
+  // quedó oculta, issue #97). El onRoute de Ocio se encarga de
+  // mostrar de nuevo la cabecera global.
+  document.getElementById("btn-close-profile").addEventListener("click", () => {
+    document.getElementById("profile-view").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    navigate(normalizeTabKey("ocio", getLastOcioKey()));
   });
 
   statsPeriodSelect.addEventListener("change", () => {

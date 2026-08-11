@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260906" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260906" />
+  <link rel="stylesheet" href="css/styles.css?v=20260907" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260907" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -242,11 +242,17 @@
     </footer>
   </div>
 
-  <!-- Vista de perfil / estadísticas / amigos (issue #206: sin botón de
-       volver ni título; la cabecera global con el botón de perfil está
-       siempre visible) -->
+  <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
+       2026-08-11: en el perfil NO se muestra la cabecera global —el
+       usuario prefiere la flecha de volver y las pestañas en la misma
+       fila, como antes—; la cabecera global solo aparece en Ocio y
+       Recetas) -->
   <div id="profile-view" class="profile-view hidden" role="main" aria-label="Vista de perfil">
     <div class="profile-view__header">
+      <button type="button" class="icon-btn" id="btn-close-profile" aria-label="Volver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+      </button>
       <div class="profile-subtabs" role="tablist" aria-label="Secciones del perfil">
         <button type="button" class="profile-subtab is-active" role="tab" aria-selected="true" aria-controls="profile-section-stats" data-section="stats">Estadísticas</button>
         <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-friends" data-section="friends">Amigos</button>
@@ -589,7 +595,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260906"></script>
+  <script type="module" src="js/app.js?v=20260907"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

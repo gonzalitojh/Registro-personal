@@ -1580,10 +1580,11 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
   max-width: 980px;
   margin: 0 auto;
-  /* Padding superior: hueco para la cabecera global fija (--header-h)
-     + 1rem de aire (issue #206: la cabecera ahora es global y visible
-     también en Perfil). */
-  padding: calc(var(--header-h) + 1rem) 1.25rem 4rem;
+  /* Padding superior: aire simple de 1.5rem. La cabecera global NO se
+     muestra en el perfil (issue #206, iteración 2026-08-11): el
+     usuario prefiere la flecha de volver y las pestañas en la misma
+     fila, así que no hace falta reservar el hueco de --header-h. */
+  padding: 1.5rem 1.25rem 4rem;
 }
 
 .profile-view__header {

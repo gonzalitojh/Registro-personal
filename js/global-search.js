@@ -684,6 +684,13 @@ function navigateTo(result) {
 
 function openGlobalSearch() {
   if (isOpen) return;
+
+  // En el perfil la cabecera global está oculta (issue #206, iteración
+  // 2026-08-11): la búsqueda superior no está disponible allí. El
+  // guard evita que los atajos de teclado (Ctrl+K, "/") abran un
+  // dropdown huérfano bajo una cabecera invisible.
+  if (currentSection() === "perfil") return;
+
   isOpen = true;
 
   // Si el drawer lateral está abierto, cerrarlo primero: su backdrop
