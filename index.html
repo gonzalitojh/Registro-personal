@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260910" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260910" />
+  <link rel="stylesheet" href="css/styles.css?v=20260911" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260911" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -542,10 +542,36 @@
       </section>
 
       <!-- Pestaña Ingredientes (issue #209): catálogo de ingredientes,
-           extraído de la pestaña Recetas. El contenido lo renderiza
-           js/recipes.js (renderIngredientsCatalog). -->
+           extraído de la pestaña Recetas. Estética tipo Ocio (issue
+           #218): barra de herramientas con alta manual, filtro por
+           categorías (multiselección, todas por defecto) y ordenación;
+           el contenido lo renderiza js/recipes.js
+           (renderIngredientsCatalog). -->
       <section id="panel-ingredients-tab" class="hidden" role="tabpanel" aria-labelledby="panel-ingredients-tab-heading">
         <h2 id="panel-ingredients-tab-heading" class="visually-hidden">Ingredientes</h2>
+        <div class="ingredients-toolbar">
+          <button type="button" id="btn-new-ingredient" class="btn btn--primary btn--small">
+            + Nuevo ingrediente
+          </button>
+          <div class="ingredients-filter" id="ingredients-filter">
+            <button type="button" id="btn-ingredient-filter" class="ingredients-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="ingredient-filter-panel">
+              <span id="ingredient-filter-label">Todas las categorías</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="ingredient-filter-panel" class="ingredients-filter__panel hidden"></div>
+          </div>
+          <label class="visually-hidden" for="ingredient-sort">Ordenar ingredientes</label>
+          <select id="ingredient-sort" class="sort-select">
+            <option value="az">Alfabético A-Z</option>
+            <option value="za">Alfabético Z-A</option>
+            <option value="recent">Recientes añadidos</option>
+            <option value="used">Más usadas</option>
+          </select>
+        </div>
         <div id="ingredients-catalog" class="ingredients-catalog"></div>
       </section>
 
@@ -600,6 +626,18 @@
     </div>
   </div>
 
+  <!-- Modal de detalle / alta manual de ingrediente (issue #218):
+       ventana con la información ampliada al pulsar una tarjeta del
+       catálogo y alta manual con «+ Nuevo ingrediente». El contenido
+       lo renderiza js/recipes.js. -->
+  <div id="ingredient-modal" class="modal hidden">
+    <div class="modal__backdrop" id="ingredient-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Ingrediente">
+      <button id="ingredient-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="ingredient-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Modal de detalle / edición / alta manual -->
   <div id="item-modal" class="modal hidden">
     <div class="modal__backdrop" id="modal-backdrop"></div>
@@ -639,7 +677,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260910"></script>
+  <script type="module" src="js/app.js?v=20260911"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

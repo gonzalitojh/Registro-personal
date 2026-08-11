@@ -43,6 +43,14 @@ let customTags = [];
 // vive en su propia pestaña, así que se re-renderiza solo si está a la
 // vista cuando llegan datos nuevos.
 let currentTab = "recetas";
+// Estado del catálogo de ingredientes (issue #218): ordenación activa y
+// categorías seleccionadas en el filtro (todas por defecto). El flag
+// de "tocado" evita que las categorías propias recién cargadas rompan
+// la selección hecha por el usuario.
+let ingredientSort = "az";
+let ingredientFilterTouched = false;
+let activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
+let ingredientModalCleanup = null;
 let modalCleanup = null;
 let editingRecipeId = null;
 let modalReadOnly = false;
@@ -67,6 +75,11 @@ export function resetRecipesData() {
   ingredients = [];
   customTags = [];
   currentTab = "recetas";
+  ingredientSort = "az";
+  ingredientFilterTouched = false;
+  activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
+  closeIngredientModal();
+  closeIngredientFilterPanel();
 }
 
 export function notifyRecipesChanged() {
@@ -98,6 +111,32 @@ export function setupRecipes(opts) {
       e.preventDefault();
       closeRecipeModal();
     }
+  });
+
+  // Modal de ingrediente (issue #218): cierre por ✕, backdrop y Escape.
+  document.getElementById("ingredient-modal-close").addEventListener("click", closeIngredientModal);
+  document.getElementById("ingredient-modal-backdrop").addEventListener("click", closeIngredientModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("ingredient-modal").classList.contains("hidden")) {
+      e.preventDefault();
+      closeIngredientModal();
+    }
+  });
+
+  // Barra de herramientas del catálogo de ingredientes (issue #218).
+  document.getElementById("btn-new-ingredient").addEventListener("click", () => openIngredientModal(null));
+  document.getElementById("ingredient-sort").addEventListener("change", (e) => {
+    ingredientSort = e.target.value;
+    renderIngredientsCatalog();
+  });
+  setupIngredientFilter();
+
+  // Delegación de acciones de las cards de ingredientes: la tarjeta es
+  // un <button> con el nombre; al pulsarla se abre el modal de detalle.
+  document.getElementById("ingredients-catalog").addEventListener("click", (e) => {
+    const card = e.target.closest("[data-ingredient-id]");
+    if (!card) return;
+    openIngredientModal(card.dataset.ingredientId);
   });
 
   // Delegación de acciones de las cards de recetas.
@@ -138,6 +177,15 @@ export function subscribeRecipesData(uid, onChange, onError) {
 
   subs.push(ctx.subscribeToTags(uid, (items) => {
     customTags = items;
+    // El filtro por defecto incluye todas las categorías: si el usuario
+    // aún no lo ha tocado, las propias recién cargadas se suman al Set.
+    if (!ingredientFilterTouched) {
+      ingredientFilterCategoryIds().forEach((id) => activeCategoryFilter.add(id));
+      if (currentTab === "ingredientes") {
+        updateIngredientFilterLabel();
+        renderIngredientsCatalog();
+      }
+    }
     renderRecipesList();
   }, onError));
 
@@ -171,6 +219,10 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
     const panel = document.getElementById(panelId);
     if (panel) panel.classList.toggle("hidden", key !== tab);
   });
+
+  // Si el panel de filtro del catálogo quedó abierto, cerrarlo al
+  // cambiar de pestaña (evita estado obsoleto al volver).
+  if (tab !== "ingredientes") closeIngredientFilterPanel();
 
   if (tab === "recetas") {
     renderRecipesList();
@@ -274,13 +326,11 @@ function tagLabel(scope, id) {
   return id;
 }
 
-// ---------- Catálogo de ingredientes (pestaña «Ingredientes», issue #209) ----------
+// ---------- Catálogo de ingredientes (pestaña «Ingredientes», issue #209 / #218) ----------
 
-function renderIngredientsCatalog() {
-  const container = document.getElementById("ingredients-catalog");
-  if (!container) return;
-
-  // Índice de recetas por ingrediente (recetas que usan cada uno).
+// Índice de recetas por ingrediente (recetas que usan cada uno). Se usa
+// en el render, en la ordenación «Más usadas» y en el modal de detalle.
+function getUsageIndex() {
   const byName = new Map();
   recipes.forEach((r) => {
     (r.ingredientes || []).forEach((i) => {
@@ -289,49 +339,403 @@ function renderIngredientsCatalog() {
       byName.get(key).add(r.id);
     });
   });
+  return byName;
+}
 
-  const sorted = [...ingredients].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+function renderIngredientsCatalog() {
+  const container = document.getElementById("ingredients-catalog");
+  if (!container) return;
+
+  const byName = getUsageIndex();
+  const sorted = [...ingredients].sort((a, b) => compareIngredients(a, b, byName));
   if (!sorted.length) {
     container.innerHTML = `<p class="empty-state">El catálogo de ingredientes se rellena solo: cada vez que guardas una
-      receta con ingredientes, aparecen aquí para poder asignarles una categoría (y se usan para la lista de la compra).</p>`;
+      receta con ingredientes, aparecen aquí para poder asignarles una categoría (y se usan para la lista de la compra).
+      También puedes añadirlos a mano con «+ Nuevo ingrediente».</p>`;
     return;
   }
 
-  container.innerHTML = `<h3 class="ingredients-catalog__title">Catálogo de ingredientes</h3>
-  <p class="ingredients-catalog__hint">Asigna la categoría de cada ingrediente; la lista de la compra se agrupa por ella.</p>
-  <ul class="ingredients-catalog__list">
-    ${sorted.map((ing) => {
-      const catLabel = tagLabel("ingrediente", ing.categoriaId);
-      const usedBy = recipes.filter((r) => (byName.get(normalizeIngredientName(ing.nombre)) || new Set()).has(r.id));
-      return `<li class="ingredient-row">
-        <div class="ingredient-row__main">
-          <span class="ingredient-row__name">${escapeHtml(ing.nombre)}</span>
-          <span class="ingredient-row__cat">${catLabel ? escapeHtml(catLabel) : "Sin categoría"}</span>
-        </div>
-        <select class="ingredient-row__select" data-ingredient-id="${ing.id}" aria-label="Categoría de ${escapeHtml(ing.nombre)}">
-          ${optionsFor("ingrediente", ing.categoriaId)}
-        </select>
-        ${usedBy.length ? `<p class="ingredient-row__used">Usada en: ${usedBy.map((r) =>
-          `<button type="button" class="ingredient-row__link" data-recipe-id="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}</p>` : ""}
-      </li>`;
-    }).join("")}
-  </ul>`;
+  // Filtro por categorías (issue #218): multiselección con todas
+  // seleccionadas por defecto. Los ingredientes sin categoría se
+  // muestran siempre (son el cubo de entrada al que se les asigna).
+  const filtered = sorted.filter(
+    (ing) => !ing.categoriaId || activeCategoryFilter.has(ing.categoriaId)
+  );
+  if (!filtered.length) {
+    container.innerHTML = `<p class="empty-state">Ningún ingrediente en las categorías seleccionadas.
+      Ajusta el filtro de categorías para ver más.</p>`;
+    return;
+  }
 
-  container.querySelectorAll("select[data-ingredient-id]").forEach((sel) => {
-    sel.addEventListener("change", async () => {
-      try {
-        await ctx.updateIngredientCategory(currentUser, sel.dataset.ingredientId, sel.value);
-        showToast("Categoría actualizada.");
-      } catch (err) {
-        console.error("No se pudo actualizar la categoría:", err);
-      }
-    });
+  // Agrupación por categoría (patrón de la lista de la compra): las
+  // predefinidas en su orden, las personalizadas presentes en los datos
+  // por orden alfabético de etiqueta y «Sin categoría» al final.
+  const groups = new Map();
+  INGREDIENT_CATEGORIES.forEach((c) => groups.set(c.id, []));
+  groups.set("", []);
+  filtered.forEach((ing) => {
+    const key = ing.categoriaId || "";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(ing);
   });
-  container.querySelectorAll("[data-recipe-id]").forEach((btn) => {
+  const customGroupIds = [...groups.keys()]
+    .filter((id) => id && !INGREDIENT_CATEGORIES.some((c) => c.id === id))
+    .sort((a, b) => tagLabel("ingrediente", a).localeCompare(tagLabel("ingrediente", b), "es"));
+
+  container.innerHTML = `<p class="ingredients-count" aria-live="polite">${filtered.length}
+    ${filtered.length === 1 ? "ingrediente" : "ingredientes"}</p>
+    ${INGREDIENT_CATEGORIES.map((c) => {
+      const items = groups.get(c.id);
+      if (!items?.length) return "";
+      return `<section class="ingredient-group">
+        <h3 class="ingredient-group__title">${escapeHtml(c.label)}</h3>
+        <div class="ingredient-grid">
+          ${items.map((ing) => ingredientCardHtml(ing)).join("")}
+        </div>
+      </section>`;
+    }).join("")}
+    ${customGroupIds.map((id) => `<section class="ingredient-group">
+      <h3 class="ingredient-group__title">${escapeHtml(tagLabel("ingrediente", id))}</h3>
+      <div class="ingredient-grid">
+        ${groups.get(id).map((ing) => ingredientCardHtml(ing)).join("")}
+      </div>
+    </section>`).join("")}
+    ${groups.get("").length ? `<section class="ingredient-group">
+      <h3 class="ingredient-group__title">Sin categoría</h3>
+      <div class="ingredient-grid">
+        ${groups.get("").map((ing) => ingredientCardHtml(ing)).join("")}
+      </div>
+    </section>` : ""}`;
+}
+
+// Comparador de ingredientes según el orden activo (issue #218). Todos
+// los modos terminan con tie-break determinista (nombre, luego id).
+function compareIngredients(a, b, byName) {
+  let diff = 0;
+  if (ingredientSort === "za") {
+    diff = b.nombre.localeCompare(a.nombre, "es");
+  } else if (ingredientSort === "recent") {
+    diff = (b.addedAt?.toMillis?.() || 0) - (a.addedAt?.toMillis?.() || 0);
+  } else if (ingredientSort === "used") {
+    const usedA = byName.get(normalizeIngredientName(a.nombre))?.size || 0;
+    const usedB = byName.get(normalizeIngredientName(b.nombre))?.size || 0;
+    diff = usedB - usedA;
+  } else {
+    diff = a.nombre.localeCompare(b.nombre, "es");
+  }
+  return diff || a.nombre.localeCompare(b.nombre, "es") || a.id.localeCompare(b.id);
+}
+
+// Tarjeta del catálogo: muestra únicamente el nombre (issue #218); la
+// información ampliada vive en el modal que abre al pulsarla.
+function ingredientCardHtml(ing) {
+  return `<button type="button" class="ingredient-card" data-ingredient-id="${ing.id}">${escapeHtml(ing.nombre)}</button>`;
+}
+
+// ---------- Filtro por categorías (issue #218) ----------
+
+// Checkboxes del panel de filtro: «Todas» + las categorías (predefinidas
+// y propias del usuario). El panel se pinta solo al abrir; los cambios
+// posteriores solo alternan clases is-checked (sin re-render) para no
+// perder el foco y para que la marca visual sea inmediata (iteración
+// tras comentario de la issue #218: el filtro se aplica y se colorea a
+// medida que se selecciona, no al cerrar el panel).
+
+// Ids de todas las categorías visibles en el panel (predefinidas + propias).
+function ingredientFilterCategoryIds() {
+  return mergeTags(
+    INGREDIENT_CATEGORIES,
+    customTags.filter((t) => t.tipo === "ingrediente")
+  ).map((t) => t.id);
+}
+
+// «Todas» está marcado si y solo si TODAS las categorías del panel
+// (predefinidas y propias) están en el filtro.
+function ingredientFilterAllChecked() {
+  const ids = ingredientFilterCategoryIds();
+  return ids.length > 0 && ids.every((id) => activeCategoryFilter.has(id));
+}
+
+function renderIngredientFilter() {
+  const panel = document.getElementById("ingredient-filter-panel");
+  if (!panel) return;
+  const tags = mergeTags(
+    INGREDIENT_CATEGORIES,
+    customTags.filter((t) => t.tipo === "ingrediente")
+  );
+  const allChecked = ingredientFilterAllChecked();
+  panel.innerHTML = `<label class="ingredients-filter__all${allChecked ? " is-checked" : ""}">
+      <input type="checkbox" value="__all__"${allChecked ? " checked" : ""} />
+      <span>Todas</span>
+    </label>
+    <div class="ingredients-filter__separator" role="presentation"></div>
+    ${tags.map((t) => {
+      const checked = activeCategoryFilter.has(t.id);
+      return `<label class="ingredients-filter__item${checked ? " is-checked" : ""}">
+        <input type="checkbox" value="${escapeHtml(t.id)}"${checked ? " checked" : ""} />
+        <span>${escapeHtml(t.label)}${t.custom ? " (propia)" : ""}</span>
+      </label>`;
+    }).join("")}`;
+}
+
+function updateIngredientFilterLabel() {
+  const label = document.getElementById("ingredient-filter-label");
+  if (!label) return;
+  if (ingredientFilterAllChecked()) {
+    label.textContent = "Todas las categorías";
+    return;
+  }
+  const n = activeCategoryFilter.size;
+  label.textContent = `${n} ${n === 1 ? "categoría" : "categorías"}`;
+}
+
+// Toggle de la marca del checkbox «Todas» (marcado solo si lo están
+// todas las categorías del panel).
+function syncIngredientFilterAll() {
+  const all = document.querySelector("#ingredient-filter-panel .ingredients-filter__all");
+  if (!all) return;
+  const checked = ingredientFilterAllChecked();
+  all.classList.toggle("is-checked", checked);
+  const input = all.querySelector("input");
+  input.checked = checked;
+}
+
+// Marca visual de cada casilla en tiempo real (issue #218, iteración
+// tras comentario): el input está oculto (opacity: 0) y la única señal
+// de seleccionado es la clase is-checked del label, así que se alterna
+// en el momento de marcar/desmarcar, no al volver a abrir el panel.
+// La fuente de verdad es activeCategoryFilter, no input.checked: al
+// pulsar «Todas» el navegador solo actualiza ese input, los demás
+// quedarían desincronizados.
+function syncIngredientFilterItems() {
+  document.querySelectorAll("#ingredient-filter-panel .ingredients-filter__item").forEach((item) => {
+    const input = item.querySelector("input");
+    if (!input) return;
+    const checked = activeCategoryFilter.has(input.value);
+    item.classList.toggle("is-checked", checked);
+    input.checked = checked;
+  });
+}
+
+function closeIngredientFilterPanel() {
+  const panel = document.getElementById("ingredient-filter-panel");
+  const btn = document.getElementById("btn-ingredient-filter");
+  if (!panel || panel.classList.contains("hidden")) return;
+  panel.classList.add("hidden");
+  btn?.setAttribute("aria-expanded", "false");
+  // Desregistrar el Escape del panel (se registra al abrirlo) para que
+  // no robe foco tras cierres por fuera (openRecipes, resetRecipesData).
+  document.removeEventListener("keydown", escHandlerRef);
+}
+
+// Referencia al manejador de Escape del panel (registrado al abrirlo);
+// se guarda en el módulo para poder desregistrarlo desde
+// closeIngredientFilterPanel sin acoplar el cierre al setup.
+let escHandlerRef = null;
+
+function setupIngredientFilter() {
+  const wrap = document.getElementById("ingredients-filter");
+  const panel = document.getElementById("ingredient-filter-panel");
+  const btn = document.getElementById("btn-ingredient-filter");
+  if (!wrap || !panel || !btn) return;
+
+  const escHandler = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeIngredientFilterPanel();
+      btn.focus();
+    }
+  };
+  escHandlerRef = escHandler;
+
+  btn.addEventListener("click", () => {
+    if (panel.classList.contains("hidden")) {
+      renderIngredientFilter();
+      panel.classList.remove("hidden");
+      btn.setAttribute("aria-expanded", "true");
+      document.addEventListener("keydown", escHandler);
+    } else {
+      closeIngredientFilterPanel();
+      btn.focus();
+    }
+  });
+
+  // Click fuera del wrapper: cerrar (patrón del dropdown de perfil).
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target) && !panel.classList.contains("hidden")) {
+      closeIngredientFilterPanel();
+    }
+  });
+
+  panel.addEventListener("change", (e) => {
+    const input = e.target.closest("input[type='checkbox']");
+    if (!input) return;
+    ingredientFilterTouched = true;
+    if (input.value === "__all__") {
+      activeCategoryFilter = input.checked
+        ? new Set(ingredientFilterCategoryIds())
+        : new Set();
+    } else if (input.checked) {
+      activeCategoryFilter.add(input.value);
+    } else {
+      activeCategoryFilter.delete(input.value);
+    }
+    // Marca visual y filtro en vivo (issue #218, iteración): colorear
+    // lo seleccionado y aplicar el filtro a medida que se selecciona,
+    // no cuando se cierra el panel.
+    syncIngredientFilterItems();
+    syncIngredientFilterAll();
+    updateIngredientFilterLabel();
+    renderIngredientsCatalog();
+  });
+}
+
+// ---------- Modal de ingrediente (issue #218) ----------
+
+// Abre el modal de ingrediente: con id = detalle ampliado (categoría,
+// recetas que lo usan, eliminar); sin id = alta manual.
+function openIngredientModal(id) {
+  const modal = document.getElementById("ingredient-modal");
+  const content = document.getElementById("ingredient-modal-content");
+  const ingredient = id ? ingredients.find((i) => i.id === id) : null;
+
+  modal.querySelector(".modal__card").setAttribute(
+    "aria-label",
+    ingredient ? `Ingrediente: ${ingredient.nombre}` : "Nuevo ingrediente"
+  );
+  content.innerHTML = ingredient ? ingredientDetailHtml(ingredient) : ingredientNewHtml();
+  bindIngredientModalHandlers(content, ingredient);
+
+  modal._previousActiveElement = document.activeElement;
+  modal.classList.remove("hidden");
+  ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
+  // En el alta manual, foco directo al nombre para escribir ya. Se hace
+  // en un segundo rAF tras el de trapFocus (que enfoca la ✕, el primer
+  // enfocable): los callbacks del mismo frame corren en orden, así el
+  // foco final queda en el input y el trap no se rompe.
+  if (!ingredient) {
+    requestAnimationFrame(() => {
+      content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
+    });
+  }
+}
+
+function closeIngredientModal() {
+  const modal = document.getElementById("ingredient-modal");
+  if (!modal || modal.classList.contains("hidden")) return;
+  modal.classList.add("hidden");
+  if (ingredientModalCleanup) {
+    ingredientModalCleanup();
+    ingredientModalCleanup = null;
+  }
+  if (modal._previousActiveElement) modal._previousActiveElement.focus();
+}
+
+function ingredientDetailHtml(ing) {
+  const byName = getUsageIndex();
+  const usedRecipes = recipes.filter((r) =>
+    (byName.get(normalizeIngredientName(ing.nombre)) || new Set()).has(r.id)
+  );
+  const catLabel = tagLabel("ingrediente", ing.categoriaId);
+  return `<h3 class="ingredient-modal__title">${escapeHtml(ing.nombre)}</h3>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-categoria">Categoría</label>
+      <select id="ing-modal-categoria" aria-label="Categoría de ${escapeHtml(ing.nombre)}">
+        ${optionsFor("ingrediente", ing.categoriaId)}
+      </select>
+    </div>
+    ${usedRecipes.length ? `<p class="ingredient-modal__used">Usada en ${usedRecipes.length}
+      ${usedRecipes.length === 1 ? "receta" : "recetas"}:
+      ${usedRecipes.map((r) =>
+        `<button type="button" class="ingredient-modal__link" data-recipe-id="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}</p>`
+      : `<p class="ingredient-modal__used">No se usa en ninguna receta aún.</p>`}
+    <p class="ingredient-modal__cat-hint">${catLabel ? `Categoría actual: ${escapeHtml(catLabel)}.` : "Sin categoría."}
+      La lista de la compra se agrupa por esta categoría.</p>
+    <div class="ingredient-modal__actions">
+      <button type="button" class="btn btn--small btn--danger" data-ing-delete>Eliminar</button>
+      <button type="button" class="btn btn--small btn--outline" data-ing-close>Cerrar</button>
+    </div>`;
+}
+
+function ingredientNewHtml() {
+  return `<form id="ingredient-new-form" class="ingredient-modal__form">
+    <h3 class="ingredient-modal__title">Nuevo ingrediente</h3>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-nombre">Nombre *</label>
+      <input type="text" id="ing-modal-nombre" required maxlength="200" autocomplete="off"
+             placeholder="P. ej. azúcar moreno" />
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-categoria-nueva">Categoría</label>
+      <select id="ing-modal-categoria-nueva" aria-label="Categoría del nuevo ingrediente">
+        ${optionsFor("ingrediente", "")}
+      </select>
+    </div>
+    <p class="ingredient-modal__cat-hint">Si el ingrediente ya está en el catálogo, no se añadirá otra vez.</p>
+    <div class="ingredient-modal__actions">
+      <button type="button" class="btn btn--small" data-ing-close>Cancelar</button>
+      <button type="submit" class="btn btn--small btn--primary">Guardar</button>
+    </div>
+  </form>`;
+}
+
+function bindIngredientModalHandlers(content, ingredient) {
+  content.querySelector("[data-ing-close]")?.addEventListener("click", closeIngredientModal);
+
+  // Cambio de categoría en el detalle: inmediato + toast (como antes).
+  content.querySelector("#ing-modal-categoria")?.addEventListener("change", async (e) => {
+    try {
+      await ctx.updateIngredientCategory(currentUser, ingredient.id, e.target.value);
+      showToast("Categoría actualizada.");
+    } catch (err) {
+      console.error("No se pudo actualizar la categoría:", err);
+    }
+  });
+
+  // Links «Usada en»: abren la receta en modo lectura; el modal de
+  // ingrediente se cierra antes (ambos comparten z-index).
+  content.querySelectorAll("[data-recipe-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const recipe = recipes.find((r) => r.id === btn.dataset.recipeId);
-      if (recipe) openRecipeModal(recipe, { readOnly: true });
+      if (!recipe) return;
+      closeIngredientModal();
+      openRecipeModal(recipe, { readOnly: true });
     });
+  });
+
+  // Eliminar el ingrediente del catálogo (no afecta a las recetas).
+  content.querySelector("[data-ing-delete]")?.addEventListener("click", async () => {
+    if (!confirm(`¿Eliminar el ingrediente «${ingredient.nombre}» del catálogo? No afecta a las recetas que lo usan.`)) return;
+    try {
+      await ctx.deleteIngredient(currentUser, ingredient.id);
+      closeIngredientModal();
+      showToast("Ingrediente eliminado del catálogo.");
+    } catch (err) {
+      console.error("No se pudo eliminar el ingrediente:", err);
+      showToast("No se pudo eliminar el ingrediente.");
+    }
+  });
+
+  // Alta manual: nombre normalizado y sin duplicados.
+  content.querySelector("#ingredient-new-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const raw = content.querySelector("#ing-modal-nombre").value.trim();
+    if (!raw) return;
+    const nombre = normalizeIngredientName(raw);
+    const exists = ingredients.some((i) => normalizeIngredientName(i.nombre) === nombre);
+    if (exists) {
+      showToast("Ese ingrediente ya existe en el catálogo.");
+      return;
+    }
+    const categoriaId = content.querySelector("#ing-modal-categoria-nueva").value;
+    try {
+      await ctx.addIngredient(currentUser, { nombre, categoriaId });
+      closeIngredientModal();
+      showToast("Ingrediente añadido al catálogo.");
+    } catch (err) {
+      console.error("No se pudo añadir el ingrediente:", err);
+      showToast("No se pudo añadir el ingrediente.");
+    }
   });
 }
 
