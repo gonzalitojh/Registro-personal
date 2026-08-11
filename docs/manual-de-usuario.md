@@ -58,7 +58,8 @@ pero todos pueden verse entre sí (en modo lectura).
 **Importante:** solo pueden entrar los correos que estén en la lista de
 invitados. Si tu correo no está en la lista, la web te lo dirá
 (*«Tu correo no está en la lista de invitados. Pide que te añadan.»*) y no
-podrás entrar. Pídele a quien administre la web que te añada.
+podrás entrar. Pídele a quien administre la web que te añada (solo tiene
+que actualizar la lista en las reglas de seguridad de Firebase).
 
 La primera vez que entras se crea tu cuenta automáticamente, con tu nombre
 y tu foto de Google. Para salir, pulsa tu foto (arriba a la derecha) y
@@ -877,8 +878,9 @@ anotaciones y cambios necesitan conexión a internet.
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien
-administra la web lo hace en dos sitios: la lista de la web y las reglas
-de seguridad).
+administra la web lo hace en las reglas de seguridad de Firebase: la
+lista de `isAllowedUser()` en `firestore.rules`, que hay que publicar
+después en Firebase console).
 
 **Al buscar libros aparece «Error 503» o tarda mucho**
 Es un fallo puntual del servidor de libros, no tuyo: la web reintenta
