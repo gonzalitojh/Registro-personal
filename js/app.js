@@ -121,6 +121,78 @@ function renderLibraryFor(group) {
   });
 }
 
+// ---------- Guarda de re-render por snapshot (issue #191) ----------
+//
+// Firestore dispara un snapshot con CUALQUIER escritura en la colección
+// (valoraciones, pasada diaria de metadatos, updatedAt...). Sin guarda,
+// cada snapshot volcaba el innerHTML del grid/lista completo: los <img
+// loading="lazy"> en vuelo se cancelaban una y otra vez y las portadas
+// nunca llegaban a cargar (parpadeo incluido) hasta reiniciar la web.
+// Con esta guarda, un grupo solo se re-renderiza si los campos que se
+// PINTAN cambiaron de verdad. Los metadatos no renderizados (updatedAt,
+// overview, cast, ...) quedan fuera a propósito.
+const renderedSignatures = { movies: null, tv: null, books: null, games: null };
+
+// Campos del ítem que afectan a lo que pinta el grid/lista (ui.js:
+// renderGrid/renderList, progressLine, upcomingBadge, quickActionLabel,
+// isItemUnreleased). Mantener en sincronía con esos renderizadores.
+const RENDERED_FIELDS = [
+  "id",
+  "title",
+  "status",
+  "rating",
+  "coverUrl",
+  "year",
+  "author",
+  "releaseDate",
+  "firstAirDate",
+  "awaitingRelease",
+  "manual",
+  "communityRating",
+  "timesCompleted",
+  "lastWatchedAt",
+  "nextEpisode",
+  "nextEpisodeAirDate",
+  "nextEpisodeToAir",
+  "seasonAirDates",
+  "watchLog",
+  "readLog",
+  "playLog",
+];
+
+function renderSignature(items) {
+  return JSON.stringify(
+    items.map((it) => {
+      const row = {};
+      for (const field of RENDERED_FIELDS) {
+        if (it[field] !== undefined) row[field] = it[field];
+      }
+      return row;
+    })
+  );
+}
+
+// true si el grupo cambió respecto a la última renderización; en ese
+// caso actualiza la firma. issue #191.
+function groupChanged(group, items) {
+  const sig = renderSignature(items);
+  if (renderedSignatures[group] === sig) return false;
+  renderedSignatures[group] = sig;
+  return true;
+}
+
+// Actualiza el grupo tras un snapshot y re-renderiza SOLO si los datos
+// visibles cambiaron (issue #191). La búsqueda global también se
+// refresca solo entonces: su estado «Añadir/Añadido» depende de los ids
+// de la colección, que forman parte de la firma.
+function syncGroup(group, items) {
+  allItems[group] = items;
+  if (groupChanged(group, items)) {
+    renderLibraryFor(group);
+    refreshExternalResults(createCtx());
+  }
+}
+
 function maybeTriggerDailyCheck() {
   if (moviesReady && tvReady && booksReady && gamesReady && !checksTriggered) {
     checksTriggered = true;
@@ -351,6 +423,11 @@ async function init() {
   // Módulos especializados. profileApi (declarado antes del router
   // para su uso en onRoute) se asigna aquí.
   setupModalCloseListeners();
+  // Fallback de portadas (issue #191): ante un error de carga (403/404
+  // de hotlinking, red caída o carga abortada por un re-render) la
+  // portada cae al placeholder «Sin imagen» en la biblioteca y los
+  // modales. Listener de captura global registrado una sola vez.
+  ui.setupCoverErrorFallback();
   setupNotifications(ctx);
   profileApi = setupProfile(ctx);
   // Los cambios de visibilidad de Ajustes refrescan pestañas y
@@ -392,6 +469,12 @@ async function init() {
       allItems.tv = [];
       allItems.books = [];
       allItems.games = [];
+      // Limpiar las firmas de render (issue #191): el siguiente login
+      // debe re-renderizar su biblioteca sin comparar contra otro usuario.
+      renderedSignatures.movies = null;
+      renderedSignatures.tv = null;
+      renderedSignatures.books = null;
+      renderedSignatures.games = null;
       notifications = [];
       cleanupSettings();
       resetDevicePush();
@@ -433,10 +516,8 @@ async function init() {
       subscribe: ({ onChange, onError }) =>
         subscribeToItems(user.uid, "movie", onChange, onError),
       onChange: (items) => {
-        allItems.movies = items;
+        syncGroup("movies", items);
         moviesReady = true;
-        renderLibraryFor("movies");
-        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       onError: () => ui.showToast("No se pudieron cargar tus películas."),
@@ -447,10 +528,8 @@ async function init() {
       subscribe: ({ onChange, onError }) =>
         subscribeToItems(user.uid, "tv", onChange, onError),
       onChange: (items) => {
-        allItems.tv = items;
+        syncGroup("tv", items);
         tvReady = true;
-        renderLibraryFor("tv");
-        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       onError: () => ui.showToast("No se pudieron cargar tus series."),
@@ -461,10 +540,8 @@ async function init() {
       subscribe: ({ onChange, onError }) =>
         subscribeToItems(user.uid, "book", onChange, onError),
       onChange: (items) => {
-        allItems.books = items;
+        syncGroup("books", items);
         booksReady = true;
-        renderLibraryFor("books");
-        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       onError: () => ui.showToast("No se pudieron cargar tus libros."),
@@ -475,10 +552,8 @@ async function init() {
       subscribe: ({ onChange, onError }) =>
         subscribeToItems(user.uid, "game", onChange, onError),
       onChange: (items) => {
-        allItems.games = items;
+        syncGroup("games", items);
         gamesReady = true;
-        renderLibraryFor("games");
-        refreshExternalResults(createCtx());
         maybeTriggerDailyCheck();
       },
       onError: () => ui.showToast("No se pudieron cargar tus videojuegos."),
