@@ -1,7 +1,7 @@
 {
   "title": "Estética pestaña menú",
   "description": "La pestaña «Menú» de la sección de Recetas (issue #64) no se ve bien: los botones tienen una estética completamente diferente a la del resto de la web (sección Ocio y pestañas de Recetas/Ingredientes). El usuario pide mejorar la estética de la pestaña, especialmente los botones, para que sigan el mismo lenguaje visual que el resto (botones píldora estilo .sort-select / .ingredients-filter__btn, .btn--primary para acciones principales, danger coherente para destructivas, selects consistentes).\n\nNota del flujo: la base de trabajo es la rama content/issue-64-seccion-recetas; se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "validated",
   "acceptance criteria": [
     "La pestaña «Menú» mantiene toda la funcionalidad existente (navegar semanas, comensales, borrar semana, + Receta por comida, recetas a la semana, quitar/eliminar).",
     "Los botones y controles de la pestaña siguen el lenguaje visual del resto de la web: acciones principales con .btn--primary, navegación/comensales/selects como píldoras coherentes con .sort-select y controles tipo Ocio, destructivas con .btn--danger coherente.",
@@ -22,5 +22,5 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/220",
     "title": "Estética pestaña menú"
   },
-  "note": "Iteración (comentario 2026-08-11): botones «+ Receta» de cada comida con colores de píldora (.btn--pill) + overrides familia clara; bump PWA 20260913; ADR-083 actualizado. Pendiente: re-validar (QA + seguridad) y actualizar PR #222."
+  "note": "Iteración (comentario 2026-08-11): botones «+ Receta» con colores de píldora (.btn--pill) + overrides familia clara; bump PWA 20260913; ADR-083 actualizado. QA PASS (4 temas AA/AAA, responsividad OK, funcionalidad intacta). Pendiente: escaneo de seguridad y actualizar PR #222."
 }
