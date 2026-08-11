@@ -177,7 +177,7 @@ selector de portadas de ediciones de libro, `openBookConfirmModal`).
 |---------|--------|
 | `js/render-guard.js` | **Nuevo**: `RENDERED_FIELDS` (21+2 campos), `renderSignature()`, `createRenderGuard()` → `{ changed(group, items), reset() }` |
 | `js/app.js` | **Modificado**: `createRenderGuard` importado; `syncGroup(group, items)` que solo llama `renderLibraryFor` + `refreshExternalResults` cuando `changed()` es `true`; los 4 `onChange` de `subscribeToItems` pasan por `syncGroup`; `groupChanged.reset()` al cerrar sesión; `ui.setupCoverErrorFallback()` en `init()` |
-| `js/ui.js` | **Modificado**: `COVER_IMG_CLASSES` (7 clases) y `setupCoverErrorFallback()` (listener de captura de `"error"` en `document`, guarda de bucle `data:`) |
+| `js/ui.js` | **Modificado**: `COVER_IMG_CLASSES` (8 clases, incluye `cover-picker__item-cover` del selector de ediciones) y `setupCoverErrorFallback()` (listener de captura de `"error"` en `document`, guarda de bucle `data:`) |
 | `service-worker.js` | **Modificado**: `'./js/render-guard.js'` en `STATIC_ASSETS`; bump `?v=20260904` → `?v=20260905` |
 | `index.html` | **Modificado**: bump `?v=20260904` → `?v=20260905` (×3) |
 | `js/config.js` | **Modificado**: `APP_VERSION` `'20260904'` → `'20260905'` |
