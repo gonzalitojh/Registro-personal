@@ -2651,98 +2651,246 @@ body.is-back-to-top-visible .back-to-top {
   margin-top: auto;
 }
 
-/* --- Catálogo de ingredientes --- */
+/* --- Catálogo de ingredientes (issue #218): estética tipo Ocio --- */
+
+.ingredients-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+  max-width: 100%;
+}
+
+/* Dropdown de filtro por categorías (multiselección, todas por
+   defecto). El botón es una píldora igual que .sort-select (ocio). */
+.ingredients-filter {
+  position: relative;
+  display: inline-flex;
+}
+
+.ingredients-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ingredients-filter__btn svg {
+  flex-shrink: 0;
+}
+
+.ingredients-filter__panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  width: min(320px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: 0.4rem;
+  z-index: 40;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+}
+
+.ingredients-filter__all,
+.ingredients-filter__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ingredients-filter__item {
+  color: var(--ink);
+}
+
+.ingredients-filter__item:hover,
+.ingredients-filter__all:hover {
+  background: var(--paper-dim);
+}
+
+.ingredients-filter__all {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Marca del checkbox (violeta, acento de la pestaña) con el mismo
+   patrón que .recipe-form__chip: input oculto + estado en el label. */
+.ingredients-filter__all.is-checked,
+.ingredients-filter__item.is-checked {
+  background: var(--games);
+  color: var(--white);
+  font-weight: 600;
+}
+
+.ingredients-filter__separator {
+  height: 1px;
+  margin: 0.3rem 0.4rem;
+  background: var(--paper-line);
+  opacity: 0.5;
+}
+
+.ingredients-filter__all input,
+.ingredients-filter__item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* En móvil el panel se ancla al viewport (patrón .profile-dropdown):
+   si el toolbar envuelve en varias filas, el ancla al botón podría
+   dejar el panel fuera del ancho visible. */
+@media (max-width: 767px) {
+  .ingredients-filter__panel {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: calc(var(--header-h) + var(--tabs-bar-h) + 0.75rem);
+    width: auto;
+    max-width: none;
+  }
+}
 
 .ingredients-catalog {
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.ingredients-count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.ingredient-group {
   background: var(--ink-raised);
   border: 1px solid var(--paper-alpha-20);
   border-radius: var(--radius);
-  padding: 0.9rem;
+  padding: 0.8rem;
 }
 
-.ingredients-catalog__title {
-  margin: 0 0 0.3rem;
-  font-size: 1rem;
-}
-
-.ingredients-catalog__hint {
-  margin: 0 0 0.7rem;
-  font-size: 0.78rem;
+.ingredient-group__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
 
-.ingredients-catalog__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.ingredient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+  gap: 0.6rem;
 }
 
-.ingredient-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--paper-alpha-14);
-}
-
-.ingredient-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.ingredient-row__main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1 1 180px;
-}
-
-.ingredient-row__name {
-  font-weight: 600;
-  overflow-wrap: break-word;
-}
-
-.ingredient-row__cat {
-  font-size: 0.75rem;
-  color: var(--ink-soft);
-}
-
-.ingredient-row__select {
-  flex: 0 1 260px;
-  max-width: 100%;
-  background: var(--ink);
-  color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
+.ingredient-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: none;
   border-radius: var(--radius);
-  padding: 0.35rem;
-  font-size: 0.82rem;
+  box-shadow: var(--shadow-card);
+  padding: 0.7rem 0.8rem;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
-.ingredient-row__used {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.78rem;
+.ingredient-card:hover {
+  background: var(--paper-alpha-10);
+}
+
+.ingredients-filter__btn:focus-visible,
+.ingredients-filter__all:focus-visible,
+.ingredients-filter__item:focus-visible,
+.ingredient-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* --- Modal de ingrediente (issue #218) --- */
+
+.ingredient-modal__title {
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.ingredient-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
+}
+
+.ingredient-modal__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ingredient-modal__field input,
+.ingredient-modal__field select {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  min-width: 0;
+}
+
+.ingredient-modal__used {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
   color: var(--ink-soft);
   overflow-wrap: break-word;
 }
 
-.ingredient-row__link {
+.ingredient-modal__link {
   background: none;
   border: none;
   padding: 0;
   color: var(--teal-reel);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   text-decoration: underline;
   cursor: pointer;
 }
 
-[data-theme="black"] .ingredient-row__link {
-  color: var(--teal-reel-dark);
+.ingredient-modal__cat-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+}
+
+.ingredient-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
 /* --- Menú semanal --- */
@@ -3288,6 +3436,12 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--ink);
 }
 
+[data-theme="black"] .ingredients-filter__all.is-checked,
+[data-theme="black"] .ingredients-filter__item.is-checked {
+  background: var(--games-dark);
+  color: var(--ink);
+}
+
 .recipe-form__chip input {
   position: absolute;
   opacity: 0;
@@ -3336,8 +3490,12 @@ body.is-back-to-top-visible .back-to-top {
   box-shadow: var(--shadow-card);
 }
 
-[data-theme="light"] .ingredients-catalog,
-[data-theme="white"] .ingredients-catalog,
+[data-theme="light"] .ingredient-group,
+[data-theme="white"] .ingredient-group,
+[data-theme="light"] .ingredient-card,
+[data-theme="white"] .ingredient-card,
+[data-theme="light"] .ingredients-filter__panel,
+[data-theme="white"] .ingredients-filter__panel,
 [data-theme="light"] .menu-grid__cell,
 [data-theme="white"] .menu-grid__cell,
 [data-theme="light"] .menu-weekly,
@@ -3350,14 +3508,23 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--ink-alpha-15);
 }
 
+/* La píldora del filtro usa --ink-raised como fondo y --paper como
+   texto (como .sort-select de ocio): en la familia clara se invierte. */
+[data-theme="light"] .ingredients-filter__btn,
+[data-theme="white"] .ingredients-filter__btn {
+  color: var(--ink);
+}
+
 [data-theme="light"] .menu-comensales input,
 [data-theme="white"] .menu-comensales input,
 [data-theme="light"] .menu-meal__picker select,
 [data-theme="white"] .menu-meal__picker select,
 [data-theme="light"] .menu-weekly__addrow select,
 [data-theme="white"] .menu-weekly__addrow select,
-[data-theme="light"] .ingredient-row__select,
-[data-theme="white"] .ingredient-row__select,
+[data-theme="light"] .ingredient-modal__field input,
+[data-theme="white"] .ingredient-modal__field input,
+[data-theme="light"] .ingredient-modal__field select,
+[data-theme="white"] .ingredient-modal__field select,
 [data-theme="light"] .shopping-extra-form__row input,
 [data-theme="white"] .shopping-extra-form__row input,
 [data-theme="light"] .shopping-extra-form__row select,
@@ -3381,8 +3548,10 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 [data-theme="black"] .recipe-card__meta,
-[data-theme="black"] .ingredient-row__cat,
-[data-theme="black"] .ingredient-row__used,
+[data-theme="black"] .ingredient-group__title,
+[data-theme="black"] .ingredients-count,
+[data-theme="black"] .ingredient-modal__used,
+[data-theme="black"] .ingredient-modal__cat-hint,
 [data-theme="black"] .menu-weekly__hint,
 [data-theme="black"] .menu-weekly__empty,
 [data-theme="black"] .shopping-line__qty,
@@ -3394,6 +3563,35 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .recipe-form__hint,
 [data-theme="black"] .recipe-form__paso-num {
   color: var(--ink-soft);
+}
+
+/* Tarjetas y panel del filtro: superficies de papel → superficies
+   oscuras (patrón de las tarjetas de receta en negro puro). */
+[data-theme="black"] .ingredient-card {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-20);
+}
+
+[data-theme="black"] .ingredients-filter__panel {
+  background: var(--ink-raised);
+  border: 1px solid var(--paper-alpha-20);
+}
+
+[data-theme="black"] .ingredients-filter__item:hover,
+[data-theme="black"] .ingredients-filter__all:hover {
+  background: var(--paper-alpha-10);
+}
+
+[data-theme="black"] .ingredient-modal__link {
+  color: var(--teal-reel-dark);
+}
+
+[data-theme="black"] .ingredient-modal__field input,
+[data-theme="black"] .ingredient-modal__field select {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
 }
 
 [data-theme="black"] .recipe-form__import {

@@ -334,7 +334,7 @@ function renderIngredientsCatalog() {
   if (!container) return;
 
   const byName = getUsageIndex();
-  const sorted = [...ingredients].sort(compareIngredients);
+  const sorted = [...ingredients].sort((a, b) => compareIngredients(a, b, byName));
   if (!sorted.length) {
     container.innerHTML = `<p class="empty-state">El catálogo de ingredientes se rellena solo: cada vez que guardas una
       receta con ingredientes, aparecen aquí para poder asignarles una categoría (y se usan para la lista de la compra).
@@ -397,14 +397,13 @@ function renderIngredientsCatalog() {
 
 // Comparador de ingredientes según el orden activo (issue #218). Todos
 // los modos terminan con tie-break determinista (nombre, luego id).
-function compareIngredients(a, b) {
+function compareIngredients(a, b, byName) {
   let diff = 0;
   if (ingredientSort === "za") {
     diff = b.nombre.localeCompare(a.nombre, "es");
   } else if (ingredientSort === "recent") {
     diff = (b.addedAt?.toMillis?.() || 0) - (a.addedAt?.toMillis?.() || 0);
   } else if (ingredientSort === "used") {
-    const byName = getUsageIndex();
     const usedA = byName.get(normalizeIngredientName(a.nombre))?.size || 0;
     const usedB = byName.get(normalizeIngredientName(b.nombre))?.size || 0;
     diff = usedB - usedA;
