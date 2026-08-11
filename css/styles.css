@@ -3576,7 +3576,13 @@ body.is-back-to-top-visible .back-to-top {
 
 [data-theme="black"] .ingredients-filter__panel {
   background: var(--ink-raised);
+  color: var(--paper);
   border: 1px solid var(--paper-alpha-20);
+}
+
+[data-theme="black"] .ingredients-filter__all,
+[data-theme="black"] .ingredients-filter__item {
+  color: var(--paper);
 }
 
 [data-theme="black"] .ingredients-filter__item:hover,

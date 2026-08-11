@@ -44,8 +44,11 @@ let customTags = [];
 // vista cuando llegan datos nuevos.
 let currentTab = "recetas";
 // Estado del catálogo de ingredientes (issue #218): ordenación activa y
-// categorías seleccionadas en el filtro (todas por defecto).
+// categorías seleccionadas en el filtro (todas por defecto). El flag
+// de "tocado" evita que las categorías propias recién cargadas rompan
+// la selección hecha por el usuario.
 let ingredientSort = "az";
+let ingredientFilterTouched = false;
 let activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
 let ingredientModalCleanup = null;
 let modalCleanup = null;
@@ -73,8 +76,10 @@ export function resetRecipesData() {
   customTags = [];
   currentTab = "recetas";
   ingredientSort = "az";
+  ingredientFilterTouched = false;
   activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
   closeIngredientModal();
+  closeIngredientFilterPanel();
 }
 
 export function notifyRecipesChanged() {
@@ -172,6 +177,15 @@ export function subscribeRecipesData(uid, onChange, onError) {
 
   subs.push(ctx.subscribeToTags(uid, (items) => {
     customTags = items;
+    // El filtro por defecto incluye todas las categorías: si el usuario
+    // aún no lo ha tocado, las propias recién cargadas se suman al Set.
+    if (!ingredientFilterTouched) {
+      ingredientFilterCategoryIds().forEach((id) => activeCategoryFilter.add(id));
+      if (currentTab === "ingredientes") {
+        updateIngredientFilterLabel();
+        renderIngredientsCatalog();
+      }
+    }
     renderRecipesList();
   }, onError));
 
@@ -423,6 +437,22 @@ function ingredientCardHtml(ing) {
 // Checkboxes del panel de filtro: «Todas» + las categorías (predefinidas
 // y propias del usuario). El panel se pinta solo al abrir; los cambios
 // posteriores solo alternan clases is-checked para no perder el foco.
+
+// Ids de todas las categorías visibles en el panel (predefinidas + propias).
+function ingredientFilterCategoryIds() {
+  return mergeTags(
+    INGREDIENT_CATEGORIES,
+    customTags.filter((t) => t.tipo === "ingrediente")
+  ).map((t) => t.id);
+}
+
+// «Todas» está marcado si y solo si TODAS las categorías del panel
+// (predefinidas y propias) están en el filtro.
+function ingredientFilterAllChecked() {
+  const ids = ingredientFilterCategoryIds();
+  return ids.length > 0 && ids.every((id) => activeCategoryFilter.has(id));
+}
+
 function renderIngredientFilter() {
   const panel = document.getElementById("ingredient-filter-panel");
   if (!panel) return;
@@ -430,7 +460,7 @@ function renderIngredientFilter() {
     INGREDIENT_CATEGORIES,
     customTags.filter((t) => t.tipo === "ingrediente")
   );
-  const allChecked = activeCategoryFilter.size === INGREDIENT_CATEGORIES.length;
+  const allChecked = ingredientFilterAllChecked();
   panel.innerHTML = `<label class="ingredients-filter__all${allChecked ? " is-checked" : ""}">
       <input type="checkbox" value="__all__"${allChecked ? " checked" : ""} />
       <span>Todas</span>
@@ -448,18 +478,20 @@ function renderIngredientFilter() {
 function updateIngredientFilterLabel() {
   const label = document.getElementById("ingredient-filter-label");
   if (!label) return;
+  if (ingredientFilterAllChecked()) {
+    label.textContent = "Todas las categorías";
+    return;
+  }
   const n = activeCategoryFilter.size;
-  label.textContent = n === INGREDIENT_CATEGORIES.length
-    ? "Todas las categorías"
-    : `${n} ${n === 1 ? "categoría" : "categorías"}`;
+  label.textContent = `${n} ${n === 1 ? "categoría" : "categorías"}`;
 }
 
-// Toggle de la marca del checkbox «Todas» (marcado solo si lo están las
-// doce categorías predefinidas).
+// Toggle de la marca del checkbox «Todas» (marcado solo si lo están
+// todas las categorías del panel).
 function syncIngredientFilterAll() {
   const all = document.querySelector("#ingredient-filter-panel .ingredients-filter__all");
   if (!all) return;
-  const checked = activeCategoryFilter.size === INGREDIENT_CATEGORIES.length;
+  const checked = ingredientFilterAllChecked();
   all.classList.toggle("is-checked", checked);
   const input = all.querySelector("input");
   input.checked = checked;
@@ -511,9 +543,10 @@ function setupIngredientFilter() {
   panel.addEventListener("change", (e) => {
     const input = e.target.closest("input[type='checkbox']");
     if (!input) return;
+    ingredientFilterTouched = true;
     if (input.value === "__all__") {
       activeCategoryFilter = input.checked
-        ? new Set(INGREDIENT_CATEGORIES.map((c) => c.id))
+        ? new Set(ingredientFilterCategoryIds())
         : new Set();
     } else if (input.checked) {
       activeCategoryFilter.add(input.value);
@@ -545,9 +578,10 @@ function openIngredientModal(id) {
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
   ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
-  // En el alta manual, foco directo al nombre para escribir ya.
+  // En el alta manual, foco directo al nombre para escribir ya. Se hace
+  // tras el rAF de trapFocus (que enfoca el primer enfocable, la ✕).
   if (!ingredient) {
-    content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
+    setTimeout(() => content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false }), 0);
   }
 }
 
