@@ -41,6 +41,7 @@ export const DEFAULT_KEY = "series";
 // Mapa token de ruta de Recetas → id del panel en index.html.
 export const RECIPES_TAB_TO_PANEL = {
   recetas: "panel-recipes-tab",
+  ingredientes: "panel-ingredients-tab",
   menu: "panel-menu-tab",
   compra: "panel-shopping-tab",
 };

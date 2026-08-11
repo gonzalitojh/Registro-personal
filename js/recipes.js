@@ -39,8 +39,10 @@ let ctx = null;
 let recipes = [];
 let ingredients = [];
 let customTags = [];
-let activeFilter = "";
-let showingIngredients = false;
+// Pestaña de Recetas activa (issue #209): el catálogo de ingredientes
+// vive en su propia pestaña, así que se re-renderiza solo si está a la
+// vista cuando llegan datos nuevos.
+let currentTab = "recetas";
 let modalCleanup = null;
 let editingRecipeId = null;
 let modalReadOnly = false;
@@ -64,13 +66,7 @@ export function resetRecipesData() {
   recipes = [];
   ingredients = [];
   customTags = [];
-  activeFilter = "";
-  showingIngredients = false;
-  // Restaurar el estado DOM del catálogo por si otro usuario lo
-  // dejó abierto: oculto y con el toggle coherente.
-  document.getElementById("ingredients-catalog")?.classList.add("hidden");
-  const toggle = document.getElementById("btn-toggle-ingredients");
-  if (toggle) toggle.setAttribute("aria-pressed", "false");
+  currentTab = "recetas";
 }
 
 export function notifyRecipesChanged() {
@@ -85,11 +81,6 @@ export function setupRecipes(opts) {
   onRecipeDeleted = opts?.onRecipeDeleted || null;
 
   document.getElementById("btn-new-recipe").addEventListener("click", () => openRecipeModal());
-  document.getElementById("btn-toggle-ingredients").addEventListener("click", toggleIngredientsCatalog);
-  document.getElementById("recipes-search-input").addEventListener("input", (e) => {
-    activeFilter = e.target.value.trim().toLowerCase();
-    renderRecipesList();
-  });
 
   // Subtabs internas: la UI solo navega; el router (fromRouter) hace
   // el render. Patrón idéntico al del perfil (profile.js).
@@ -133,13 +124,16 @@ export function subscribeRecipesData(uid, onChange, onError) {
   subs.push(ctx.subscribeToRecipes(uid, (items) => {
     recipes = items;
     renderRecipesList();
+    // El catálogo muestra en qué recetas se usa cada ingrediente:
+    // refrescarlo si la pestaña de Ingredientes está a la vista.
+    if (currentTab === "ingredientes") renderIngredientsCatalog();
     notifyRecipesChanged();
     if (onChange) onChange();
   }, onError));
 
   subs.push(ctx.subscribeToIngredients(uid, (items) => {
     ingredients = items;
-    if (showingIngredients) renderIngredientsCatalog();
+    if (currentTab === "ingredientes") renderIngredientsCatalog();
   }, onError));
 
   subs.push(ctx.subscribeToTags(uid, (items) => {
@@ -156,6 +150,7 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
   if (!fromRouter) {
     navigate({ section: "recetas", tab });
   }
+  currentTab = tab;
   document.getElementById("app").classList.add("hidden");
   document.getElementById("profile-view").classList.add("hidden");
   document.getElementById("recipes-view").classList.remove("hidden");
@@ -168,6 +163,7 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
 
   const panels = {
     recetas: "panel-recipes-tab",
+    ingredientes: "panel-ingredients-tab",
     menu: "panel-menu-tab",
     compra: "panel-shopping-tab",
   };
@@ -178,6 +174,8 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
 
   if (tab === "recetas") {
     renderRecipesList();
+  } else if (tab === "ingredientes") {
+    renderIngredientsCatalog();
   } else if (tabRenderers[tab]) {
     tabRenderers[tab]();
   }
@@ -197,18 +195,13 @@ function renderRecipesList() {
   const container = document.getElementById("recipes-list");
   if (!container) return;
 
-  const list = filterRecipes(recipes, activeFilter);
-
-  if (!list.length) {
-    container.innerHTML =
-      recipes.length === 0
-        ? `<p class="empty-state">Aún no hay recetas. Pulsa «+ Nueva receta» para crear la primera.</p>`
-        : `<p class="empty-state">Ninguna receta coincide con «${escapeHtml(activeFilter)}».</p>`;
+  if (!recipes.length) {
+    container.innerHTML = `<p class="empty-state">Aún no hay recetas. Pulsa «+ Nueva receta» para crear la primera.</p>`;
     return;
   }
 
   container.innerHTML = `<div class="recipes-grid">
-    ${list.map(recipeCardHtml).join("")}
+    ${recipes.map(recipeCardHtml).join("")}
   </div>`;
 }
 
@@ -281,15 +274,7 @@ function tagLabel(scope, id) {
   return id;
 }
 
-// ---------- Catálogo de ingredientes ----------
-
-function toggleIngredientsCatalog() {
-  showingIngredients = !showingIngredients;
-  const btn = document.getElementById("btn-toggle-ingredients");
-  btn.setAttribute("aria-pressed", String(showingIngredients));
-  document.getElementById("ingredients-catalog").classList.toggle("hidden", !showingIngredients);
-  if (showingIngredients) renderIngredientsCatalog();
-}
+// ---------- Catálogo de ingredientes (pestaña «Ingredientes», issue #209) ----------
 
 function renderIngredientsCatalog() {
   const container = document.getElementById("ingredients-catalog");
