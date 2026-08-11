@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260909" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260909" />
+  <link rel="stylesheet" href="css/styles.css?v=20260910" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260910" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -487,6 +487,15 @@
           </svg>
           <span>Recetas</span>
         </button>
+        <button class="tab tab--ingredients" role="tab" aria-selected="false"
+                aria-controls="panel-ingredients-tab" data-recipes-tab="ingredientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+          <span>Ingredientes</span>
+        </button>
         <button class="tab tab--menu" role="tab" aria-selected="false"
                 aria-controls="panel-menu-tab" data-recipes-tab="menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -517,26 +526,27 @@
     </nav>
 
     <div class="recipes-view__body">
-      <!-- Pestaña Recetas: lista de recetas con búsqueda + catálogo
-           de ingredientes (toggle). El contenido lo renderiza
-           js/recipes.js. -->
+      <!-- Pestaña Recetas (issue #209): únicamente el botón de nueva
+           receta. La búsqueda de recetas vive solo en la cabecera
+           global y el catálogo de ingredientes en su propia pestaña.
+           El contenido lo renderiza js/recipes.js. -->
       <section id="panel-recipes-tab" role="tabpanel" aria-labelledby="panel-recipes-tab-heading">
         <h2 id="panel-recipes-tab-heading" class="visually-hidden">Recetas</h2>
         <div class="recipes-toolbar">
-          <input id="recipes-search-input" class="recipes-search-input" type="search"
-                 placeholder="Buscar por nombre, ingrediente o etiqueta…"
-                 autocomplete="off" aria-label="Buscar recetas" />
-          <div class="recipes-toolbar__actions">
-            <button type="button" id="btn-toggle-ingredients" class="btn btn--outline btn--small"
-                    aria-pressed="false">Ingredientes</button>
-            <button type="button" id="btn-new-recipe" class="btn btn--primary btn--small">
-              + Nueva receta
-            </button>
-          </div>
+          <button type="button" id="btn-new-recipe" class="btn btn--primary btn--small">
+            + Nueva receta
+          </button>
         </div>
         <div id="recipes-list" aria-live="polite"></div>
-        <div id="ingredients-catalog" class="ingredients-catalog hidden"></div>
         <datalist id="recipe-ingredients-datalist"></datalist>
+      </section>
+
+      <!-- Pestaña Ingredientes (issue #209): catálogo de ingredientes,
+           extraído de la pestaña Recetas. El contenido lo renderiza
+           js/recipes.js (renderIngredientsCatalog). -->
+      <section id="panel-ingredients-tab" class="hidden" role="tabpanel" aria-labelledby="panel-ingredients-tab-heading">
+        <h2 id="panel-ingredients-tab-heading" class="visually-hidden">Ingredientes</h2>
+        <div id="ingredients-catalog" class="ingredients-catalog"></div>
       </section>
 
       <!-- Pestaña Menú semanal: rejilla día × comida, comensales y
@@ -629,7 +639,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260909"></script>
+  <script type="module" src="js/app.js?v=20260910"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

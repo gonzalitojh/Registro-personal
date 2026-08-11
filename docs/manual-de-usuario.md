@@ -113,10 +113,10 @@ Nada más entrar verás:
   reaparece al subir
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **La sección de Recetas tiene su propia barra de pestañas, igual que
-  Ocio**: **Recetas en ocre**, **Menú en verde** y **Lista de la
-  compra en rojo**, cada una con su icono. Es fija de la misma manera
-  (abajo en el móvil, bajo la barra de búsqueda en ordenador y tableta)
-  y sus pestañas se pueden ocultar desde
+  Ocio**: **Recetas en ocre**, **Ingredientes en violeta**, **Menú en
+  verde** y **Lista de la compra en rojo**, cada una con su icono. Es
+  fija de la misma manera (abajo en el móvil, bajo la barra de búsqueda
+  en ordenador y tableta) y sus pestañas se pueden ocultar desde
   [Ajustes → Secciones y pestañas](#16-ajustes) igual que las de Ocio
   (más en [sección 8](#8-recetas)).
 
@@ -176,8 +176,8 @@ deslizándose hacia el borde de la pantalla, como si salieran de ella,
 para que la lista ocupe todo el espacio. En cuanto desplazas hacia
 arriba, vuelven a aparecer deslizándose desde su borde.
 
-En **Recetas** la cabecera y su barra de pestañas (Recetas, Menú,
-Lista de la compra) **siempre están visibles**: el auto-ocultado al
+En **Recetas** la cabecera y su barra de pestañas (Recetas, Ingredientes,
+Menú, Lista de la compra) **siempre están visibles**: el auto-ocultado al
 desplazarse solo ocurre en las listas de **Ocio**. En **tu perfil** no
 hay cabecera global: tiene su propia cabecera con la flecha de volver
 y las pestañas en la misma fila. La flecha de volver del perfil te
@@ -437,13 +437,13 @@ perfil (sección 14.1).
 
 La sección **Recetas** (en la barra lateral, junto a «Ocio») te permite
 guardar tus recetas, planificar el menú de la semana y generar la lista
-de la compra automáticamente. Tiene tres pestañas — **Recetas**, **Menú**
-y **Lista de la compra** — en una barra fija **igual que las de Ocio**:
-abajo en el móvil y bajo la barra de búsqueda en el ordenador y la
-tableta, cada una con su icono y su color (**ocre**, **verde** y
-**rojo**). La pestaña activa se marca con una franja de su color. Puedes
-ocultarlas desde [Ajustes → Secciones y pestañas](#16-ajustes), igual
-que las de Ocio.
+de la compra automáticamente. Tiene cuatro pestañas — **Recetas**,
+**Ingredientes**, **Menú** y **Lista de la compra** — en una barra fija
+**igual que las de Ocio**: abajo en el móvil y bajo la barra de
+búsqueda en el ordenador y la tableta, cada una con su icono y su color
+(**ocre**, **violeta**, **verde** y **rojo**). La pestaña activa se
+marca con una franja de su color. Puedes ocultarlas desde [Ajustes →
+Secciones y pestañas](#16-ajustes), igual que las de Ocio.
 
 ### 8.1 Tus recetas
 
@@ -471,18 +471,11 @@ propias**: escribe el nombre en el campo «Nueva etiqueta propia…» y
 pulsa «Añadir». Las etiquetas propias se guardan en tu cuenta y aparecen
 marcadas como «(propia)».
 
-Con el buscador encuentras recetas **por nombre, por ingrediente** (por
-ejemplo «huevo» muestra todas las recetas que lo usan) y **por
-etiqueta** (por ejemplo «vegetariano»).
-
-La **barra de búsqueda de la cabecera** también busca **dentro de tus
-recetas** (más en [sección 9.2](#92-buscar-en-tu-registro)): pulsa un
-resultado para abrir la receta en modo lectura.
-
-El botón **«Ingredientes»** abre el catálogo de ingredientes de tu
-cuenta: se rellena solo con los que usas en tus recetas y te permite
-asignarles la categoría (la lista de la compra se agrupa por ella).
-También muestra en qué recetas se usa cada ingrediente.
+La **barra de búsqueda de la cabecera** busca **dentro de tus recetas**
+(más en [sección 9.2](#92-buscar-en-tu-registro)): encuentra recetas
+**por nombre, por ingrediente** (por ejemplo «huevo» muestra todas las
+recetas que lo usan) y **por etiqueta** (por ejemplo «vegetariano»).
+Pulsa un resultado para abrir la receta en modo lectura.
 
 Con **«Ver»** abres la receta en modo lectura; con **«Editar»** la
 modificas; con **«Eliminar»** la borras (se quita del menú y de la
@@ -541,7 +534,18 @@ receta de 4 porciones con 200 g de arroz, para 2 comensales, pedirá
   excluidas y puedes volver a incluirlas pulsando su nombre. También se
   indican en el menú (tachadas).
 
-### 8.5 Datos y sincronización
+### 8.5 El catálogo de ingredientes
+
+La pestaña **«Ingredientes»** muestra el catálogo de ingredientes de tu
+cuenta: se rellena solo con los que usas en tus recetas y te permite
+asignarles la categoría (la lista de la compra se agrupa por ella).
+También muestra **en qué recetas se usa cada ingrediente**: pulsa el
+nombre de una receta para abrirla en modo lectura.
+
+Puedes ocultar esta pestaña desde [Ajustes → Secciones y
+pestañas](#16-ajustes) igual que el resto.
+
+### 8.6 Datos y sincronización
 
 Las recetas, el catálogo de ingredientes, las etiquetas propias y los
 menús se guardan en tu cuenta y se sincronizan en tiempo real entre
@@ -923,9 +927,9 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - **Secciones y pestañas**: elige qué secciones y pestañas de la web
   ves. Hoy hay dos secciones: **«Ocio»**, con sus cuatro pestañas
   (**Series**, **Películas**, **Libros** y **Videojuegos**), y
-  **«Recetas»**, con sus tres pestañas (**Recetas**, **Menú** y
-  **Lista de la compra**). En el futuro se añadirán más secciones y
-  aparecerán aquí con sus pestañas. Al **ocultar una pestaña**,
+  **«Recetas»**, con sus cuatro pestañas (**Recetas**, **Ingredientes**,
+  **Menú** y **Lista de la compra**). En el futuro se añadirán más
+  secciones y aparecerán aquí con sus pestañas. Al **ocultar una pestaña**,
   desaparece de la barra de pestañas de su sección (la de Ocio o la
   de Recetas) y de la vista: tus datos, avisos y actualizaciones
   siguen funcionando igual, solo deja de verse. Al **ocultar una
