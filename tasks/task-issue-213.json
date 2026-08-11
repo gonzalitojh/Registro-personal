@@ -1,0 +1,28 @@
+{
+  "title": "Botón volver del perfil (issue #213)",
+  "description": "La base del trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a `dev`), según instrucción explícita de la issue.\n\nAl presionar el botón _volver_ del perfil, se debe ir a la sección en la que estaba antes, no ir siempre a la sección _ocio_.\n\nEstado previo (issue #206, ADR-077): el perfil tiene su propia cabecera con la flecha de volver (`#btn-close-profile`) y las pestañas en la misma fila; la cabecera global no aparece allí. El handler en `js/profile.js` cierra la vista con toggle manual y navega SIEMPRE a `normalizeTabKey(\"ocio\", getLastOcioKey())`. Con la llegada de la sección Recetas (issue #64), si el usuario entró al perfil desde Recetas, el botón de volver debe regresar a Recetas (con su última pestaña activa), no a Ocio.\n\nSolución: trackear en `js/router.js` la última sección de primer nivel visitada (ocio/recetas; no perfil) y usarla en el handler de volver del perfil para regresar a la sección correcta con su pestaña normalizada (issue #97 para pestañas ocultas). Plan:\n1. `js/router.js`: añadir `lastSection` (default \"ocio\") que se actualiza en `applyRoute` cuando section es ocio o recetas; exportar `getLastSection()`.\n2. `js/profile.js`: en el handler de `#btn-close-profile`, si `getLastSection() === \"recetas\"` navegar a `{ section: \"recetas\", tab: normalizeTabKey(\"recetas\", getLastRecipesTab()) }`; si no, comportamiento actual (Ocio, con su última pestaña normalizada). Mantener el toggle manual de cierre de la vista.\n3. Bump PWA.\n4. Manual de usuario (sección 15 y 3.2): la flecha vuelve a la sección (Ocio o Recetas) donde estabas.\n5. ADR.",
+  "status": "implemented",
+  "acceptance criteria": [
+    "Al pulsar la flecha de volver del perfil, se regresa a la sección de primer nivel en la que estaba el usuario antes de entrar al perfil (Ocio o Recetas), no siempre a Ocio.",
+    "Si la sección de origen es Recetas, se vuelve con su última pestaña activa (normalizada a la primera visible si quedó oculta, issue #97).",
+    "Si la sección de origen es Ocio, se vuelve a la última pestaña de Ocio activa (comportamiento actual preservado).",
+    "La URL se sincroniza (router de hash) al volver, igual que en el comportamiento actual.",
+    "Sin regresiones: la cabecera global se vuelve a mostrar en Ocio/Recetas tras cerrar el perfil; #app / #recipes-view se muestran correctamente según la sección.",
+    "Responsividad y 4 modos de tema sin cambios (no se toca CSS).",
+    "El manual de usuario refleja el nuevo comportamiento (regla 3 de AGENTS.md)."
+  ],
+  "definition of done": [
+    "Planificación completada y aprobada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA: criterios de aceptación verificados.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado con 'Related issue: #213'.",
+    "PR creada contra `content/issue-64-seccion-recetas` (NO dev, instrucción explícita de la issue) SIN keyword de cierre; task file subido con status 'review' + bloque pr.",
+    "Issue #213 label actualizada a su estado final (status: needs-review al crear la PR)."
+  ],
+  "issue": {
+    "number": 213,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/213",
+    "title": "Botón volver del perfil"
+  }
+}
