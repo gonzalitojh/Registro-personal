@@ -185,7 +185,7 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    Sin ese patrón, los despliegues desde ramas como `feature/...` se
    rechazan con un error de "environment protection rules".
 3. El workflow `.github/workflows/deploy-all-branches.yml` despliega
-   **todas las ramas** en cada push a `main` o `dev`: cada merge reconstruye
+   **todas las ramas** en cada push de cualquier rama: cada push reconstruye
    el sitio con todas las ramas.
    - La rama `main` se sirve en la raíz:
      `https://tu-usuario.github.io/nombre-del-repo/`.
@@ -200,6 +200,13 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
      rama `dev` se sirve en `/dev/dev/`. Es un preview completo y
      funcional: cada rama tiene su propia web con su service worker,
      manifest y assets funcionando desde su base.
+   - Las ramas cuyo nombre empieza por `no-deploy/` (p. ej.
+     `no-deploy/feat/...`) quedan **excluidas del despliegue**: no se
+     sirven en el hub de previews y un push a una de ellas **no dispara
+     el workflow** (no consume minutos de Actions). Es útil para
+     conservar ramas que no vas a fusionar: renómbrala con ese prefijo
+     (p. ej. `feat/...` → `no-deploy/feat/...`) y, al borrar la rama
+     original, su preview desaparece del hub en el siguiente despliegue.
    Nota: los previews de las ramas abiertas se actualizan con cada merge a
    `dev`/`main`, no con cada push de la propia rama; para forzar la
    actualización de un preview sin merge, usa el paso 4.
