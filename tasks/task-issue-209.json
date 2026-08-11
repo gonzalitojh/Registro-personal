@@ -1,0 +1,29 @@
+{
+  "title": "Pestaña de ingredientes (issue #209)",
+  "description": "La base del trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a `dev`), según instrucción explícita de la issue.\n\nEl catálogo de ingredientes que se encuentra dentro de la pestaña de Recetas (panel-recipes-tab, toggle «Ingredientes») debe extraerse a otra pestaña propia (nueva pestaña «Ingredientes» en la barra de Recetas). Eliminar el catálogo y el toggle de la pestaña de Recetas y quitar también la barra de búsqueda local, quedando únicamente el botón «+ Nueva receta».\n\nEstado previo (issue #208, ADR-078): la sección Recetas tiene barra de pestañas uniforme `tabs--bar` con tres pestañas (Recetas/Menú/Lista de la compra), acentos ocre/verde/rojo, ocultables desde Ajustes (SECTION_REGISTRY en js/settings.js, applyTabVisibility en js/app.js). En la pestaña «Recetas» (panel-recipes-tab) conviven: input de búsqueda local (#recipes-search-input), toggle «Ingredientes» (#btn-toggle-ingredients) con el catálogo (#ingredients-catalog) y el botón «+ Nueva receta» (#btn-new-recipe). El catálogo lo renderiza js/recipes.js (renderIngredientsCatalog) y asigna categorías a los ingredientes (ctx.updateIngredientCategory). La búsqueda local alimenta activeFilter; la búsqueda global de cabecera (issue #206) usa searchRecipes (filterRecipes) y es independiente del input local.\n\nSolución: crear la pestaña «Ingredientes» (token `ingredientes`, panel `panel-ingredients-tab`) siguiendo el patrón existente:\n1. `index.html`: añadir botón de pestaña `tab--ingredients` con data-recipes-tab=\"ingredientes\" e icono; añadir `<section id=\"panel-ingredients-tab\" class=\"hidden\">` con el contenedor #ingredients-catalog dentro. En panel-recipes-tab: eliminar el input de búsqueda, el botón toggle «Ingredientes» y el div #ingredients-catalog; dejar únicamente el botón «+ Nueva receta» (mantener #recipe-ingredients-datalist, que usa el modal de receta).\n2. `js/recipes.js`: eliminar listener de #recipes-search-input y #btn-toggle-ingredients, la variable showingIngredients y toggleIngredientsCatalog; resetRecipesData sin referencias al toggle; renderIngredientsCatalog pasa a renderizarse al abrir la pestaña (openRecipes: map panels + render cuando tab === \"ingredientes\") y al llegar datos nuevos si la pestaña está visible; eliminar activeFilter y su uso en renderRecipesList (la lista muestra todas las recetas; searchRecipes/filterRecipes se conservan para la búsqueda global).\n3. `js/router.js`: añadir `ingredientes: \"panel-ingredients-tab\"` a RECIPES_TAB_TO_PANEL.\n4. `js/settings.js`: añadir `ingredientes: true` al default de visibleTabs y la entrada `ingredientes: { label: \"Ingredientes\", panelId: \"panel-ingredients-tab\" }` en SECTION_REGISTRY.recetas.tabs (ocultable en Ajustes, patrón issue #97).\n5. `css/styles.css`: `.tab--ingredients { --tab-accent: var(--games); }` (violeta, único acento libre de la paleta; patrón ADR-078) + override `[data-theme=\"black\"] .tab--ingredients.is-active` con --games-dark; eliminar CSS muerto de .recipes-search-input.\n6. Bump PWA (service-worker.js ?v=20260909 → 20260910).\n7. Manual de usuario: secciones 3.1/3.2, 8 (cuatro pestañas: Recetas, Ingredientes, Menú y Lista de la compra), 8.1 (la pestaña Recetas queda solo con «+ Nueva receta»; la búsqueda de recetas pasa a ser solo la de la cabecera), nueva subsección para la pestaña Ingredientes (catálogo: categorías, recetas que lo usan) y 16 (Ajustes: cuatro pestañas de Recetas).\n8. ADR con 'Related issue: #209'.",
+  "status": "created",
+  "acceptance criteria": [
+    "Existe una nueva pestaña «Ingredientes» en la barra de pestañas de Recetas, con icono y acento violeta, funcional en los cuatro modos de tema.",
+    "La pestaña «Recetas» queda únicamente con el botón «+ Nueva receta»: sin barra de búsqueda local, sin toggle «Ingredientes» y sin catálogo.",
+    "La pestaña «Ingredientes» muestra el catálogo (asignación de categoría por ingrediente, recetas que lo usan) con el mismo contenido y comportamiento que antes (updateIngredientCategory, apertura de receta).",
+    "El catálogo se renderiza al abrir la pestaña y se actualiza en tiempo real cuando cambian los ingredientes o las recetas si la pestaña está visible.",
+    "El router soporta #/recetas/ingredientes y la pestaña es ocultable desde Ajustes → Secciones y pestañas (patrón issue #97), con normalización de la pestaña activa si se oculta.",
+    "La búsqueda global de cabecera sigue encontrando recetas (searchRecipes/filterRecipes intactos).",
+    "Responsividad: sin scroll horizontal en 360/768/1280 px y con contenido largo; regla 2 de AGENTS.md.",
+    "Manual de usuario actualizado (regla 3 de AGENTS.md) y ADR creado."
+  ],
+  "definition of done": [
+    "Planificación completada y aprobada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA: criterios de aceptación verificados.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR creado con 'Related issue: #209'.",
+    "PR creada contra `content/issue-64-seccion-recetas` (NO dev, instrucción explícita de la issue) SIN keyword de cierre; task file subido con status 'review' + bloque pr.",
+    "Issue #209 label actualizada a su estado final (status: needs-review al crear la PR)."
+  ],
+  "issue": {
+    "number": 209,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/209",
+    "title": "Pestaña de ingredientes"
+  }
+}
