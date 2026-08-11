@@ -459,6 +459,18 @@ async function init() {
       const panelEl = panels[tab.panelId];
       if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Pestañas de Recetas (issue #208): la barra de pestañas de
+    // Recetas es ya del mismo componente que la de Ocio, así que las
+    // pestañas ocultas en Ajustes también salen de su barra. Los
+    // paneles de Recetas los re-togglea openRecipes al abrir la
+    // sección (con normalizeTabKey, que ya cae a la primera visible
+    // si la pedida está oculta), así que aquí solo se añade hidden.
+    Object.entries(SECTION_REGISTRY.recetas.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-recipes-tab="${tabKey}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = document.getElementById(tab.panelId);
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
+    });
     // Si la pestaña activa quedó oculta, caer a la primera visible
     // (el mismo guard de activatePanel, issue #97): sin esto el área
     // de contenido quedaría en blanco al ocultar la pestaña activa.
