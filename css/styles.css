@@ -3590,6 +3590,14 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-10);
 }
 
+/* En negro puro el hover genérico (--paper-alpha-10 sobre fondo oscuro)
+   ganaría al .is-checked y dejaría el texto --ink ilegible: el hover de
+   un ítem marcado mantiene el fondo violeta oscuro. */
+[data-theme="black"] .ingredients-filter__all.is-checked:hover,
+[data-theme="black"] .ingredients-filter__item.is-checked:hover {
+  background: var(--games-dark);
+}
+
 [data-theme="black"] .ingredient-modal__link {
   color: var(--teal-reel-dark);
 }

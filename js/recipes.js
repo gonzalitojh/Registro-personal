@@ -503,7 +503,15 @@ function closeIngredientFilterPanel() {
   if (!panel || panel.classList.contains("hidden")) return;
   panel.classList.add("hidden");
   btn?.setAttribute("aria-expanded", "false");
+  // Desregistrar el Escape del panel (se registra al abrirlo) para que
+  // no robe foco tras cierres por fuera (openRecipes, resetRecipesData).
+  document.removeEventListener("keydown", escHandlerRef);
 }
+
+// Referencia al manejador de Escape del panel (registrado al abrirlo);
+// se guarda en el módulo para poder desregistrarlo desde
+// closeIngredientFilterPanel sin acoplar el cierre al setup.
+let escHandlerRef = null;
 
 function setupIngredientFilter() {
   const wrap = document.getElementById("ingredients-filter");
@@ -511,13 +519,14 @@ function setupIngredientFilter() {
   const btn = document.getElementById("btn-ingredient-filter");
   if (!wrap || !panel || !btn) return;
 
-  function escHandler(e) {
+  const escHandler = (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
       closeIngredientFilterPanel();
       btn.focus();
     }
-  }
+  };
+  escHandlerRef = escHandler;
 
   btn.addEventListener("click", () => {
     if (panel.classList.contains("hidden")) {
@@ -527,7 +536,6 @@ function setupIngredientFilter() {
       document.addEventListener("keydown", escHandler);
     } else {
       closeIngredientFilterPanel();
-      document.removeEventListener("keydown", escHandler);
       btn.focus();
     }
   });
@@ -536,7 +544,6 @@ function setupIngredientFilter() {
   document.addEventListener("click", (e) => {
     if (!wrap.contains(e.target) && !panel.classList.contains("hidden")) {
       closeIngredientFilterPanel();
-      document.removeEventListener("keydown", escHandler);
     }
   });
 
@@ -579,9 +586,13 @@ function openIngredientModal(id) {
   modal.classList.remove("hidden");
   ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
   // En el alta manual, foco directo al nombre para escribir ya. Se hace
-  // tras el rAF de trapFocus (que enfoca el primer enfocable, la ✕).
+  // en un segundo rAF tras el de trapFocus (que enfoca la ✕, el primer
+  // enfocable): los callbacks del mismo frame corren en orden, así el
+  // foco final queda en el input y el trap no se rompe.
   if (!ingredient) {
-    setTimeout(() => content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false }), 0);
+    requestAnimationFrame(() => {
+      content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
+    });
   }
 }
 
