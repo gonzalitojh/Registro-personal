@@ -37,12 +37,15 @@ ADR-076):
 ## Decisión
 
 1. **Cabecera global**: el `header.app-header` se mueve **fuera de
-   `#app`**, a nivel de `body`, con la clase `hidden` por defecto.
-   `ui.showApp()` la muestra al iniciar sesión y `ui.showAuthScreen()`
-   la oculta (nunca en la pantalla de acceso). El auto-ocultado por
-   scroll (issue #137) queda **restringido a las listas de Ocio** (su
-   guard `activePanel()` ya lo limitaba); en Perfil y Recetas la
-   cabecera es fija.
+   `#app`**, a nivel de `body`, con la clase `hidden` por defecto y el
+   **id `app-header`** (requisito del toggle de `ui.js`: sin él,
+   `getElementById("app-header")` devuelve `null` y la cabecera
+   permanece oculta en todas las páginas; regresión detectada en la
+   iteración del 2026-08-11). `ui.showApp()` la muestra al iniciar
+   sesión y `ui.showAuthScreen()` la oculta (nunca en la pantalla de
+   acceso). El auto-ocultado por scroll (issue #137) queda
+   **restringido a las listas de Ocio** (su guard `activePanel()` ya lo
+   limitaba); en Perfil y Recetas la cabecera es fija.
 2. **Vistas sin volver ni título**: se eliminan `#btn-close-profile`,
    `#btn-close-recipes` y los dos `<h1 class="app-title">`; la clase
    CSS `.app-title` (y su override móvil) desaparece por ser código
