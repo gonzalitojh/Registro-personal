@@ -48,6 +48,7 @@ const STATIC_ASSETS = [
   './js/quick-actions.js',
   './js/rating-modal.js',
   './js/reading-log.js',
+  './js/render-guard.js',
   './js/search.js',
   './js/sorting.js',
   './js/tv-progress.js',

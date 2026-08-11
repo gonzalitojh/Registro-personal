@@ -27,6 +27,7 @@ import { getOpenLibraryDescription } from "./api-books.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { APP_VERSION } from "./config.js";
 import { subscribeWithRetry } from "./retry.js";
+import { createRenderGuard } from "./render-guard.js";
 import { applySort } from "./sorting.js";
 import { ALLOWED_EMAILS } from "./allowed-emails.js";
 import * as ui from "./ui.js";
@@ -128,58 +129,9 @@ function renderLibraryFor(group) {
 // cada snapshot volcaba el innerHTML del grid/lista completo: los <img
 // loading="lazy"> en vuelo se cancelaban una y otra vez y las portadas
 // nunca llegaban a cargar (parpadeo incluido) hasta reiniciar la web.
-// Con esta guarda, un grupo solo se re-renderiza si los campos que se
-// PINTAN cambiaron de verdad. Los metadatos no renderizados (updatedAt,
-// overview, cast, ...) quedan fuera a propósito.
-const renderedSignatures = { movies: null, tv: null, books: null, games: null };
-
-// Campos del ítem que afectan a lo que pinta el grid/lista (ui.js:
-// renderGrid/renderList, progressLine, upcomingBadge, quickActionLabel,
-// isItemUnreleased). Mantener en sincronía con esos renderizadores.
-const RENDERED_FIELDS = [
-  "id",
-  "title",
-  "status",
-  "rating",
-  "coverUrl",
-  "year",
-  "author",
-  "releaseDate",
-  "firstAirDate",
-  "awaitingRelease",
-  "manual",
-  "communityRating",
-  "timesCompleted",
-  "lastWatchedAt",
-  "nextEpisode",
-  "nextEpisodeAirDate",
-  "nextEpisodeToAir",
-  "seasonAirDates",
-  "watchLog",
-  "readLog",
-  "playLog",
-];
-
-function renderSignature(items) {
-  return JSON.stringify(
-    items.map((it) => {
-      const row = {};
-      for (const field of RENDERED_FIELDS) {
-        if (it[field] !== undefined) row[field] = it[field];
-      }
-      return row;
-    })
-  );
-}
-
-// true si el grupo cambió respecto a la última renderización; en ese
-// caso actualiza la firma. issue #191.
-function groupChanged(group, items) {
-  const sig = renderSignature(items);
-  if (renderedSignatures[group] === sig) return false;
-  renderedSignatures[group] = sig;
-  return true;
-}
+// La guarda (js/render-guard.js) solo re-renderiza un grupo cuando los
+// campos que se PINTAN cambiaron de verdad.
+const groupChanged = createRenderGuard();
 
 // Actualiza el grupo tras un snapshot y re-renderiza SOLO si los datos
 // visibles cambiaron (issue #191). La búsqueda global también se
@@ -187,7 +139,7 @@ function groupChanged(group, items) {
 // de la colección, que forman parte de la firma.
 function syncGroup(group, items) {
   allItems[group] = items;
-  if (groupChanged(group, items)) {
+  if (groupChanged.changed(group, items)) {
     renderLibraryFor(group);
     refreshExternalResults(createCtx());
   }
@@ -471,10 +423,7 @@ async function init() {
       allItems.games = [];
       // Limpiar las firmas de render (issue #191): el siguiente login
       // debe re-renderizar su biblioteca sin comparar contra otro usuario.
-      renderedSignatures.movies = null;
-      renderedSignatures.tv = null;
-      renderedSignatures.books = null;
-      renderedSignatures.games = null;
+      groupChanged.reset();
       notifications = [];
       cleanupSettings();
       resetDevicePush();
