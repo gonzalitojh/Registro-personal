@@ -1,0 +1,33 @@
+{
+  "title": "Arreglar vista de menú",
+  "description": "La base de la que iniciar el trabajo es la rama content/issue-64-seccion-recetas. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev). Arregla la pestaña de menú. Actualmente se ve muy mal, se superponen unas cosas a otras.",
+  "status": "review",
+  "acceptance criteria": [
+    "La pestaña de menú se ve correctamente: ningún elemento se superpone a otros.",
+    "El menú es responsivo (móvil, tablet y escritorio) sin scroll horizontal.",
+    "La nueva rama parte de content/issue-64-seccion-recetas.",
+    "La PR se hace contra content/issue-64-seccion-recetas (no contra dev)."
+  ],
+  "definition of done": [
+    "Planificación completada",
+    "Implementación realizada y micro-commits incrementales",
+    "Validación de aceptación y DoD superada (qa-reviewer)",
+    "Escaneo de seguridad PASS (security-champion)",
+    "ADR actualizado/creado si procede con 'Related issue: #215'",
+    "PR creada contra content/issue-64-seccion-recetas sin keyword de cierre",
+    "Issue #215 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 215,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/215",
+    "title": "Arreglar vista de menú"
+  },
+  "pr": {
+    "number": 217,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/217",
+    "title": "fix: pestaña de menú sin solapamientos (issue #215)",
+    "branch": "fix/issue-215-vista-menu",
+    "commit": "44c408f",
+    "closes": "#215"
+  }
+}

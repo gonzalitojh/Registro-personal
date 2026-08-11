@@ -2792,6 +2792,16 @@ body.is-back-to-top-visible .back-to-top {
   min-width: 0;
 }
 
+/* js/menu.js envuelve cabecera y filas en .menu-grid__head y
+   .menu-grid__row (grupos de celdas). Sin caja propia, sus celdas
+   participan directamente en el grid de 4 columnas: cabecera en la
+   fila 1 y cada día en su fila. Sin esto, cada wrapper se auto-coloca
+   en UNA celda estrecha y todo se aplasta y se superpone (issue #215). */
+.menu-grid__head,
+.menu-grid__row {
+  display: contents;
+}
+
 .menu-grid__cell {
   background: var(--ink-raised);
   border: 1px solid var(--paper-alpha-14);
