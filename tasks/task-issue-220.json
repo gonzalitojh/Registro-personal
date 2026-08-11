@@ -1,0 +1,25 @@
+{
+  "title": "Estética pestaña menú",
+  "description": "La pestaña «Menú» de la sección de Recetas (issue #64) no se ve bien: los botones tienen una estética completamente diferente a la del resto de la web (sección Ocio y pestañas de Recetas/Ingredientes). El usuario pide mejorar la estética de la pestaña, especialmente los botones, para que sigan el mismo lenguaje visual que el resto (botones píldora estilo .sort-select / .ingredients-filter__btn, .btn--primary para acciones principales, danger coherente para destructivas, selects consistentes).\n\nNota del flujo: la base de trabajo es la rama content/issue-64-seccion-recetas; se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).",
+  "status": "created",
+  "acceptance criteria": [
+    "La pestaña «Menú» mantiene toda la funcionalidad existente (navegar semanas, comensales, borrar semana, + Receta por comida, recetas a la semana, quitar/eliminar).",
+    "Los botones y controles de la pestaña siguen el lenguaje visual del resto de la web: acciones principales con .btn--primary, navegación/comensales/selects como píldoras coherentes con .sort-select y controles tipo Ocio, destructivas con .btn--danger coherente.",
+    "El cambio se verifica en los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro) sin texto ni superficies invisibles ni contraste insuficiente (WCAG AA).",
+    "La vista se ve correctamente en móvil (~360px), tablet (~768px) y escritorio (~1280px) sin scroll horizontal a nivel de página (el scroll interno del grid del menú está permitido).",
+    "Manual de usuario actualizado si cambia algo visible para el usuario."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA superada (criterios de aceptación y casos borde).",
+    "Escaneo de seguridad PASS.",
+    "ADR creado con 'Related issue: #220'.",
+    "PR creada contra la rama content/issue-64-seccion-recetas (sin keyword de cierre en el body), con task file actualizado (status review + bloque pr) y issue en status: needs-review."
+  ],
+  "issue": {
+    "number": 220,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/220",
+    "title": "Estética pestaña menú"
+  }
+}
