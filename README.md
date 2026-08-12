@@ -242,8 +242,8 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
     vuelve a la cola con un comentario). Se pueden **encolar varias
     ejecuciones** del workflow (p. ej. N issues abiertas seguidas): las
     runs esperan en cola y se procesan en orden, una sesión a la vez, sin
-    cancelar las encoladas (antes solo cabían 1 en ejecución + 1 en cola y
-    las demás se cancelaban).
+    cancelar las encoladas (antes solo cabían 1 en ejecución + 1 en cola
+    y las demás se cancelaban).
 
 ## 7. Autorizar tu dominio en Firebase
 

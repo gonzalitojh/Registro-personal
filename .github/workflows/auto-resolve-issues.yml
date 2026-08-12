@@ -416,23 +416,36 @@ jobs:
             FAIL_REASON=" Motivo: $(head -c 4000 "$GITHUB_WORKSPACE/session-failure.txt")"
           fi
           NEXT_RETRY=$((RETRY + 1))
+
+          # Agota los reintentos (o el dispatch de relanzamiento falla): la
+          # issue vuelve a la cola con un comentario que lo explica.
+          return_to_queue() {
+            local MOTIVO="$1"
+            local PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
+            [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" && "$PREV_STATUS" != "in-progress" ]] || PREV_STATUS="todo"
+            echo "$MOTIVO: la issue #$N vuelve a la cola (status: $PREV_STATUS)."
+            bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
+            gh issue comment "$N" --body "⚠️ $MOTIVO.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+          }
+
           if [[ "$NEXT_RETRY" -le "$MAX_RELAUNCHES" ]]; then
-            echo "Reintentando: se relanza la sesión de la issue #$N (intento $NEXT_RETRY de $((MAX_RELAUNCHES + 1)))..."
+            echo "Reintentando: se relanza la sesión de la issue #$N (intento $((NEXT_RETRY + 1)) de $((MAX_RELAUNCHES + 1)))..."
             # La issue se mantiene en in-progress: el relanzamiento la retoma
             # (el dispatch con issue_number acepta cualquier status) y el
             # selector no la vuelve a elegir mientras tanto. El progreso lo
             # restaura el paso wip-restore de la run relanzada (wip/issue-N).
             bash scripts/gh-issue.sh set-state "$N" "status: in-progress" >/dev/null 2>&1 || true
-            gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se relanza automáticamente (intento $NEXT_RETRY de $((MAX_RELAUNCHES + 1)))." >/dev/null 2>&1 || true
-            gh workflow run auto-resolve-issues.yml --ref dev -f "issue_number=$N" -f "retry=$NEXT_RETRY" || {
-              echo "AVISO: no se pudo relanzar el workflow (best-effort)." >&2
-            }
+            if gh workflow run auto-resolve-issues.yml --ref dev -f "issue_number=$N" -f "retry=$NEXT_RETRY"; then
+              echo "Relanzamiento encolado: run de la issue #$N con retry=$NEXT_RETRY (esperará en la cola del concurrency)."
+              gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se relanza automáticamente (intento $((NEXT_RETRY + 1)) de $((MAX_RELAUNCHES + 1)))." >/dev/null 2>&1 || true
+            else
+              # Ventana pre-merge (el input retry aún no existe en dev) o error
+              # de API: no dejar la issue colgada en in-progress → a la cola.
+              echo "AVISO: no se pudo relanzar el workflow (best-effort); la issue #$N vuelve a la cola." >&2
+              return_to_queue "La sesión automática de SDD falló y no se pudo relanzar automáticamente"
+            fi
           else
-            PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
-            [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" && "$PREV_STATUS" != "in-progress" ]] || PREV_STATUS="todo"
-            echo "Máximo de reintentos alcanzado ($MAX_RELAUNCHES): la issue #$N vuelve a la cola (status: $PREV_STATUS)."
-            bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
-            gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló tras $((MAX_RELAUNCHES + 1)) intentos.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+            return_to_queue "La sesión automática de SDD falló tras $((MAX_RELAUNCHES + 1)) intentos"
           fi
 
       - name: Disparar despliegue deploy-all-branches (workflow_dispatch)

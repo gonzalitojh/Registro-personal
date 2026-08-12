@@ -99,7 +99,8 @@ dry_run != 'true'`), best-effort, con dos ramas:
      el selector no la vuelve a elegir mientras tanto).
   2. Se comenta en la issue el fallo con su motivo y el intento
      (`⚠️ La sesión automática de SDD falló. Motivo: ... Se relanza
-     automáticamente (intento N de 3).`).
+     automáticamente (intento N de 3).`; N cuenta el intento global, el
+     fallido inclusive).
   3. Se relanza: `gh workflow run auto-resolve-issues.yml --ref dev
      -f issue_number=<N> -f retry=<N+1>`.
   4. La run relanzada entra en la cola del concurrency (si hay otras runs,
@@ -110,6 +111,12 @@ dry_run != 'true'`), best-effort, con dos ramas:
   previo — la issue vuelve a la cola (`status: todo`, o `prev_status` si es
   un estado significativo distinto de `in-progress`: `blocked`,
   `needs-review`…) con comentario indicando el agotamiento y el motivo.
+- **Fallo del propio dispatch de relanzamiento** (p. ej. en la ventana
+  previa a la fusión de esta PR, cuando `dev` aún no declara el input
+  `retry` y la API lo rechaza con HTTP 422): se aplica el mismo
+  `return_to_queue` que en el agotamiento (issue a la cola + comentario
+  «no se pudo relanzar automáticamente»), de modo que la issue **nunca se
+  queda colgada en `in-progress`** sin sesión en marcha.
 
 Detalles de robustez:
 
@@ -203,9 +210,10 @@ documenta en la cabecera del workflow y en este ADR.
   fácil de revertir (quitar una línea).
 - **El relanzamiento usa `--ref dev`**: si `dev` no contuviera la versión
   nueva del workflow en el momento del fallo (p. ej. fallo antes de
-  fusionar), el dispatch sería rechazado (HTTP 422) y el paso avisaría
-  (best-effort). Tras la fusión de esta PR, `dev` siempre tiene la versión
-  nueva.
+  fusionar), el dispatch sería rechazado (HTTP 422); en ese caso el paso
+  aplica el `return_to_queue` (issue a la cola + comentario) en vez de
+  dejar la issue colgada en `in-progress`. Tras la fusión de esta PR, `dev`
+  siempre tiene la versión nueva.
 - **Posible doble procesamiento leve**: si entre el fallo y la ejecución del
   relanzamiento otra run encolada selecciona la misma issue (solo posible si
   la issue volvió a `todo` por una ruta previa a esta versión), el
