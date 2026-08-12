@@ -23,9 +23,21 @@ name: auto-resolve-issues
 #   - workflow_dispatch → prueba manual o reanudación: con issue_number fuerza
 #     ESA issue aunque esté bloqueada (construye el candidato directamente, no
 #     vía selector que rechaza blocked), con dry_run solo muestra el prompt.
+#   - Fallo de la sesión (issue #226): si una sesión falla, el propio run la
+#     relanza automáticamente sobre la MISMA issue (workflow_dispatch con
+#     issue_number + input interno "retry"), hasta 2 reintentos; si se agotan,
+#     la issue vuelve a la cola con un comentario. Así un fallo (tokens del
+#     modelo free, watchdog, timeout) no deja la issue abandonada esperando
+#     un disparo manual.
 #
 # "Apagar el servidor" = cuando el selector devuelve NONE (no quedan issues
 # elegibles), el workflow termina sin lanzar ninguna sesión.
+#
+# Cola de ejecuciones (issue #226): el concurrency group usa `queue: max`
+# (hasta 100 runs encoladas por grupo). Las runs se ejecutan EN ORDEN, una
+# sesión a la vez (cancel-in-progress: false nunca mata una sesión activa ni
+# una run encolada). Antes solo cabía 1 en ejecución + 1 en cola y la 3ª run
+# se cancelaba automáticamente ("no solo dos").
 #
 # NOTA (activación, issue #120): GitHub Actions selecciona la versión del
 # workflow según el evento:
@@ -52,6 +64,11 @@ on:
         type: boolean
         required: false
         default: false
+      retry:
+        description: "Nº de reintento automático tras fallo (uso interno del relanzamiento; 0 = ejecución normal)"
+        type: number
+        required: false
+        default: 0
 
 permissions:
   contents: write      # commits/push del agente (flujo SDD: rama + PR)
@@ -59,11 +76,14 @@ permissions:
   issues: write        # labels (set-state) y comentarios
   actions: write       # lanzar workflow_dispatch de deploy-all-branches tras sesión exitosa
 
-# Una sola sesión a la vez: si llega un evento mientras otra sesión corre,
-# el nuevo run espera (cancel-in-progress: false NUNCA mata una sesión activa).
+# Varias sesiones en cola, una a la vez (issue #226): queue: max encola hasta
+# 100 runs del grupo y se ejecutan en orden; cancel-in-progress: false NUNCA
+# mata una sesión activa ni una run encolada (antes, la 3ª run en llegar se
+# cancelaba: solo cabía 1 en ejecución + 1 en cola).
 concurrency:
   group: sdd-auto-resolver
   cancel-in-progress: false
+  queue: max
 
 jobs:
   resolve:
@@ -137,6 +157,12 @@ jobs:
               ST="$(echo "$LABELS" | grep '^status: ' | sed 's/^status: //' | head -1)"
             fi
             echo "Reanudación manual de la issue #$N (workflow_dispatch, status: ${ST:-ninguno})"
+            RETRY="${{ inputs.retry }}"
+            RETRY="${RETRY//[^0-9]/}"   # sanitizar
+            [[ -n "$RETRY" ]] || RETRY=0
+            if [[ "$RETRY" -gt 0 ]]; then
+              echo "  ↳ reintento automático $RETRY tras un fallo previo de la sesión (issue #226)"
+            fi
             SELECTED="$(gh issue view "$N" --json number,title,body,labels,comments,createdAt,url -q . | jq -c '{number,title,body,labels:[.labels[].name],comments,createdAt,url}')"
             echo "resume=true" >> "$GITHUB_OUTPUT"
             echo "prev_status=${ST:-todo}" >> "$GITHUB_OUTPUT"
@@ -216,7 +242,6 @@ jobs:
               echo "AVISO: no se pudo marcar #$N como in-progress (best-effort)." >&2
             fi
           fi
-          echo "claim_owner=$EVENT" >> "$GITHUB_OUTPUT"
 
       # =========================================================================
       # Protección de progreso WIP (issue #128): si un intento previo falló por
@@ -365,27 +390,50 @@ jobs:
           }
           git push origin "$BRANCH_NAME" --force 2>/dev/null || echo "AVISO: no se pudo pushear $BRANCH_NAME (best-effort)." >&2
 
-      - name: Rollback en fallo de sesión (best-effort)
-        if: failure() && steps.candidate.outputs.selected != 'NONE' && steps.claim.outputs.claim_owner != 'issue_comment'
+      - name: Relanzar o devolver a la cola en fallo de sesión (best-effort)
+        # Issue #226: en fallo de la sesión el run se RELANZA automáticamente
+        # sobre la misma issue (hasta MAX_RELAUNCHES reintentos; el input
+        # interno `retry` cuenta los intentos). Si se agotan, se devuelve la
+        # issue a la cola (comportamiento previo: rollback + comentario).
+        # El `--ref dev` es deliberado: el input `retry` solo existe en la
+        # versión nueva del workflow (dispatch API rechaza inputs no
+        # declarados con HTTP 422), y `dev` se actualiza antes que `main`.
+        if: failure() && steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
           if [[ ! -f "$GITHUB_WORKSPACE/candidate.json" ]]; then
-            echo "AVISO: no hay candidate.json; nada que devolver a la cola." >&2
+            echo "AVISO: no hay candidate.json; nada que relanzar." >&2
             exit 0
           fi
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
-          # Se devuelve la issue al estado previo (todo por defecto; blocked si
-          # la reanudación de una issue bloqueada vuelve a fallar).
-          PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
-          [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" ]] || PREV_STATUS="todo"
-          echo "Reintentando: se devuelve la issue #$N a la cola (status: $PREV_STATUS) y se comenta el fallo."
-          bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
+          RETRY="${{ inputs.retry }}"
+          RETRY="${RETRY//[^0-9]/}"   # sanitizar
+          [[ -n "$RETRY" ]] || RETRY=0
+          MAX_RELAUNCHES=2            # reintentos automáticos (3 intentos en total)
           FAIL_REASON=""
           if [[ -f "$GITHUB_WORKSPACE/session-failure.txt" ]]; then
             FAIL_REASON=" Motivo: $(head -c 4000 "$GITHUB_WORKSPACE/session-failure.txt")"
           fi
-          gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+          NEXT_RETRY=$((RETRY + 1))
+          if [[ "$NEXT_RETRY" -le "$MAX_RELAUNCHES" ]]; then
+            echo "Reintentando: se relanza la sesión de la issue #$N (intento $NEXT_RETRY de $((MAX_RELAUNCHES + 1)))..."
+            # La issue se mantiene en in-progress: el relanzamiento la retoma
+            # (el dispatch con issue_number acepta cualquier status) y el
+            # selector no la vuelve a elegir mientras tanto. El progreso lo
+            # restaura el paso wip-restore de la run relanzada (wip/issue-N).
+            bash scripts/gh-issue.sh set-state "$N" "status: in-progress" >/dev/null 2>&1 || true
+            gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se relanza automáticamente (intento $NEXT_RETRY de $((MAX_RELAUNCHES + 1)))." >/dev/null 2>&1 || true
+            gh workflow run auto-resolve-issues.yml --ref dev -f "issue_number=$N" -f "retry=$NEXT_RETRY" || {
+              echo "AVISO: no se pudo relanzar el workflow (best-effort)." >&2
+            }
+          else
+            PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
+            [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" && "$PREV_STATUS" != "in-progress" ]] || PREV_STATUS="todo"
+            echo "Máximo de reintentos alcanzado ($MAX_RELAUNCHES): la issue #$N vuelve a la cola (status: $PREV_STATUS)."
+            bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
+            gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló tras $((MAX_RELAUNCHES + 1)) intentos.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+          fi
 
       - name: Disparar despliegue deploy-all-branches (workflow_dispatch)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'

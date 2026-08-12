@@ -1,0 +1,28 @@
+{
+  "title": "Relanzar auto-resolve-issues",
+  "description": "Issue #226: si una ejecución del workflow auto-resolve-issues falla o es cancelado (siempre que no lo haya cancelado el usuario manualmente), debe volver a lanzarse sobre la misma issue. Además, se deben poder encolar varias ejecuciones, no solo dos.\n\nContexto técnico relevante:\n- El workflow .github/workflows/auto-resolve-issues.yml usa un concurrency group `sdd-auto-resolver` con cancel-in-progress: false: solo caben 1 run en ejecución + 1 en cola; una 3ª run se cancela automáticamente (\"Canceling since a higher priority waiting request exists\"). GitHub añadió `queue: max` al concurrency (changelog 2026-05-07): encola hasta 100 runs por grupo que se ejecutan en orden.\n- En fallo de sesión, el workflow actual hace rollback (issue a la cola + comentario) pero NO relanza: la issue queda esperando un disparo manual (nueva issue, comentario o dispatch).\n- `gh workflow run` valida los inputs contra el workflow del ref indicado (HTTP 422 si el input no existe): el relanzamiento debe usar el input `retry` declarado y --ref dev (dev se actualiza antes que main).\n- El progreso de sesiones fallidas se conserva en ramas wip/issue-N (issue #128) y se restaura automáticamente en el siguiente intento (wip-restore).\n- La cancelación manual del usuario NO debe relanzar. Con queue: max, GitHub ya no cancela automáticamente runs encoladas, así que la única vía de cancelación relevante es la manual: la cláusula \"es cancelado\" del requerimiento queda resuelta por la causa raíz (ya no se cancelan runs automáticamente).",
+  "status": "in-progress",
+  "acceptance criteria": [
+    "AC1: Si una sesión del workflow auto-resolve-issues falla, el workflow se relanza automáticamente sobre la MISMA issue (dispatch con issue_number + retry) sin intervención manual.",
+    "AC2: El relanzamiento tiene tope: máximo 2 reintentos automáticos (3 intentos en total); agotados, la issue vuelve a la cola con un comentario que lo indica.",
+    "AC3: La issue permanece en status: in-progress durante los reintentos (el selector no la vuelve a elegir) y el progreso WIP (wip/issue-N) se restaura en la run relanzada.",
+    "AC4: Se pueden encolar varias ejecuciones del workflow (más de 2): el concurrency usa queue: max (hasta 100 runs en cola) y las runs se ejecutan en orden, una sesión a la vez, sin cancelar las encoladas.",
+    "AC5: La cancelación manual del usuario NO relanza (con queue: max no hay cancelaciones automáticas de runs encoladas; cancel-in-progress: false nunca mata una sesión activa).",
+    "AC6: Los comentarios de la issue documentan cada fallo (motivo, intento) y el agotamiento de reintentos con su estado final.",
+    "AC7: Documentado: cabecera del workflow, README sección 6 y ADR nuevo con 'Related issue: #226'.",
+    "AC8: Validación: YAML parseable, lógica del paso de relanzamiento revisada (best-effort, sanitización del input retry) y dispatch de prueba con el input retry aceptado (HTTP 422 solo para inputs no declarados)."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada (workflow auto-resolve-issues.yml: input retry, concurrency queue: max, paso relanzar/devolver a la cola, cabecera; README sección 6 si procede).",
+    "Validación QA: criterios de aceptación y DoD verificados (incluido lint YAML y prueba del dispatch con input retry).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #226'.",
+    "PR contra dev SIN keyword de cierre; issue #226 con label actualizada a su estado final (cierre vía issues-done-on-dev al fusionar)."
+  ],
+  "issue": {
+    "number": 226,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/226",
+    "title": "Relanzar auto-resolve-issues"
+  }
+}
