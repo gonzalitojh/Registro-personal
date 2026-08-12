@@ -430,6 +430,12 @@
 /* El hover de .btn--danger no se toca: su fondo pasa a --stamp y el
    texto a --paper (5.33:1), como en el modo oscuro */
 
+/* Píldoras y selects del menú (issue #220): en negro puro no hace
+   falta override — --ink-raised es #0a0a0a (fondo casi negro) con
+   texto --paper claro y borde --paper-alpha-30, y el hover usa
+   --paper-alpha-10 (tinte claro sobre negro). La píldora de borrar
+   usa --stamp-dark de la regla de arriba y su hover rellena --stamp. */
+
 /* Filas de notificación: sobre el dropdown oscuro, un tono distinto
    y un borde sutil para separarlas */
 [data-theme="black"] .notif-row {
@@ -650,6 +656,22 @@ button {
 .btn--small {
   padding: 0.35rem 0.7rem;
   font-size: 0.8rem;
+}
+
+/* Variante píldora (issue #220): mismas métricas que
+   .sort-select / .ingredients-filter__btn de Ocio. Declarada ANTES
+   de .btn--danger: para .btn--pill.btn--danger, este último gana
+   fondo/borde/color de peligro y el pill aporta radio/padding. */
+.btn--pill {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+}
+.btn--pill:hover {
+  background: var(--paper-alpha-10);
 }
 
 .btn--danger {
@@ -2905,7 +2927,8 @@ body.is-back-to-top-visible .back-to-top {
 
 .menu-week-label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: break-word;
@@ -2923,10 +2946,16 @@ body.is-back-to-top-visible .back-to-top {
   width: 4.5rem;
   background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
-  border-radius: var(--radius);
-  padding: 0.35rem;
-  font-size: 0.85rem;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.menu-comensales input:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 /* Rejilla día × comida: en móvil se permite scroll horizontal
@@ -3017,8 +3046,21 @@ body.is-back-to-top-visible .back-to-top {
   flex-shrink: 0;
 }
 
+/* Botón «+ Receta» por comida (issue #220): mismos colores que la
+   píldora .btn--pill (fondo --ink-raised, texto --paper, borde
+   --paper-alpha-30, hover --paper-alpha-10) para que los botones de
+   añadir receta de cada día no destaquen con estética distinta al
+   resto de la pestaña. */
 .menu-meal__add {
   align-self: flex-start;
+  border-radius: 999px;
+  border-color: var(--paper-alpha-30);
+  background: var(--ink-raised);
+  color: var(--paper);
+}
+
+.menu-meal__add:hover {
+  background: var(--paper-alpha-10);
 }
 
 .menu-meal__picker {
@@ -3031,12 +3073,17 @@ body.is-back-to-top-visible .back-to-top {
   flex: 1 1 120px;
   min-width: 0;
   max-width: 100%;
-  background: var(--ink);
+  background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
-  border-radius: var(--radius);
-  padding: 0.3rem;
-  font-size: 0.8rem;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.menu-meal__picker select:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 /* Recetas a la semana (no escalan) */
@@ -3088,12 +3135,17 @@ body.is-back-to-top-visible .back-to-top {
   flex: 1 1 180px;
   min-width: 0;
   max-width: 100%;
-  background: var(--ink);
+  background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
-  border-radius: var(--radius);
-  padding: 0.35rem;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
   font-size: 0.82rem;
+}
+
+.menu-weekly__addrow select:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 /* --- Lista de la compra --- */
@@ -3556,6 +3608,34 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .ingredients-filter__btn,
 [data-theme="white"] .ingredients-filter__btn {
   color: var(--ink);
+}
+
+/* Píldoras de la barra del menú (issue #220): mismo patrón que
+   .sort-select en la familia clara — el texto pasa a --ink sobre el
+   fondo claro. El :not(.btn--danger) deja intacto el color peligro
+   de la píldora de borrar semana en claro. */
+[data-theme="light"] .btn--pill:not(.btn--danger),
+[data-theme="white"] .btn--pill:not(.btn--danger) {
+  color: var(--ink);
+}
+
+[data-theme="light"] .btn--pill:not(.btn--danger):hover,
+[data-theme="white"] .btn--pill:not(.btn--danger):hover {
+  background: var(--ink-alpha-10);
+  color: var(--ink);
+}
+
+/* Botón «+ Receta» por comida en la familia clara: mismo patrón que
+   .btn--pill — el texto pasa a --ink sobre el fondo claro
+   (--ink-raised = blanco) y el hover a --ink-alpha-10. */
+[data-theme="light"] .menu-meal__add,
+[data-theme="white"] .menu-meal__add {
+  color: var(--ink);
+}
+
+[data-theme="light"] .menu-meal__add:hover,
+[data-theme="white"] .menu-meal__add:hover {
+  background: var(--ink-alpha-10);
 }
 
 [data-theme="light"] .menu-comensales input,
