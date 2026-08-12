@@ -318,4 +318,67 @@ Comentario nuevo del usuario en la issue #225 con cuatro peticiones:
   Seguridad PASS: sin hallazgos (cambios 100 % presentacionales y de
   interacción; sin tocar datos).
 
+## Iteración 2 (2026-08-12): el scroll vertical no marca en rojo y la ✕ del swipe solo se ve al deslizar
+
+Comentario nuevo del usuario en la issue #225 con dos últimos
+detalles:
+
+> Cuando me voy desplazando (especialmente en el móvil) se va
+> marcando en rojo (aunque no se seleccione) el ítem sobre el que he
+> puesto el dedo para desplazarme. Corregir eso. Además, al
+> seleccionarse, la x que se muestra al desplazar se ve y se
+> superpone a la otra que hay. Esta x solo debe ser visible con el
+> desplazamiento, no antes de desplazarse.
+
+### Decisiones de la iteración 2
+
+1. **El scroll vertical nunca revela el fondo rojo** — el axis lock
+   (ADR-028) ya distinguía el eje, pero en `touchend` el cálculo del
+   `offset` final usaba la deriva horizontal (`deltaX`) aunque el
+   lock hubiera sido `vertical`: con una deriva de más de 44 px
+   durante un scroll de página, `snap(offset < SWIPE_OPEN/2)` dejaba
+   el ítem revelado (fondo rojo) al soltar el dedo — exactamente el
+   «marcado en rojo» que el usuario veía al desplazarse en el móvil.
+   Ahora:
+   - En `touchmove` el transform y las clases `is-revealed`/
+     `is-deleting` solo se aplican con `lock === "horizontal"` (antes
+     se aplicaban también mientras el lock estaba aún sin decidir).
+   - En `touchend`, con `lock === "vertical"` se hace `snap(false)`
+     (se cierra la línea si estaba revelada); con `lock === null`
+     (toque sin desplazamiento) no se toca el estado. Solo el gesto
+     decidido como horizontal puede revelar o borrar.
+2. **La ✕ del fondo rojo solo se ve durante el arrastre** — la ✕
+   blanca decorativa `.shopping-line__swipe-icon` pasaba de
+   `opacity: 0.9` permanente a `opacity: 0` con transición, visible
+   únicamente mientras la fila tiene la clase `.is-dragging` (activa
+   durante el gesto táctil). Así, al quedar la línea revelada solo
+   se ve la ✕ roja de eliminar (siempre visible) y no se superponen
+   dos ✕; la ✕ blanca es feedback del gesto en curso, no un segundo
+   botón (sigue con `pointer-events: none`, el borrado se dispara
+   con el desplazamiento extra o con la ✕ roja).
+3. **Manual y hint** — sección 8.4 del manual: se aclara que el
+   gesto debe ser horizontal (desplazar la lista arriba/abajo no
+   marca ninguna línea) y que la ✕ del fondo rojo solo se ve mientras
+   se desliza.
+4. **PWA**: bump de versión `20260915 → 20260916`.
+
+### Consecuencias de la iteración 2
+
+- **Positivas**: al hacer scroll en el móvil ninguna línea queda
+  marcada en rojo ni se revela accidentalmente (el gesto solo
+  reacciona a la deriva horizontal decidida por el axis lock); la
+  línea revelada muestra una única ✕ (la roja de eliminar), sin la
+  blanca decorativa superpuesta.
+- **Neutras**: la ✕ blanca ya no acompaña a la línea revelada en
+  reposo; el borrado por swipe y por ✕ roja conservan su
+  comportamiento.
+- **Negativas**: ninguna conocida. QA PASS: scroll vertical con
+  deriva horizontal no revela ni borra, el swipe horizontal sigue
+  revelando y borrando con el desplazamiento extra, la ✕ blanca solo
+  aparece durante el arrastre y la línea revelada muestra una sola ✕,
+  los cuatro modos de tema con contraste WCAG AA y responsividad en
+  360 / 768 / 1280 px sin scroll horizontal. Seguridad PASS: sin
+  hallazgos (cambios 100 % presentacionales y de interacción; sin
+  tocar datos).
+
 Related issue: #225 (https://github.com/gonzalitojh/Registro-personal/issues/225)

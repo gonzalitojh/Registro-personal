@@ -3459,13 +3459,21 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* ✕ decorativa del fondo rojo (issue #225, iteración): solo se ve
-   al deslizar; el borrado se dispara con el desplazamiento extra,
-   no pulsando esta icono. */
+   DURANTE el arrastre del swipe (.is-dragging), nunca en reposo ni
+   al quedar revelada la línea — si se mostrara en el estado
+   revelado se superpondría a la ✕ roja de eliminar, siempre
+   visible (iteración 2). El borrado se dispara con el
+   desplazamiento extra, no pulsando este icono. */
 .shopping-line__swipe-icon {
   color: var(--white);
   font-size: 0.95rem;
-  opacity: 0.9;
+  opacity: 0;
+  transition: opacity 0.15s ease;
   pointer-events: none;
+}
+
+.shopping-line-wrap.is-dragging .shopping-line__swipe-icon {
+  opacity: 0.9;
 }
 
 [data-theme="black"] .shopping-line-wrap {

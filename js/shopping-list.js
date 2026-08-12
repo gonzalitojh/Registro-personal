@@ -588,6 +588,13 @@ async function includeRecipe(recipeId) {
 // transform inline, que gana sobre la clase. El botón ✕ de la
 // derecha queda siempre visible (accesible por teclado) y no
 // depende de este gesto.
+//
+// Iteración 2 (issue #225): el transform y la revelación SOLO se
+// aplican cuando el axis lock decide 'horizontal'. Un scroll
+// vertical (aunque arrastre un poco en horizontal) nunca revela el
+// fondo rojo: al soltar con lock 'vertical' se cierra
+// (snap(false)) — antes, una deriva de >44 px durante el scroll
+// dejaba el ítem marcado en rojo sin haberlo seleccionado.
 function attachLineSwipe(wrap, content) {
   let startX = 0;
   let startY = 0;
@@ -612,7 +619,6 @@ function attachLineSwipe(wrap, content) {
       startY = touch.clientY;
       startTouchId = touch.identifier;
       dragging = true;
-      wrap.classList.add("is-dragging");
     },
     { passive: true }
   );
@@ -626,10 +632,18 @@ function attachLineSwipe(wrap, content) {
       const deltaY = touch.clientY - startY;
       // Axis lock (ADR-028): al cruzar el slop se decide el eje y no
       // se vuelve atrás; el empate gana 'vertical' (el scroll manda).
+      // 'is-dragging' (que muestra la ✕ blanca del fondo y quita la
+      // transición) SOLO se activa si el gesto es horizontal: un
+      // scroll vertical no debe mostrar la ✕ (issue #225, iteración 2).
       if (lock === null && (Math.abs(deltaX) >= lockThreshold || Math.abs(deltaY) >= lockThreshold)) {
         lock = Math.abs(deltaX) > Math.abs(deltaY) ? "horizontal" : "vertical";
+        if (lock === "horizontal") wrap.classList.add("is-dragging");
       }
-      if (lock === "vertical") return;
+      // Hasta que el lock decida, o si es 'vertical', no se mueve
+      // nada: el scroll nunca debe arrastrar el ítem (issue #225,
+      // iteración 2 — antes el dedo desplazando la página podía
+      // revelar el fondo rojo).
+      if (lock !== "horizontal") return;
       const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
       content.style.transform = `translateX(${offset}px)`;
       wrap.classList.toggle("is-revealed", offset < SWIPE_OPEN / 2);
@@ -653,18 +667,25 @@ function attachLineSwipe(wrap, content) {
     "touchend",
     (e) => {
       const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
-      // Solo se borra si el gesto fue horizontal (axis lock): un
-      // scroll vertical con deriva horizontal no debe eliminar.
-      if (lock === "horizontal" && offset <= SWIPE_DELETE) {
+      // Solo se borra o se revela si el gesto fue horizontal (axis
+      // lock): un scroll vertical con deriva horizontal no debe
+      // eliminar ni marcar el ítem en rojo (issue #225, iteración
+      // 2 — antes el ítem quedaba revelado al soltar el scroll).
+      if (lock === "vertical") {
+        snap(false);
+      } else if (lock === "horizontal" && offset <= SWIPE_DELETE) {
         // Desplazamiento extra: eliminar directamente (issue #225,
         // iteración), sin necesidad de pulsar nada.
         const delBtn = wrap.querySelector(".shopping-line__remove");
         const key = delBtn?.dataset.delKey;
         snap(false);
         if (key) deleteLine(key);
-      } else {
+      } else if (lock === "horizontal") {
         snap(offset < SWIPE_OPEN / 2);
       }
+      // lock === null (toque sin desplazamiento): no se toca el
+      // estado — un toque sobre una línea revelada la mantiene
+      // revelada; sobre una cerrada, cerrada.
       // Click fantasma (issue #225): tras un gesto horizontal el
       // navegador sintetiza un click al soltar el dedo, que caería
       // sobre el checkbox/stepper de la fila desplazada y los

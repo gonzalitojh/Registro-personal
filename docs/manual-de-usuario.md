@@ -545,9 +545,12 @@ recetas «a la semana» se apuntan con su cantidad fija.
 - **Quitar un ítem**: desliza una línea **hacia la izquierda** y
   continúa deslizando un poco más (en el móvil) o pulsa la **✕ roja
   de la derecha** (en ordenador) para quitarla de la lista; puedes
-  deshacerlo en el aviso que aparece al momento. Los ítems de recetas
-  dejan de calcularse en las semanas marcadas (al pie de la lista
-  aparece «Quitados de la lista» y puedes volver a incluirlos
+  deshacerlo en el aviso que aparece al momento. Solo el gesto
+  horizontal de deslizar revela el fondo rojo con su ✕ (que se ve
+  únicamente mientras deslizas); desplazarte por la lista con el
+  dedo hacia arriba o abajo **no marca** ninguna línea. Los ítems de
+  recetas dejan de calcularse en las semanas marcadas (al pie de la
+  lista aparece «Quitados de la lista» y puedes volver a incluirlos
   pulsando su nombre).
 - Con **«+ Ítem extra»** añades cosas a mano: ingredientes que falten,
   cosas para congelar, **productos de limpieza y otros objetos no
