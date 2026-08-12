@@ -536,6 +536,28 @@
           <button type="button" id="btn-new-recipe" class="btn btn--primary btn--small">
             + Nueva receta
           </button>
+          <div class="recipes-filter" id="recipes-alergeno-filter">
+            <button type="button" id="btn-recipe-alergeno-filter" class="recipes-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="recipe-alergeno-filter-panel">
+              <span id="recipe-alergeno-filter-label">Todos los alérgenos</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="recipe-alergeno-filter-panel" class="recipes-filter__panel hidden"></div>
+          </div>
+          <div class="recipes-filter" id="recipes-tipo-filter">
+            <button type="button" id="btn-recipe-tipo-filter" class="recipes-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="recipe-tipo-filter-panel">
+              <span id="recipe-tipo-filter-label">Todos los tipos</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="recipe-tipo-filter-panel" class="recipes-filter__panel hidden"></div>
+          </div>
         </div>
         <div id="recipes-list" aria-live="polite"></div>
         <datalist id="recipe-ingredients-datalist"></datalist>
