@@ -246,4 +246,76 @@ necesaria); no se bloquea ninguna otra mejora de esta issue.
   superficie de ataque de Firestore). Manual de usuario actualizado
   (sección 8.4).
 
+## Iteración (2026-08-12): refinamientos de paquetes y de la eliminación
+
+Comentario nuevo del usuario en la issue #225 con cuatro peticiones:
+
+> 1. Si aparece el número de paquetes, no debería aparecer el peso.
+>    Tampoco la palabra «paquetes», simplemente el número.
+> 2. Para eliminar un ítem, añadir a la derecha del todo una X roja
+>    con la que eliminarlo (sobre todo desde PC).
+> 3. Al presionar sobre un item se marca en rojo como para eliminar y
+>    aparece «Eliminar» superponiéndose al peso. Esto no debería
+>    pasar, solo cuando se desplaza, no al pulsar, en cuyo caso
+>    estaría marcando el item, no eliminándolo.
+> 4. Cuando se desplaza el item para eliminarlo, hacer un pequeño
+>    desplazamiento extra para eliminarlo sin necesidad de pulsar
+>    sobre eliminar que se mostraría ahora.
+
+### Decisiones de la iteración
+
+1. **Paquetes: solo el número** — `qtyHtml` muestra únicamente la
+   cifra de paquetes (con `aria-label` «N paquetes» para lectores de
+   pantalla) y elimina el span `.shopping-line__detail` («· 550 g»):
+   ya no se ve el peso ni la palabra «paquetes». Se retira también su
+   CSS (`.shopping-line__detail` y sus overrides) y su referencia en
+   el estado `is-bought`.
+2. **✕ roja siempre visible a la derecha** — cada línea incluye un
+   botón `.shopping-line__remove` (✕) al final del contenido, con
+   área táctil de 1.75rem (≥ 24 px, WCAG 2.2 AA 2.5.8) y el rojo
+   claro `#d16a59` (AA sobre oscuro, patrón del ↺; en la familia
+   clara se oscurece a `--stamp`). Reutiliza el delegado de
+   `data-del-key` existente, así que elimina con el mismo flujo y
+   deshacer.
+3. **El hover ya no revela el estado de eliminar** — se elimina el
+   bloque `@media (hover: hover)` que desplazaba el contenido al
+   pasar el ratón (causa del «marcado en rojo» y del «Eliminar»
+   superpuesto al peso al pulsar). Ahora el hover solo marca la
+   línea (fondo suave `--paper-alpha-10`/`--ink-alpha-10`), igual
+   que antes se marcaba al pulsar. El teclado queda cubierto por la
+   ✕ (botón real, enfocable y activable).
+4. **Swipe con desplazamiento extra elimina directamente** — se
+   añade la constante `SWIPE_DELETE = -112` (24 px más allá del
+   revelado a -88): durante el arrastre el contenido puede llegar a
+   -112 y la clase `.is-deleting` oscurece el fondo rojo
+   (`filter: brightness(0.85)`) para comunicar el umbral; al soltar
+   con `offset <= SWIPE_DELETE` se elimina el ítem directamente (con
+   deshacer), sin botón que pulsar. El botón «Eliminar» del fondo del
+   swipe desaparece (`.shopping-line__del` → icono decorativo
+   `.shopping-line__swipe-icon` con `pointer-events: none`).
+5. **Manual y hint** — sección 8.4 del manual y el hint al pie de la
+   lista se actualizan: número de paquetes sin peso, ✕ de la derecha
+   y swipe con desplazamiento extra.
+6. **PWA**: bump de versión `20260914 → 20260915`.
+
+### Consecuencias de la iteración
+
+- **Positivas**: la cantidad con paquete queda limpia (solo el
+  número, sin duplicar peso); la ✕ roja da un camino de borrado
+  evidente y accesible en escritorio; el hover deja de sugerir un
+  borrado que no ocurre; el swipe gana el patrón estándar «desliza
+  hasta el fondo para borrar» con feedback visual del umbral.
+- **Neutras**: el borrado por swipe sigue pidiendo un gesto completo
+  (revelado + desplazamiento extra), lo que conserva la protección
+  frente a borrados accidentales de la decisión original; la
+  accesibilidad por teclado pasa del botón revelado al botón ✕
+  siempre visible.
+- **Negativas**: ninguna conocida. QA PASS: paquete muestra solo el
+  número y sin peso, ✕ elimina con deshacer, el hover no revela el
+  borrado (solo marca), el swipe con desplazamiento extra elimina al
+  soltar sin pulsar, los cuatro modos de tema con contraste WCAG AA
+  y responsividad en 360 / 768 / 1280 px sin scroll horizontal.
+  Seguridad PASS: sin hallazgos (cambios 100 % presentacionales y de
+  interacción; sin tocar datos).
+
 Related issue: #225 (https://github.com/gonzalitojh/Registro-personal/issues/225)

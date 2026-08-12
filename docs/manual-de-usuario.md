@@ -535,24 +535,25 @@ recetas «a la semana» se apuntan con su cantidad fija.
   **cantidad del paquete** en su ficha (ver 8.5), la lista compara lo
   que necesitas con el paquete y lo redondea al alza: si necesitas
   550 g de harina y la harina se vende en paquetes de 1 Kg, aparecerá
-  «1 paquete»; si necesitas 2,5 Kg, «3 paquetes». Junto a la cantidad
-  se indica lo que necesitas en total (p. ej. «· 550 g»). Puedes
-  **ajustar los paquetes** con los botones − y + (¿te sobra harina de
-  la semana pasada? quita un paquete; ¿quieres tener de sobra? añade
-  uno) y el ajuste se guarda en ese dispositivo; el botón ↺ vuelve al
-  cálculo automático. Si el ingrediente no tiene cantidad de paquete
-  (o las unidades no se pueden comparar), se muestra lo que necesites.
-- **Quitar un ítem**: desliza una línea **hacia la izquierda** (en el
-  móvil) o pulsa **«Eliminar»** (en ordenador) para quitarla de la
-  lista; puedes deshacerlo en el aviso que aparece al momento. Los
-  ítems de recetas dejan de calcularse en las semanas marcadas (al pie
-  de la lista aparece «Quitados de la lista» y puedes volver a
-  incluirlos pulsando su nombre).
+  el número **1**; si necesitas 2,5 Kg, el **3**. Junto al número
+  puedes **ajustar los paquetes** con los botones − y + (¿te sobra
+  harina de la semana pasada? quita un paquete; ¿quieres tener de
+  sobra? añade uno) y el ajuste se guarda en ese dispositivo; el
+  botón ↺ vuelve al cálculo automático. Si el ingrediente no tiene
+  cantidad de paquete (o las unidades no se pueden comparar), se
+  muestra lo que necesites.
+- **Quitar un ítem**: desliza una línea **hacia la izquierda** y
+  continúa deslizando un poco más (en el móvil) o pulsa la **✕ roja
+  de la derecha** (en ordenador) para quitarla de la lista; puedes
+  deshacerlo en el aviso que aparece al momento. Los ítems de recetas
+  dejan de calcularse en las semanas marcadas (al pie de la lista
+  aparece «Quitados de la lista» y puedes volver a incluirlos
+  pulsando su nombre).
 - Con **«+ Ítem extra»** añades cosas a mano: ingredientes que falten,
   cosas para congelar, **productos de limpieza y otros objetos no
   comestibles** (marca «No es comestible»). El ítem se añade a todas
   las semanas seleccionadas y se quita igual que el resto (deslizando
-  o con «Eliminar»).
+  o con la ✕).
 - Si una receta del menú ya la tienes hecha o no necesitas comprar sus
   ingredientes, **exclúyela**: al pie de la lista aparecen las recetas
   excluidas y puedes volver a incluirlas pulsando su nombre. También se
