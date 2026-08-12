@@ -3435,7 +3435,9 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Fila de la lista: envoltorio con el fondo rojo del swipe debajo.
    El contenido (superficie normal) se desplaza a la izquierda al
-   deslizar (issue #225) o en hover/foco en escritorio. */
+   deslizar (issue #225). El fondo se ve solo durante el gesto o en
+   el estado revelado; el hover ya NO lo revela (issue #225,
+   iteración: al pulsar solo se marca la línea). */
 .shopping-line-wrap {
   position: relative;
   border-radius: var(--radius);
@@ -3451,26 +3453,26 @@ body.is-back-to-top-visible .back-to-top {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-end;
+  padding-right: 0.7rem;
 }
 
-.shopping-line__del {
-  width: 88px;
-  border: none;
-  background: transparent;
+/* ✕ decorativa del fondo rojo (issue #225, iteración): solo se ve
+   al deslizar; el borrado se dispara con el desplazamiento extra,
+   no pulsando esta icono. */
+.shopping-line__swipe-icon {
   color: var(--white);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 [data-theme="black"] .shopping-line-wrap {
   background: var(--stamp-dark);
 }
 
-[data-theme="black"] .shopping-line__del {
+[data-theme="black"] .shopping-line__swipe-icon {
   color: var(--ink);
 }
 
@@ -3490,19 +3492,20 @@ body.is-back-to-top-visible .back-to-top {
   transition: none;
 }
 
-/* En escritorio (dispositivo con hover) el «Eliminar» se revela al
-   pasar el ratón; por teclado lo gestiona el JS (focus del botón,
-   clase .is-revealed) para no interferir con el foco del checkbox. */
-@media (hover: hover) {
-  .shopping-line-wrap:hover .shopping-line__content {
-    transform: translateX(-88px);
-  }
+/* Estado de borrado inminente (issue #225, iteración): al cruzar el
+   desplazamiento extra el fondo rojo se oscurece para comunicar que
+   al soltar se elimina. */
+.shopping-line-wrap.is-deleting {
+  filter: brightness(0.85);
 }
 
 .shopping-line-wrap.is-revealed .shopping-line__content {
   transform: translateX(-88px);
 }
 
+/* Hover: solo marca la línea (fondo suave); nunca revela el estado
+   de eliminar (issue #225, iteración: «al pulsar estaría marcando
+   el item, no eliminándolo»). */
 .shopping-line-wrap:hover .shopping-line__content {
   background: var(--paper-alpha-10);
 }
@@ -3514,8 +3517,7 @@ body.is-back-to-top-visible .back-to-top {
 
 .shopping-line-wrap.is-bought .shopping-line__name,
 .shopping-line-wrap.is-bought .shopping-line__pkgcount,
-.shopping-line-wrap.is-bought .shopping-line__qty--plain,
-.shopping-line-wrap.is-bought .shopping-line__detail {
+.shopping-line-wrap.is-bought .shopping-line__qty--plain {
   text-decoration: line-through;
   opacity: 0.55;
 }
@@ -3611,11 +3613,30 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--stamp);
 }
 
-.shopping-line__detail {
+/* ✕ roja de eliminar, siempre visible a la derecha de cada línea
+   (issue #225, iteración): área táctil de 1.75rem (≥ 24 px, WCAG
+   2.2 AA 2.5.8). Mismo rojo claro que .shopping-line__pkgreset
+   (#d16a59 ≈ 4,7:1 sobre --ink-raised); en la familia clara se
+   oscurece al --stamp (6,4:1 sobre blanco). */
+.shopping-line__remove {
   flex-shrink: 0;
-  color: var(--ink-soft);
-  font-size: 0.72rem;
-  white-space: nowrap;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  color: #d16a59;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shopping-line__remove:hover {
+  background: var(--paper-alpha-10);
 }
 
 .shopping-deleted {
@@ -3643,10 +3664,6 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .shopping-deleted__btn,
 [data-theme="white"] .shopping-deleted__btn {
   color: var(--stamp);
-}
-
-.shopping-line__remove:hover {
-  background: var(--paper-alpha-10);
 }
 
 /* Checkboxes de la lista de la compra (marcar comprado) y del form
@@ -3990,6 +4007,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="white"] .shopping-btn--ghost:hover { background: var(--ink-alpha-10); }
 [data-theme="light"] .shopping-line__remove:hover,
 [data-theme="white"] .shopping-line__remove:hover { background: var(--ink-alpha-10); }
+[data-theme="light"] .shopping-line__remove,
+[data-theme="white"] .shopping-line__remove { color: var(--stamp); }
 
 /* Overrides de la familia oscura en negro puro (mismas superficies
    que el resto de la app: --ink-raised con texto papel). */
@@ -4012,7 +4031,6 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .menu-weekly__hint,
 [data-theme="black"] .menu-weekly__empty,
 [data-theme="black"] .shopping-line__qty,
-[data-theme="black"] .shopping-line__detail,
 [data-theme="black"] .shopping-deleted,
 [data-theme="black"] .shopping-excluded,
 [data-theme="black"] .shopping-hint,
