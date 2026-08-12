@@ -58,6 +58,13 @@ let modalCleanup = null;
 let editingRecipeId = null;
 let modalReadOnly = false;
 let onRecipeDeleted = null;
+// Filtros de la pestaña Recetas (issue #234): alérgenos y tipo de
+// comida, multiselección con «todas» marcadas por defecto. El flag de
+// "tocado" evita que las etiquetas propias recién cargadas rompan la
+// selección hecha por el usuario (patrón de ingredientFilterTouched).
+let recipeFilterTouched = false;
+let activeAlergenoFilter = new Set(ALERGEN_TAGS.map((t) => t.id));
+let activeTipoFilter = new Set(MEAL_TYPES.map((t) => t.id));
 
 // Renderers de las otras pestañas (registrados por menu.js y
 // shopping-list.js): openRecipes los llama al activar su tab.
@@ -87,8 +94,13 @@ export function resetRecipesData() {
   currentTab = "recetas";
   ingredientFilterTouched = false;
   activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
+  recipeFilterTouched = false;
+  activeAlergenoFilter = new Set(ALERGEN_TAGS.map((t) => t.id));
+  activeTipoFilter = new Set(MEAL_TYPES.map((t) => t.id));
   closeIngredientModal();
   closeIngredientFilterPanel();
+  closeRecipeAlergenoFilterPanel();
+  closeRecipeTipoFilterPanel();
 }
 
 export function notifyRecipesChanged() {
@@ -114,9 +126,14 @@ export function setupRecipes(opts) {
 
   // Modal de receta: cierre por ✕, backdrop y Escape.
   document.getElementById("recipe-modal-close").addEventListener("click", closeRecipeModal);
-  document.getElementById("recipe-modal-backdrop").addEventListener("click", closeRecipeModal);
+  // Backdrop y Escape (issue #234): solo cierran en modo lectura. En
+  // edición se bloquean para no perder el progreso del formulario; la
+  // ✕ y «Cancelar» siguen siendo las vías explícitas de cierre.
+  document.getElementById("recipe-modal-backdrop").addEventListener("click", () => {
+    if (modalReadOnly) closeRecipeModal();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !document.getElementById("recipe-modal").classList.contains("hidden")) {
+    if (e.key === "Escape" && !document.getElementById("recipe-modal").classList.contains("hidden") && modalReadOnly) {
       e.preventDefault();
       closeRecipeModal();
     }
@@ -144,16 +161,29 @@ export function setupRecipes(opts) {
     openIngredientModal(card.dataset.ingredientId);
   });
 
-  // Delegación de acciones de las cards de recetas.
+  // Delegación de acciones de las cards de recetas (issue #234): la
+  // tarjeta entera es el botón; al pulsarla se abre el detalle en modo
+  // solo lectura (ya no hay botones Ver/Editar/Eliminar en la tarjeta).
   document.getElementById("recipes-list").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-action]");
-    if (!btn) return;
-    const recipe = recipes.find((r) => r.id === btn.dataset.id);
+    const card = e.target.closest("[data-recipe-id]");
+    if (!card) return;
+    const recipe = recipes.find((r) => r.id === card.dataset.recipeId);
     if (!recipe) return;
-    if (btn.dataset.action === "view") openRecipeModal(recipe, { readOnly: true });
-    if (btn.dataset.action === "edit") openRecipeModal(recipe);
-    if (btn.dataset.action === "delete") deleteRecipeFlow(recipe);
+    openRecipeModal(recipe, { readOnly: true });
   });
+  // Soporte de teclado para la tarjeta (role="button" + tabindex): Enter
+  // o Espacio abren el detalle igual que el click.
+  document.getElementById("recipes-list").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest("[data-recipe-id]");
+    if (!card) return;
+    e.preventDefault();
+    const recipe = recipes.find((r) => r.id === card.dataset.recipeId);
+    if (!recipe) return;
+    openRecipeModal(recipe, { readOnly: true });
+  });
+
+  setupRecipeFilters();
 
   return { openRecipes };
 }
@@ -182,13 +212,23 @@ export function subscribeRecipesData(uid, onChange, onError) {
 
   subs.push(ctx.subscribeToTags(uid, (items) => {
     customTags = items;
-    // El filtro por defecto incluye todas las categorías: si el usuario
-    // aún no lo ha tocado, las propias recién cargadas se suman al Set.
+    // El filtro por defecto incluye todas las etiquetas: si el usuario
+    // aún no lo ha tocado, las propias recién cargadas se suman a los
+    // Sets de los filtros de la pestaña Recetas (issue #234) y a los
+    // del catálogo de Ingredientes.
     if (!ingredientFilterTouched) {
       ingredientFilterCategoryIds().forEach((id) => activeCategoryFilter.add(id));
       if (currentTab === "ingredientes") {
         updateIngredientFilterLabel();
         renderIngredientsCatalog();
+      }
+    }
+    if (!recipeFilterTouched) {
+      recipeFilterTagIds("alergeno").forEach((id) => activeAlergenoFilter.add(id));
+      recipeFilterTagIds("tipo").forEach((id) => activeTipoFilter.add(id));
+      if (currentTab === "recetas") {
+        updateRecipeAlergenoFilterLabel();
+        updateRecipeTipoFilterLabel();
       }
     }
     renderRecipesList();
@@ -225,9 +265,13 @@ export function openRecipes({ tab = "recetas", fromRouter = false } = {}) {
     if (panel) panel.classList.toggle("hidden", key !== tab);
   });
 
-  // Si el panel de filtro del catálogo quedó abierto, cerrarlo al
+  // Si los paneles de filtro quedaron abiertos, cerrarlos al
   // cambiar de pestaña (evita estado obsoleto al volver).
   if (tab !== "ingredientes") closeIngredientFilterPanel();
+  if (tab !== "recetas") {
+    closeRecipeAlergenoFilterPanel();
+    closeRecipeTipoFilterPanel();
+  }
 
   if (tab === "recetas") {
     renderRecipesList();
@@ -257,9 +301,32 @@ function renderRecipesList() {
     return;
   }
 
+  // Filtros de la pestaña (issue #234): alérgenos y tipo de comida.
+  const filtered = recipes.filter((r) => recipeMatchesAlergenoFilter(r) && recipeMatchesTipoFilter(r));
+  if (!filtered.length) {
+    container.innerHTML = `<p class="empty-state">Ninguna receta coincide con los filtros seleccionados.
+      Ajusta los filtros de alérgenos o tipo de comida para ver más.</p>`;
+    return;
+  }
+
   container.innerHTML = `<div class="recipes-grid">
-    ${recipes.map(recipeCardHtml).join("")}
+    ${filtered.map(recipeCardHtml).join("")}
   </div>`;
+}
+
+// Coincidencia de una receta con el filtro de alérgenos (issue #234):
+// con «todas» seleccionadas (por defecto) pasa todo; si no, la receta
+// debe estar marcada con al menos uno de los alérgenos elegidos. Las
+// recetas sin alérgenos marcados pasan siempre (como los ingredientes
+// sin categoría en el catálogo). Mismo criterio para el tipo de comida.
+function recipeMatchesAlergenoFilter(r) {
+  if (recipeFilterAllChecked(activeAlergenoFilter, "alergeno")) return true;
+  return !(r.alergenos || []).length || (r.alergenos || []).some((id) => activeAlergenoFilter.has(id));
+}
+
+function recipeMatchesTipoFilter(r) {
+  if (recipeFilterAllChecked(activeTipoFilter, "tipo")) return true;
+  return !(r.tipos || []).length || (r.tipos || []).some((id) => activeTipoFilter.has(id));
 }
 
 // Búsqueda: por nombre, por ingrediente (recetas que lo usan) y por
@@ -288,7 +355,11 @@ function recipeCardHtml(r) {
     ? `<span class="recipe-card__badge" title="Importada desde una URL, pendiente de revisar">Revisar</span>`
     : "";
   const tags = [...alergenos, ...tipos];
-  return `<article class="recipe-card${r.needsReview ? " recipe-card--review" : ""}">
+  // La tarjeta entera es el botón (issue #234): al pulsarla se abre el
+  // detalle en modo lectura. role="button" + tabindex para teclado.
+  return `<article class="recipe-card${r.needsReview ? " recipe-card--review" : ""}"
+    role="button" tabindex="0" data-recipe-id="${r.id}"
+    aria-label="Ver receta ${escapeHtml(r.nombre)}">
     <div class="recipe-card__top">
       <h3 class="recipe-card__title">${escapeHtml(r.nombre)}</h3>
       ${badge}
@@ -301,24 +372,21 @@ function recipeCardHtml(r) {
     ${tags.length ? `<p class="recipe-card__tags">
       ${tags.map((t) => `<span class="recipe-card__tag">${escapeHtml(t.label)}</span>`).join("")}
     </p>` : ""}
-    <div class="recipe-card__actions">
-      <button type="button" class="btn btn--small" data-action="view" data-id="${r.id}">Ver</button>
-      <button type="button" class="btn btn--small" data-action="edit" data-id="${r.id}">Editar</button>
-      <button type="button" class="btn btn--small btn--danger" data-action="delete" data-id="${r.id}">Eliminar</button>
-    </div>
   </article>`;
 }
 
 async function deleteRecipeFlow(recipe) {
-  if (!confirm(`¿Eliminar la receta «${recipe.nombre}»?`)) return;
+  if (!confirm(`¿Eliminar la receta «${recipe.nombre}»?`)) return false;
   try {
     await ctx.deleteRecipe(currentUser, recipe.id);
     // Limpiar referencias en los menús (si app.js inyectó el callback).
     if (onRecipeDeleted) onRecipeDeleted(recipe.id);
     showToast("Receta eliminada.");
+    return true;
   } catch (err) {
     console.error("No se pudo eliminar la receta:", err);
     showToast("No se pudo eliminar la receta.");
+    return false;
   }
 }
 
@@ -582,6 +650,210 @@ function setupIngredientFilter() {
     syncIngredientFilterAll();
     updateIngredientFilterLabel();
     renderIngredientsCatalog();
+  });
+}
+
+// ---------- Filtros de la pestaña Recetas (issue #234) ----------
+
+// Checkboxes de los paneles de filtro: «Todas» + las etiquetas
+// (predefinidas y propias del usuario). Mismo patrón que el filtro por
+// categorías del catálogo de ingredientes (issue #218): el panel se
+// pinta solo al abrir; los cambios posteriores solo alternan clases
+// is-checked (sin re-render) y el filtrado se aplica en vivo.
+
+// Ids de todas las etiquetas visibles en el panel de un scope
+// (predefinidas + propias).
+function recipeFilterTagIds(scope) {
+  return mergeTags(
+    PRESET_BY_SCOPE[scope],
+    customTags.filter((t) => t.tipo === scope)
+  ).map((t) => t.id);
+}
+
+// «Todas» está marcado si y solo si TODAS las etiquetas del panel
+// (predefinidas y propias) están en el filtro.
+function recipeFilterAllChecked(activeSet, scope) {
+  const ids = recipeFilterTagIds(scope);
+  return ids.length > 0 && ids.every((id) => activeSet.has(id));
+}
+
+// Config de los dos filtros (ids de los elementos del DOM por scope).
+const RECIPE_FILTER_UI = {
+  alergeno: {
+    btnId: "btn-recipe-alergeno-filter",
+    panelId: "recipe-alergeno-filter-panel",
+    labelId: "recipe-alergeno-filter-label",
+  },
+  tipo: {
+    btnId: "btn-recipe-tipo-filter",
+    panelId: "recipe-tipo-filter-panel",
+    labelId: "recipe-tipo-filter-label",
+  },
+};
+
+// Referencia a los manejadores de Escape de cada panel (registrados al
+// abrirlo; se guardan para poder desregistrarlos desde el cierre).
+const recipeFilterEscHandlers = {};
+
+function recipeFilterActiveSet(scope) {
+  return scope === "alergeno" ? activeAlergenoFilter : activeTipoFilter;
+}
+
+function recipeFilterSetActive(scope, set) {
+  if (scope === "alergeno") activeAlergenoFilter = set;
+  else activeTipoFilter = set;
+}
+
+function renderRecipeFilterPanel(scope) {
+  const { panelId } = RECIPE_FILTER_UI[scope];
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const tags = mergeTags(
+    PRESET_BY_SCOPE[scope],
+    customTags.filter((t) => t.tipo === scope)
+  );
+  const activeSet = recipeFilterActiveSet(scope);
+  const allChecked = recipeFilterAllChecked(activeSet, scope);
+  panel.innerHTML = `<label class="recipes-filter__all${allChecked ? " is-checked" : ""}">
+      <input type="checkbox" value="__all__"${allChecked ? " checked" : ""} />
+      <span>Todos</span>
+    </label>
+    <div class="recipes-filter__separator" role="presentation"></div>
+    ${tags.map((t) => {
+      const checked = activeSet.has(t.id);
+      return `<label class="recipes-filter__item${checked ? " is-checked" : ""}">
+        <input type="checkbox" value="${escapeHtml(t.id)}"${checked ? " checked" : ""} />
+        <span>${escapeHtml(t.label)}${t.custom ? " (propia)" : ""}</span>
+      </label>`;
+    }).join("")}`;
+}
+
+function updateRecipeAlergenoFilterLabel() {
+  updateRecipeFilterLabel("alergeno");
+}
+
+function updateRecipeTipoFilterLabel() {
+  updateRecipeFilterLabel("tipo");
+}
+
+function updateRecipeFilterLabel(scope) {
+  const { labelId } = RECIPE_FILTER_UI[scope];
+  const label = document.getElementById(labelId);
+  if (!label) return;
+  const activeSet = recipeFilterActiveSet(scope);
+  if (recipeFilterAllChecked(activeSet, scope)) {
+    label.textContent = scope === "alergeno" ? "Todos los alérgenos" : "Todos los tipos";
+    return;
+  }
+  const n = activeSet.size;
+  const word = scope === "alergeno" ? "alérgeno" : "tipo";
+  label.textContent = `${n} ${n === 1 ? word : word + "s"}`;
+}
+
+// Toggle de la marca del checkbox «Todas» (marcado solo si lo están
+// todas las etiquetas del panel).
+function syncRecipeFilterAll(scope) {
+  const { panelId } = RECIPE_FILTER_UI[scope];
+  const all = document.querySelector(`#${panelId} .recipes-filter__all`);
+  if (!all) return;
+  const checked = recipeFilterAllChecked(recipeFilterActiveSet(scope), scope);
+  all.classList.toggle("is-checked", checked);
+  const input = all.querySelector("input");
+  input.checked = checked;
+}
+
+// Marca visual de cada casilla en tiempo real (patrón de
+// syncIngredientFilterItems): la fuente de verdad es el Set activo, no
+// input.checked.
+function syncRecipeFilterItems(scope) {
+  const { panelId } = RECIPE_FILTER_UI[scope];
+  const activeSet = recipeFilterActiveSet(scope);
+  document.querySelectorAll(`#${panelId} .recipes-filter__item`).forEach((item) => {
+    const input = item.querySelector("input");
+    if (!input) return;
+    const checked = activeSet.has(input.value);
+    item.classList.toggle("is-checked", checked);
+    input.checked = checked;
+  });
+}
+
+function closeRecipeFilterPanel(scope) {
+  const { panelId, btnId } = RECIPE_FILTER_UI[scope];
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById(btnId);
+  if (!panel || panel.classList.contains("hidden")) return;
+  panel.classList.add("hidden");
+  btn?.setAttribute("aria-expanded", "false");
+  if (recipeFilterEscHandlers[scope]) {
+    document.removeEventListener("keydown", recipeFilterEscHandlers[scope]);
+    delete recipeFilterEscHandlers[scope];
+  }
+}
+
+function closeRecipeAlergenoFilterPanel() {
+  closeRecipeFilterPanel("alergeno");
+}
+
+function closeRecipeTipoFilterPanel() {
+  closeRecipeFilterPanel("tipo");
+}
+
+function setupRecipeFilters() {
+  ["alergeno", "tipo"].forEach((scope) => {
+    const { btnId, panelId } = RECIPE_FILTER_UI[scope];
+    const wrap = document.getElementById(`recipes-${scope}-filter`);
+    const panel = document.getElementById(panelId);
+    const btn = document.getElementById(btnId);
+    if (!wrap || !panel || !btn) return;
+
+    const escHandler = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeRecipeFilterPanel(scope);
+        btn.focus();
+      }
+    };
+
+    btn.addEventListener("click", () => {
+      if (panel.classList.contains("hidden")) {
+        renderRecipeFilterPanel(scope);
+        panel.classList.remove("hidden");
+        btn.setAttribute("aria-expanded", "true");
+        recipeFilterEscHandlers[scope] = escHandler;
+        document.addEventListener("keydown", escHandler);
+      } else {
+        closeRecipeFilterPanel(scope);
+        btn.focus();
+      }
+    });
+
+    // Click fuera del wrapper: cerrar (patrón del dropdown de perfil).
+    document.addEventListener("click", (e) => {
+      if (!wrap.contains(e.target) && !panel.classList.contains("hidden")) {
+        closeRecipeFilterPanel(scope);
+      }
+    });
+
+    panel.addEventListener("change", (e) => {
+      const input = e.target.closest("input[type='checkbox']");
+      if (!input) return;
+      recipeFilterTouched = true;
+      if (input.value === "__all__") {
+        recipeFilterSetActive(
+          scope,
+          input.checked ? new Set(recipeFilterTagIds(scope)) : new Set()
+        );
+      } else if (input.checked) {
+        recipeFilterActiveSet(scope).add(input.value);
+      } else {
+        recipeFilterActiveSet(scope).delete(input.value);
+      }
+      // Marca visual y filtro en vivo (patrón del catálogo).
+      syncRecipeFilterAll(scope);
+      syncRecipeFilterItems(scope);
+      updateRecipeFilterLabel(scope);
+      renderRecipesList();
+    });
   });
 }
 
@@ -856,15 +1128,27 @@ function optionsFor(scope, selectedId) {
 export function openRecipeModal(recipe = null, { readOnly = false } = {}) {
   const modal = document.getElementById("recipe-modal");
   const content = document.getElementById("recipe-modal-content");
+  const wasHidden = modal.classList.contains("hidden");
   editingRecipeId = recipe?.id || null;
   modalReadOnly = readOnly;
 
   content.innerHTML = recipeModalHtml(recipe);
   bindRecipeModalHandlers(content);
 
-  modal._previousActiveElement = document.activeElement;
-  modal.classList.remove("hidden");
+  if (wasHidden) {
+    modal._previousActiveElement = document.activeElement;
+    modal.classList.remove("hidden");
+  }
+  // Re-render en caliente (p. ej. lectura → edición): liberar el trap
+  // de foco anterior antes de crear el nuevo.
+  if (modalCleanup) modalCleanup();
   modalCleanup = trapFocus(modal.querySelector(".modal__card"));
+  // Transición a modo edición: el foco va al primer campo del form.
+  if (!wasHidden && !modalReadOnly && recipe) {
+    requestAnimationFrame(() => {
+      content.querySelector("#recipe-nombre")?.focus({ preventScroll: false });
+    });
+  }
 }
 
 function closeRecipeModal() {
@@ -960,8 +1244,11 @@ function recipeModalHtml(recipe) {
     </fieldset>
 
     <div class="recipe-form__actions">
-      <button type="button" id="btn-recipe-cancel" class="btn btn--outline">${modalReadOnly ? "Cerrar" : "Cancelar"}</button>
-      ${modalReadOnly ? "" : `<button type="submit" class="btn btn--primary">Guardar</button>`}
+      ${modalReadOnly
+        ? `<button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
+           <button type="button" class="btn btn--small" data-recipe-edit>Editar</button>`
+        : `<button type="button" id="btn-recipe-cancel" class="btn btn--outline">Cancelar</button>
+           <button type="submit" class="btn btn--primary">Guardar</button>`}
     </div>
   </form>`;
 }
@@ -1031,6 +1318,20 @@ function bindRecipeModalHandlers(content) {
   });
 
   content.querySelector("#btn-recipe-cancel")?.addEventListener("click", closeRecipeModal);
+
+  // Modo lectura (issue #234): la ventana de información tiene botones
+  // de editar y eliminar; el cierre queda para la ✕ (y el backdrop solo
+  // en lectura, ver setupRecipes).
+  content.querySelector("[data-recipe-edit]")?.addEventListener("click", () => {
+    const recipe = recipes.find((r) => r.id === editingRecipeId);
+    if (!recipe) return;
+    openRecipeModal(recipe); // re-render en modo edición
+  });
+  content.querySelector("[data-recipe-delete]")?.addEventListener("click", async () => {
+    const recipe = recipes.find((r) => r.id === editingRecipeId);
+    if (!recipe) return;
+    if (await deleteRecipeFlow(recipe)) closeRecipeModal();
+  });
 
   // Importación desde URL.
   content.querySelector("#btn-import-recipe")?.addEventListener("click", () => {

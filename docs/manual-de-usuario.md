@@ -477,9 +477,24 @@ La **barra de búsqueda de la cabecera** busca **dentro de tus recetas**
 recetas que lo usan) y **por etiqueta** (por ejemplo «vegetariano»).
 Pulsa un resultado para abrir la receta en modo lectura.
 
-Con **«Ver»** abres la receta en modo lectura; con **«Editar»** la
-modificas; con **«Eliminar»** la borras (se quita del menú y de la
-lista de la compra).
+Encima del listado hay dos **filtros desplegables**: uno de
+**alérgenos** y otro de **tipo de comida**. Púlsalos para marcar o
+desmarcar opciones (puedes seleccionar **varias a la vez** o «Todos»);
+las tarjetas se filtran al momento. Una receta se muestra si lleva
+**al menos una** de las etiquetas marcadas en cada filtro, y las
+recetas sin etiquetas de ese tipo se ven siempre.
+
+Para abrir una receta **pulsa sobre su tarjeta, en cualquier sitio de
+ella**: se abre su ventana de información en **modo lectura** (no se
+puede modificar nada). Dentro de la ventana hay dos botones:
+**«Editar»** y **«Eliminar»**. Con **«Eliminar»** la borras (se quita
+del menú y de la lista de la compra); con **«Editar»** pasas al modo
+de edición con el mismo formulario de alta.
+
+La ventana se cierra con la **✕** de arriba. En modo lectura también
+se cierra al **pulsar fuera** de ella; en modo **edición** no, para
+que no se pierda lo que estés escribiendo si pulsas fuera por error
+(ciérrala con «Cancelar» o con la ✕).
 
 ### 8.2 Importar una receta desde una web
 
