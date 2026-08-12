@@ -232,11 +232,18 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
    Requiere que
    el workflow esté en la rama por defecto (`main`): se activa en
    producción tras la promoción `dev` → `main`. Prueba manual desde la
-   pestaña Actions → `auto-resolve-issues` → "Run workflow" (con
-   `dry_run` para ver la selección sin lanzar la sesión). Si una sesión
-   falla a mitad de ejecución (p. ej. por límite de tokens del modelo
-   free), el progreso se guarda automáticamente en una rama
-   `wip/issue-N` y se restaura en el siguiente intento.
+    pestaña Actions → `auto-resolve-issues` → "Run workflow" (con
+    `dry_run` para ver la selección sin lanzar la sesión). Si una sesión
+    falla a mitad de ejecución (p. ej. por límite de tokens del modelo
+    free), el progreso se guarda automáticamente en una rama
+    `wip/issue-N`, se restaura en el siguiente intento y el workflow se
+    **relanza automáticamente sobre la misma issue** (hasta 2 reintentos,
+    comentando cada fallo en la issue; agotados los reintentos, la issue
+    vuelve a la cola con un comentario). Se pueden **encolar varias
+    ejecuciones** del workflow (p. ej. N issues abiertas seguidas): las
+    runs esperan en cola y se procesan en orden, una sesión a la vez, sin
+    cancelar las encoladas (antes solo cabían 1 en ejecución + 1 en cola
+    y las demás se cancelaban).
 
 ## 7. Autorizar tu dominio en Firebase
 
