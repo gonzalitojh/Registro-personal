@@ -2974,11 +2974,16 @@ body.is-back-to-top-visible .back-to-top {
 .ingredients-filter__btn:focus-visible,
 .ingredients-filter__all:focus-visible,
 .ingredients-filter__item:focus-visible,
-.recipes-filter__btn:focus-visible,
-.recipes-filter__all:focus-visible,
-.recipes-filter__item:focus-visible,
 .ingredient-card:focus-visible {
   outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* El acento de la pestaña Recetas es ocre (mismo patrón que la tarjeta). */
+.recipes-filter__btn:focus-visible,
+.recipes-filter__all:focus-visible,
+.recipes-filter__item:focus-visible {
+  outline: 2px solid var(--ochre-spine);
   outline-offset: 2px;
 }
 
@@ -4178,6 +4183,33 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .ingredients-filter__all.is-checked:hover,
 [data-theme="black"] .ingredients-filter__item.is-checked:hover {
   background: var(--games-dark);
+}
+
+/* Filtro de Recetas (issue #234): en negro puro el panel usa superficie
+   oscura (--ink-raised) y texto papel, como el filtro de Ingredientes.
+   El hover genérico (--paper-alpha-10) ganaría al .is-checked y dejaría
+   el texto --white ilegible: el hover de un ítem marcado mantiene el
+   ocre (--ochre-spine-dark es la variante clara #c99a4e en negro puro
+   con texto casi negro, contraste ≈ 7.4:1). */
+[data-theme="black"] .recipes-filter__panel {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-20);
+}
+
+[data-theme="black"] .recipes-filter__all,
+[data-theme="black"] .recipes-filter__item {
+  color: var(--paper);
+}
+
+[data-theme="black"] .recipes-filter__item:hover,
+[data-theme="black"] .recipes-filter__all:hover {
+  background: var(--paper-alpha-10);
+}
+
+[data-theme="black"] .recipes-filter__all.is-checked:hover,
+[data-theme="black"] .recipes-filter__item.is-checked:hover {
+  background: var(--ochre-spine-dark);
 }
 
 [data-theme="black"] .ingredient-modal__link {
