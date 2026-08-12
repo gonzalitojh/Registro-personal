@@ -1,7 +1,7 @@
 {
   "title": "Mejoras pestaña recetas",
   "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLas tarjetas de las recetas, se deben eliminar los botones \"ver\", \"editar\" y \"eliminar\". En su lugar, al presionar sobre la tarjeta, en cualquier sitio de ella, se abrirá una ventana de información de la receta en cuestión. Consideraciones sobre dicha ventana de información:\n- Se debe abrir en modo \"solo lectura\".\n- El botón de \"cerrar\" al final se puede eliminar, ya tiene la X arriba.\n- Debe tener un botón para editar y otro para eliminar.\n- Cuando está en modo edición, se debe asegurar que si se pulsa fuera de la ventana, esta no se cerrará, para evitar perder el progreso. En modo lectura si se puede cerrar de esta forma.\n\nArriba debe haber dos filtros, uno por alérgenos y otro por tipo de comida. Deben ser desplegables en los que se pueda seleccionar más de una opción o todas, similar al filtro de la pestaña _Ingredientes_.",
-  "status": "planned",
+  "status": "review",
   "acceptance criteria": [
     "Las tarjetas de receta no muestran botones \"ver\", \"editar\" ni \"eliminar\".",
     "Al pulsar en cualquier punto de la tarjeta se abre la ventana de información de la receta.",
@@ -41,5 +41,10 @@
       "docs/manual-de-usuario.md: sección 8.1 actualizada",
       "docs/adr-087-mejoras-pestana-recetas.md"
     ]
+  },
+  "pr": {
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/235",
+    "number": 235,
+    "branch": "style/issue-234-mejoras-pestana-recetas"
   }
 }
