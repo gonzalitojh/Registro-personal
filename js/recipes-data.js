@@ -7,20 +7,42 @@
 
 // Categorías de ingrediente (predefinidas para todos). La issue
 // pedía revisar las 9 iniciales y ampliarlas: se añaden
-// «Bebidas y cafés», «Congelados» y «Otros».
+// «Bebidas y cafés», «Congelados» y «Otros». Cada categoría lleva su
+// icono (emoji, con precedente en la UI: 👤 en sidebar/global-search)
+// que se muestra junto al título de su grupo en el catálogo (issue
+// #224).
 export const INGREDIENT_CATEGORIES = [
-  { id: "frutas_verduras", label: "Frutas, verduras y hortalizas" },
-  { id: "carnes_aves", label: "Carnes y aves" },
-  { id: "pescado_mariscos", label: "Pescado y mariscos" },
-  { id: "lacteos_huevos", label: "Lácteos y huevos" },
-  { id: "legumbres_cereales", label: "Legumbres, cereales y harinas" },
-  { id: "despensa_basicos", label: "Despensa y básicos" },
-  { id: "especias_hierbas", label: "Especias, hierbas y condimentos" },
-  { id: "aperitivos_dulces", label: "Aperitivos y dulces" },
-  { id: "hogar", label: "Artículos del hogar" },
-  { id: "bebidas_cafes", label: "Bebidas y cafés" },
-  { id: "congelados", label: "Congelados" },
-  { id: "otros", label: "Otros" },
+  { id: "frutas_verduras", label: "Frutas, verduras y hortalizas", icon: "🍎" },
+  { id: "carnes_aves", label: "Carnes y aves", icon: "🥩" },
+  { id: "pescado_mariscos", label: "Pescado y mariscos", icon: "🐟" },
+  { id: "lacteos_huevos", label: "Lácteos y huevos", icon: "🥛" },
+  { id: "legumbres_cereales", label: "Legumbres, cereales y harinas", icon: "🌾" },
+  { id: "despensa_basicos", label: "Despensa y básicos", icon: "🧂" },
+  { id: "especias_hierbas", label: "Especias, hierbas y condimentos", icon: "🌿" },
+  { id: "aperitivos_dulces", label: "Aperitivos y dulces", icon: "🍿" },
+  { id: "hogar", label: "Artículos del hogar", icon: "🧼" },
+  { id: "bebidas_cafes", label: "Bebidas y cafés", icon: "☕" },
+  { id: "congelados", label: "Congelados", icon: "❄️" },
+  { id: "otros", label: "Otros", icon: "🗂️" },
+];
+
+// Icono de las categorías personalizadas del usuario (issue #224).
+export const CUSTOM_CATEGORY_ICON = "🏷️";
+
+// Icono del grupo «Sin categoría» (issue #224).
+export const UNCATEGORIZED_ICON = "🧺";
+
+// Supermercados para la ficha del ingrediente (issue #224): etiquetas
+// opcionales de dónde se puede comprar cada ingrediente. Los colores
+// de marca viven en el CSS (css/styles.css), no aquí: este archivo
+// solo define los ids y las etiquetas.
+export const SUPERMARKETS = [
+  { id: "lidl", label: "Lidl" },
+  { id: "aldi", label: "Aldi" },
+  { id: "mercadona", label: "Mercadona" },
+  { id: "dia", label: "Día" },
+  { id: "carrefour", label: "Carrefour" },
+  { id: "el_corte_ingles", label: "El Corte Inglés" },
 ];
 
 // Alérgenos / etiquetas dietéticas (predefinidas). Se añaden

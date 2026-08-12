@@ -1192,11 +1192,10 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--ink);
 }
 
-/* Etiquetas largas de pestaña (p. ej. «Lista de la compra» en
-   Recetas, issue #208): el texto envuelve dentro del ancho de la
-   pestaña en lugar de desbordarla; nunca se trunca (AGENTS.md:
-   sin texto fuera de pantalla). Inofensivo para las etiquetas
-   cortas de Ocio. */
+/* Etiquetas largas de pestaña (issue #208, p. ej. «Ingredientes» en
+   Recetas): el texto envuelve dentro del ancho de la pestaña en
+   lugar de desbordarla; nunca se trunca (AGENTS.md: sin texto fuera
+   de pantalla). Inofensivo para las etiquetas cortas de Ocio. */
 .tabs--bar .tab span {
   max-width: 100%;
   overflow-wrap: break-word;
@@ -2811,12 +2810,23 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .ingredient-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0 0 0.5rem;
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.ingredient-group__icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .ingredient-grid {
@@ -2914,6 +2924,111 @@ body.is-back-to-top-visible .back-to-top {
   gap: 0.5rem;
   justify-content: flex-end;
   margin-top: 1rem;
+}
+
+/* Supermercados y cantidad del paquete del ingrediente (issue #224):
+   chips de selección en el alta y el detalle, con color de marca por
+   supermercado. Los colores de marca están hardcodeados A PROPÓSITO
+   (AGENTS.md §4.4): son colores corporativos idénticos en los 4 modos
+   de tema; solo los chips desmarcados usan variables (--paper-dim,
+   --paper-line, --ink) y por eso necesitan override en negro puro. */
+
+.ingredient-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.supermarket-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--paper-dim);
+  border: 1px solid var(--paper-line);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.supermarket-chip input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+}
+
+[data-theme="black"] .supermarket-chip {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+/* Foco de teclado visible en los chips (issue #224): el input está
+   oculto, así que el anillo se dibuja sobre el label contenedor.
+   Mismo color que el resto de :focus-visible del catálogo. */
+.supermarket-chip:focus-within {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* Etiqueta de supermercado no interactiva (mismo aspecto que el chip
+   marcado; queda lista para vistas de solo lectura). */
+.supermarket-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Colores de marca hardcodeados A PROPÓSITO (AGENTS.md §4.4): son los
+   colores corporativos de cada supermercado, no variables de tema, y
+   deben verse igual en los 4 modos. Contraste AA verificado: texto
+   blanco sobre #0050AA, #002B5C, #A50F26, #004E9F y #00543F; texto
+   negro sobre el amarillo #FFCB05 de Mercadona. */
+.supermarket-chip--lidl.is-checked,
+.supermarket-tag--lidl { background: #0050AA; border-color: #0050AA; color: #fff; }
+.supermarket-chip--aldi.is-checked,
+.supermarket-tag--aldi { background: #002B5C; border-color: #002B5C; color: #fff; }
+.supermarket-chip--mercadona.is-checked,
+.supermarket-tag--mercadona { background: #FFCB05; border-color: #FFCB05; color: #000; }
+.supermarket-chip--dia.is-checked,
+.supermarket-tag--dia { background: #A50F26; border-color: #A50F26; color: #fff; }
+.supermarket-chip--carrefour.is-checked,
+.supermarket-tag--carrefour { background: #004E9F; border-color: #004E9F; color: #fff; }
+.supermarket-chip--el_corte_ingles.is-checked,
+.supermarket-tag--el_corte_ingles { background: #00543F; border-color: #00543F; color: #fff; }
+
+/* Fila «Cantidad del paquete» (issue #224): el número ocupa el resto
+   del ancho y la unidad un ancho fijo; en móvil envuelve en dos filas
+   para que la unidad no se quede corta ni desborde. */
+.ingredient-modal__qty-row {
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ingredient-modal__qty-row input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.ingredient-modal__qty-row select {
+  flex: 0 0 auto;
+  width: 8rem;
+}
+
+@media (max-width: 480px) {
+  .ingredient-modal__qty-row {
+    flex-wrap: wrap;
+  }
+  .ingredient-modal__qty-row select {
+    flex: 1 1 100%;
+    width: auto;
+  }
 }
 
 /* --- Menú semanal --- */
@@ -3175,13 +3290,19 @@ body.is-back-to-top-visible .back-to-top {
 
 .shopping-extra-form__row input,
 .shopping-extra-form__row select {
-  background: var(--ink);
+  background: var(--ink-raised);
   color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
-  border-radius: var(--radius);
-  padding: 0.4rem;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
   font-size: 0.85rem;
   min-width: 0;
+}
+
+.shopping-extra-form__row input:focus-visible,
+.shopping-extra-form__row select:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 .shopping-extra-form__row input#extra-nombre {
@@ -3212,6 +3333,23 @@ body.is-back-to-top-visible .back-to-top {
 .shopping-extra-form__actions {
   display: flex;
   gap: 0.4rem;
+}
+
+/* Variante shopping del patrón «píldora» del ADR-083. No reutiliza
+   .btn--pill porque la PR #222 (issue #220) aún abierta lo define; en
+   negro puro no necesita override: --ink-raised (#0a0a0a) + texto
+   --paper claro + hover --paper-alpha-10 ya son correctos. */
+.shopping-btn--ghost {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.shopping-btn--ghost:hover {
+  background: var(--paper-alpha-10);
 }
 
 .shopping-list {
@@ -3453,7 +3591,10 @@ body.is-back-to-top-visible .back-to-top {
 .shopping-line__pkgreset {
   flex-shrink: 0;
   background: none;
-  border: none;
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  color: var(--stamp);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0 0.1rem;
@@ -3502,6 +3643,24 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .shopping-deleted__btn,
 [data-theme="white"] .shopping-deleted__btn {
   color: var(--stamp);
+}
+
+.shopping-line__remove:hover {
+  background: var(--paper-alpha-10);
+}
+
+/* Checkboxes de la lista de la compra (marcar comprado) y del form
+   de ítem extra con el acento de la pestaña (--stamp, rojo), mismo
+   patrón que .saga-row input[type="checkbox"] en Ocio: accent-color
+   nativo + tamaño fijo. --stamp (#a63b2e) da check blanco ≈6.4:1 en
+   Oscuro y en la familia clara; en negro puro pasa a --stamp-dark
+   (#cf6655, umbral gráfico 3:1 sobre negro, patrón de ocio.css). */
+.shopping-line__main input[type="checkbox"],
+.shopping-extra-form__check input[type="checkbox"] {
+  accent-color: var(--stamp);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .shopping-excluded {
@@ -3822,6 +3981,16 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--ink-alpha-20);
 }
 
+/* Píldora ghost y ✕ de la lista de la compra en la familia clara:
+   el texto pasa a --ink y el hover a un tinte de tinta (patrón de
+   .btn--pill de la issue #220). */
+[data-theme="light"] .shopping-btn--ghost,
+[data-theme="white"] .shopping-btn--ghost { color: var(--ink); }
+[data-theme="light"] .shopping-btn--ghost:hover,
+[data-theme="white"] .shopping-btn--ghost:hover { background: var(--ink-alpha-10); }
+[data-theme="light"] .shopping-line__remove:hover,
+[data-theme="white"] .shopping-line__remove:hover { background: var(--ink-alpha-10); }
+
 /* Overrides de la familia oscura en negro puro (mismas superficies
    que el resto de la app: --ink-raised con texto papel). */
 [data-theme="black"] .recipe-card {
@@ -3940,4 +4109,20 @@ body.is-back-to-top-visible .back-to-top {
 
 [data-theme="black"] .shopping-line-wrap--hogar .shopping-line__content {
   border-left-color: var(--ochre-spine);
+}
+
+/* En negro puro los inputs del form de ítem extra vuelven a --ink:
+   la píldora base (--ink-raised) quedaría sin límite sobre el
+   propio --ink-raised del formulario (patrón de ingredient-modal__field).
+   .shopping-btn--ghost y .shopping-line__remove:hover no necesitan
+   override: la base ya funciona en negro puro. */
+[data-theme="black"] .shopping-extra-form__row input,
+[data-theme="black"] .shopping-extra-form__row select { background: var(--ink); }
+
+/* Checkboxes de la lista de la compra en negro puro: el acento rojo
+   pasa a la variante clara (--stamp-dark #cf6655) para mantener el
+   umbral gráfico 3:1 sobre negro (patrón de episode-checkbox). */
+[data-theme="black"] .shopping-line__main input[type="checkbox"],
+[data-theme="black"] .shopping-extra-form__check input[type="checkbox"] {
+  accent-color: var(--stamp-dark);
 }

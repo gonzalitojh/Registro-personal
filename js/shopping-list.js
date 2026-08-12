@@ -691,7 +691,7 @@ function renderExtraForm() {
     </label>
     <div class="shopping-extra-form__actions">
       <button type="button" class="btn btn--small btn--primary" data-extra-action="add">Añadir</button>
-      <button type="button" class="btn btn--small" data-extra-action="cancel">Cancelar</button>
+      <button type="button" class="btn btn--small shopping-btn--ghost" data-extra-action="cancel">Cancelar</button>
     </div>`;
 }
 

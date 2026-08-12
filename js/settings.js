@@ -46,7 +46,7 @@ export const SECTION_REGISTRY = {
       recetas: { label: "Recetas", panelId: "panel-recipes-tab" },
       ingredientes: { label: "Ingredientes", panelId: "panel-ingredients-tab" },
       menu: { label: "Menú", panelId: "panel-menu-tab" },
-      compra: { label: "Lista de la compra", panelId: "panel-shopping-tab" },
+      compra: { label: "Compra", panelId: "panel-shopping-tab" },
     },
   },
 };

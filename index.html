@@ -520,7 +520,7 @@
             <circle cx="19" cy="21" r="1" />
             <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
           </svg>
-          <span>Lista de la compra</span>
+          <span>Compra</span>
         </button>
       </div>
     </nav>
@@ -543,10 +543,9 @@
 
       <!-- Pestaña Ingredientes (issue #209): catálogo de ingredientes,
            extraído de la pestaña Recetas. Estética tipo Ocio (issue
-           #218): barra de herramientas con alta manual, filtro por
-           categorías (multiselección, todas por defecto) y ordenación;
-           el contenido lo renderiza js/recipes.js
-           (renderIngredientsCatalog). -->
+           #218): barra de herramientas con alta manual y filtro por
+           categorías (multiselección, todas por defecto); el contenido
+           lo renderiza js/recipes.js (renderIngredientsCatalog). -->
       <section id="panel-ingredients-tab" class="hidden" role="tabpanel" aria-labelledby="panel-ingredients-tab-heading">
         <h2 id="panel-ingredients-tab-heading" class="visually-hidden">Ingredientes</h2>
         <div class="ingredients-toolbar">
@@ -564,13 +563,6 @@
             </button>
             <div id="ingredient-filter-panel" class="ingredients-filter__panel hidden"></div>
           </div>
-          <label class="visually-hidden" for="ingredient-sort">Ordenar ingredientes</label>
-          <select id="ingredient-sort" class="sort-select">
-            <option value="az">Alfabético A-Z</option>
-            <option value="za">Alfabético Z-A</option>
-            <option value="recent">Recientes añadidos</option>
-            <option value="used">Más usadas</option>
-          </select>
         </div>
         <div id="ingredients-catalog" class="ingredients-catalog"></div>
       </section>
@@ -602,16 +594,16 @@
         </div>
       </section>
 
-      <!-- Pestaña Lista de la compra: cálculo automático desde el
+      <!-- Pestaña Compra (lista de la compra): cálculo automático desde el
            menú (varias semanas seleccionables, issue #225) + ítems
            extra manuales. js/shopping-list.js. -->
       <section id="panel-shopping-tab" class="hidden" role="tabpanel" aria-labelledby="panel-shopping-tab-heading">
-        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Lista de la compra</h2>
+        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Compra</h2>
         <div class="shopping-toolbar">
           <button type="button" id="shopping-prev-week" class="btn btn--pill" aria-label="Semanas anteriores">←</button>
           <span id="shopping-week-label" class="menu-week-label"></span>
           <button type="button" id="shopping-next-week" class="btn btn--pill" aria-label="Semanas siguientes">→</button>
-          <button type="button" id="btn-add-extra-item" class="btn btn--small">+ Ítem extra</button>
+          <button type="button" id="btn-add-extra-item" class="btn btn--primary btn--small">+ Ítem extra</button>
         </div>
         <div id="shopping-week-chips" class="shopping-week-chips"
              role="group" aria-label="Semanas incluidas en la lista"></div>

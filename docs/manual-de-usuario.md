@@ -114,7 +114,7 @@ Nada más entrar verás:
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **La sección de Recetas tiene su propia barra de pestañas, igual que
   Ocio**: **Recetas en ocre**, **Ingredientes en violeta**, **Menú en
-  verde** y **Lista de la compra en rojo**, cada una con su icono. Es
+  verde** y **Compra en rojo**, cada una con su icono. Es
   fija de la misma manera (abajo en el móvil, bajo la barra de búsqueda
   en ordenador y tableta) y sus pestañas se pueden ocultar desde
   [Ajustes → Secciones y pestañas](#16-ajustes) igual que las de Ocio
@@ -177,7 +177,7 @@ para que la lista ocupe todo el espacio. En cuanto desplazas hacia
 arriba, vuelven a aparecer deslizándose desde su borde.
 
 En **Recetas** la cabecera y su barra de pestañas (Recetas, Ingredientes,
-Menú, Lista de la compra) **siempre están visibles**: el auto-ocultado al
+Menú, Compra) **siempre están visibles**: el auto-ocultado al
 desplazarse solo ocurre en las listas de **Ocio**. En **tu perfil** no
 hay cabecera global: tiene su propia cabecera con la flecha de volver
 y las pestañas en la misma fila. La flecha de volver del perfil te
@@ -438,7 +438,7 @@ perfil (sección 14.1).
 La sección **Recetas** (en la barra lateral, junto a «Ocio») te permite
 guardar tus recetas, planificar el menú de la semana y generar la lista
 de la compra automáticamente. Tiene cuatro pestañas — **Recetas**,
-**Ingredientes**, **Menú** y **Lista de la compra** — en una barra fija
+**Ingredientes**, **Menú** y **Compra** — en una barra fija
 **igual que las de Ocio**: abajo en el móvil y bajo la barra de
 búsqueda en el ordenador y la tableta, cada una con su icono y su color
 (**ocre**, **violeta**, **verde** y **rojo**). La pestaña activa se
@@ -516,7 +516,7 @@ lista de la compra), exclúyela desde la lista de la compra (ver 8.4).
 
 ### 8.4 La lista de la compra
 
-La pestaña **«Lista de la compra»** calcula sola lo que necesitas
+La pestaña **«Compra»** calcula sola lo que necesitas
 comprar: cada ingrediente de cada receta se multiplica por
 (comensales ÷ porciones de la receta). Por ejemplo, una receta de 4
 porciones con 200 g de arroz, para 2 comensales, pedirá 100 g. Las
@@ -564,10 +564,17 @@ La pestaña **«Ingredientes»** muestra el catálogo de ingredientes de tu
 cuenta, agrupados **por categorías**. Se rellena solo con los que usas
 en tus recetas, y también puedes añadir ingredientes a mano con el
 botón **«+ Nuevo ingrediente»** (arriba a la izquierda): escribe el
-nombre y elige la categoría (si el ingrediente ya existe, no se añade
-otra vez).
+nombre y elige la categoría. También puedes rellenar, si quieres, los
+**supermercados** donde se puede comprar (Lidl, Aldi, Mercadona, Día,
+Carrefour y El Corte Inglés, cada uno con su etiqueta de color) y la
+**cantidad del paquete** (número y unidad: g, Kg, mL, L, unidades).
 
-Sobre la lista tienes dos controles:
+Los ingredientes se guardan y muestran **tal y como los escribes**, con
+sus mayúsculas y tildes. Si escribes uno que ya existe (aunque lo
+escribas con otras mayúsculas o sin tildes), no se añade otra vez: se
+conserva la primera vez que lo escribiste.
+
+Sobre la lista tienes un control:
 
 - **Filtro por categorías**: un desplegable con una casilla por
   categoría, todas marcadas por defecto. Desmarca las que no quieras
@@ -577,16 +584,18 @@ Sobre la lista tienes dos controles:
   para que veas qué está seleccionado y la lista se actualiza sola.
   Con la casilla **«Todas»** marcas o desmarcas todas de una vez. Los
   ingredientes **sin categoría** se muestran siempre.
-- **Ordenar**: un desplegable para ordenar la lista por **alfabeto
-  (A-Z o Z-A)**, **recientes añadidos** o **más usadas** (las que
-  aparecen en más recetas).
 
 Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
 una ventana con la información ampliada: la **categoría** (puedes
-cambiarla ahí mismo; la lista de la compra se agrupa por ella), **en
-qué recetas se usa** (pulsa el nombre de una receta para abrirla en
-modo lectura) y un botón **«Eliminar»** para quitarlo del catálogo
-(no afecta a las recetas que lo usan).
+cambiarla ahí mismo; la lista de la compra se agrupa por ella), los
+**supermercados** donde se puede comprar (las etiquetas de color de
+Lidl, Aldi, Mercadona, Día, Carrefour y El Corte Inglés) y la
+**cantidad del paquete** (número y unidad). Las tres se cambian en la
+misma ventana, igual que la categoría: el cambio se guarda en el
+momento. La ventana también indica **en qué recetas se usa** (pulsa el
+nombre de una receta para abrirla en modo lectura) y tiene un botón
+**«Eliminar»** para quitarlo del catálogo (no afecta a las recetas que
+lo usan).
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
 pestañas](#16-ajustes) igual que el resto.
@@ -974,7 +983,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   ves. Hoy hay dos secciones: **«Ocio»**, con sus cuatro pestañas
   (**Series**, **Películas**, **Libros** y **Videojuegos**), y
   **«Recetas»**, con sus cuatro pestañas (**Recetas**, **Ingredientes**,
-  **Menú** y **Lista de la compra**). En el futuro se añadirán más
+  **Menú** y **Compra**). En el futuro se añadirán más
   secciones y aparecerán aquí con sus pestañas. Al **ocultar una pestaña**,
   desaparece de la barra de pestañas de su sección (la de Ocio o la
   de Recetas) y de la vista: tus datos, avisos y actualizaciones
