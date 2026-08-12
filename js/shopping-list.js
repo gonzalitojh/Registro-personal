@@ -666,22 +666,24 @@ function attachLineSwipe(wrap, content) {
   wrap.addEventListener(
     "touchend",
     (e) => {
-      const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
       // Solo se borra o se revela si el gesto fue horizontal (axis
       // lock): un scroll vertical con deriva horizontal no debe
       // eliminar ni marcar el ítem en rojo (issue #225, iteración
       // 2 — antes el ítem quedaba revelado al soltar el scroll).
       if (lock === "vertical") {
         snap(false);
-      } else if (lock === "horizontal" && offset <= SWIPE_DELETE) {
-        // Desplazamiento extra: eliminar directamente (issue #225,
-        // iteración), sin necesidad de pulsar nada.
-        const delBtn = wrap.querySelector(".shopping-line__remove");
-        const key = delBtn?.dataset.delKey;
-        snap(false);
-        if (key) deleteLine(key);
       } else if (lock === "horizontal") {
-        snap(offset < SWIPE_OPEN / 2);
+        const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
+        if (offset <= SWIPE_DELETE) {
+          // Desplazamiento extra: eliminar directamente (issue #225,
+          // iteración), sin necesidad de pulsar nada.
+          const delBtn = wrap.querySelector(".shopping-line__remove");
+          const key = delBtn?.dataset.delKey;
+          snap(false);
+          if (key) deleteLine(key);
+        } else {
+          snap(offset < SWIPE_OPEN / 2);
+        }
       }
       // lock === null (toque sin desplazamiento): no se toca el
       // estado — un toque sobre una línea revelada la mantiene
