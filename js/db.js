@@ -218,14 +218,23 @@ export async function addIngredient(uid, ingredient) {
   return addDoc(ingredientsRef(uid), {
     nombre: ingredient.nombre,
     categoriaId: ingredient.categoriaId || "",
+    // Campos opcionales de la ficha (issue #224): tiendas donde se
+    // puede comprar el ingrediente y cantidad del paquete (número +
+    // unidad). Solo se persisten si vienen definidos en el alta.
+    ...(ingredient.supermercados !== undefined && { supermercados: ingredient.supermercados }),
+    ...(ingredient.paqueteCantidad !== undefined && { paqueteCantidad: ingredient.paqueteCantidad }),
+    ...(ingredient.paqueteUnidad !== undefined && { paqueteUnidad: ingredient.paqueteUnidad }),
     addedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
 }
 
-export async function updateIngredientCategory(uid, ingredientId, categoriaId) {
+// Actualización parcial de un ingrediente del catálogo (issue #224):
+// solo los campos pasados en `fields`. Para supermercados se envía el
+// array completo nuevo.
+export async function updateIngredient(uid, ingredientId, fields) {
   return updateDoc(doc(db, "users", uid, "ingredients", ingredientId), {
-    categoriaId,
+    ...fields,
     updatedAt: serverTimestamp(),
   });
 }

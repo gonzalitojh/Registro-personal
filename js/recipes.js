@@ -16,6 +16,9 @@ import {
   INGREDIENT_CATEGORIES,
   ALERGEN_TAGS,
   MEAL_TYPES,
+  SUPERMARKETS,
+  CUSTOM_CATEGORY_ICON,
+  UNCATEGORIZED_ICON,
   normalizeIngredientName,
   normalizeUnit,
   mergeTags,
@@ -43,11 +46,11 @@ let customTags = [];
 // vive en su propia pestaña, así que se re-renderiza solo si está a la
 // vista cuando llegan datos nuevos.
 let currentTab = "recetas";
-// Estado del catálogo de ingredientes (issue #218): ordenación activa y
-// categorías seleccionadas en el filtro (todas por defecto). El flag
-// de "tocado" evita que las categorías propias recién cargadas rompan
-// la selección hecha por el usuario.
-let ingredientSort = "az";
+// Estado del catálogo de ingredientes (issue #218): categorías
+// seleccionadas en el filtro (todas por defecto). El flag de "tocado"
+// evita que las categorías propias recién cargadas rompan la selección
+// hecha por el usuario. (El selector de ordenación se eliminó en la
+// issue #224: el catálogo se muestra siempre en orden alfabético.)
 let ingredientFilterTouched = false;
 let activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
 let ingredientModalCleanup = null;
@@ -75,7 +78,6 @@ export function resetRecipesData() {
   ingredients = [];
   customTags = [];
   currentTab = "recetas";
-  ingredientSort = "az";
   ingredientFilterTouched = false;
   activeCategoryFilter = new Set(INGREDIENT_CATEGORIES.map((c) => c.id));
   closeIngredientModal();
@@ -125,10 +127,6 @@ export function setupRecipes(opts) {
 
   // Barra de herramientas del catálogo de ingredientes (issue #218).
   document.getElementById("btn-new-ingredient").addEventListener("click", () => openIngredientModal(null));
-  document.getElementById("ingredient-sort").addEventListener("change", (e) => {
-    ingredientSort = e.target.value;
-    renderIngredientsCatalog();
-  });
   setupIngredientFilter();
 
   // Delegación de acciones de las cards de ingredientes: la tarjeta es
@@ -329,7 +327,7 @@ function tagLabel(scope, id) {
 // ---------- Catálogo de ingredientes (pestaña «Ingredientes», issue #209 / #218) ----------
 
 // Índice de recetas por ingrediente (recetas que usan cada uno). Se usa
-// en el render, en la ordenación «Más usadas» y en el modal de detalle.
+// en el modal de detalle («Usada en»).
 function getUsageIndex() {
   const byName = new Map();
   recipes.forEach((r) => {
@@ -346,8 +344,7 @@ function renderIngredientsCatalog() {
   const container = document.getElementById("ingredients-catalog");
   if (!container) return;
 
-  const byName = getUsageIndex();
-  const sorted = [...ingredients].sort((a, b) => compareIngredients(a, b, byName));
+  const sorted = [...ingredients].sort(compareIngredients);
   if (!sorted.length) {
     container.innerHTML = `<p class="empty-state">El catálogo de ingredientes se rellena solo: cada vez que guardas una
       receta con ingredientes, aparecen aquí para poder asignarles una categoría (y se usan para la lista de la compra).
@@ -369,7 +366,9 @@ function renderIngredientsCatalog() {
 
   // Agrupación por categoría (patrón de la lista de la compra): las
   // predefinidas en su orden, las personalizadas presentes en los datos
-  // por orden alfabético de etiqueta y «Sin categoría» al final.
+  // por orden alfabético de etiqueta y «Sin categoría» al final. Cada
+  // título lleva su icono (issue #224): el de la categoría predefinida,
+  // el genérico de etiqueta para las propias y el de «Sin categoría».
   const groups = new Map();
   INGREDIENT_CATEGORIES.forEach((c) => groups.set(c.id, []));
   groups.set("", []);
@@ -388,42 +387,31 @@ function renderIngredientsCatalog() {
       const items = groups.get(c.id);
       if (!items?.length) return "";
       return `<section class="ingredient-group">
-        <h3 class="ingredient-group__title">${escapeHtml(c.label)}</h3>
+        <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${c.icon}</span>${escapeHtml(c.label)}</h3>
         <div class="ingredient-grid">
           ${items.map((ing) => ingredientCardHtml(ing)).join("")}
         </div>
       </section>`;
     }).join("")}
     ${customGroupIds.map((id) => `<section class="ingredient-group">
-      <h3 class="ingredient-group__title">${escapeHtml(tagLabel("ingrediente", id))}</h3>
+      <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${CUSTOM_CATEGORY_ICON}</span>${escapeHtml(tagLabel("ingrediente", id))}</h3>
       <div class="ingredient-grid">
         ${groups.get(id).map((ing) => ingredientCardHtml(ing)).join("")}
       </div>
     </section>`).join("")}
     ${groups.get("").length ? `<section class="ingredient-group">
-      <h3 class="ingredient-group__title">Sin categoría</h3>
+      <h3 class="ingredient-group__title"><span class="ingredient-group__icon" aria-hidden="true">${UNCATEGORIZED_ICON}</span>Sin categoría</h3>
       <div class="ingredient-grid">
         ${groups.get("").map((ing) => ingredientCardHtml(ing)).join("")}
       </div>
     </section>` : ""}`;
 }
 
-// Comparador de ingredientes según el orden activo (issue #218). Todos
-// los modos terminan con tie-break determinista (nombre, luego id).
-function compareIngredients(a, b, byName) {
-  let diff = 0;
-  if (ingredientSort === "za") {
-    diff = b.nombre.localeCompare(a.nombre, "es");
-  } else if (ingredientSort === "recent") {
-    diff = (b.addedAt?.toMillis?.() || 0) - (a.addedAt?.toMillis?.() || 0);
-  } else if (ingredientSort === "used") {
-    const usedA = byName.get(normalizeIngredientName(a.nombre))?.size || 0;
-    const usedB = byName.get(normalizeIngredientName(b.nombre))?.size || 0;
-    diff = usedB - usedA;
-  } else {
-    diff = a.nombre.localeCompare(b.nombre, "es");
-  }
-  return diff || a.nombre.localeCompare(b.nombre, "es") || a.id.localeCompare(b.id);
+// Comparador del catálogo: orden alfabético A-Z (es) con tie-break
+// determinista por id. (El selector de ordenación se eliminó en la
+// issue #224 y solo existe este orden.)
+function compareIngredients(a, b) {
+  return a.nombre.localeCompare(b.nombre, "es") || a.id.localeCompare(b.id);
 }
 
 // Tarjeta del catálogo: muestra únicamente el nombre (issue #218); la
@@ -592,6 +580,35 @@ function setupIngredientFilter() {
 
 // ---------- Modal de ingrediente (issue #218) ----------
 
+// Unidades disponibles para la cantidad del paquete (issue #224); la
+// primera opción vacía («—») significa sin especificar.
+const PACKAGE_UNITS = ["", "g", "Kg", "mL", "L", "unidades"];
+
+// Chips de supermercados (issue #224): las mismas etiquetas en el alta
+// y en el detalle. `selected` son los ids marcados (en el alta, nada).
+function supermarketChipsHtml(selected = []) {
+  return SUPERMARKETS.map((s) => {
+    const checked = selected.includes(s.id);
+    return `<label class="supermarket-chip supermarket-chip--${s.id}${checked ? " is-checked" : ""}" data-supermercado="${s.id}">
+      <input type="checkbox" value="${s.id}"${checked ? " checked" : ""} />
+      <span>${escapeHtml(s.label)}</span>
+    </label>`;
+  }).join("");
+}
+
+// Fila «Cantidad del paquete» (número + unidad, issue #224): los ids
+// son los mismos en el alta y en el detalle para reutilizar lecturas.
+function packageQtyRowHtml(ing = {}) {
+  const cantidad = ing.paqueteCantidad ?? "";
+  const unidad = ing.paqueteUnidad || "";
+  return `<div class="ingredient-modal__qty-row">
+    <input type="number" id="ing-modal-paquete" min="0" step="any" placeholder="Cantidad" value="${escapeHtml(cantidad)}" />
+    <select id="ing-modal-unidad" aria-label="Unidad de la cantidad del paquete">
+      ${PACKAGE_UNITS.map((u) => `<option value="${escapeHtml(u)}"${u === unidad ? " selected" : ""}>${u === "" ? "—" : escapeHtml(u)}</option>`).join("")}
+    </select>
+  </div>`;
+}
+
 // Abre el modal de ingrediente: con id = detalle ampliado (categoría,
 // recetas que lo usan, eliminar); sin id = alta manual.
 function openIngredientModal(id) {
@@ -644,6 +661,16 @@ function ingredientDetailHtml(ing) {
         ${optionsFor("ingrediente", ing.categoriaId)}
       </select>
     </div>
+    <div class="ingredient-modal__field">
+      <label>Supermercados</label>
+      <div class="ingredient-modal__chips">
+        ${supermarketChipsHtml(ing.supermercados || [])}
+      </div>
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-paquete">Cantidad del paquete</label>
+      ${packageQtyRowHtml(ing)}
+    </div>
     ${usedRecipes.length ? `<p class="ingredient-modal__used">Usada en ${usedRecipes.length}
       ${usedRecipes.length === 1 ? "receta" : "recetas"}:
       ${usedRecipes.map((r) =>
@@ -671,6 +698,16 @@ function ingredientNewHtml() {
         ${optionsFor("ingrediente", "")}
       </select>
     </div>
+    <div class="ingredient-modal__field">
+      <label>Supermercados</label>
+      <div class="ingredient-modal__chips">
+        ${supermarketChipsHtml()}
+      </div>
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-paquete">Cantidad del paquete</label>
+      ${packageQtyRowHtml()}
+    </div>
     <p class="ingredient-modal__cat-hint">Si el ingrediente ya está en el catálogo, no se añadirá otra vez.</p>
     <div class="ingredient-modal__actions">
       <button type="button" class="btn btn--small" data-ing-close>Cancelar</button>
@@ -685,12 +722,60 @@ function bindIngredientModalHandlers(content, ingredient) {
   // Cambio de categoría en el detalle: inmediato + toast (como antes).
   content.querySelector("#ing-modal-categoria")?.addEventListener("change", async (e) => {
     try {
-      await ctx.updateIngredientCategory(currentUser, ingredient.id, e.target.value);
+      await ctx.updateIngredient(currentUser, ingredient.id, { categoriaId: e.target.value });
       showToast("Categoría actualizada.");
     } catch (err) {
       console.error("No se pudo actualizar la categoría:", err);
     }
   });
+
+  // Supermercados (issue #224): la marca visual cambia al instante en
+  // el alta y en el detalle; el guardado inmediato solo aplica en el
+  // detalle (patrón del cambio de categoría). El array de ids se
+  // recalcula entero y se envía como array completo nuevo.
+  content.querySelectorAll(".ingredient-modal__chips").forEach((chips) => {
+    chips.addEventListener("change", async (e) => {
+      const label = e.target.closest("[data-supermercado]");
+      if (!label) return;
+      label.classList.toggle("is-checked", e.target.checked);
+      if (!ingredient) return;
+      try {
+        const ids = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
+        await ctx.updateIngredient(currentUser, ingredient.id, { supermercados: ids });
+        showToast("Supermercados actualizados.");
+      } catch (err) {
+        console.error("No se pudo actualizar los supermercados:", err);
+      }
+    });
+  });
+
+  // Cantidad del paquete en el detalle (issue #224): guardado inmediato
+  // al dejar el campo (patrón de la categoría). Vacío = sin cantidad;
+  // valores inválidos o negativos se descartan (se revierte a vacío).
+  if (ingredient) {
+    content.querySelector("#ing-modal-paquete")?.addEventListener("change", async (e) => {
+      let value = e.target.value === "" ? null : Number(e.target.value);
+      if (value !== null && (!Number.isFinite(value) || value < 0)) {
+        e.target.value = "";
+        value = null;
+      }
+      try {
+        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteCantidad: value });
+        showToast("Cantidad de paquete actualizada.");
+      } catch (err) {
+        console.error("No se pudo actualizar la cantidad de paquete:", err);
+      }
+    });
+
+    content.querySelector("#ing-modal-unidad")?.addEventListener("change", async (e) => {
+      try {
+        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteUnidad: e.target.value });
+        showToast("Unidad actualizada.");
+      } catch (err) {
+        console.error("No se pudo actualizar la unidad:", err);
+      }
+    });
+  }
 
   // Links «Usada en»: abren la receta en modo lectura; el modal de
   // ingrediente se cierra antes (ambos comparten z-index).
@@ -716,20 +801,29 @@ function bindIngredientModalHandlers(content, ingredient) {
     }
   });
 
-  // Alta manual: nombre normalizado y sin duplicados.
+  // Alta manual: el nombre se guarda tal cual se escribió (tildes y
+  // mayúsculas, issue #224); la deduplicación sigue por nombre
+  // normalizado (sin tildes, minúsculas).
   content.querySelector("#ingredient-new-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const raw = content.querySelector("#ing-modal-nombre").value.trim();
     if (!raw) return;
-    const nombre = normalizeIngredientName(raw);
-    const exists = ingredients.some((i) => normalizeIngredientName(i.nombre) === nombre);
+    const nombre = raw;
+    const exists = ingredients.some((i) => normalizeIngredientName(i.nombre) === normalizeIngredientName(raw));
     if (exists) {
       showToast("Ese ingrediente ya existe en el catálogo.");
       return;
     }
     const categoriaId = content.querySelector("#ing-modal-categoria-nueva").value;
+    // Campos opcionales (issue #224): supermercados marcados (array de
+    // ids) y cantidad del paquete (número, vacío → null; unidad).
+    const supermercados = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
+    const qtyRaw = content.querySelector("#ing-modal-paquete").value;
+    const qtyNum = qtyRaw === "" ? null : Number(qtyRaw);
+    const paqueteCantidad = qtyNum !== null && Number.isFinite(qtyNum) && qtyNum >= 0 ? qtyNum : null;
+    const paqueteUnidad = content.querySelector("#ing-modal-unidad").value;
     try {
-      await ctx.addIngredient(currentUser, { nombre, categoriaId });
+      await ctx.addIngredient(currentUser, { nombre, categoriaId, supermercados, paqueteCantidad, paqueteUnidad });
       closeIngredientModal();
       showToast("Ingrediente añadido al catálogo.");
     } catch (err) {
@@ -1052,6 +1146,10 @@ async function saveRecipeFromForm(content) {
 }
 
 // Añade al catálogo los ingredientes nuevos (los existentes no se tocan).
+// El catálogo conserva la primera grafía escrita (issue #224): el
+// nombre se guarda con sus tildes y mayúsculas tal cual vino en la
+// receta, mientras que la deduplicación sigue usando el nombre
+// normalizado (sin tildes, minúsculas).
 async function syncIngredientsCatalog(ingredientes) {
   const known = new Set(ingredients.map((i) => normalizeIngredientName(i.nombre)));
   for (const ing of ingredientes || []) {
@@ -1059,7 +1157,7 @@ async function syncIngredientsCatalog(ingredientes) {
     if (!name || known.has(name)) continue;
     known.add(name);
     try {
-      await ctx.addIngredient(currentUser, { nombre: name, categoriaId: ing.categoriaId || "" });
+      await ctx.addIngredient(currentUser, { nombre: ing.nombre.trim(), categoriaId: ing.categoriaId || "" });
     } catch (err) {
       console.error("No se pudo añadir el ingrediente al catálogo:", err);
     }
