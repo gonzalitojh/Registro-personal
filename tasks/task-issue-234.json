@@ -1,0 +1,45 @@
+{
+  "title": "Mejoras pestaña recetas",
+  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLas tarjetas de las recetas, se deben eliminar los botones \"ver\", \"editar\" y \"eliminar\". En su lugar, al presionar sobre la tarjeta, en cualquier sitio de ella, se abrirá una ventana de información de la receta en cuestión. Consideraciones sobre dicha ventana de información:\n- Se debe abrir en modo \"solo lectura\".\n- El botón de \"cerrar\" al final se puede eliminar, ya tiene la X arriba.\n- Debe tener un botón para editar y otro para eliminar.\n- Cuando está en modo edición, se debe asegurar que si se pulsa fuera de la ventana, esta no se cerrará, para evitar perder el progreso. En modo lectura si se puede cerrar de esta forma.\n\nArriba debe haber dos filtros, uno por alérgenos y otro por tipo de comida. Deben ser desplegables en los que se pueda seleccionar más de una opción o todas, similar al filtro de la pestaña _Ingredientes_.",
+  "status": "planned",
+  "acceptance criteria": [
+    "Las tarjetas de receta no muestran botones \"ver\", \"editar\" ni \"eliminar\".",
+    "Al pulsar en cualquier punto de la tarjeta se abre la ventana de información de la receta.",
+    "La ventana se abre en modo solo lectura.",
+    "No existe botón \"cerrar\" al final de la ventana (se cierra con la X superior).",
+    "La ventana tiene botones para editar y eliminar la receta.",
+    "En modo edición, pulsar fuera de la ventana no la cierra; en modo lectura sí la cierra.",
+    "Hay dos filtros desplegables arriba: uno por alérgenos y otro por tipo de comida.",
+    "Los filtros permiten seleccionar más de una opción (multiselección), similar al filtro de la pestaña Ingredientes.",
+    "Los filtros funcionan sobre el listado de tarjetas (filtrado por alérgenos y tipo de comida)."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (rama creada desde content/issue-64-seccion-recetas).",
+    "Validación QA superada contra los criterios de aceptación.",
+    "Escaneo de seguridad superado.",
+    "Manual de usuario actualizado si el cambio afecta a lo visible para el usuario.",
+    "ADR documentado con 'Related issue: #234'.",
+    "PR creada contra content/issue-64-seccion-recetas SIN keyword de cierre.",
+    "Task file subido con status 'review' + bloque pr.",
+    "Issue #234 label updated to its final state (status: needs-review)."
+  ],
+  "issue": {
+    "number": 234,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/234",
+    "title": "Mejoras pestaña recetas"
+  },
+  "plan": {
+    "base": "content/issue-64-seccion-recetas",
+    "branch": "style/issue-234-mejoras-pestana-recetas",
+    "steps": [
+      "index.html: dos filtros desplegables (alérgenos + tipo) en la toolbar de la pestaña Recetas, patrón del filtro de Ingredientes",
+      "js/recipes.js: eliminar botones Ver/Editar/Eliminar de las cards; card clickeable entera abre modal en solo lectura",
+      "js/recipes.js: modal lectura con botones Editar/Eliminar (sin 'Cerrar' abajo, la X arriba sigue); en edición no se cierra con click fuera/Escape, en lectura sí",
+      "js/recipes.js: estado y render de los dos filtros (multiselección con 'Todas', patrón ingredientFilter) + reset en resetRecipesData",
+      "css/styles.css: estilos .recipes-filter (acento ocre) + card hover/focus-visible; overrides familia clara y negro puro",
+      "docs/manual-de-usuario.md: sección 8.1 actualizada",
+      "docs/adr-087-mejoras-pestana-recetas.md"
+    ]
+  }
+}
