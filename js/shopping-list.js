@@ -421,11 +421,12 @@ function qtyHtml(line) {
   }
   const override = pkgOverrides.has(line.key);
   const shown = override ? pkgOverrides.get(line.key) : info.packages;
-  const paqueteLabel = `${shown} ${shown === 1 ? "paquete" : "paquetes"}`;
+  const shownText = formatCantidad(shown);
+  const paqueteLabel = `${shownText} ${shown === 1 ? "paquete" : "paquetes"}`;
   return `<span class="shopping-line__qty">
       <button type="button" class="shopping-line__stepper" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="minus"
         aria-label="Quitar un paquete de ${escapeHtml(line.nombre)}" title="Quitar un paquete">−</button>
-      <span class="shopping-line__pkgcount" aria-label="${paqueteLabel}">${formatCantidad(shown)}</span>
+      <span class="shopping-line__pkgcount" aria-label="${paqueteLabel}">${shownText}</span>
       <button type="button" class="shopping-line__stepper" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="plus"
         aria-label="Añadir un paquete de ${escapeHtml(line.nombre)}" title="Añadir un paquete">+</button>
       ${override ? `<button type="button" class="shopping-line__pkgreset" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="reset"
