@@ -652,7 +652,9 @@ function attachLineSwipe(wrap, content) {
     "touchend",
     (e) => {
       const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
-      if (offset <= SWIPE_DELETE) {
+      // Solo se borra si el gesto fue horizontal (axis lock): un
+      // scroll vertical con deriva horizontal no debe eliminar.
+      if (lock === "horizontal" && offset <= SWIPE_DELETE) {
         // Desplazamiento extra: eliminar directamente (issue #225,
         // iteración), sin necesidad de pulsar nada.
         const delBtn = wrap.querySelector(".shopping-line__remove");
