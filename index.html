@@ -594,14 +594,19 @@
         </div>
       </section>
 
-      <!-- Pestaña Compra (la lista de la compra): cálculo automático
-           desde el menú + ítems extra manuales. js/shopping-list.js. -->
+      <!-- Pestaña Compra (lista de la compra): cálculo automático desde el
+           menú (varias semanas seleccionables, issue #225) + ítems
+           extra manuales. js/shopping-list.js. -->
       <section id="panel-shopping-tab" class="hidden" role="tabpanel" aria-labelledby="panel-shopping-tab-heading">
         <h2 id="panel-shopping-tab-heading" class="visually-hidden">Compra</h2>
         <div class="shopping-toolbar">
+          <button type="button" id="shopping-prev-week" class="btn btn--pill" aria-label="Semanas anteriores">←</button>
           <span id="shopping-week-label" class="menu-week-label"></span>
+          <button type="button" id="shopping-next-week" class="btn btn--pill" aria-label="Semanas siguientes">→</button>
           <button type="button" id="btn-add-extra-item" class="btn btn--primary btn--small">+ Ítem extra</button>
         </div>
+        <div id="shopping-week-chips" class="shopping-week-chips"
+             role="group" aria-label="Semanas incluidas en la lista"></div>
         <div id="shopping-extra-form" class="shopping-extra-form hidden"></div>
         <div id="shopping-list" class="shopping-list"></div>
       </section>

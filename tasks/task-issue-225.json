@@ -1,0 +1,33 @@
+{
+  "title": "Mejoras en lista de la compra",
+  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLa pestaña de lista de la compra, debe permitir la selección de varias semanas y que se sumen los ingredientes totales.\n\nAdemás, para aquellos ingredientes que tengan almacenada unidad de medida y cantidad (implementado en la issue #224), se deben comparar para dar la cantidad en paquetes. Es decir, si necesito 550 gramos de harina y la harina está marcada en 1 Kg, en la lista debería aparecer 1 paquete o si necesito 2,5 Kg, en la lista debería aparecer 3 paquetes. Además, debería permitir al usuario modificar esa cantidad, por ejemplo si tengo un poco de sobra y me puedo ahorrar un paquete o si quiero comprar de más para tener de sobra. Si el producto no tiene cantidad marcada, se mostrará lo que se necesite.\n\nAdemás, también se debe poder eliminar un ítem de la lista de la compra, desplazándolo hacia la izquierda.",
+  "status": "review",
+  "acceptance criteria": [
+    "La lista de la compra permite seleccionar varias semanas a la vez y suma los ingredientes totales de las semanas seleccionadas.",
+    "Los ingredientes con cantidad y unidad de paquete almacenadas (issue #224: paqueteCantidad/paqueteUnidad del catálogo) muestran la cantidad en paquetes redondeada al alza (550 g con paquete de 1 Kg → 1 paquete; 2,5 Kg → 3 paquetes), comparando unidades compatibles (g/Kg, mL/L, unidades).",
+    "El usuario puede modificar al alza o a la baja esa cantidad de paquetes (p. ej. ahorrarse un paquete o comprar de más), y el ajuste persiste.",
+    "Si el producto no tiene cantidad de paquete marcada (o las unidades no son comparables), se muestra lo que se necesite (comportamiento actual).",
+    "Un ítem de la lista de la compra puede eliminarse desplazándolo hacia la izquierda (con deshacer).",
+    "La funcionalidad se mantiene en los cuatro modos de tema y sin scroll horizontal (móvil/tablet/escritorio).",
+    "Manual de usuario actualizado (sección 8.4) y ADR nuevo."
+  ],
+  "definition of done": [
+    "Planificación (task-architect) realizada.",
+    "Implementación completa en rama derivada de content/issue-64-seccion-recetas.",
+    "Validación QA (qa-reviewer) en verde.",
+    "Escaneo de seguridad (security-champion) sin hallazgos HIGH.",
+    "Manual de usuario y ADR actualizados.",
+    "PR contra la rama content/issue-64-seccion-recetas SIN keyword de cierre.",
+    "Issue #225 label actualizada a su estado final (needs-review)."
+  ],
+  "issue": {
+    "number": 225,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/225",
+    "title": "Mejoras en lista de la compra"
+  },
+  "pr": {
+    "number": 228,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/228",
+    "base": "content/issue-64-seccion-recetas"
+  }
+}
