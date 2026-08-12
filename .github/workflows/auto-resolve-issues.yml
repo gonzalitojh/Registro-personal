@@ -99,6 +99,10 @@ jobs:
       # Opcional: solo si el usuario configura el secret; el modelo free de
       # OpenCode Zen funciona sin API key.
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      # Input interno vía variable de entorno (issue #226): evita interpolar
+      # ${{ inputs.retry }} directamente en los scripts (los scripts solo ven
+      # dígitos tras la sanitización; hallazgo LOW del security-champion).
+      RETRY_INPUT: ${{ inputs.retry }}
     steps:
       - name: Checkout (fetch-depth 0 para ramas desde origin/dev)
         uses: actions/checkout@v4
@@ -157,7 +161,7 @@ jobs:
               ST="$(echo "$LABELS" | grep '^status: ' | sed 's/^status: //' | head -1)"
             fi
             echo "Reanudación manual de la issue #$N (workflow_dispatch, status: ${ST:-ninguno})"
-            RETRY="${{ inputs.retry }}"
+            RETRY="${RETRY_INPUT:-}"   # vía env del job (issue #226); nunca interpolar inputs.retry
             RETRY="${RETRY//[^0-9]/}"   # sanitizar
             [[ -n "$RETRY" ]] || RETRY=0
             if [[ "$RETRY" -gt 0 ]]; then
@@ -407,7 +411,7 @@ jobs:
             exit 0
           fi
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
-          RETRY="${{ inputs.retry }}"
+          RETRY="${RETRY_INPUT:-}"   # vía env del job (issue #226); nunca interpolar inputs.retry
           RETRY="${RETRY//[^0-9]/}"   # sanitizar
           [[ -n "$RETRY" ]] || RETRY=0
           MAX_RELAUNCHES=2            # reintentos automáticos (3 intentos en total)
