@@ -672,14 +672,14 @@ una receta para abrirla en modo lectura) y tiene un botón
   unidad se elige en un desplegable con **g, Kg, mL, L y Unidades**),
   y el ingrediente se apunta en la lista de la compra de las semanas
   seleccionadas (igual que un ítem extra). También tiene un botón
-**«Eliminar»** para quitarlo del catálogo (no afecta a las recetas que
-lo usan) y un botón **✏️ Editar** para modificarlo: con el lápiz se
-abre la misma ventana en modo edición, donde puedes cambiar el
-**nombre**, la **foto** (pegando una URL de imagen), la **categoría**,
-los **supermercados** y la **cantidad del paquete**; los cambios se
-guardan todos juntos con el botón **«Guardar»** (o se descartan con
-«Cancelar»). La ventana no tiene botón «Cerrar» abajo: se cierra con la
-✕ de arriba.
+  **«Eliminar»** para quitarlo del catálogo (no afecta a las recetas
+  que lo usan) y un botón **✏️ Editar** para modificarlo: con el lápiz
+  se abre la misma ventana en modo edición, donde puedes cambiar el
+  **nombre**, la **foto** (pegando una URL de imagen), la **categoría**,
+  los **supermercados** y la **cantidad del paquete**; los cambios se
+  guardan todos juntos con el botón **«Guardar»** (o se descartan con
+  «Cancelar»). La ventana no tiene botón «Cerrar» abajo: se cierra con
+  la ✕ de arriba.
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
 pestañas](#16-ajustes) igual que el resto.
