@@ -173,6 +173,54 @@ esos temas el papel translúcido de la base es blanco y quedaría
 invisible sobre el chip claro. Sin cambios de comportamiento, HTML ni
 JS: solo CSS de tema.
 
+## Iteración 3 (2026-08-13): buscador en la familia clara dentro del modal papel y overrides de Negro puro completos
+
+Hallazgo del usuario tras la iteración 1: en el tema **Oscuro** la
+ventana del buscador (modal papel `--paper`) mostraba **tarjetas,
+campo de búsqueda y píldoras de filtro en chips oscuros**
+(`--ink-raised` con texto papel), un contraste interno que el usuario
+describía como feo, con el **nombre de la receta ilegible** (heredaba
+la tinta del modal, casi negra, sobre el chip oscuro). Pidió invertir
+los colores para adecuar la ventana al resto de la web.
+
+Decisión: dentro del modal papel del tema Oscuro, los controles del
+buscador pasan a la **familia clara** (misma fuente de verdad que
+`.ingredient-modal__field input` y `.recipe-form__field input`, y que
+la tarjeta `.recipe-card` de la pestaña Recetas — superficies claras
+sobre el papel, que es el lenguaje visual del resto de la app):
+
+- `.recipe-pick__card` → `--paper-dim`/`--ink` con borde
+  `--paper-line`; el nombre queda en tinta oscura legible (13.1:1).
+- `.recipe-pick__search` → `--paper-dim`/`--ink` (placeholder a la
+  tinta del contenido: `--ink-soft` daba ≈ 2.3:1, no AA).
+- `.recipe-pick .recipes-filter__btn` → píldora clara
+  (`--paper-dim`/`--ink`/`--paper-line`).
+- `.recipe-pick__comensales` → `--ink` (la tinta suave daba ≈ 2.3:1).
+- Tinte del placeholder de foto `--ink-alpha-08`.
+
+Y en **Negro puro** (donde el modal es superficie oscura
+`--ink-raised`), los overrides agrupados que la base clara exige —
+la base `--paper-dim`/`--ink` es casi negra en ese tema (texto #000
+sobre #111, invisible ≈ 1.07:1):
+
+- `.recipe-pick__card` → chip oscuro `--ink-raised`/`--paper` (16.5:1)
+  con hover/foco en la variante clara del teal (`--teal-reel-dark`
+  #4f9c8e, 6.11:1).
+- `.recipe-pick .recipes-filter__btn` → mismo chip oscuro (16.5:1).
+- `.recipe-pick__comensales` → `--ink-soft` (5.8:1, AA).
+- `.recipe-pick__search::placeholder` → `--ink-soft` (6.16:1, AA;
+  sin override quedaría #000 sobre el campo #000).
+- El campo y el input de comensales conservan los overrides de
+  iteraciones anteriores (`--ink`/`--paper`); las píldoras de
+  etiquetas usan los modificadores `--alergeno/--tipo` ya agrupados
+  (teal/ocre claros con texto tinta, 6.5:1 y 8.2:1).
+
+Contrastes resultantes (texto AA/AAA en los cuatro temas): tarjeta
+13.1:1 (Oscuro) / 16.5:1 (Negro puro) / 12.9:1 (Claro) / 21:1 (Blanco
+puro); nombre de receta siempre legible; placeholder 6.16:1 (Negro
+puro). Sin cambios de comportamiento, HTML ni JS: solo CSS de tema,
+por lo que el manual de usuario no requiere actualización.
+
 ## Consecuencias
 
 - **Positivas**: añadir recetas a una comida deja de ser un
