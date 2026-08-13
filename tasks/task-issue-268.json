@@ -1,7 +1,7 @@
 {
   "title": "Salir del perfil",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-62-seccion-gimnasio`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nCuando se accede a cualquiera de las pestañas del perfil, al dar al botón de atrás, se debe volver a la página en la que se estaba previamente. En ocio y recetas si está bien, pero si accedo desde el gimnasio vuelve a ocio.",
-  "status": "documented",
+  "status": "review",
   "acceptance_criteria": [
     "Al entrar en cualquiera de las pestañas del perfil (incluida la de gimnasio) desde una página previa, el botón de atrás del navegador (o el mecanismo de navegación equivalente de la app) vuelve a la página en la que se estaba previamente.",
     "Desde gimnasio, el botón atrás NO vuelve a ocio: vuelve a la página previa real (ej. inicio, o la página desde la que se accedió).",
@@ -49,5 +49,14 @@
     "qa": "PASS — 30/30 checks E2E en navegador real: gimnasio/entrenos, gimnasio/ejercicios, regresiones ocio y recetas, pestaña oculta, deep-link, back del navegador, sin scroll horizontal.",
     "security": "PASS — 0 HIGH, 1 MEDIUM preexistente informativo (claves Firebase públicas en js/config.js, no tocadas por la rama), 0 LOW."
   },
-  "adr": "docs/adr-097-salir-perfil-gimnasio.md (Related issue: #268)"
+  "adr": "docs/adr-097-salir-perfil-gimnasio.md (Related issue: #268)",
+  "pr": {
+    "number": 272,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/272",
+    "title": "fix(profile): la flecha de volver del perfil regresa a Gimnasio (#268)",
+    "branch": "fix/issue-268-salir-perfil",
+    "base": "feat/issue-62-seccion-gimnasio",
+    "commit": "3d842a8",
+    "closes": "#268"
+  }
 }
