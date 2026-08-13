@@ -553,7 +553,10 @@ function renderWorkoutEditorHtml() {
       ${hint}
       ${exercisesHtml}
       ${emptyCatalogHint}
-      <button type="button" class="btn btn--small" data-gym-add-exercise>+ Añadir ejercicio</button>
+      <div class="gym-block-button-row">
+        <button type="button" class="btn btn--small" data-gym-add-exercise>+ Añadir ejercicio</button>
+        <button type="button" class="btn btn--small" data-gym-new-exercise>Nuevo ejercicio</button>
+      </div>
     </div>
     <div class="gym-modal__actions">
       <button type="button" class="btn btn--small" data-gym-wk-cancel>Cancelar</button>
@@ -706,6 +709,12 @@ function bindWorkoutEditorHandlers(content) {
     renderWorkoutEditor();
     const block = document.querySelector(".gym-exercise-block:last-of-type");
     block?.querySelector("[data-gym-ex-select]")?.focus();
+  });
+
+  // Nuevo ejercicio (#265): abre el mismo modal de alta que la pestaña
+  // Ejercicios sin cerrar el del entreno (patrón de open-catalog).
+  content.querySelector("[data-gym-new-exercise]")?.addEventListener("click", () => {
+    openExerciseModal();
   });
 
   // Atajo al catálogo (hint cuando el catálogo está vacío y el

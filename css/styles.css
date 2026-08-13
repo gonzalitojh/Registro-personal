@@ -4962,6 +4962,18 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--ink-soft);
 }
 
+/* Fila de botones del constructor (añadir ejercicio / nuevo ejercicio
+   y añadir serie / duplicar serie): en línea, con salto en pantallas
+   estrechas. Sin overrides de tema: reutiliza .btn y
+   .gym-add-series-btn (ya cubiertos en las cuatro familias). */
+.gym-block-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .gym-remove-btn {
   background: none;
   border: none;
