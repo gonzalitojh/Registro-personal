@@ -38,6 +38,30 @@ responsividad 360/768/1280 px y cuatro modos de tema según las reglas
 tarea (regla 3 de AGENTS.md, §9.1). Este ADR documenta la decisión a
 posteriori, como los recientes (ADR-093, ADR-094, ADR-095, ADR-096).
 
+### Iteración (comentario de 2026-08-13)
+
+La issue recibió un comentario de seguimiento con dos peticiones
+nuevas, incorporadas en la misma PR:
+
+1. **Etiquetas en los recuadros de peso y repeticiones**: la tabla de
+   series del constructor de entreno añade una **cabecera de
+   columnas** (`.gym-series-row--head`, con «Peso (kg/lbs)» y
+   «Repeticiones») usando la misma rejilla que las filas, para que
+   quede claro qué recuadro es cada uno. La etiqueta de peso refleja
+   la unidad activa. La cabecera se excluye de la lectura del
+   formulario con `:not(.gym-series-row--head)` (una primera versión
+   sin el `:not` rompía el sync de series: TypeError al leer `value`
+   de los spans; detectado en QA y corregido).
+2. **Desplegable kg/lbs en el modal de entreno**: el formulario de
+   creación/edición de entrenos incorpora un selector «Unidad de
+   peso» (`#gym-wk-unit`) **sincronizado bidireccionalmente** con el
+   global de la sección (`#gym-unit-select`): al cambiar cualquiera
+   de los dos se persiste con `setUnit` (whitelist kg/lbs) y se
+   re-renderiza todo lo que muestra pesos (`renderAllWithUnit`),
+   convirtiendo las series desde el borrador canónico en kg. Antes de
+   re-renderizar se sincroniza el borrador con lo tecleado, para no
+   perder valores a medio escribir.
+
 Related issue: #265 — https://github.com/gonzalitojh/Registro-personal/issues/265
 
 ## Decisión
@@ -169,7 +193,8 @@ ajustarlas. Reglas de la implementación:
   entreno si la entrada legacy aparecía antes en el array; impacto
   mínimo, corregido en la revisión).
 - **Manual de usuario actualizado** (§9.1): botones «Nuevo ejercicio»
-  y «Duplicar serie» y comportamiento del pre-relleno documentados
+  y «Duplicar serie», comportamiento del pre-relleno, etiquetas de
+  la tabla de series y selector de unidad del modal documentados
   (regla 3 de AGENTS.md).
 
 ### Negativas / Riesgos
@@ -185,15 +210,19 @@ ajustarlas. Reglas de la implementación:
   escritas, así que el riesgo de pérdida de datos es nulo.
 - **Ninguna otra conocida.** Validado: QA PASS (AC1–AC4 del task file,
   responsividad y cuatro modos de tema) y el código continúa el patrón
-  de validación y seguridad del resto de la sección (ADR-095).
+  de validación y seguridad del resto de la sección (ADR-095). La
+  iteración re-validó los criterios originales y los dos nuevos
+  (etiquetas y selector de unidad sincronizado) tras un fix de QA
+  (TypeError del sync por la cabecera, resuelto con `:not`), con
+  escaneo de seguridad sin hallazgos.
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/gym.js` | **Modificado**: botón «Nuevo ejercicio» (abre `openExerciseModal()` sin cerrar el modal de entreno), eliminación de «Otro…» (`__custom__`) con placeholder del nombre legacy, botón «Duplicar serie» (última serie, `showToast` si no hay), pre-relleno de series (`lastWorkoutSeriesForExercise()` / `maybePrefillSeriesFromLastWorkout()`) con match por `ejercicioId` y fallback por nombre |
-| `css/styles.css` | **Modificado**: `.gym-block-button-row` (fila de botones «añadir/nuevo» y «añadir/duplicar» con salto en pantallas estrechas; sin overrides de tema: reutiliza `.btn` y `.gym-add-series-btn`, ya cubiertos en las cuatro familias) |
-| `docs/manual-de-usuario.md` | **Modificado**: §9.1 — botones «Nuevo ejercicio» y «Duplicar serie» y pre-relleno de series de la última vez |
+| `js/gym.js` | **Modificado**: botón «Nuevo ejercicio» (abre `openExerciseModal()` sin cerrar el modal de entreno), eliminación de «Otro…» (`__custom__`) con placeholder del nombre legacy, botón «Duplicar serie» (última serie, `showToast` si no hay), pre-relleno de series (`lastWorkoutSeriesForExercise()` / `maybePrefillSeriesFromLastWorkout()`) con match por `ejercicioId` y fallback por nombre; **iteración**: cabecera de etiquetas Peso/Repeticiones (`.gym-series-row--head`) excluida del sync con `:not(...)`, selector `#gym-wk-unit` en el modal sincronizado con `#gym-unit-select` (sync previo del borrador para no perder lo tecleado) |
+| `css/styles.css` | **Modificado**: `.gym-block-button-row` (fila de botones «añadir/nuevo» y «añadir/duplicar» con salto en pantallas estrechas; sin overrides de tema: reutiliza `.btn` y `.gym-add-series-btn`, ya cubiertos en las cuatro familias); **iteración**: `.gym-series-row--head` (cabecera de etiquetas, misma rejilla que las filas, `var(--ink-soft)` cubierta en las cuatro familias) |
+| `docs/manual-de-usuario.md` | **Modificado**: §9.1 — botones «Nuevo ejercicio» y «Duplicar serie», pre-relleno de series de la última vez y etiquetas de la tabla de series; §9.3 — selector de unidad del modal sincronizado con el de la sección |
 | `docs/adr-097-ejercicios-entrenos.md` | **Nuevo**: este documento |
 
 Related issue: #265 — https://github.com/gonzalitojh/Registro-personal/issues/265
