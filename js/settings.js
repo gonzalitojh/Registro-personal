@@ -281,29 +281,31 @@ function buildSectionsHTML(settings) {
 
 // ---- Event Wiring ----
 
-// Botón "Sincronizar ahora": lanza syncNow (daily-check.js) con
-// cooldown de 30 minutos y feedback vía toast. Restaura el botón
-// en finally para que nunca quede bloqueado si algo falla.
+// Botón "Comprobar estrenos" (issue #200): la pasada mínima A5-a
+// ya no cura metadatos, solo revisa estrenos/episodios pendientes.
+// Lanza syncNow (daily-check.js) con cooldown de 30 minutos y
+// feedback vía toast. Restaura el botón en finally para que nunca
+// quede bloqueado si algo falla.
 function wireSyncButton(ctx) {
   const btn = document.getElementById("btn-sync-now");
   if (!btn) return;
   btn.addEventListener("click", async () => {
     btn.disabled = true;
     const originalText = btn.textContent;
-    btn.textContent = "Sincronizando…";
+    btn.textContent = "Comprobando…";
     try {
       const result = await syncNow(ctx);
       if (result.ok) {
-        ctx.showToast("Datos sincronizados con las APIs.");
+        ctx.showToast("Estrenos comprobados.");
       } else if (result.reason === "cooldown") {
-        ctx.showToast("Sincronización reciente, inténtalo en un rato.");
+        ctx.showToast("Comprobación reciente, inténtalo en un rato.");
       } else if (result.reason === "running") {
-        ctx.showToast("Ya hay una sincronización en curso.");
+        ctx.showToast("Ya hay una comprobación en curso.");
       } else {
-        ctx.showToast("No se pudo sincronizar: " + (result.message || "error desconocido."));
+        ctx.showToast("No se pudo comprobar: " + (result.message || "error desconocido."));
       }
     } catch (err) {
-      ctx.showToast("No se pudo sincronizar: " + (err.message || err));
+      ctx.showToast("No se pudo comprobar: " + (err.message || err));
     } finally {
       btn.disabled = false;
       btn.textContent = originalText;

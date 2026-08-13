@@ -57,6 +57,38 @@ export function isBookAlreadyAdded(item, idsSet, keysSet) {
   return keysSet.has(key);
 }
 
+// Almacenamiento mínimo (issue #200, estudio A2 secciones 8.1-8.2):
+// del snapshot ampliado de la API solo se persisten los campos que la
+// UI consume SIN red — tarjeta (coverUrl), avisos (releaseDate,
+// firstAirDate, nextEpisodeToAir, seasonAirDates) y rating comunitario
+// (la tarjeta lo pinta). El resto de la ficha (sinopsis, reparto,
+// tráiler, saga, plataformas...) se pide bajo demanda al abrir la
+// ficha; getMovieDetails/getTvExtraDetails guardan ese snapshot en su
+// caché de 24 h, así que una ficha recién añadida no repite llamada.
+export function minimalStoredFields(details, type) {
+  const keep = {};
+  if (type === "movie") {
+    if (details.releaseDate !== undefined) keep.releaseDate = details.releaseDate;
+    if (details.communityRating != null) keep.communityRating = details.communityRating;
+    if (details.coverUrl) keep.coverUrl = details.coverUrl;
+  } else if (type === "tv") {
+    if (details.firstAirDate !== undefined) keep.firstAirDate = details.firstAirDate;
+    if (details.tmdbStatus) keep.tmdbStatus = details.tmdbStatus;
+    if (details.nextEpisodeToAir) keep.nextEpisodeToAir = details.nextEpisodeToAir;
+    if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
+      keep.seasonAirDates = details.seasonAirDates;
+    }
+    if (details.communityRating != null) keep.communityRating = details.communityRating;
+    if (details.coverUrl) keep.coverUrl = details.coverUrl;
+  } else if (type === "game") {
+    if (details.year) keep.year = details.year;
+    if (details.releaseDate !== undefined) keep.releaseDate = details.releaseDate;
+    if (details.communityRating != null) keep.communityRating = details.communityRating;
+    if (details.coverUrl) keep.coverUrl = details.coverUrl;
+  }
+  return keep;
+}
+
 /* ---------- Alta desde resultados ---------- */
 
 async function doAddBook(item, btn, ctx, choices) {
@@ -160,7 +192,9 @@ export async function handleAdd(item, btn, ctx) {
       };
       try {
         const details = await getGameDetails(item.externalId);
-        Object.assign(draft, details);
+        // Almacenamiento mínimo: solo tarjeta + avisos + rating
+        // comunitario (la sinopsis, plataformas, etc. van bajo demanda).
+        Object.assign(draft, minimalStoredFields(details, "game"));
         if (!draft.coverUrl) draft.coverUrl = item.coverUrl || null;
         // Guarda obligatoria de releaseDate truthy: isUnreleasedDate(null)
         // devuelve true y un juego sin fecha quedaría awaitingRelease para
@@ -201,7 +235,9 @@ export async function handleAdd(item, btn, ctx) {
       draft.watchLog = [];
       try {
         const details = await getMovieDetails(item.externalId);
-        Object.assign(draft, details);
+        // Almacenamiento mínimo: solo tarjeta + avisos + rating
+        // comunitario (sinopsis, reparto, tráiler, saga... bajo demanda).
+        Object.assign(draft, minimalStoredFields(details, "movie"));
         if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) draft.awaitingRelease = true;
       } catch (err) {
         // no bloqueamos el alta si este paso extra falla
@@ -215,10 +251,9 @@ export async function handleAdd(item, btn, ctx) {
       draft.history = [];
       try {
         const details = await getTvExtraDetails(item.externalId);
-        Object.assign(draft, details);
-        if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
-          draft.seasonAirDates = details.seasonAirDates;
-        }
+        // Almacenamiento mínimo: los campos de avisos (fechas y próximo
+        // episodio) sí se persisten; el resto de la ficha, bajo demanda.
+        Object.assign(draft, minimalStoredFields(details, "tv"));
         if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) draft.awaitingRelease = true;
       } catch (err) {
         // ídem
@@ -410,7 +445,9 @@ export async function handleAddSeen(item, btn, ctx) {
       let details = {};
       try {
         details = await getGameDetails(item.externalId);
-        Object.assign(draft, details);
+        // Almacenamiento mínimo: solo tarjeta + avisos + rating
+        // comunitario (la ficha se pide bajo demanda al abrirla).
+        Object.assign(draft, minimalStoredFields(details, "game"));
         // IGDB puede devolver cover null: no pisar la
         // portada del resultado de búsqueda (mismo patrón que TMDB).
         draft.coverUrl = draft.coverUrl || item.coverUrl;
@@ -473,7 +510,8 @@ export async function handleAddSeen(item, btn, ctx) {
         watchLog: [todayISO()],
         awaitingRelease: false,
       };
-      Object.assign(draft, details);
+      // Almacenamiento mínimo: solo tarjeta + avisos + rating comunitario.
+      Object.assign(draft, minimalStoredFields(details, "movie"));
 
       // TMDB puede devolver poster_path null: no pisar la portada del
       // resultado de búsqueda (patrón del review de QA, issue #115).
@@ -530,10 +568,8 @@ export async function handleAddSeen(item, btn, ctx) {
       rating: null,
       notes: "",
     };
-    Object.assign(draft, tvDetails);
-    if (tvDetails.seasonAirDates && Object.keys(tvDetails.seasonAirDates).length) {
-      draft.seasonAirDates = tvDetails.seasonAirDates;
-    }
+    // Almacenamiento mínimo: solo tarjeta + avisos + rating comunitario.
+    Object.assign(draft, minimalStoredFields(tvDetails, "tv"));
     // Todos los episodios de todas las temporadas, marcados hoy.
     const watched = markAllSeasonsWatched({}, seasonsMeta, todayISO());
     const progress = computeProgress(seasonsMeta, watched);

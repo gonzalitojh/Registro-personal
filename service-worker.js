@@ -18,7 +18,7 @@ const resolved = (p) => new URL(p, scopeURL).toString();
 
 const CACHE_STATIC = 'mi-registro-v4-static';
 const CACHE_DYNAMIC = 'mi-registro-v4-dynamic';
-const DYNAMIC_MAX_ENTRIES = 50;
+const DYNAMIC_MAX_ENTRIES = 100; // issue #200: la ficha bajo demanda cachea más imágenes (pósters/backdrops) en la caché dinámica
 
 // -------------------------------------------------------------
 // Recursos precargados durante el evento "install".
@@ -53,6 +53,8 @@ const STATIC_ASSETS = [
   './js/tv-progress.js',
   './js/watch-log.js',
   './js/daily-check.js',
+  './js/item-details.js',
+  './js/migration.js',
   './js/undo-delete.js',
   './js/api-books.js',
   './js/api-movies.js',

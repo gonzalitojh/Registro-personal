@@ -1,7 +1,8 @@
 # ADR-021: Sincronización de datos con TMDB/Open Library: refresco completo con política truthy-only (issue #23)
 
 ## Estado
-Aceptado
+Aceptado (parcialmente sustituido por ADR-093, issue #200: ver la
+sección «Actualización (issue #200)» al final del documento)
 
 ## Fecha
 Agosto 2026
@@ -109,5 +110,35 @@ Se eliminaron los filtros `needsCheck`/`needsBackfill` y el skip de libros que y
 | `js/config.js` | `APP_VERSION` → `'20260804'` |
 | `service-worker.js` | `STATIC_ASSETS` actualizados a `?v=20260804` para propagar el cambio (consistencia con ADR-019) |
 | `docs/adr-021-db-data-sync.md` | **Nuevo**: este documento |
+
+## Actualización (issue #200)
+
+El **refresco completo diario de metadatos** descrito en este ADR queda
+**parcialmente sustituido** por el **almacenamiento mínimo A2 + pasada
+mínima A5-a** de la issue #200 (estudio de la issue #183, ADR-073;
+implementación en **ADR-093**):
+
+- Las altas ya **no persisten** el snapshot de ficha (sinopsis, reparto,
+  géneros, tráiler, saga, plataformas...): los detalles se piden **bajo
+  demanda** al abrir el modal con caché de 24 h.
+- La pasada diaria **ya no consulta todos los ítems no manuales**: solo
+  los que pueden generar un aviso (películas con estreno pendiente,
+  series con premiere/episodio sin estrenar, libros /works/ sin sinopsis;
+  juegos sin red). Con ello desaparecen `buildMovieUpdates`,
+  `buildTvUpdates` y el refresco diario de `coverUrl`/`communityRating`/
+  `trailerUrl`/saga (la portada y el rating se revalidan al abrir la
+  ficha, stale-while-revalidate).
+- El botón **«Sincronizar ahora»** pasa a **«Comprobar estrenos»** con el
+  alcance reducido de la pasada mínima (mismo cooldown de 30 min).
+- Los documentos antiguos conservan los campos históricos hasta la poda
+  única por usuario (`js/migration.js`, marcador `profile.storageMigration`).
+
+En vigor de este ADR siguen: el guard diario (`lastReleaseCheckAt`), el
+flag anti-concurrencia `isRefreshing` (gestión centralizada en
+`checkForUpdates`, seteo síncrono contiguo), el pool de 4 peticiones, el
+aborto por fallos encadenados y el cooldown de 30 min sin quemado si la
+pasada aborta. La política truthy-only permanece en los fragmentos de la
+pasada mínima que aún escriben (`releaseDate`, campos de emisión de
+series, sinopsis de libros).
 
 Related issue: #23 — https://github.com/gonzalitojh/Registro-personal/issues/23
