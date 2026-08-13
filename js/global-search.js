@@ -85,6 +85,13 @@ const GROUPS = [
 
 let wrap, input, resultsEl, clearBtn;
 
+// Botón hamburguesa de la cabecera (issue #253): con la búsqueda
+// abierta se convierte en una ✕ (clase is-search-open) que al pulsarla
+// cierra la búsqueda. Se resuelve en setup; el optional chaining cubre
+// el caso de que falte el elemento.
+let toggleBtn = null;
+const TOGGLE_ARIA_LABEL = "Abrir menú de navegación";
+
 // ---- Utilidades ----
 
 function escapeHtml(str) {
@@ -693,13 +700,20 @@ function openGlobalSearch() {
 
   isOpen = true;
 
+  // Issue #253: la hamburguesa ☰ de la cabecera se convierte en una ✕
+  // (con animación CSS) que cierra la búsqueda al pulsarla. La clase y
+  // el aria-label se aplican ANTES de cerrar la barra lateral: si el
+  // drawer está abierto, el toggle.click() de abajo lo cierra y el
+  // icono queda ya en modo ✕.
+  toggleBtn?.classList.add("is-search-open");
+  toggleBtn?.setAttribute("aria-label", "Cerrar búsqueda");
+
   // Si el drawer lateral está abierto, cerrarlo primero: su backdrop
   // (z-index 55) taparía el dropdown de resultados (z-index 40).
   // El click en el toggle dispara closeSidebar() de js/sidebar.js.
   const sidebar = document.getElementById("app-sidebar");
   if (sidebar && sidebar.classList.contains("is-open")) {
-    const toggle = document.getElementById("btn-sidebar-toggle");
-    if (toggle) toggle.click();
+    if (toggleBtn) toggleBtn.click();
   }
 
   resultsEl.classList.remove("hidden");
@@ -735,9 +749,21 @@ function openGlobalSearch() {
   }
 }
 
+// Consulta de estado para otros módulos (issue #253): sidebar.js la
+// usa para que el botón ☰/✕ cierre la búsqueda en vez de abrir la
+// barra lateral mientras el dropdown está abierto.
+export function isGlobalSearchOpen() {
+  return isOpen;
+}
+
 export function closeGlobalSearch() {
   if (!isOpen) return;
   isOpen = false;
+
+  // Issue #253: la hamburguesa ☰ de la cabecera deja de ser la ✕ que
+  // cierra la búsqueda y recupera su icono y su aria-label de menú.
+  toggleBtn?.classList.remove("is-search-open");
+  toggleBtn?.setAttribute("aria-label", TOGGLE_ARIA_LABEL);
 
   // Invalidar búsquedas externas en curso y limpiar su estado
   searchSeq++;
@@ -820,6 +846,7 @@ export function setupGlobalSearch(ctx) {
   input = document.getElementById("global-search-input");
   resultsEl = document.getElementById("global-search-results");
   clearBtn = document.getElementById("global-search-clear");
+  toggleBtn = document.getElementById("btn-sidebar-toggle");
 
   if (!wrap || !input || !resultsEl || !clearBtn) {
     console.warn("global-search: elementos DOM no encontrados");
