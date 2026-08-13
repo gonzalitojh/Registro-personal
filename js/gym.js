@@ -675,7 +675,7 @@ function syncWorkoutDraftFromDom() {
 function bindWorkoutEditorHandlers(content) {
   // Selección de ejercicio del catálogo: se sincroniza el borrador (el
   // nombre snapshot puede cambiar al pasar de un ejercicio a otro) y se
-  // pre-rellenan las series con las de la última vez (Fase 4).
+  // pre-rellenan las series con las de la última vez (#265).
   content.querySelectorAll("[data-gym-ex-select]").forEach((select) => {
     select.addEventListener("change", () => {
       syncWorkoutDraftFromDom();
