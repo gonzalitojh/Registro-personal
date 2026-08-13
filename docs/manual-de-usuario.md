@@ -854,8 +854,14 @@ verás:
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
-  un aviso y el botón **«Añadir resto de la saga»**. Pulsa el botón, marca
-  las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
+  el aviso **«Saga: ...»** con el botón **«Añadir resto de la saga»**. Pulsa
+  el botón, marca las películas que quieras en la lista y pulsa
+  **«Añadir seleccionadas»**. Justo debajo del aviso se muestran también
+  **«Otras películas de la saga»** como tarjetas deslizables (portada,
+  título y año), igual que las recomendaciones: cada película que aún no
+  tengas en tu registro tiene un botón **«Añadir»** para añadirla
+  directamente; las que ya están en tu registro aparecen como
+  **«Añadida»** (botón deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
   con títulos similares que puedes añadir directamente.
 - **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
