@@ -584,9 +584,13 @@ function renderRecipePickerList() {
   });
 
   if (!candidates.length) {
-    list.innerHTML = `<p class="recipe-pick__empty">${existing.size && !getRecipes().length
+    const all = getRecipes();
+    const msg = !all.length
       ? "Aún no hay recetas. Crea la primera en la pestaña Recetas."
-      : "Ninguna receta coincide con la búsqueda o los filtros."}</p>`;
+      : existing.size === all.length
+        ? "Ya están todas tus recetas en esta comida."
+        : "Ninguna receta coincide con la búsqueda o los filtros.";
+    list.innerHTML = `<p class="recipe-pick__empty">${msg}</p>`;
     return;
   }
 
