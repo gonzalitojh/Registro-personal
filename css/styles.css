@@ -4095,12 +4095,12 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* Etiquetas de alérgenos y de tipo de plato con colores propios para
-   que no se confundan (issue #236). Píldoras rellenas con los pares de
-   contraste ya documentados en la app: teal + texto blanco ≈ 6.8:1 y
-   ocre oscuro + texto blanco ≈ 6.2:1 (AA ≥ 4.5:1). El estilo translúcido
-   de .recipe-card__tag no vale aquí: el ocre sobre papel (≈ 4.32:1) no
-   alcanzaría el umbral de texto. En negro puro se usan las variantes
-   claras con texto tinta (bloque más abajo). */
+   que no se confundan (issue #236). Píldoras rellenas con pares de
+   contraste AA: teal + texto blanco ≈ 6.7:1 y ocre oscuro + texto
+   blanco ≈ 5.2:1 (≥ 4.5:1). El estilo translúcido de .recipe-card__tag
+   no vale aquí: el ocre sobre papel (≈ 4.32:1) no alcanzaría el umbral
+   de texto. En negro puro se usan las variantes claras con texto tinta
+   (bloque más abajo). */
 .recipe-view__tag {
   font-size: 0.78rem;
   border-radius: 999px;
@@ -4123,10 +4123,13 @@ body.is-back-to-top-visible .back-to-top {
   overflow-wrap: break-word;
 }
 
+/* Porciones en tinta plena: --ink-soft (#948a76) sobre papel en el
+   tema Oscuro solo da ≈ 2.6:1 (no alcanza AA), así que el texto
+   secundario de la vista de lectura usa la tinta del contenido. */
 .recipe-view__meta {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 .recipe-view__section {
@@ -4145,6 +4148,11 @@ body.is-back-to-top-visible .back-to-top {
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
+  /* Las <ul> de ingredientes y enlaces no llevan viñetas: quitar el
+     padding-inline-start por defecto (~40px) que dejaría un hueco
+     huérfano; la numeración la aporta solo el <ol> de instrucciones. */
+  list-style: none;
+  padding-left: 0;
 }
 
 .recipe-view__ingrediente {
@@ -4166,12 +4174,23 @@ body.is-back-to-top-visible .back-to-top {
   overflow-wrap: break-word;
 }
 
+/* Las instrucciones son un <ol> nativo: recuperar display block para
+   que los ::marker de numeración se rendericen (un contenedor flex
+   blockifica los <li> y los números desaparecen, verificado en QA).
+   Se restaura la viñeta decimal y el padding que el reset de
+   .recipe-view__list quitó, para que la numeración se vea. */
 .recipe-view__pasos {
+  display: block;
+  list-style: decimal;
   padding-left: 1.3rem;
 }
 
 .recipe-view__paso {
   overflow-wrap: break-word;
+}
+
+.recipe-view__paso + .recipe-view__paso {
+  margin-top: 0.3rem;
 }
 
 .recipe-view__links {
@@ -4444,6 +4463,12 @@ body.is-back-to-top-visible .back-to-top {
 
 [data-theme="black"] .recipe-view__link {
   color: var(--teal-reel-dark);
+}
+
+/* En negro puro la tinta es #000 sobre la superficie del modal
+   (--ink-raised): el texto secundario vuelve a papel como el resto. */
+[data-theme="black"] .recipe-view__meta {
+  color: var(--paper);
 }
 
 [data-theme="black"] .recipe-form__import-row input {

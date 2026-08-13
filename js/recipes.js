@@ -1309,7 +1309,7 @@ function recipeReadOnlyHtml(recipe) {
     ? `<section class="recipe-view__section">
         <h4 class="recipe-view__heading">Enlaces</h4>
         <ul class="recipe-view__list recipe-view__links">
-          ${enlaces.map((url) => `<li><a class="recipe-view__link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></li>`).join("")}
+          ${enlaces.map((url) => `<li>${enlaceRecetaHtml(url)}</li>`).join("")}
         </ul>
       </section>`
     : "";
@@ -1338,6 +1338,17 @@ function cantidadRecetaHtml(ing) {
   const partes = [cantidad !== "" && cantidad !== null ? formatCantidad(cantidad) : "", unidad].filter(Boolean);
   if (!partes.length) return "";
   return `<span class="recipe-view__ing-cantidad">${partes.map(escapeHtml).join(" ")}</span>`;
+}
+
+// Enlace de referencia en la vista de lectura. Higiene defensiva: solo
+// los esquemas http/https son clickeables (un `javascript:` pegado a
+// mano en el formulario no debe ejecutarse al pulsar); el resto se
+// muestra como texto plano.
+function enlaceRecetaHtml(url) {
+  const texto = escapeHtml(url);
+  return /^https?:\/\//i.test(url)
+    ? `<a class="recipe-view__link" href="${texto}" target="_blank" rel="noopener noreferrer">${texto}</a>`
+    : texto;
 }
 
 function chipHtml(tag, checked) {
