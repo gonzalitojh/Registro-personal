@@ -625,16 +625,21 @@ Sobre la lista tienes un control:
   ingredientes **sin categoría** se muestran siempre.
 
 Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
-una ventana con la información ampliada: la **categoría** (puedes
-cambiarla ahí mismo; la lista de la compra se agrupa por ella), los
-**supermercados** donde se puede comprar (las etiquetas de color de
-Lidl, Aldi, Mercadona, Día, Carrefour y El Corte Inglés) y la
-**cantidad del paquete** (número y unidad). Las tres se cambian en la
-misma ventana, igual que la categoría: el cambio se guarda en el
-momento. La ventana también indica **en qué recetas se usa** (pulsa el
-nombre de una receta para abrirla en modo lectura) y tiene un botón
-**«Eliminar»** para quitarlo del catálogo (no afecta a las recetas que
-lo usan).
+una ventana **en modo lectura** con la información ampliada: la
+**categoría**, los **supermercados** donde se puede comprar (las
+etiquetas de color de Lidl, Aldi, Mercadona, Día, Carrefour y El Corte
+Inglés), la **cantidad del paquete** (número y unidad) y, si tiene, una
+**foto**. Si el ingrediente no tiene foto no se muestra nada de imagen.
+La ventana también indica **en qué recetas se usa** (pulsa el nombre de
+una receta para abrirla en modo lectura) y tiene un botón **«Eliminar»**
+para quitarlo del catálogo (no afecta a las recetas que lo usan) y un
+botón **✏️ Editar** para modificarlo: con el lápiz se abre la misma
+ventana en modo edición, donde puedes cambiar el **nombre**, la
+**foto** (pegando una URL de imagen), la **categoría**, los
+**supermercados** y la **cantidad del paquete**; los cambios se guardan
+todos juntos con el botón **«Guardar»** (o se descartan con
+«Cancelar»). La ventana no tiene botón «Cerrar» abajo: se cierra con la
+✕ de arriba.
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
 pestañas](#16-ajustes) igual que el resto.
