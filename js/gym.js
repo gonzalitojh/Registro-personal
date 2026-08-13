@@ -78,6 +78,17 @@ let workoutDraft = null;
 // al pulsar Guardar (sin borrador: no hay constructor).
 let editingExerciseId = null;
 
+// Rango libre del resumen (issue #269, iteración 3): fechas YYYY-MM-DD
+// elegidas en el calendario del recuadro único; null = límite abierto.
+// Ya no hay dos inputs de fecha independientes: el primer click en el
+// calendario fija «desde» y el segundo «hasta» (intercambiando si el
+// segundo es anterior al primero).
+let summaryRange = { from: null, to: null };
+// Mes visible en el calendario del rango ({year, month 0-11}).
+let summaryRangeMonth = null;
+// El calendario está abierto (aria-expanded del trigger).
+let summaryRangePopoverOpen = false;
+
 // Wiring de los listeners del DOM (idempotente): setupGym corre tras
 // cada login y los addEventListener no deben acumularse.
 let gymWired = false;
@@ -145,9 +156,8 @@ export function setupGym(opts) {
   // sincroniza la UI (is-active/aria-pressed) y la visibilidad del
   // recuadro del rango libre (solo con la opción «Rango», iteración
   // del comentario de la issue), y si el periodo cambió se
-  // re-renderiza el resumen (lee el periodo nuevo del DOM). Los
-  // inputs de fecha solo re-renderizan cuando el chip activo es
-  // «Rango» (en semana/mes en curso no aplican).
+  // re-renderiza el resumen (lee el periodo nuevo del DOM). Los chips
+  // de semana/mes en curso no aplican al rango libre.
   document.querySelectorAll("[data-summary-period]").forEach((chip) => {
     chip.addEventListener("click", () => {
       const previous = document.querySelector(".gym-summary-chip.is-active")?.dataset.summaryPeriod || null;
@@ -155,13 +165,46 @@ export function setupGym(opts) {
       if (previous !== chip.dataset.summaryPeriod) renderSummary();
     });
   });
-  const fromInput = document.getElementById("gym-summary-from");
-  const toInput = document.getElementById("gym-summary-to");
-  [fromInput, toInput].forEach((input) => {
-    input?.addEventListener("change", () => {
-      updateSummaryRangeSummary();
-      if (summaryPeriodRange().custom) renderSummary();
-    });
+
+  // Recuadro único del rango (iteración 3): el trigger abre/cierra el
+  // calendario; dentro se eligen «desde» (primer click) y «hasta»
+  // (segundo click) en el mismo control. Cierra con «Listo», con
+  // Escape o al hacer click fuera del recuadro.
+  const rangeTrigger = document.getElementById("gym-summary-range-trigger");
+  rangeTrigger?.addEventListener("click", () => {
+    if (summaryRangePopoverOpen) {
+      closeSummaryRangePopover();
+    } else {
+      openSummaryRangePopover();
+    }
+  });
+  document.getElementById("gym-summary-range-prev")?.addEventListener("click", () => {
+    shiftSummaryRangeMonth(-1);
+  });
+  document.getElementById("gym-summary-range-next")?.addEventListener("click", () => {
+    shiftSummaryRangeMonth(1);
+  });
+  document.getElementById("gym-summary-range-days")?.addEventListener("click", (e) => {
+    const day = e.target.closest("[data-summary-range-day]");
+    if (!day) return;
+    onSummaryRangeDayClick(day.dataset.summaryRangeDay);
+  });
+  document.getElementById("gym-summary-range-clear")?.addEventListener("click", () => {
+    // Borrar el rango deja ambos extremos sin límite y el calendario
+    // abierto para volver a elegir.
+    summaryRange = { from: null, to: null };
+    renderSummaryRangeCalendar();
+    updateSummaryRangeSummary();
+    renderSummary();
+  });
+  document.getElementById("gym-summary-range-done")?.addEventListener("click", closeSummaryRangePopover);
+  document.addEventListener("click", (e) => {
+    if (summaryRangePopoverOpen && !e.target.closest("#gym-summary-range, .gym-summary-chip")) {
+      closeSummaryRangePopover();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && summaryRangePopoverOpen) closeSummaryRangePopover();
   });
 
   // Selector de unidad de peso (issue #62): se persiste con setUnit
@@ -407,13 +450,14 @@ function exerciseCardHtml(ex) {
 // ---------- Pestaña Resumen (issue #269) ----------
 
 // Rango de fechas (fechaISO YYYY-MM-DD) del periodo activo, leído
-// del DOM (chip .gym-summary-chip.is-active e inputs del rango libre)
-// con el patrón UTC de ctx.todayISO():
+// del DOM (chip .gym-summary-chip.is-active) y del estado del rango
+// libre elegido en el calendario del recuadro único (#269), con el
+// patrón UTC de ctx.todayISO():
 //   - week: lunes de la semana en curso → hoy.
 //   - month: primer día del mes en curso → hoy.
-//   - custom: fechas de #gym-summary-from/#gym-summary-to, inclusivo.
-//     Un input vacío es un límite abierto (null); si from > to se
-//     intercambian.
+//   - custom: summaryRange.from/summaryRange.to, inclusivo.
+//     Un extremo vacío es un límite abierto (null); si from > to se
+//     intercambian (el calendario ya lo evita al elegir, defensivo).
 function summaryPeriodRange() {
   const today = ctx.todayISO();
   const active = document.querySelector(".gym-summary-chip.is-active")?.dataset.summaryPeriod || "week";
@@ -421,8 +465,7 @@ function summaryPeriodRange() {
     return { period: "month", custom: false, from: today.slice(0, 8) + "01", to: today };
   }
   if (active === "custom") {
-    let from = document.getElementById("gym-summary-from")?.value || null;
-    let to = document.getElementById("gym-summary-to")?.value || null;
+    let { from, to } = summaryRange;
     if (from && to && from > to) [from, to] = [to, from];
     return { period: "custom", custom: true, from, to };
   }
@@ -461,16 +504,21 @@ function summaryGroupFor(e) {
 // comparación lexicográfica; from/to null = límite abierto) en:
 //   - totals { entrenos, ejercicios } del periodo (nº de entrenos y
 //     nº de ejercicios distintos).
-//   - perExercise: Map clave → { nombre, grupoMuscular, veces } con
-//     veces = nº de entrenos distintos en que aparece.
+//   - perExercise: Map clave → { nombre, grupoMuscular, veces,
+//     pesoMin, pesoMax } con veces = nº de entrenos distintos en que
+//     aparece y el peso menor/mayor registrado en el periodo (kg
+//     canónicos; las series sin peso —null o ≤ 0— no entran en los
+//     extremos).
 //   - perGroup: Map grupo → { label, ejercicios, entrenos } con el nº
 //     de ejercicios distintos y de entrenos de cada grupo muscular.
-// Iteración del comentario del usuario en la issue: los sumatorios de
-// series, repeticiones y volumen se eliminan — el resumen se centra
-// en lo que pide: nº de entrenos, ejercicios totales y el desglose
-// por grupos musculares. Una entrada sin id ni nombre no agrupa ni
-// cuenta (no hay ejercicio al que atribuirla); sin grupo muscular
-// solo cuenta en los totales, no en el desglose por grupos.
+// Iteraciones de los comentarios del usuario en la issue: los
+// sumatorios de series, repeticiones y volumen se eliminan — el
+// resumen se centra en lo que pide: nº de entrenos, ejercicios
+// totales, desglose por grupos musculares y, desde la iteración 3, el
+// aumento de peso por ejercicio (mínimo y máximo del periodo). Una
+// entrada sin id ni nombre no agrupa ni cuenta (no hay ejercicio al
+// que atribuirla); sin grupo muscular solo cuenta en los totales, no
+// en el desglose por grupos.
 function summarizeWorkouts(workoutsList, from, to) {
   const totals = { entrenos: 0, ejercicios: 0 };
   const perExercise = new Map();
@@ -493,11 +541,22 @@ function summarizeWorkouts(workoutsList, from, to) {
           nombre: catalogEx?.nombre || e.nombre || "",
           grupoMuscular: summaryGroupFor(e),
           veces: 0,
+          pesoMin: null,
+          pesoMax: null,
         };
         perExercise.set(key, agg);
       }
       if (!seenWorkouts.has(key)) seenWorkouts.set(key, new Set());
       seenWorkouts.get(key).add(w.id);
+      // Extremos de peso del periodo (kg canónicos): una serie sin
+      // peso registrado (null o ≤ 0, p. ej. peso corporal) no puede
+      // ser ni el mínimo ni el máximo.
+      for (const s of e.series || []) {
+        const kg = s?.pesoKg;
+        if (kg == null || kg <= 0) continue;
+        if (agg.pesoMin == null || kg < agg.pesoMin) agg.pesoMin = kg;
+        if (agg.pesoMax == null || kg > agg.pesoMax) agg.pesoMax = kg;
+      }
       const group = agg.grupoMuscular;
       if (!group) continue;
       let gagg = perGroup.get(group);
@@ -584,16 +643,30 @@ function renderSummary() {
         </div>`
     : "";
 
+  // Iteración 3: cada ejercicio muestra además el aumento de peso del
+  // periodo — el menor y el mayor registrado (y su diferencia) en la
+  // unidad de presentación activa; «—» si no hay ninguna serie con
+  // peso en el periodo (todo sin peso registrado).
+  const fmtPeso = (kg) => (kg == null ? "—" : escapeHtml(String(kgToDisplay(kg))));
+  const unitHeader = escapeHtml(unitLabel());
   const rows = [...perExercise.values()]
     .sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, "es"))
-    .map((agg) => `
+    .map((agg) => {
+      // El aumento se calcula en kg (canónicos) y se convierte una
+      // sola vez al pintar, como el mínimo y el máximo.
+      const aumentoKg = agg.pesoMin != null && agg.pesoMax != null ? agg.pesoMax - agg.pesoMin : null;
+      return `
       <tr>
         <td class="gym-summary-table__name">
           ${escapeHtml(agg.nombre)}
           ${agg.grupoMuscular ? `<span class="gym-muscle-chip">${escapeHtml(groupLabel(agg.grupoMuscular))}</span>` : ""}
         </td>
         <td>${agg.veces}</td>
-      </tr>`)
+        <td>${fmtPeso(agg.pesoMin)}</td>
+        <td>${fmtPeso(agg.pesoMax)}</td>
+        <td>${aumentoKg == null ? "—" : fmtPeso(aumentoKg)}</td>
+      </tr>`;
+    })
     .join("");
 
   const table = rows.length
@@ -604,6 +677,9 @@ function renderSummary() {
               <tr>
                 <th>Ejercicio</th>
                 <th>Veces</th>
+                <th>Peso mín (${unitHeader})</th>
+                <th>Peso máx (${unitHeader})</th>
+                <th>Aumento (${unitHeader})</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -622,7 +698,8 @@ function renderSummary() {
 // solo en el chip del periodo indicado (los otros quedan inactivos) y
 // el recuadro del rango libre visible únicamente con la opción
 // «Rango» (iteración del comentario de la issue). Al activar «Rango»
-// el recuadro nace abierto y con el rango ya elegido en su resumen.
+// el calendario nace abierto y con el rango ya elegido resumido en el
+// trigger; al salir a semana/mes el calendario se cierra.
 function syncSummaryPeriodUI(period) {
   document.querySelectorAll("[data-summary-period]").forEach((chip) => {
     const isActive = chip.dataset.summaryPeriod === period;
@@ -631,25 +708,175 @@ function syncSummaryPeriodUI(period) {
   });
   const rangeBox = document.getElementById("gym-summary-range");
   if (rangeBox) {
+    if (period !== "custom") closeSummaryRangePopover();
     rangeBox.hidden = period !== "custom";
-    if (period === "custom") {
-      rangeBox.open = true;
-      updateSummaryRangeSummary();
-    }
+    if (period === "custom") openSummaryRangePopover();
   }
 }
 
-// Texto del recuadro del rango libre (#gym-summary-range-summary):
-// las fechas «desde – hasta» ya elegidas (o «sin límite» si un
-// extremo está vacío), en el mismo formato que la cabecera del
-// periodo pintado.
+// Texto del trigger del recuadro del rango libre
+// (#gym-summary-range-summary): las fechas «desde – hasta» ya
+// elegidas en el calendario (o «sin límite» si un extremo está
+// vacío), en el mismo formato que la cabecera del periodo pintado.
 function updateSummaryRangeSummary() {
   const summaryEl = document.getElementById("gym-summary-range-summary");
   if (!summaryEl) return;
-  const from = document.getElementById("gym-summary-from")?.value || null;
-  const to = document.getElementById("gym-summary-to")?.value || null;
+  const { from, to } = summaryRange;
   const fmtDate = (iso) => (iso ? ctx.formatDateEs(iso) : "sin límite");
   summaryEl.textContent = `${fmtDate(from)} – ${fmtDate(to)}`;
+}
+
+// ---------- Calendario del rango libre (issue #269, iteración 3) ----------
+
+// Mes inicial del calendario: el del extremo «desde» (o «hasta» si
+// solo se eligió ese) si hay rango; si no, el mes en curso.
+function summaryRangeCalMonth() {
+  const anchor = summaryRange.from || summaryRange.to;
+  if (anchor) {
+    const [y, m] = anchor.split("-").map(Number);
+    return { year: y, month: m - 1 };
+  }
+  const [y, m] = ctx.todayISO().split("-").map(Number);
+  return { year: y, month: m - 1 };
+}
+
+// Cabeceras de la semana (lunes primero) en el idioma de la
+// interfaz (es-ES): "L M X J V S D". Se calculan una vez y se
+// recuerdan (fallback explícito si el entorno no las produce).
+let summaryWeekdayLabels = null;
+function summaryWeekdayLabelsFn() {
+  if (summaryWeekdayLabels) return summaryWeekdayLabels;
+  const fallback = ["L", "M", "X", "J", "V", "S", "D"];
+  summaryWeekdayLabels = Array.from({ length: 7 }, (_, i) => {
+    // 2024-01-01 fue lunes: los 7 primeros días de enero de 2024
+    // cubren la semana completa en orden.
+    const label = new Date(Date.UTC(2024, 0, 1 + i)).toLocaleDateString("es-ES", {
+      weekday: "narrow",
+      timeZone: "UTC",
+    });
+    return label || fallback[i];
+  });
+  return summaryWeekdayLabels;
+}
+
+// Título del mes del calendario ("Agosto de 2026", es-ES).
+function summaryRangeMonthLabel(year, month) {
+  const label = new Date(Date.UTC(year, month, 1)).toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : `${year}`;
+}
+
+// Grid del mes en curso: 42 celdas (6 filas × 7 columnas, lunes
+// primero). Las celdas fuera del mes son null (vacías) para que la
+// rejilla no salte de altura al navegar entre meses.
+function summaryRangeDayGrid(year, month) {
+  const firstWeekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  const offset = (firstWeekday + 6) % 7; // lunes primero (domingo = 0 → 6)
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells = [];
+  for (let i = 0; i < offset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  }
+  while (cells.length < 42) cells.push(null);
+  return cells;
+}
+
+// Primer click (sin rango o con rango completo): empieza un rango
+// nuevo en ese día. Segundo click (con «desde» elegido y «hasta»
+// vacío): cierra el rango, intercambiando los extremos si el click
+// es anterior al «desde»; al completarse el calendario se cierra.
+function onSummaryRangeDayClick(iso) {
+  if (!summaryRange.from || (summaryRange.from && summaryRange.to)) {
+    summaryRange = { from: iso, to: null };
+  } else {
+    let { from, to } = summaryRange;
+    if (iso < from) {
+      to = from;
+      from = iso;
+    } else {
+      to = iso;
+    }
+    summaryRange = { from, to };
+  }
+  const completed = summaryRange.from && summaryRange.to;
+  renderSummaryRangeCalendar();
+  updateSummaryRangeSummary();
+  renderSummary();
+  if (completed) closeSummaryRangePopover();
+}
+
+// Pinta el mes visible en el calendario del recuadro: cabecera con el
+// mes y la navegación, fila de días de la semana y rejilla de días
+// con los estados (hoy, extremos del rango, días intermedios).
+function renderSummaryRangeCalendar() {
+  const grid = document.getElementById("gym-summary-range-days");
+  if (!grid) return;
+  const monthEl = document.getElementById("gym-summary-range-month");
+  const weekdaysEl = document.getElementById("gym-summary-range-weekdays");
+  const cal = summaryRangeMonth;
+  if (monthEl) monthEl.textContent = summaryRangeMonthLabel(cal.year, cal.month);
+  if (weekdaysEl) {
+    weekdaysEl.innerHTML = summaryWeekdayLabelsFn()
+      .map((l) => `<span class="gym-summary-range__cal-weekday">${l}</span>`)
+      .join("");
+  }
+  const today = ctx.todayISO();
+  const { from, to } = summaryRange;
+  grid.innerHTML = summaryRangeDayGrid(cal.year, cal.month).map((iso) => {
+    if (!iso) return `<span class="gym-summary-range__cal-blank" aria-hidden="true"></span>`;
+    const selected = iso === from || iso === to;
+    const inRange = !selected && from && to && iso > from && iso < to;
+    const classes = [
+      "gym-summary-range__day",
+      iso === today ? "gym-summary-range__day--today" : "",
+      selected ? "gym-summary-range__day--selected" : "",
+      inRange ? "gym-summary-range__day--in-range" : "",
+    ].filter(Boolean).join(" ");
+    return `<button type="button" class="${classes}" data-summary-range-day="${iso}"
+      aria-label="${escapeHtml(ctx.formatDateEs(iso))}" aria-pressed="${selected ? "true" : "false"}">${Number(iso.slice(8))}</button>`;
+  }).join("");
+}
+
+// Abre el calendario: recuerda el mes del rango elegido (o el mes en
+// curso), repinta y deja el foco en el extremo «desde» (o en hoy si
+// el rango está vacío) para poder navegar también con teclado.
+function openSummaryRangePopover() {
+  const popover = document.getElementById("gym-summary-range-popover");
+  const trigger = document.getElementById("gym-summary-range-trigger");
+  if (!popover || !trigger || !popover.hidden) return;
+  summaryRangeMonth = summaryRangeCalMonth();
+  renderSummaryRangeCalendar();
+  updateSummaryRangeSummary();
+  popover.hidden = false;
+  trigger.setAttribute("aria-expanded", "true");
+  summaryRangePopoverOpen = true;
+  const focusDay = summaryRange.from
+    ? document.querySelector(`[data-summary-range-day="${summaryRange.from}"]`)
+    : document.querySelector(".gym-summary-range__day--today");
+  (focusDay || trigger).focus({ preventScroll: false });
+}
+
+function closeSummaryRangePopover() {
+  const popover = document.getElementById("gym-summary-range-popover");
+  const trigger = document.getElementById("gym-summary-range-trigger");
+  if (!popover || popover.hidden) return;
+  popover.hidden = true;
+  trigger?.setAttribute("aria-expanded", "false");
+  summaryRangePopoverOpen = false;
+}
+
+// Navega el calendario un mes (delta ±1); el mes visible se
+// recomputa con aritmética modular sobre (year, month 0-11).
+function shiftSummaryRangeMonth(delta) {
+  const cal = summaryRangeMonth;
+  const m = cal.month + delta;
+  const year = cal.year + Math.floor(m / 12);
+  summaryRangeMonth = { year, month: ((m % 12) + 12) % 12 };
+  renderSummaryRangeCalendar();
 }
 
 // ---------- Modal de entreno ----------

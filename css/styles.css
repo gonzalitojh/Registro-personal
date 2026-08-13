@@ -4848,33 +4848,38 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--paper);
 }
 
-/* Recuadro del rango libre (iteración del comentario #269): un
-   único <details> que fusiona las dos fechas en una sola caja
-   (chips «desde»/«hasta» dentro), oculto salvo con la opción
-   «Rango» (controla el atributo hidden js/gym.js). Sin marcador
-   nativo del <details>; el summary muestra el rango ya elegido. */
+/* Recuadro del rango libre (issue #269): un ÚNICO control para
+   elegir desde/hasta (iteración 3 del comentario del usuario). El
+   trigger es el recuadro visible — etiqueta + rango ya elegido — y
+   al pulsarlo se abre el calendario donde el primer click fija
+   «desde» y el segundo «hasta»; oculto salvo con la opción «Rango»
+   (controla el atributo hidden js/gym.js). */
 .gym-summary-range {
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  background: var(--paper-dim);
-  color: var(--ink);
+  position: relative;
   min-width: 0;
-  font-size: 0.85rem;
-  font-family: var(--font-body);
 }
-.gym-summary-range summary {
+
+.gym-summary-range__trigger {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.4rem;
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
-  list-style: none;
   min-width: 0;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  color: var(--ink);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
 }
-.gym-summary-range summary::-webkit-details-marker {
-  display: none;
+.gym-summary-range__trigger[aria-expanded="true"] {
+  border-color: var(--ink-soft);
 }
+
 .gym-summary-range__label {
   font-weight: 600;
   white-space: nowrap;
@@ -4888,25 +4893,133 @@ body.is-back-to-top-visible .back-to-top {
   overflow-wrap: break-word;
   min-width: 0;
 }
-.gym-summary-range__fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  padding: 0 0.6rem 0.5rem;
-  min-width: 0;
-}
 
-/* Inputs de fecha del rango: fuente a 1rem (nunca px < 16, evita el
-   zoom de iOS) y flexibles para no desbordar. */
-.gym-summary-range__fields input[type="date"] {
-  min-width: 0;
-  font-size: 1rem;
-  background: var(--paper-dim);
+/* Calendario del rango (popover): una única caja donde elegir las
+   dos fechas (primer click desde, segundo hasta). Superficie papel
+   con sombra de tarjeta; se posiciona bajo el trigger y nunca más
+   ancho que la pantalla (en móvil pasa a flujo normal). */
+.gym-summary-range__popover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 30;
+  min-width: 300px;
+  max-width: calc(100vw - 1.5rem);
+  background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
-  padding: 0.3rem 0.5rem;
+  box-shadow: var(--shadow-card);
+  padding: 0.7rem;
+}
+
+.gym-summary-range__cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  min-width: 0;
+}
+.gym-summary-range__cal-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  min-width: 0;
+  text-align: center;
+}
+.gym-summary-range__cal-nav {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
   font-family: var(--font-body);
+}
+.gym-summary-range__cal-nav:hover {
+  background: var(--paper-dim);
+}
+
+.gym-summary-range__cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+.gym-summary-range__cal-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  padding: 0.2rem 0;
+  min-width: 0;
+}
+
+/* Rejilla de días: 7 columnas de ancho igual (en móvil caben en
+   360 px) y filas con altura fija para no saltar al navegar. */
+.gym-summary-range__cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.gym-summary-range__cal-blank {
+  height: 2.1rem;
+}
+.gym-summary-range__day {
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  height: 2.1rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.gym-summary-range__day:hover {
+  background: var(--paper-dim);
+}
+.gym-summary-range__day--today {
+  border-color: var(--ink-soft);
+}
+.gym-summary-range__day--selected {
+  background: var(--games);
+  color: var(--paper);
+  font-weight: 600;
+}
+/* Días intermedios del rango: tinte violeta (--games al 22 %, no hay
+   variable alfa del acento; mismo valor en las cuatro familias) con
+   el texto en --ink, muy por encima de AA en todas ellas. */
+.gym-summary-range__day--in-range {
+  background: rgba(122, 90, 158, 0.22);
+  color: var(--ink);
+}
+
+.gym-summary-range__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+/* En pantallas estrechas el popover pasa a flujo normal (nada de
+   posicionamiento absoluto: no puede desbordar) y el recuadro ocupa
+   toda la fila del selector. */
+@media (max-width: 480px) {
+  .gym-summary-range {
+    flex: 1 1 100%;
+  }
+  .gym-summary-range__popover {
+    position: static;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+  }
 }
 
 /* Cabecera del rango pintado («Periodo: DD/MM/YYYY – DD/MM/YYYY»). */
@@ -5681,28 +5794,58 @@ body.is-back-to-top-visible .back-to-top {
 /* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
    con texto papel (la base --paper-dim sería gris #111 casi igual a
    la superficie del modal; patrón de .ingredient-modal__field). El
-   recuadro del rango del Resumen (issue #269) sigue el mismo patrón:
-   en negro puro el valor y el calendario nativo quedarían negros
-   sobre casi negro. */
+   recuadro del rango del Resumen y su calendario (issue #269)
+   siguen el mismo patrón: en negro puro la superficie pasa a tinta
+   (--ink) y el texto a papel. */
 [data-theme="black"] .gym-form__field input,
 [data-theme="black"] .gym-form__field select,
 [data-theme="black"] .gym-form__field textarea,
 [data-theme="black"] .gym-exercise-block select,
 [data-theme="black"] .gym-exercise-block input[type="text"],
 [data-theme="black"] .gym-series-row input,
-[data-theme="black"] .gym-summary-range,
-[data-theme="black"] .gym-summary-range__fields input[type="date"] {
+[data-theme="black"] .gym-summary-range__trigger,
+[data-theme="black"] .gym-summary-range__popover {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
 }
 
-/* Textos interiores del recuadro del rango en negro puro: con el
-   fondo invertido a --ink, la etiqueta y el rango elegido pasan a
-   papel (el --ink-soft base quedaría negro sobre negro). */
+/* Textos interiores del recuadro del rango y del calendario en negro
+   puro: con el fondo invertido a --ink, la etiqueta, el rango
+   elegido, el título del mes, la navegación y los días pasan a papel
+   (el --ink-soft base quedaría negro sobre negro). */
 [data-theme="black"] .gym-summary-range__label,
-[data-theme="black"] .gym-summary-range__value {
+[data-theme="black"] .gym-summary-range__value,
+[data-theme="black"] .gym-summary-range__cal-title,
+[data-theme="black"] .gym-summary-range__cal-weekday,
+[data-theme="black"] .gym-summary-range__cal-nav,
+[data-theme="black"] .gym-summary-range__day {
   color: var(--paper);
+}
+
+/* Hover del calendario en negro puro: tinte claro sobre la
+   superficie oscura (--paper-dim #111 sería invisible). */
+[data-theme="black"] .gym-summary-range__cal-nav:hover,
+[data-theme="black"] .gym-summary-range__day:hover {
+  background: var(--paper-alpha-10);
+}
+
+/* Extremos del rango en negro puro: acento en su variante clara y
+   texto tinta (la variante base #7a5a9e con texto papel daría
+   ~2:1); los días intermedios usan un tinte claro neutro porque el
+   violeta al 22 % sobre negro casi no se ve. */
+[data-theme="black"] .gym-summary-range__day--selected {
+  background: var(--games-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .gym-summary-range__day--in-range {
+  background: var(--paper-alpha-14);
+  color: var(--paper);
+}
+
+/* El trigger abierto marca su borde con el acento claro. */
+[data-theme="black"] .gym-summary-range__trigger[aria-expanded="true"] {
+  border-color: var(--games-dark);
 }
 
 /* El panel del ejercicio del constructor usa el borde claro del
