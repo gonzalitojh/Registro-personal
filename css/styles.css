@@ -4759,6 +4759,45 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
 }
 
+/* Tarjeta del buscador en negro puro (issue #242, iteración): la base
+   (familia clara sobre el modal papel del tema Oscuro) usa
+   --paper-dim/--ink, casi negros en este tema (texto invisible ≈
+   1.07:1 sobre el fondo #111); vuelve al chip oscuro con texto papel,
+   patrón de .recipe-card en negro puro. El hover conserva el acento
+   en la variante clara del teal (#4f9c8e ≈ 6.6:1). */
+[data-theme="black"] .recipe-pick__card {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+[data-theme="black"] .recipe-pick__card:hover,
+[data-theme="black"] .recipe-pick__card:focus-visible {
+  border-color: var(--teal-reel-dark);
+}
+
+/* Píldoras de filtro del buscador en negro puro: misma inversión que
+   la tarjeta (la base clara sería texto #000 sobre fondo #111). */
+[data-theme="black"] .recipe-pick .recipes-filter__btn {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+/* Fila de comensales de la tarjeta en negro puro: la base usa --ink
+   (#000) y quedaría invisible sobre la tarjeta oscura; tinta suave
+   clara, patrón de .menu-weekly__hint (≈ 6.2:1, AA). */
+[data-theme="black"] .recipe-pick__comensales {
+  color: var(--ink-soft);
+}
+
+/* Placeholder del campo de búsqueda en negro puro: la base usa --ink
+   (#000) y sería invisible sobre el campo también --ink (#000);
+   tinta suave clara (#948a76 ≈ 6.2:1, AA). */
+[data-theme="black"] .recipe-pick__search::placeholder {
+  color: var(--ink-soft);
+}
+
 [data-theme="black"] .recipe-form__import {
   background: var(--paper-alpha-10);
   border-color: var(--paper-alpha-20);
