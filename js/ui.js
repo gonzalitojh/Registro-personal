@@ -189,8 +189,11 @@ export function setAuthError(message) {
 // "Añadir" delega en onAdd (que devuelve true si el alta fue exitosa,
 // para que el llamador cierre el modal). Si se pasa onEnrich, se
 // cargan los detalles ampliados (duración, reparto, sinopsis, rating,
-// tráiler) sin re-renderizar la estructura del modal.
-export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null } = {}) {
+// tráiler) sin re-renderizar la estructura del modal. Si se pasa
+// onClose, el botón "Cerrar" lo invoca en lugar de cerrar el modal
+// (lo usa la vista previa de películas de la saga, issue #280, para
+// restaurar la ficha que se estaba viendo).
+export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null, onClose = null } = {}) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine =
@@ -229,7 +232,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
     </div>
   `;
 
-  content.querySelector("#btn-preview-close").addEventListener("click", closeModal);
+  content.querySelector("#btn-preview-close").addEventListener("click", () => {
+    if (onClose) onClose();
+    else closeModal();
+  });
 
   const addBtn = content.querySelector("#btn-preview-add");
   if (onAdd && !added) {
@@ -1064,9 +1070,13 @@ function renderRecommendations(items, existingIds, group, interactive) {
  * @param {Array}  sagaParts   - [{externalId, title, year, posterUrl}]
  * @param {Set}    existingIds - Set de externalId ya añadidos
  * @param {boolean} interactive - true si se muestran botones "Añadir"
+ * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
+ *                               un botón pulsable que llama onOpen(movie)
+ *                               para abrir la vista previa de esa
+ *                               película antes de añadirla (issue #280)
  * @returns {string} HTML de la sección, o cadena vacía
  */
-function renderSagaMovies(sagaParts, existingIds, interactive) {
+function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
   if (!sagaParts || !sagaParts.length) return "";
   const cardsHtml = sagaParts
     .map((m, index) => {
@@ -1076,6 +1086,25 @@ function renderSagaMovies(sagaParts, existingIds, interactive) {
              ${added ? "Añadida" : "Añadir"}
            </button>`
         : "";
+      if (typeof onOpen === "function") {
+        // Tarjeta pulsable: el botón .saga-card__open envuelve portada
+        // y texto (phrasing content, por eso .rec-card__body es span),
+        // y el botón "Añadir" queda como hermano, anclado abajo por
+        // el flex: 1 del botón open (issue #280, iteración).
+        return `
+        <div class="rec-card saga-card" data-saga-index="${index}">
+          <button type="button" class="saga-card__open" data-saga-index="${index}"
+                  aria-label="Ver información de ${escapeHtml(m.title)}">
+            <img class="rec-card__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+            <span class="rec-card__body">
+              <span class="rec-card__title">${escapeHtml(m.title)}</span>
+              <span class="rec-card__year">${escapeHtml(m.year || "")}</span>
+              <span class="saga-card__hint">Ver información</span>
+            </span>
+          </button>
+          ${btnHtml}
+        </div>`;
+      }
       return `
         <div class="rec-card saga-card" data-saga-index="${index}">
           <img class="rec-card__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
@@ -1117,7 +1146,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie } = callbacks;
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -1143,7 +1172,7 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
       <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
       <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
     </div>
-    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie)}` : ""}
+    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie)}` : ""}
 
     ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation)}
 
@@ -1202,6 +1231,18 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
         const index = Number(btn.dataset.sagaIndex);
         const movie = sagaParts[index];
         if (movie) onAddSagaMovie(movie, btn);
+      });
+    });
+  }
+
+  // Wire saga card open preview (issue #280, iteración): pulsar la
+  // tarjeta muestra la información de la película antes de añadirla.
+  if (onOpenSagaMovie) {
+    content.querySelectorAll(".saga-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.sagaIndex);
+        const movie = sagaParts[index];
+        if (movie) onOpenSagaMovie(movie);
       });
     });
   }

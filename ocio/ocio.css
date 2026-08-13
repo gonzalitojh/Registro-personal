@@ -1837,6 +1837,44 @@ input, textarea, select { font-size: 16px; }
   margin: 0 0 0.6rem;
 }
 
+/* Tarjeta de saga como botón de vista previa (issue #280, iteración):
+   al pulsarla se abre la información de la película antes de
+   añadirla. El botón .saga-card__open ocupa todo el cuerpo de la
+   tarjeta (flex: 1) y el botón "Añadir" (.saga-card__add) queda como
+   hermano, anclado abajo con margin-top: auto. Los estilos del cuerpo
+   (.rec-card__body) se heredan por clase, ahora sobre span (phrasing
+   content dentro del button). */
+.saga-card__open {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.saga-card .rec-card__cover {
+  display: block; /* evita el gap de baseline de la img inline dentro del button */
+}
+
+.saga-card__hint {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+  text-decoration: underline;
+}
+
+.saga-card__open:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
 /* =========================================================
    Foco visible para componentes específicos de ocio
    ========================================================= */
