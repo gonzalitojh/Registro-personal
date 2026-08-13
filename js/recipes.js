@@ -890,8 +890,11 @@ function packageQtyRowHtml(ing = {}) {
 }
 
 // Abre el modal de ingrediente: con id = detalle ampliado (categoría,
-// recetas que lo usan, eliminar); sin id = alta manual.
-function openIngredientModal(id) {
+// recetas que lo usan, eliminar); sin id = alta manual. `onCreated`
+// (issue #240) se llama al guardar un alta manual con el ingrediente
+// recién creado ({ nombre, categoriaId }), para que el formulario de
+// receta pueda usarlo al momento.
+function openIngredientModal(id, { onCreated = null } = {}) {
   const modal = document.getElementById("ingredient-modal");
   const content = document.getElementById("ingredient-modal-content");
   const ingredient = id ? ingredients.find((i) => i.id === id) : null;
@@ -901,7 +904,7 @@ function openIngredientModal(id) {
     ingredient ? `Ingrediente: ${ingredient.nombre}` : "Nuevo ingrediente"
   );
   content.innerHTML = ingredient ? ingredientDetailHtml(ingredient) : ingredientNewHtml();
-  bindIngredientModalHandlers(content, ingredient);
+  bindIngredientModalHandlers(content, ingredient, onCreated);
 
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
@@ -996,7 +999,7 @@ function ingredientNewHtml() {
   </form>`;
 }
 
-function bindIngredientModalHandlers(content, ingredient) {
+function bindIngredientModalHandlers(content, ingredient, onCreated = null) {
   content.querySelector("[data-ing-close]")?.addEventListener("click", closeIngredientModal);
 
   // Cambio de categoría en el detalle: inmediato + toast (como antes).
@@ -1106,6 +1109,7 @@ function bindIngredientModalHandlers(content, ingredient) {
       await ctx.addIngredient(currentUser, { nombre, categoriaId, supermercados, paqueteCantidad, paqueteUnidad });
       closeIngredientModal();
       showToast("Ingrediente añadido al catálogo.");
+      if (onCreated) onCreated({ nombre, categoriaId });
     } catch (err) {
       console.error("No se pudo añadir el ingrediente:", err);
       showToast("No se pudo añadir el ingrediente.");
@@ -1221,7 +1225,12 @@ function recipeModalHtml(recipe) {
       <div id="recipe-ingredientes">
         ${ingredientes.map((ing, i) => ingredienteRowHtml(ing, i)).join("")}
       </div>
-      <button type="button" id="btn-add-ingrediente" class="btn btn--small">+ Ingrediente</button>
+      <div class="recipe-form__ingredientes-actions">
+        <button type="button" id="btn-add-ingrediente" class="btn btn--small">+ Ingrediente</button>
+        <button type="button" id="btn-nuevo-ingrediente-receta" class="btn btn--small">+ Nuevo ingrediente</button>
+      </div>
+      <p class="recipe-form__hint">Los ingredientes se eligen del catálogo (con buscador); la categoría viene de
+        ahí. Con «Nuevo ingrediente» lo creas al momento si no está.</p>
     </fieldset>
 
     <fieldset class="recipe-form__fieldset" ${ro}>
@@ -1367,14 +1376,152 @@ function customTagInput(scope, id) {
   </div>`;
 }
 
+// Categoría de un ingrediente de receta (issue #240): la fuente de
+// verdad es el catálogo (el formulario ya no la selecciona); si el
+// nombre no está en el catálogo (p. ej. se eliminó de él), se conserva
+// el valor guardado en la receta para no perder el dato.
+function ingredientCategoriaDe(nombre, guardada) {
+  if (!nombre) return guardada || "";
+  const cat = ingredients.find((i) => normalizeIngredientName(i.nombre) === normalizeIngredientName(nombre));
+  return cat ? (cat.categoriaId || "") : (guardada || "");
+}
+
+// Fila de ingrediente del formulario de receta (issue #240): el nombre
+// ya no se escribe libremente ni se elige categoría. Es un combobox con
+// buscador sobre el catálogo de ingredientes (input + desplegable); la
+// selección queda en los hidden .ing-nombre-valor / .ing-categoria-valor,
+// que son los que lee readRecipeFromForm al guardar. El texto libre que
+// no corresponda a una opción no selecciona nada (la fila se ignora).
 function ingredienteRowHtml(ing, i) {
+  const nombre = ing.nombre || "";
   return `<div class="recipe-form__ingrediente" data-row="${i}">
-    <input type="text" class="ing-nombre" placeholder="Ingrediente" value="${escapeHtml(ing.nombre || "")}" list="recipe-ingredients-datalist" />
+    <div class="ing-combo">
+      <input type="text" class="ing-nombre" placeholder="Buscar ingrediente…" value="${escapeHtml(nombre)}"
+             role="combobox" aria-expanded="false" aria-autocomplete="list" autocomplete="off"
+             aria-label="Ingrediente (elige uno del catálogo)" />
+      <button type="button" class="ing-combo__toggle" aria-label="Elegir ingrediente del catálogo" tabindex="-1">▾</button>
+      <ul class="ing-combo__list" role="listbox" hidden></ul>
+      <input type="hidden" class="ing-nombre-valor" value="${escapeHtml(nombre)}" />
+      <input type="hidden" class="ing-categoria-valor" value="${escapeHtml(ingredientCategoriaDe(nombre, ing.categoriaId))}" />
+    </div>
     <input type="number" class="ing-cantidad" placeholder="Cant." step="any" min="0" value="${escapeHtml(ing.cantidad ?? "")}" />
     <input type="text" class="ing-unidad" placeholder="Unidad" value="${escapeHtml(ing.unidad || "")}" />
-    <select class="ing-categoria" aria-label="Categoría del ingrediente">${optionsFor("ingrediente", ing.categoriaId)}</select>
     <button type="button" class="btn btn--small btn--danger ing-remove" aria-label="Quitar ingrediente">✕</button>
   </div>`;
+}
+
+// Pinta las opciones del desplegable de un combobox de ingrediente:
+// las del catálogo que coinciden con el texto tecleado (orden
+// alfabético), más el valor ya seleccionado de la fila si no está en el
+// catálogo (dato legado que se conserva visible y elegible).
+function renderIngredienteComboList(combo) {
+  const list = combo.querySelector(".ing-combo__list");
+  const texto = combo.querySelector(".ing-nombre").value.trim();
+  const norm = normalizeIngredientName(texto);
+  const matches = ingredients
+    .filter((i) => !norm || normalizeIngredientName(i.nombre).includes(norm))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const currentVal = combo.querySelector(".ing-nombre-valor").value;
+  const matched = new Set(matches.map((i) => normalizeIngredientName(i.nombre)));
+  if (currentVal && !matched.has(normalizeIngredientName(currentVal))) {
+    matches.unshift({ nombre: currentVal, categoriaId: combo.querySelector(".ing-categoria-valor").value });
+  }
+  list.innerHTML = matches.length
+    ? matches.map((i) => `<li role="option" data-nombre="${escapeHtml(i.nombre)}" data-categoria="${escapeHtml(i.categoriaId || "")}">${escapeHtml(i.nombre)}</li>`).join("")
+    : `<li role="option" class="ing-combo__empty" aria-disabled="true">Sin coincidencias. Crea el ingrediente con «Nuevo ingrediente».</li>`;
+}
+
+// Comportamiento del combobox de ingrediente (issue #240): abrir al
+// enfocar o al escribir, filtrado en vivo, selección con click / Enter
+// (y flechas arriba/abajo), cierre con Escape o al salir del campo. El
+// texto libre por sí solo NO selecciona nada: solo las opciones del
+// catálogo escriben el valor oculto de la fila.
+function bindIngredienteCombo(combo) {
+  const input = combo.querySelector(".ing-nombre");
+  const toggle = combo.querySelector(".ing-combo__toggle");
+  const list = combo.querySelector(".ing-combo__list");
+  let activeIndex = -1;
+  let closeTimer = null;
+
+  const close = () => {
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+    list.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    activeIndex = -1;
+  };
+
+  const open = () => {
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+    renderIngredienteComboList(combo);
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  };
+
+  const selectOption = (option) => {
+    if (!option || option.getAttribute("aria-disabled") === "true") return;
+    combo.querySelector(".ing-nombre-valor").value = option.dataset.nombre;
+    combo.querySelector(".ing-categoria-valor").value = option.dataset.categoria || "";
+    input.value = option.dataset.nombre;
+    close();
+  };
+
+  input.addEventListener("focus", open);
+  input.addEventListener("input", () => {
+    renderIngredienteComboList(combo);
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    activeIndex = -1;
+  });
+  input.addEventListener("keydown", (e) => {
+    const options = [...list.querySelectorAll('[role="option"]')];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!options.length) return;
+      const max = options.length - 1;
+      activeIndex = activeIndex < 0 ? (e.key === "ArrowDown" ? 0 : max) : activeIndex + (e.key === "ArrowDown" ? 1 : -1);
+      activeIndex = Math.min(max, Math.max(0, activeIndex));
+      options.forEach((o, i) => o.classList.toggle("is-active", i === activeIndex));
+    } else if (e.key === "Enter") {
+      if (!list.hidden) {
+        e.preventDefault();
+        const optionsActive = [...list.querySelectorAll('[role="option"]')];
+        selectOption(optionsActive[activeIndex] || optionsActive[0]);
+      }
+    } else if (e.key === "Escape" && !list.hidden) {
+      e.preventDefault();
+      input.value = combo.querySelector(".ing-nombre-valor").value;
+      close();
+    }
+  });
+  // El blur cierra el desplegable con un pequeño retardo para no
+  // adelantarse al click de una opción (el mousedown con preventDefault
+  // de la lista mantiene el foco, así que aquí solo llegan los cierres
+  // de pulsar fuera o tabular).
+  input.addEventListener("blur", () => {
+    closeTimer = setTimeout(close, 120);
+  });
+  toggle.addEventListener("click", () => {
+    if (list.hidden) {
+      open();
+      input.focus();
+    } else {
+      close();
+    }
+  });
+  list.addEventListener("mousedown", (e) => {
+    const option = e.target.closest('[role="option"]');
+    if (option) e.preventDefault();
+  });
+  list.addEventListener("click", (e) => {
+    const option = e.target.closest('[role="option"]');
+    if (option) selectOption(option);
+  });
 }
 
 function instruccionRowHtml(paso, i) {
@@ -1390,6 +1537,18 @@ function bindRecipeModalHandlers(content) {
   content.querySelector("#btn-add-ingrediente")?.addEventListener("click", () => {
     const wrap = content.querySelector("#recipe-ingredientes");
     wrap.insertAdjacentHTML("beforeend", ingredienteRowHtml({}, wrap.children.length));
+    bindIngredienteCombo(wrap.lastElementChild.querySelector(".ing-combo"));
+  });
+  // Nuevo ingrediente desde la receta (issue #240): abre la misma
+  // ventana de creación del catálogo; al guardarse, se añade una fila
+  // con ese ingrediente ya elegido.
+  content.querySelector("#btn-nuevo-ingrediente-receta")?.addEventListener("click", () => {
+    openIngredientModal(null, { onCreated: (ing) => {
+      const wrap = content.querySelector("#recipe-ingredientes");
+      wrap.insertAdjacentHTML("beforeend", ingredienteRowHtml(ing, wrap.children.length));
+      bindIngredienteCombo(wrap.lastElementChild.querySelector(".ing-combo"));
+      wrap.lastElementChild.querySelector(".ing-cantidad").focus();
+    } });
   });
   content.querySelector("#btn-add-paso")?.addEventListener("click", () => {
     const wrap = content.querySelector("#recipe-instrucciones");
@@ -1459,11 +1618,8 @@ function bindRecipeModalHandlers(content) {
     saveRecipeFromForm(content);
   });
 
-  // Datalist de ingredientes del catálogo para autocompletar.
-  const datalist = document.getElementById("recipe-ingredients-datalist");
-  if (datalist) {
-    datalist.innerHTML = ingredients.map((i) => `<option value="${escapeHtml(i.nombre)}"></option>`).join("");
-  }
+  // Comboboxes de ingrediente (issue #240): uno por fila.
+  content.querySelectorAll("#recipe-ingredientes .ing-combo").forEach(bindIngredienteCombo);
 }
 
 function renumberPasos(content) {
@@ -1484,18 +1640,31 @@ function readRecipeFromForm(content) {
     throw new Error("Las porciones son obligatorias.");
   }
 
+  // Ingredientes (issue #240): solo cuenta la selección del combobox
+  // (el valor oculto que escribe una opción del catálogo). El texto
+  // libre sin selección se avisa y se descarta; la categoría se toma
+  // del catálogo (o de la guardada en la receta si ya no está en él).
+  const sinSeleccion = [];
   const ingredientes = [...content.querySelectorAll("#recipe-ingredientes .recipe-form__ingrediente")]
     .map((row) => {
-      const ingNombre = row.querySelector(".ing-nombre").value.trim();
-      if (!ingNombre) return null;
+      const ingNombre = row.querySelector(".ing-nombre-valor").value.trim();
+      if (!ingNombre) {
+        const textoLibre = row.querySelector(".ing-nombre").value.trim();
+        if (textoLibre) sinSeleccion.push(textoLibre);
+        return null;
+      }
       return {
         nombre: ingNombre,
         cantidad: row.querySelector(".ing-cantidad").value === "" ? null : Number(row.querySelector(".ing-cantidad").value),
         unidad: normalizeUnit(row.querySelector(".ing-unidad").value),
-        categoriaId: row.querySelector(".ing-categoria").value,
+        categoriaId: ingredientCategoriaDe(ingNombre, row.querySelector(".ing-categoria-valor").value),
       };
     })
     .filter(Boolean);
+  if (sinSeleccion.length) {
+    const lista = sinSeleccion.map((n) => `«${n}»`).join(", ");
+    showToast(`No se añadió ${lista}: elige el ingrediente del desplegable (o créalo con «Nuevo ingrediente»).`);
+  }
 
   const instrucciones = [...content.querySelectorAll("#recipe-instrucciones .recipe-form__paso")]
     .map((row) => row.querySelector(".paso-texto").value.trim())

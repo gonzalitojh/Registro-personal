@@ -3919,8 +3919,7 @@ body.is-back-to-top-visible .back-to-top {
 .recipe-form__field textarea,
 .recipe-form__newtag input,
 .recipe-form__paso input,
-.recipe-form__ingrediente input,
-.recipe-form__ingrediente select {
+.recipe-form__ingrediente input {
   background: var(--paper-dim);
   color: var(--ink);
   border: 1px solid var(--paper-line);
@@ -3955,10 +3954,92 @@ body.is-back-to-top-visible .back-to-top {
 
 .recipe-form__ingrediente {
   display: grid;
-  grid-template-columns: 1.4fr 0.7fr 0.9fr 1.4fr auto;
+  /* Issue #240: sin columna de categoría — el nombre es un combobox
+     sobre el catálogo y la categoría viene de ahí. */
+  grid-template-columns: 1.4fr 0.7fr 0.9fr auto;
   gap: 0.35rem;
   margin-bottom: 0.35rem;
   min-width: 0;
+}
+
+/* Combobox de ingrediente del formulario de receta (issue #240):
+   input con buscador + desplegable con las opciones del catálogo.
+   El desplegable se posiciona bajo el campo (absolute sobre la fila)
+   y hace de "nativo" dentro del modal: al hacer scroll del formulario
+   se desplaza con el contenido. */
+.ing-combo {
+  position: relative;
+  min-width: 0;
+}
+
+.ing-combo .ing-nombre {
+  width: 100%;
+  padding-right: 1.9rem;
+  text-overflow: ellipsis;
+}
+
+.ing-combo__toggle {
+  position: absolute;
+  right: 0.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+}
+
+.ing-combo__list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ing-combo__list [role="option"] {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  cursor: pointer;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.ing-combo__list [role="option"]:hover,
+.ing-combo__list [role="option"].is-active {
+  background: var(--teal-alpha-18);
+  color: var(--ink);
+}
+
+.ing-combo__list .ing-combo__empty {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.ing-combo__list .ing-combo__empty:hover,
+.ing-combo__list .ing-combo__empty.is-active {
+  background: none;
+}
+
+.recipe-form__ingredientes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
 }
 
 .recipe-form__paso {
@@ -4038,17 +4119,14 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* Responsividad del formulario: en móvil las filas de ingrediente
-   pasan a dos columnas (nunca desbordan el viewport). */
+   pasan a dos columnas (nunca desbordan el viewport); el combobox
+   ocupa la fila entera para que el desplegable tenga todo el ancho. */
 @media (max-width: 560px) {
   .recipe-form__ingrediente {
     grid-template-columns: 1fr 1fr;
   }
-  .recipe-form__ingrediente .ing-nombre,
-  .recipe-form__ingrediente .ing-unidad {
-    grid-column: span 1;
-  }
-  .recipe-form__ingrediente .ing-categoria {
-    grid-column: span 1;
+  .recipe-form__ingrediente .ing-combo {
+    grid-column: 1 / -1;
   }
   .recipe-form__ingrediente .ing-remove {
     justify-self: start;
@@ -4431,11 +4509,30 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .recipe-form__field textarea,
 [data-theme="black"] .recipe-form__newtag input,
 [data-theme="black"] .recipe-form__paso input,
-[data-theme="black"] .recipe-form__ingrediente input,
-[data-theme="black"] .recipe-form__ingrediente select {
+[data-theme="black"] .recipe-form__ingrediente input {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
+}
+
+/* Combobox de ingrediente en negro puro (issue #240): el desplegable
+   usa superficie oscura (--ink-raised) y texto papel, patrón de los
+   paneles de filtro; el hover/is-active un tinte claro translúcido
+   (--paper-alpha-10, texto papel sobre él ≈ AA). */
+[data-theme="black"] .ing-combo__list {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+[data-theme="black"] .ing-combo__list [role="option"]:hover,
+[data-theme="black"] .ing-combo__list [role="option"].is-active {
+  background: var(--paper-alpha-10);
+  color: var(--paper);
+}
+
+[data-theme="black"] .ing-combo__toggle {
+  color: var(--paper);
 }
 
 [data-theme="black"] .recipe-form__chip {
