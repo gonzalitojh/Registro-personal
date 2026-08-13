@@ -164,6 +164,19 @@ async function openMovieItem(item, ctx, isRerender = false) {
     existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
+  // --- Cargar películas de la saga (issue #280) ---
+  // Si falla la consulta no bloqueamos la ficha: la sección se oculta
+  // (degradación elegante) y el banner de saga sigue visible.
+  let sagaParts = null;
+  if (item.collectionId) {
+    try {
+      const collection = await getCollectionDetails(item.collectionId);
+      sagaParts = (collection && collection.parts.length) ? collection.parts : null;
+    } catch {
+      sagaParts = null;
+    }
+  }
+
   ui.openMovieModal(item, {
     onAddWatch: async (date) => {
       const prevLog = item.watchLog;
@@ -194,7 +207,27 @@ async function openMovieItem(item, ctx, isRerender = false) {
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
-  }, recommendations, existingIds);
+    // Alta directa de una película de la saga desde su tarjeta
+    // (issue #280). existingIds es un Set compartido con el render,
+    // así los rerenders posteriores del modal la muestran como
+    // "Añadida".
+    onAddSagaMovie: item.collectionId
+      ? async (movie, btn) => {
+          btn.disabled = true;
+          btn.textContent = "Añadiendo…";
+          try {
+            await addSagaMovie(movie, ctx);
+            existingIds.add(String(movie.externalId));
+            btn.textContent = "Añadida";
+            ui.showToast(`«${movie.title}» añadida a tu registro.`);
+          } catch (err) {
+            btn.disabled = false;
+            btn.textContent = "Añadir";
+            ui.showToast("No se pudo añadir: " + err.message);
+          }
+        }
+      : undefined,
+  }, recommendations, existingIds, sagaParts);
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
