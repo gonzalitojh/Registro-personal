@@ -1,7 +1,7 @@
 {
   "title": "Últimas series del ejercicio",
   "description": "Issue #270: en la pestaña «Ejercicios», añadir las series que se hicieron la última vez que se hizo el ejercicio que se esté visualizando. La base de trabajo es la rama feat/issue-62-seccion-gimnasio; la PR debe ir también a esa rama (no a dev). Cuando el usuario abre el detalle (modo lectura) de un ejercicio del catálogo, debe verse una sección con las series (peso × repeticiones) del entreno más reciente donde se registró ese ejercicio, con su fecha.",
-  "status": "planned",
+  "status": "review",
   "acceptance criteria": [
     "Al abrir el detalle de un ejercicio de la pestaña «Ejercicios» que ya se ha trabajado antes, se muestran las series (peso × repeticiones) del entreno más reciente donde se registró.",
     "La sección indica la fecha del entreno del que proceden las series.",
@@ -25,5 +25,9 @@
     "number": 270,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/270",
     "title": "Últimas series del ejercicio"
+  },
+  "pr": {
+    "number": 273,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/273"
   }
 }
