@@ -785,6 +785,13 @@ muscular y notas) con **«✎ Editar»** y **«Eliminar»**. **Borrar un
 ejercicio no borra los entrenos que lo usan**: esos entrenos
 conservan su nombre, aunque el ejercicio ya no esté en el catálogo.
 
+Si el ejercicio **ya lo habías trabajado antes**, al abrirlo en modo
+lectura verás también la sección **«Última vez»**: la fecha del
+entreno más reciente donde lo registraste y su **tabla de series**
+(peso × repeticiones, en tu unidad de peso). Así puedes ver de un
+vistazo con qué cargas acabaste la última sesión. Si es un ejercicio
+**nuevo** (nunca lo has trabajado), esta sección no aparece.
+
 ### 9.3 Cambiar entre kilos y libras
 
 Bajo las pestañas de la sección hay un selector **«Unidad de peso»**
