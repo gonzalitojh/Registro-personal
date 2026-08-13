@@ -1,18 +1,21 @@
 // =============================================================
-// Auto-ocultar navegación al desplazar (issue #137)
+// Auto-ocultar navegación al desplazar (issue #137, #256)
 //
 // Al hacer scroll hacia abajo en las listas de ocio (series,
-// películas, libros — y cualquier pestaña futura) se ocultan la
+// películas, libros — y cualquier pestaña futura) y de recetas
+// (issue #256: Recetas, Ingredientes, Menú y Compra) se ocultan la
 // cabecera (barra de búsqueda superior) y la barra de pestañas;
 // al desplazar hacia arriba reaparecen. La animación es un simple
 // translateY que las hace "surgir del borde de la pantalla"
 // (definido en css/styles.css, bloque "Ocultar navegación al
 // desplazar").
 //
-// Añadido: cuando los filtros de la lista (.library-controls del
-// panel activo) quedan totalmente fuera de vista y la navegación
-// está oculta, se muestra el botón flotante #btn-back-to-top,
-// centrado arriba, para volver al principio de la lista.
+// Añadido: cuando los controles de la lista (los filtros
+// .library-controls del panel de ocio o la barra de herramientas
+// de la pestaña de recetas activa) quedan totalmente fuera de
+// vista y la navegación está oculta, se muestra el botón flotante
+// #btn-back-to-top, centrado arriba, para volver al principio de
+// la lista.
 //
 // Reglas de diseño:
 // - La navegación NUNCA se oculta mientras el usuario interactúa
@@ -37,10 +40,23 @@ let navHidden = false;
 let lastY = window.scrollY;
 
 // Panel de lista activo: la sección de ocio visible dentro de la
-// app. Devuelve null si no hay ninguna (pantalla de acceso o
-// perfil/ajustes, donde no aplica la ocultación por scroll).
+// app o, si la app está oculta (vista de Recetas, issue #256), el
+// panel de recetas activo (#recipes-view es hermana de primer nivel
+// de profile-view, fuera de #app). Devuelve null si no hay ninguna
+// (pantalla de acceso o perfil/ajustes, donde no aplica la
+// ocultación por scroll).
 function activePanel() {
-  return document.querySelector("#app:not(.hidden) .panel:not(.hidden)");
+  const app = document.getElementById("app");
+  if (app && !app.classList.contains("hidden")) {
+    return document.querySelector("#app .panel:not(.hidden)");
+  }
+  const recipesView = document.getElementById("recipes-view");
+  if (recipesView && !recipesView.classList.contains("hidden")) {
+    // Las pestañas de Recetas son <section> hermanas dentro de
+    // .recipes-view__body; la activa es la única sin .hidden.
+    return recipesView.querySelector(".recipes-view__body section:not(.hidden)");
+  }
+  return null;
 }
 
 // ¿El usuario está interactuando con algo que exige mantener la
@@ -63,16 +79,28 @@ function isInteracting() {
     return true;
   }
 
+  // Paneles de filtros de Recetas abiertos (issue #256): en móvil
+  // se anclan al viewport bajo la cabecera (top: var(--header-h)),
+  // así que ocultarla los dejaría descolgados, como los dropdowns
+  // de la cabecera.
+  if (
+    document.querySelector(".recipes-filter__panel:not(.hidden)") ||
+    document.querySelector(".ingredients-filter__panel:not(.hidden)")
+  ) {
+    return true;
+  }
+
   // Drawer lateral (hamburguesa) abierto.
   if (document.querySelector(".app-sidebar.is-open")) return true;
 
-  // Modal abierto (ficha de ítem, valoración, etc.).
+  // Modal abierto (ficha de ítem, valoración, receta, etc.).
   if (document.querySelector(".modal:not(.hidden)")) return true;
 
   // Pantalla de acceso (la app entera está oculta) o sin panel de
   // lista visible (perfil/ajustes): la ocultación por scroll solo
-  // tiene sentido sobre las listas de ocio.
-  if (document.getElementById("app")?.classList.contains("hidden")) return true;
+  // tiene sentido sobre las listas de ocio y recetas. activePanel()
+  // devuelve null en esas pantallas (y también cuando #recipes-view
+  // está oculta), así que este guard basta.
   if (!activePanel()) return true;
 
   return false;
@@ -89,12 +117,20 @@ function setNavHidden(hidden) {
 }
 
 // El botón "Volver arriba" solo se muestra cuando la navegación
-// está oculta Y los filtros de la lista activa han quedado
-// totalmente fuera de vista (borde inferior del .library-controls
-// por encima del viewport: getBoundingClientRect().bottom <= 0).
+// está oculta Y los controles de la lista activa han quedado
+// totalmente fuera de vista (borde inferior del elemento por encima
+// del viewport: getBoundingClientRect().bottom <= 0). Los controles
+// son los filtros de ocio (.library-controls) o la barra de
+// herramientas de la pestaña de recetas activa (issue #256:
+// .recipes-toolbar, .ingredients-toolbar, .menu-toolbar,
+// .shopping-toolbar); si el panel no tiene controles, el botón no
+// aparece.
+const CONTROLS_SELECTOR =
+  ".library-controls, .recipes-toolbar, .ingredients-toolbar, .menu-toolbar, .shopping-toolbar";
+
 function updateBackToTop() {
   const panel = activePanel();
-  const controls = panel ? panel.querySelector(".library-controls") : null;
+  const controls = panel ? panel.querySelector(CONTROLS_SELECTOR) : null;
   const visible =
     navHidden && controls !== null && controls.getBoundingClientRect().bottom <= 0;
   document.body.classList.toggle("is-back-to-top-visible", visible);
@@ -165,14 +201,19 @@ export function initAutoHideNav() {
 
   // Observar cambios de clase en los elementos que condicionan el
   // estado (cambio de pestaña/panel, apertura de modales y
-  // dropdowns, visibilidad de la app, drawer...). Si el propio
+  // dropdowns, visibilidad de la app, drawer...). Incluye la vista
+  // de Recetas (issue #256): #recipes-view se oculta/muestra al
+  // entrar/salir de la sección y sus secciones (paneles) alternan
+  // .hidden al cambiar de pestaña; sus paneles de filtros
+  // (.recipes-filter__panel, .ingredients-filter__panel) se abren
+  // desde la barra de herramientas de cada pestaña. Si el propio
   // <body> cambia (nuestras clases) la reevaluación es inofensiva:
   // setNavHidden no hace nada si el estado no cambia.
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (
         mutation.target.matches?.(
-          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, body"
+          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, #recipes-view, .recipes-view__body section, .recipes-filter__panel, .ingredients-filter__panel, body"
         )
       ) {
         evaluate();
