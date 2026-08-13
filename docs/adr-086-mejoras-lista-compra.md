@@ -381,4 +381,55 @@ detalles:
   hallazgos (cambios 100 % presentacionales y de interacción; sin
   tocar datos).
 
+## Iteración 3 (2026-08-13): sin halo rojo en las esquinas de los ítems y marcado hover sin velo rojo
+
+Comentario nuevo del usuario en la issue #225 con un último detalle
+visual:
+
+> Los items de la lista, se ve ligeramente en rojo las esquinas
+> redondeadas de cada ítem.
+
+**Causa raíz:** `.shopping-line-wrap` tiene el fondo rojo del swipe
+(`--stamp`, y `--stamp-dark` en negro puro) con
+`border-radius: var(--radius)` (3 px) y `overflow: hidden`;
+`.shopping-line__content` ocupaba el wrap 1:1 con el **mismo**
+`border-radius: var(--radius)`. Dos radios idénticos apilados → el
+anti-aliasing de la esquina redondeada del contenido se fundía con el
+rojo de detrás → halo rojo subpixel en las esquinas redondeadas de
+cada ítem en reposo.
+
+### Decisiones de la iteración 3
+
+1. **Sin radio duplicado en el contenido** — `.shopping-line__content`
+   pierde `border-radius: var(--radius)`: las esquinas ya las recorta
+   el wrap (`overflow: hidden` + `border-radius`), así que el
+   redondeo visual se conserva y el halo rojo desaparece en los
+   cuatro modos.
+2. **Marcado hover sin velo rojo** — el hover pasaba de
+   `background: var(--paper-alpha-10)` (translúcido → dejaba ver el
+   rojo del swipe de detrás y teñía la línea, percibiéndose «como
+   para eliminar», el efecto que el usuario ya rechazó en la
+   iteración 1) a `box-shadow: inset 0 0 0 999px <alpha>`, que se
+   pinta ENCIMA del fondo base `--ink-raised` sin reemplazarlo:
+   mismo marcado neutro, sin transparentar el rojo. Aplicado en las
+   3 reglas: oscura (`--paper-alpha-10`), agrupada light/white
+   (`--ink-alpha-10`) y negro puro (`--paper-alpha-10`).
+3. **PWA**: bump de versión `20260916 → 20260917`.
+
+### Consecuencias de la iteración 3
+
+- **Positivas**: los ítems en reposo ya no muestran esquinas con halo
+  rojo y el hover marca la línea con un fundido neutro (nunca «rojo
+  de borrar»).
+- **Neutras**: ninguna — cambio 100 % presentacional, sin cambios de
+  comportamiento; el manual 8.4 ya describe correctamente que solo el
+  gesto horizontal revela el rojo.
+- **Negativas**: ninguna conocida. QA PASS (qa-reviewer): los 4 modos
+  de tema con contraste WCAG AA (los alfas son los mismos que antes),
+  sin scroll horizontal, sin regresiones en swipe/✕/paquetes/
+  multi-semana; la sombra inset se pinta bajo el borde, el
+  `border-left` ocre de `--hogar` y los hijos (stepper, ✕) quedan
+  intactos. Seguridad PASS (security-champion): sin hallazgos
+  (0 HIGH/MEDIUM/LOW).
+
 Related issue: #225 (https://github.com/gonzalitojh/Registro-personal/issues/225)
