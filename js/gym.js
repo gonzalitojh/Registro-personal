@@ -587,7 +587,10 @@ function workoutExerciseBlockHtml(ex, i) {
       <button type="button" class="gym-remove-btn" data-gym-ex-remove="${i}" aria-label="Quitar ejercicio ${i + 1}">✕</button>
     </div>
     <div class="gym-series-table">${seriesRows}</div>
-    <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
+    <div class="gym-block-button-row">
+      <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
+      <button type="button" class="gym-add-series-btn" data-gym-dup-series="${i}">Duplicar serie</button>
+    </div>
   </div>`;
 }
 
@@ -650,6 +653,25 @@ function bindWorkoutEditorHandlers(content) {
       workoutDraft.ejercicios[idx].series.push({ pesoKg: 0, reps: 0 });
       renderWorkoutEditor();
       const row = document.querySelector(`[data-gym-series-peso="${idx}-${workoutDraft.ejercicios[idx].series.length - 1}"]`);
+      row?.focus();
+    });
+  });
+
+  // Duplicar serie (#265): copia la última serie del ejercicio (peso y
+  // reps) al final, sin tener que reescribirla. Avisa si no hay ninguna.
+  content.querySelectorAll("[data-gym-dup-series]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      syncWorkoutDraftFromDom();
+      const idx = parseInt(btn.dataset.gymDupSeries, 10);
+      const series = workoutDraft.ejercicios[idx].series;
+      if (!series.length) {
+        showToast("No hay ninguna serie que duplicar.");
+        return;
+      }
+      const last = series[series.length - 1];
+      series.push({ pesoKg: last.pesoKg, reps: last.reps });
+      renderWorkoutEditor();
+      const row = document.querySelector(`[data-gym-series-peso="${idx}-${series.length - 1}"]`);
       row?.focus();
     });
   });
