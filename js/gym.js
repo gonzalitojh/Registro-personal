@@ -142,8 +142,10 @@ export function setupGym(opts) {
   });
 
   // Selector de periodo del resumen (issue #269): el click en un chip
-  // sincroniza la UI (is-active/aria-pressed), y si el periodo cambió
-  // se re-renderiza el resumen (lee el periodo nuevo del DOM). Los
+  // sincroniza la UI (is-active/aria-pressed) y la visibilidad del
+  // recuadro del rango libre (solo con la opción «Rango», iteración
+  // del comentario de la issue), y si el periodo cambió se
+  // re-renderiza el resumen (lee el periodo nuevo del DOM). Los
   // inputs de fecha solo re-renderizan cuando el chip activo es
   // «Rango» (en semana/mes en curso no aplican).
   document.querySelectorAll("[data-summary-period]").forEach((chip) => {
@@ -157,6 +159,7 @@ export function setupGym(opts) {
   const toInput = document.getElementById("gym-summary-to");
   [fromInput, toInput].forEach((input) => {
     input?.addEventListener("change", () => {
+      updateSummaryRangeSummary();
       if (summaryPeriodRange().custom) renderSummary();
     });
   });
@@ -456,29 +459,34 @@ function summaryGroupFor(e) {
 
 // Agrega los entrenos del rango [from, to] (fechas YYYY-MM-DD,
 // comparación lexicográfica; from/to null = límite abierto) en:
-//   - totals { entrenos, series, reps, volumenKg } del periodo.
-//   - perExercise: Map clave → { nombre, grupoMuscular, veces,
-//     series, reps, volumenKg, pesoMaxKg }.
-// Solo suman reps/volumen las series con reps numérico > 0; el peso
-// no numérico cuenta como 0. El volumen se acumula SIEMPRE en kg
-// (pesoKg × reps) y se convierte a la unidad de presentación al
-// pintar (kgToDisplay), nunca por serie.
+//   - totals { entrenos, ejercicios } del periodo (nº de entrenos y
+//     nº de ejercicios distintos).
+//   - perExercise: Map clave → { nombre, grupoMuscular, veces } con
+//     veces = nº de entrenos distintos en que aparece.
+//   - perGroup: Map grupo → { label, ejercicios, entrenos } con el nº
+//     de ejercicios distintos y de entrenos de cada grupo muscular.
+// Iteración del comentario del usuario en la issue: los sumatorios de
+// series, repeticiones y volumen se eliminan — el resumen se centra
+// en lo que pide: nº de entrenos, ejercicios totales y el desglose
+// por grupos musculares. Una entrada sin id ni nombre no agrupa ni
+// cuenta (no hay ejercicio al que atribuirla); sin grupo muscular
+// solo cuenta en los totales, no en el desglose por grupos.
 function summarizeWorkouts(workoutsList, from, to) {
-  const totals = { entrenos: 0, series: 0, reps: 0, volumenKg: 0 };
+  const totals = { entrenos: 0, ejercicios: 0 };
   const perExercise = new Map();
-  const seenWorkouts = new Map(); // clave → Set de ids de entreno
+  const perGroup = new Map();
+  const seenWorkouts = new Map(); // clave de ejercicio → Set de ids de entreno
+  const groupWorkouts = new Map(); // grupo → Set de ids de entreno
 
   for (const w of workoutsList) {
     if (from && w.fechaISO < from) continue;
     if (to && w.fechaISO > to) continue;
     totals.entrenos += 1;
     for (const e of w.ejercicios || []) {
-      const series = e.series || [];
       const key = summaryExerciseKey(e);
-      // Entrada sin id ni nombre: no agrupa ni cuenta sus series en
-      // el total (no hay ejercicio al que atribuirlas).
+      // Entrada sin id ni nombre: no agrupa ni cuenta (no hay
+      // ejercicio al que atribuirla).
       if (!key) continue;
-      totals.series += series.length;
       let agg = perExercise.get(key);
       if (!agg) {
         const catalogEx = e.ejercicioId ? exercises.find((x) => x.id === e.ejercicioId) : null;
@@ -486,38 +494,40 @@ function summarizeWorkouts(workoutsList, from, to) {
           nombre: catalogEx?.nombre || e.nombre || "",
           grupoMuscular: summaryGroupFor(e),
           veces: 0,
-          series: 0,
-          reps: 0,
-          volumenKg: 0,
-          pesoMaxKg: 0,
         };
         perExercise.set(key, agg);
       }
-      agg.series += series.length;
       if (!seenWorkouts.has(key)) seenWorkouts.set(key, new Set());
       seenWorkouts.get(key).add(w.id);
-      for (const s of series) {
-        const reps = Number(s.reps);
-        if (!Number.isFinite(reps) || reps <= 0) continue;
-        const pesoKg = Number.isFinite(Number(s.pesoKg)) ? Number(s.pesoKg) : 0;
-        agg.reps += reps;
-        totals.reps += reps;
-        agg.volumenKg += pesoKg * reps;
-        totals.volumenKg += pesoKg * reps;
-        if (pesoKg > agg.pesoMaxKg) agg.pesoMaxKg = pesoKg;
+      const group = agg.grupoMuscular;
+      if (!group) continue;
+      let gagg = perGroup.get(group);
+      if (!gagg) {
+        gagg = { label: groupLabel(group), ejercicios: 0, entrenos: 0, keys: new Set(), workouts: new Set() };
+        perGroup.set(group, gagg);
       }
+      gagg.keys.add(key);
+      gagg.workouts.add(w.id);
     }
   }
-  // Veces = nº de entrenos distintos en que aparece el ejercicio.
+  // Veces = nº de entrenos distintos en que aparece el ejercicio;
+  // ejercicios totales = nº de ejercicios distintos del periodo.
+  totals.ejercicios = perExercise.size;
   for (const [key, agg] of perExercise) {
     agg.veces = seenWorkouts.get(key)?.size || 0;
   }
-  return { totals, perExercise };
+  for (const gagg of perGroup.values()) {
+    gagg.ejercicios = gagg.keys.size;
+    gagg.entrenos = gagg.workouts.size;
+  }
+  return { totals, perExercise, perGroup };
 }
 
 // Pinta el resumen del periodo activo en #gym-summary-data: cabecera
-// con el rango, tarjetas con los totales y tabla de desglose por
-// ejercicio (ordenado por volumen desc, tie-break por nombre).
+// con el rango, tarjetas (entrenos y ejercicios totales) y dos
+// desgloses — por grupos musculares y por ejercicio — ordenados por
+// frecuencia desc, tie-break alfabético (iteración del comentario de
+// la issue: sin sumatorios de series/reps/volumen).
 function renderSummary() {
   const container = document.getElementById("gym-summary-data");
   if (!container) return;
@@ -528,7 +538,7 @@ function renderSummary() {
     return;
   }
 
-  const { totals, perExercise } = summarizeWorkouts(workouts, from, to);
+  const { totals, perExercise, perGroup } = summarizeWorkouts(workouts, from, to);
 
   if (!totals.entrenos) {
     container.innerHTML = `<p class="empty-state">No hay entrenos en este periodo. Registra entrenos en la pestaña «Entrenos» para ver aquí tu resumen.</p>`;
@@ -536,7 +546,6 @@ function renderSummary() {
   }
 
   const fmtDate = (iso) => (iso ? ctx.formatDateEs(iso) : "sin límite");
-  const fmtKg = (kg) => `${escapeHtml(String(kgToDisplay(kg)))} ${escapeHtml(unitLabel())}`;
 
   const cards = `
     <div class="gym-summary-grid">
@@ -545,21 +554,39 @@ function renderSummary() {
         <span class="gym-summary-card__value">${totals.entrenos}</span>
       </div>
       <div class="gym-summary-card">
-        <span class="gym-summary-card__label">Series</span>
-        <span class="gym-summary-card__value">${totals.series}</span>
-      </div>
-      <div class="gym-summary-card">
-        <span class="gym-summary-card__label">Repeticiones</span>
-        <span class="gym-summary-card__value">${totals.reps}</span>
-      </div>
-      <div class="gym-summary-card">
-        <span class="gym-summary-card__label">Volumen total</span>
-        <span class="gym-summary-card__value">${fmtKg(totals.volumenKg)}</span>
+        <span class="gym-summary-card__label">Ejercicios</span>
+        <span class="gym-summary-card__value">${totals.ejercicios}</span>
       </div>
     </div>`;
 
+  const groupRows = [...perGroup.values()]
+    .sort((a, b) => b.ejercicios - a.ejercicios || a.label.localeCompare(b.label, "es"))
+    .map((g) => `
+      <tr>
+        <td>${escapeHtml(g.label)}</td>
+        <td>${g.ejercicios}</td>
+        <td>${g.entrenos}</td>
+      </tr>`)
+    .join("");
+
+  const groupsTable = groupRows.length
+    ? `<h3 class="gym-summary-section-title">Por grupos musculares</h3>
+        <div class="gym-summary-table-wrap">
+          <table class="gym-summary-table">
+            <thead>
+              <tr>
+                <th>Grupo muscular</th>
+                <th>Ejercicios</th>
+                <th>Entrenos</th>
+              </tr>
+            </thead>
+            <tbody>${groupRows}</tbody>
+          </table>
+        </div>`
+    : "";
+
   const rows = [...perExercise.values()]
-    .sort((a, b) => b.volumenKg - a.volumenKg || a.nombre.localeCompare(b.nombre, "es"))
+    .sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, "es"))
     .map((agg) => `
       <tr>
         <td class="gym-summary-table__name">
@@ -567,45 +594,63 @@ function renderSummary() {
           ${agg.grupoMuscular ? `<span class="gym-muscle-chip">${escapeHtml(groupLabel(agg.grupoMuscular))}</span>` : ""}
         </td>
         <td>${agg.veces}</td>
-        <td>${agg.series}</td>
-        <td>${agg.reps}</td>
-        <td>${fmtKg(agg.volumenKg)}</td>
-        <td>${fmtKg(agg.pesoMaxKg)}</td>
       </tr>`)
     .join("");
 
   const table = rows.length
-    ? `<div class="gym-summary-table-wrap">
-        <table class="gym-summary-table">
-          <thead>
-            <tr>
-              <th>Ejercicio</th>
-              <th>Veces</th>
-              <th>Series</th>
-              <th>Reps</th>
-              <th>Volumen</th>
-              <th>Peso máx</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`
+    ? `<h3 class="gym-summary-section-title">Por ejercicio</h3>
+        <div class="gym-summary-table-wrap">
+          <table class="gym-summary-table">
+            <thead>
+              <tr>
+                <th>Ejercicio</th>
+                <th>Veces</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`
     : "";
 
   container.innerHTML = `
     <p class="gym-summary-period">Periodo: ${escapeHtml(fmtDate(from))} – ${escapeHtml(fmtDate(to))}</p>
     ${cards}
+    ${groupsTable}
     ${table}`;
 }
 
 // Sincroniza la UI del selector de periodo: is-active/aria-pressed
-// solo en el chip del periodo indicado (los otros quedan inactivos).
+// solo en el chip del periodo indicado (los otros quedan inactivos) y
+// el recuadro del rango libre visible únicamente con la opción
+// «Rango» (iteración del comentario de la issue). Al activar «Rango»
+// el recuadro nace abierto y con el rango ya elegido en su resumen.
 function syncSummaryPeriodUI(period) {
   document.querySelectorAll("[data-summary-period]").forEach((chip) => {
     const isActive = chip.dataset.summaryPeriod === period;
     chip.classList.toggle("is-active", isActive);
     chip.setAttribute("aria-pressed", String(isActive));
   });
+  const rangeBox = document.getElementById("gym-summary-range");
+  if (rangeBox) {
+    rangeBox.hidden = period !== "custom";
+    if (period === "custom") {
+      rangeBox.open = true;
+      updateSummaryRangeSummary();
+    }
+  }
+}
+
+// Texto del recuadro del rango libre (#gym-summary-range-summary):
+// las fechas «desde – hasta» ya elegidas (o «sin límite» si un
+// extremo está vacío), en el mismo formato que la cabecera del
+// periodo pintado.
+function updateSummaryRangeSummary() {
+  const summaryEl = document.getElementById("gym-summary-range-summary");
+  if (!summaryEl) return;
+  const from = document.getElementById("gym-summary-from")?.value || null;
+  const to = document.getElementById("gym-summary-to")?.value || null;
+  const fmtDate = (iso) => (iso ? ctx.formatDateEs(iso) : "sin límite");
+  summaryEl.textContent = `${fmtDate(from)} – ${fmtDate(to)}`;
 }
 
 // ---------- Modal de entreno ----------
