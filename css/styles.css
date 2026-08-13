@@ -4816,8 +4816,8 @@ body.is-back-to-top-visible .back-to-top {
 
 /* --- Resumen de periodo (issue #269) --- */
 
-/* Selector de periodo: chips tipo .friend-chip + inputs de fecha del
-   rango libre, en línea con salto en pantallas estrechas. */
+/* Selector de periodo: chips tipo .friend-chip + recuadro del rango
+   libre, en línea con salto en pantallas estrechas. */
 .gym-summary-selector {
   display: flex;
   flex-wrap: wrap;
@@ -4848,9 +4848,53 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--paper);
 }
 
-/* Inputs de fecha del rango libre: fuente a 1rem (nunca px < 16,
-   evita el zoom de iOS) y flexibles para no desbordar. */
-.gym-summary-selector input[type="date"] {
+/* Recuadro del rango libre (iteración del comentario #269): un
+   único <details> que fusiona las dos fechas en una sola caja
+   (chips «desde»/«hasta» dentro), oculto salvo con la opción
+   «Rango» (controla el atributo hidden js/gym.js). Sin marcador
+   nativo del <details>; el summary muestra el rango ya elegido. */
+.gym-summary-range {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  color: var(--ink);
+  min-width: 0;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+}
+.gym-summary-range summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  min-width: 0;
+}
+.gym-summary-range summary::-webkit-details-marker {
+  display: none;
+}
+.gym-summary-range__label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gym-summary-range__value {
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.gym-summary-range__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 0.6rem 0.5rem;
+  min-width: 0;
+}
+
+/* Inputs de fecha del rango: fuente a 1rem (nunca px < 16, evita el
+   zoom de iOS) y flexibles para no desbordar. */
+.gym-summary-range__fields input[type="date"] {
   min-width: 0;
   font-size: 1rem;
   background: var(--paper-dim);
@@ -4903,9 +4947,22 @@ body.is-back-to-top-visible .back-to-top {
   min-width: 0;
 }
 
-/* Desglose por ejercicio: tabla con scroll horizontal propio (el de
-   página queda libre, regla 2 de AGENTS.md) y bordes con la misma
-   variable que usan el resto de superficies de Gimnasio. */
+/* Título de sección del resumen («Por grupos musculares»,
+   «Por ejercicio»): misma escala que los títulos de grupo del
+   resto de la web, con salto de palabra en pantallas estrechas. */
+.gym-summary-section-title {
+  margin: 1.1rem 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Desglose por ejercicio y por grupos musculares: tablas con scroll
+   horizontal propio (el de página queda libre, regla 2 de
+   AGENTS.md) y bordes con la misma variable que usan el resto de
+   superficies de Gimnasio. */
 .gym-summary-table-wrap {
   overflow-x: auto;
   min-width: 0;
@@ -5616,7 +5673,7 @@ body.is-back-to-top-visible .back-to-top {
 /* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
    con texto papel (la base --paper-dim sería gris #111 casi igual a
    la superficie del modal; patrón de .ingredient-modal__field). El
-   selector de fechas del Resumen (issue #269) sigue el mismo patrón:
+   recuadro del rango del Resumen (issue #269) sigue el mismo patrón:
    en negro puro el valor y el calendario nativo quedarían negros
    sobre casi negro. */
 [data-theme="black"] .gym-form__field input,
@@ -5625,10 +5682,19 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .gym-exercise-block select,
 [data-theme="black"] .gym-exercise-block input[type="text"],
 [data-theme="black"] .gym-series-row input,
-[data-theme="black"] .gym-summary-selector input[type="date"] {
+[data-theme="black"] .gym-summary-range,
+[data-theme="black"] .gym-summary-range__fields input[type="date"] {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
+}
+
+/* Textos interiores del recuadro del rango en negro puro: con el
+   fondo invertido a --ink, la etiqueta y el rango elegido pasan a
+   papel (el --ink-soft base quedaría negro sobre negro). */
+[data-theme="black"] .gym-summary-range__label,
+[data-theme="black"] .gym-summary-range__value {
+  color: var(--paper);
 }
 
 /* El panel del ejercicio del constructor usa el borde claro del

@@ -693,17 +693,28 @@
       <!-- Pestaña Resumen (issue #269): totales y desglose por
            ejercicio de los entrenos de un periodo elegido (semana en
            curso, mes en curso o rango libre desde/hasta). El
-           contenido lo renderiza js/gym.js. -->
+           contenido lo renderiza js/gym.js. Iteración: las dos fechas
+           del rango viven dentro de un único recuadro
+           (#gym-summary-range) que solo se muestra con la opción
+           «Rango» activa (comentario del usuario en la issue). -->
       <section id="panel-gym-summary-tab" role="tabpanel" aria-labelledby="panel-gym-summary-tab-heading">
         <h2 id="panel-gym-summary-tab-heading" class="visually-hidden">Resumen</h2>
         <div class="gym-summary-selector" role="group" aria-label="Periodo del resumen">
           <button type="button" class="gym-summary-chip is-active" aria-pressed="true" data-summary-period="week">Semana en curso</button>
           <button type="button" class="gym-summary-chip" aria-pressed="false" data-summary-period="month">Mes en curso</button>
           <button type="button" class="gym-summary-chip" aria-pressed="false" data-summary-period="custom">Rango</button>
-          <label class="visually-hidden" for="gym-summary-from">Desde</label>
-          <input type="date" id="gym-summary-from" aria-label="Desde">
-          <label class="visually-hidden" for="gym-summary-to">Hasta</label>
-          <input type="date" id="gym-summary-to" aria-label="Hasta">
+          <details id="gym-summary-range" class="gym-summary-range" hidden>
+            <summary>
+              <span class="gym-summary-range__label">Rango</span>
+              <span class="gym-summary-range__value" id="gym-summary-range-summary">Desde – Hasta</span>
+            </summary>
+            <div class="gym-summary-range__fields">
+              <label class="visually-hidden" for="gym-summary-from">Desde</label>
+              <input type="date" id="gym-summary-from" aria-label="Desde">
+              <label class="visually-hidden" for="gym-summary-to">Hasta</label>
+              <input type="date" id="gym-summary-to" aria-label="Hasta">
+            </div>
+          </details>
         </div>
         <div id="gym-summary-data" aria-live="polite"></div>
       </section>
