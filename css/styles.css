@@ -3724,7 +3724,8 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .shopping-extra-form__row input,
-.shopping-extra-form__row select {
+.shopping-extra-form__row select,
+.shopping-extra-form__row .ing-combo .ing-nombre {
   background: var(--ink-raised);
   color: var(--paper);
   border: 1px solid var(--paper-alpha-30);
@@ -3735,34 +3736,39 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .shopping-extra-form__row input:focus-visible,
-.shopping-extra-form__row select:focus-visible {
+.shopping-extra-form__row select:focus-visible,
+.shopping-extra-form__row .ing-combo .ing-nombre:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
 
-.shopping-extra-form__row input#extra-nombre {
+/* El combobox de ingrediente (issue #249) ocupa el ancho que tenía el
+   nombre libre; cantidad y unidad mantienen su flex fijo. */
+.shopping-extra-form__row .ing-combo {
   flex: 2 1 180px;
+}
+
+.shopping-extra-form__row .ing-combo .ing-nombre {
+  width: 100%;
 }
 
 .shopping-extra-form__row input#extra-cantidad {
   flex: 0 1 90px;
 }
 
-.shopping-extra-form__row input#extra-unidad {
+/* Unidad de medida como desplegable (issue #249, iteración): mismo
+   flex fijo que tenía el input libre. */
+.shopping-extra-form__row #extra-unidad {
   flex: 0 1 100px;
 }
 
-.shopping-extra-form__row select {
-  flex: 1 1 200px;
-}
-
-.shopping-extra-form__check {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
+/* Aviso bajo el formulario de ítem extra (issue #249): el nombre sale
+   del catálogo, no se escribe libre. */
+.shopping-extra-form__hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
   color: var(--ink-soft);
-  margin: 0.5rem 0;
+  overflow-wrap: break-word;
 }
 
 .shopping-extra-form__actions {
@@ -4116,14 +4122,13 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--stamp);
 }
 
-/* Checkboxes de la lista de la compra (marcar comprado) y del form
-   de ítem extra con el acento de la pestaña (--stamp, rojo), mismo
-   patrón que .saga-row input[type="checkbox"] en Ocio: accent-color
-   nativo + tamaño fijo. --stamp (#a63b2e) da check blanco ≈6.4:1 en
-   Oscuro y en la familia clara; en negro puro pasa a --stamp-dark
-   (#cf6655, umbral gráfico 3:1 sobre negro, patrón de ocio.css). */
-.shopping-line__main input[type="checkbox"],
-.shopping-extra-form__check input[type="checkbox"] {
+/* Checkboxes de la lista de la compra (marcar comprado) con el acento
+   de la pestaña (--stamp, rojo), mismo patrón que .saga-row
+   input[type="checkbox"] en Ocio: accent-color nativo + tamaño fijo.
+   --stamp (#a63b2e) da check blanco ≈6.4:1 en Oscuro y en la familia
+   clara; en negro puro pasa a --stamp-dark (#cf6655, umbral gráfico
+   3:1 sobre negro, patrón de ocio.css). */
+.shopping-line__main input[type="checkbox"] {
   accent-color: var(--stamp);
   width: 18px;
   height: 18px;
@@ -5041,12 +5046,12 @@ body.is-back-to-top-visible .back-to-top {
    .shopping-btn--ghost y .shopping-line__remove:hover no necesitan
    override: la base ya funciona en negro puro. */
 [data-theme="black"] .shopping-extra-form__row input,
-[data-theme="black"] .shopping-extra-form__row select { background: var(--ink); }
+[data-theme="black"] .shopping-extra-form__row select,
+[data-theme="black"] .shopping-extra-form__row .ing-combo .ing-nombre { background: var(--ink); }
 
 /* Checkboxes de la lista de la compra en negro puro: el acento rojo
    pasa a la variante clara (--stamp-dark #cf6655) para mantener el
    umbral gráfico 3:1 sobre negro (patrón de episode-checkbox). */
-[data-theme="black"] .shopping-line__main input[type="checkbox"],
-[data-theme="black"] .shopping-extra-form__check input[type="checkbox"] {
+[data-theme="black"] .shopping-line__main input[type="checkbox"] {
   accent-color: var(--stamp-dark);
 }

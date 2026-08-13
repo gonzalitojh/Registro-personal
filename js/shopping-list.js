@@ -36,11 +36,18 @@
 // =============================================================
 
 import { showToast, showUndoToast } from "./ui.js";
-import { registerTabRenderer, getRecipes, getIngredients } from "./recipes.js";
+import {
+  registerTabRenderer,
+  getRecipes,
+  getIngredients,
+  bindIngredienteCombo,
+  registerShoppingListAdder,
+} from "./recipes.js";
 import {
   INGREDIENT_CATEGORIES,
   DAY_KEYS,
   MEAL_KEYS,
+  SHOPPING_UNITS,
   normalizeIngredientName,
   normalizeUnit,
   escapeHtml,
@@ -156,6 +163,18 @@ export function setupShoppingList(opts) {
     if (!box) return;
     const lineEl = box.closest(".shopping-line-wrap");
     if (lineEl) lineEl.classList.toggle("is-bought", box.checked);
+  });
+
+  // Adder del modal del ingrediente (issue #249): «Añadir a la lista
+  // de la compra» persiste el ítem en las mismas semanas seleccionadas
+  // que el formulario de ítem extra (la escritura comparte la cola de
+  // mutaciones). Si el usuario aún no ha tocado los chips, la selección
+  // se alinea con la semana activa del menú (lo que verá al abrir la
+  // pestaña Compra); si ya eligió semanas, esas son las que se usan.
+  // recipes.js lo invoca vía registerShoppingListAdder.
+  registerShoppingListAdder(async (item) => {
+    if (!userTouchedChips) syncSelectionWithMenu();
+    await persistExtraItem(item, { create: true });
   });
 
   registerTabRenderer("compra", () => {
@@ -725,51 +744,77 @@ function attachLineSwipe(wrap, content) {
 
 // ---------- Ítems extra manuales ----------
 
+// Formulario de ítem extra (issue #249): el nombre ya no se escribe
+// libremente ni se elige categoría ni «es/no es comestible»: es un
+// combobox con buscador sobre el catálogo de ingredientes (el mismo
+// de las recetas, issue #240). De ahí salen el nombre y la categoría
+// (y con ella si es comestible o de hogar); el usuario solo añade la
+// cantidad y la unidad de medida.
 function renderExtraForm() {
   const form = document.getElementById("shopping-extra-form");
   form.innerHTML = `<div class="shopping-extra-form__row">
-      <input type="text" id="extra-nombre" placeholder="Nombre (p. ej. lavavajillas)" maxlength="100" />
+      <div class="ing-combo">
+        <input type="text" class="ing-nombre" placeholder="Buscar ingrediente…"
+               role="combobox" aria-expanded="false" aria-autocomplete="list" autocomplete="off"
+               aria-label="Ingrediente (elige uno del catálogo)" />
+        <button type="button" class="ing-combo__toggle" aria-label="Elegir ingrediente del catálogo" tabindex="-1">▾</button>
+        <ul class="ing-combo__list" role="listbox" hidden></ul>
+        <input type="hidden" class="ing-nombre-valor" />
+        <input type="hidden" class="ing-categoria-valor" />
+      </div>
       <input type="number" id="extra-cantidad" placeholder="Cant." step="any" min="0" />
-      <input type="text" id="extra-unidad" placeholder="Unidad" maxlength="30" />
-      <select id="extra-categoria" aria-label="Categoría">
-        <option value="">—</option>
-        ${INGREDIENT_CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join("")}
+      <select id="extra-unidad" aria-label="Unidad de medida">
+        ${SHOPPING_UNITS.map((u) => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("")}
       </select>
     </div>
-    <label class="shopping-extra-form__check">
-      <input type="checkbox" id="extra-comestible" checked /> No es comestible (limpieza, hogar…)
-    </label>
+    <p class="shopping-extra-form__hint">Elige un ingrediente del catálogo: la categoría (y si es
+      producto del hogar) se toma de su ficha. Si no está, créalo en la pestaña Ingredientes.</p>
     <div class="shopping-extra-form__actions">
       <button type="button" class="btn btn--small btn--primary" data-extra-action="add">Añadir</button>
       <button type="button" class="btn btn--small shopping-btn--ghost" data-extra-action="cancel">Cancelar</button>
     </div>`;
+  bindIngredienteCombo(form.querySelector(".ing-combo"), {
+    emptyText: "Sin coincidencias. Crea el ingrediente en la pestaña Ingredientes.",
+  });
+}
+
+// Persiste un ítem extra en todas las semanas seleccionadas (issue
+// #225): la escritura va por la cola de mutaciones para no pisar
+// eliminaciones o añadidos casi simultáneos. Lo usan tanto el
+// formulario de ítem extra como el modal del ingrediente (issue #249).
+async function persistExtraItem(item, { create = true } = {}) {
+  await enqueueMutation(async () => {
+    for (const weekStart of [...selectedWeeks]) {
+      const data = getMenuDataByWeek(weekStart);
+      await updateMenuWeek(weekStart, { itemsExtra: [...(data.itemsExtra || []), item] }, { create });
+    }
+  });
 }
 
 async function addExtraItem() {
   const form = document.getElementById("shopping-extra-form");
-  const nombre = form.querySelector("#extra-nombre").value.trim();
-  if (!nombre) {
-    showToast("Escribe un nombre para el ítem extra.");
+  // El nombre y la categoría vienen del combobox (solo las opciones
+  // del catálogo escriben el valor oculto; el texto libre no vale,
+  // patrón de las recetas, issue #240). Si no hay selección o el
+  // texto visible ya no coincide, la fila se descarta con aviso.
+  const nombre = form.querySelector(".ing-nombre-valor").value.trim();
+  const textoVisible = form.querySelector(".ing-nombre").value.trim();
+  if (!nombre || normalizeIngredientName(textoVisible) !== normalizeIngredientName(nombre)) {
+    showToast("Elige el ingrediente del desplegable (o créalo en la pestaña Ingredientes).");
     return;
   }
   const item = {
     nombre,
     cantidad: form.querySelector("#extra-cantidad").value === "" ? null : Number(form.querySelector("#extra-cantidad").value),
     unidad: normalizeUnit(form.querySelector("#extra-unidad").value),
-    categoriaId: form.querySelector("#extra-categoria").value,
-    comestible: !form.querySelector("#extra-comestible").checked,
+    categoriaId: form.querySelector(".ing-categoria-valor").value,
+    // El catálogo no guarda «comestible»: se deduce de la categoría
+    // (la categoría «hogar» es la de los productos de limpieza, y la
+    // lista marca esas líneas con su estilo propio).
+    comestible: form.querySelector(".ing-categoria-valor").value !== "hogar",
   };
   try {
-    // El ítem extra se añade a todas las semanas seleccionadas: la
-    // lista de la compra es multi-semana (issue #225). La escritura
-    // va por la cola de mutaciones (issue #225) para no pisar
-    // eliminaciones o añadidos casi simultáneos.
-    await enqueueMutation(async () => {
-      for (const weekStart of [...selectedWeeks]) {
-        const data = getMenuDataByWeek(weekStart);
-        await updateMenuWeek(weekStart, { itemsExtra: [...(data.itemsExtra || []), item] }, { create: true });
-      }
-    });
+    await persistExtraItem(item);
     showToast("Ítem añadido a la lista.");
     showingExtraForm = false;
     form.classList.add("hidden");

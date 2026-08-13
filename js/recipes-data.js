@@ -114,6 +114,12 @@ export function normalizeUnit(unit) {
   return String(unit || "").trim().toLowerCase();
 }
 
+// Unidades de medida para añadir un ítem a la lista de la compra
+// (issue #249, iteración): desplegable con las opciones exactas que
+// pidió el usuario. El valor se normaliza con normalizeUnit antes de
+// persistir (g, kg, ml, l, unidades).
+export const SHOPPING_UNITS = ["g", "Kg", "mL", "L", "Unidades"];
+
 // Combina las etiquetas predefinidas con las personalizadas del
 // usuario (docs de users/{uid}/tags con { nombre, tipo }). Las
 // personalizadas llevan custom: true para la UI de selección.
