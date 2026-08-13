@@ -862,6 +862,15 @@ verás:
   tengas en tu registro tiene un botón **«Añadir»** para añadirla
   directamente; las que ya están en tu registro aparecen como
   **«Añadida»** (botón deshabilitado).
+
+  También puedes **pulsar sobre la tarjeta** de cualquiera de esas
+  películas para ver su información (portada, duración, género, director,
+  reparto, sinopsis, puntuación de la comunidad y tráiler si lo tiene)
+  antes de añadirla: se abre una ventana con los botones **«Añadir»** y
+  **«Cerrar»**, y al añadirla o cerrarla (con «Cerrar», la ✕, pulsando
+  fuera de la ventana o la tecla **Esc**) vuelves a la ficha de la
+  película que estabas viendo. Las películas que ya tienes en tu registro
+  se muestran con **«Ya añadido»** (botón deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
   con títulos similares que puedes añadir directamente.
 - **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
