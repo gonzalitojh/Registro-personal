@@ -8,6 +8,12 @@
 // puede llevar SUS propios comensales (comensales propios o null
 // para heredar el global de la semana).
 //
+// Un único botón «+ Añadir receta» en la barra (issue #242,
+// iteración) abre el buscador con un selector de destino: día de la
+// semana o «Toda la semana» y comida (almuerzo/cena). Lo que se
+// añade a cada celda se muestra como tarjetas en miniatura (foto,
+// nombre y etiquetas) clicables para ver la receta en modo lectura.
+//
 // Un documento por semana en users/{uid}/menus (semanaInicio =
 // lunes ISO). La lista de la compra (shopping-list.js) consume
 // este mismo documento.
@@ -55,7 +61,9 @@ export function setupMenu(opts) {
     e.target.value = value;
     updateActiveMenu({ comensales: value });
   });
-  document.getElementById("btn-add-weekly-recipe").addEventListener("click", addWeeklyRecipe);
+  // Único botón de añadir receta (issue #242, iteración): el destino
+  // (día o toda la semana + comida) se elige dentro del buscador.
+  document.getElementById("btn-add-menu-recipe").addEventListener("click", () => openRecipePicker());
   document.getElementById("menu-weekly-list").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-weekly-remove]");
     if (!btn) return;
@@ -220,16 +228,22 @@ function renderMenuGrid(menu) {
         return `<div class="menu-grid__cell menu-grid__cell--meal" data-day="${day}" data-meal="${meal}">
           <div class="menu-meal__items">
             ${entries.map(({ recipe, comensales }) => {
-              const comHint = comensales ? ` · ${comensales} comensale${comensales === 1 ? "" : "s"}` : "";
-              return `<span class="menu-meal__item${excluded.has(recipe) ? " is-excluded" : ""}"
-                  title="${excluded.has(recipe) ? "Excluida de la lista de la compra" : escapeHtml(recipe.nombre + comHint)}">
-                  ${escapeHtml(recipe.nombre)}${comensales ? `<small class="menu-meal__comensales">· ${comensales}</small>` : ""}
-                  <button type="button" class="menu-meal__remove" data-day="${day}" data-meal="${meal}" data-remove-recipe="${recipe}"
-                    aria-label="Quitar ${escapeHtml(recipe.nombre)}">✕</button>
-                </span>`;
+              const r = byId.get(recipe);
+              const tagHtml = recipeTagsHtml(r);
+              return `<article class="menu-meal__card${excluded.has(recipe) ? " is-excluded" : ""}"
+                  role="button" tabindex="0" data-menu-card="${escapeHtml(recipe)}"
+                  aria-label="Ver receta ${escapeHtml(r.nombre)}">
+                  ${r.fotoUrl ? `<img class="menu-meal__card-photo" src="${escapeHtml(r.fotoUrl)}" alt="" loading="lazy" />` : ""}
+                  <span class="menu-meal__card-copy">
+                    <span class="menu-meal__card-name">${escapeHtml(r.nombre)}</span>
+                    ${tagHtml ? `<span class="menu-meal__card-tags">${tagHtml}</span>` : ""}
+                  </span>
+                  ${comensales ? `<small class="menu-meal__comensales">· ${comensales}</small>` : ""}
+                  <button type="button" class="menu-meal__remove" data-day="${day}" data-meal="${meal}" data-remove-recipe="${escapeHtml(recipe)}"
+                    aria-label="Quitar ${escapeHtml(r.nombre)}">✕</button>
+                </article>`;
             }).join("")}
           </div>
-          <button type="button" class="btn btn--small menu-meal__add" data-day="${day}" data-meal="${meal}">+ Receta</button>
         </div>`;
       });
       return `<div class="menu-grid__row">
@@ -238,9 +252,25 @@ function renderMenuGrid(menu) {
       </div>`;
     }).join("")}`;
 
-  // Botones «+ Receta»: abren el buscador de recetas (issue #242).
-  grid.querySelectorAll(".menu-meal__add").forEach((btn) => {
-    btn.addEventListener("click", () => openRecipePicker(btn.dataset.day, btn.dataset.meal));
+  // Tarjetas de las celdas: click (o Enter/Espacio) abre la receta en
+  // modo lectura, la misma ventana de la pestaña Recetas (issue #242,
+  // iteración). El botón ✕ quita la receta de la comida.
+  grid.querySelectorAll("[data-menu-card]").forEach((card) => {
+    const openCard = () => {
+      const recipe = byId.get(card.dataset.menuCard);
+      if (!recipe) return;
+      openRecipeModal(recipe, { readOnly: true });
+    };
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("[data-remove-recipe]")) return;
+      openCard();
+    });
+    card.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (e.target.closest("button")) return;
+      e.preventDefault();
+      openCard();
+    });
   });
 
   // Quitar receta de una comida (y de la exclusión si estaba).
@@ -306,7 +336,10 @@ function pickerFilterLabel(scope) {
 }
 
 // Apertura del buscador para una comida (día × comida de la rejilla).
-function openRecipePicker(day, meal) {
+// El botón único «+ Añadir receta» (issue #242, iteración) lo abre sin
+// destino: el usuario elige dentro el día (o «Toda la semana») y la
+// comida. pickerDay "*" = semana completa (pickerMeal = null).
+function openRecipePicker(day = DAY_KEYS[0], meal = MEAL_KEYS[0]) {
   pickerDay = day;
   pickerMeal = meal;
   pickerQuery = "";
@@ -356,10 +389,25 @@ function restoreRecipePicker() {
 
 function renderRecipePicker() {
   const content = document.getElementById("recipe-picker-content");
-  const targetLabel = `${DAY_LABELS[pickerDay]} · ${MEAL_LABELS[pickerMeal]}`;
+  const wholeWeek = pickerDay === "*";
   content.innerHTML = `
     <div class="recipe-pick">
-      <h3 class="recipe-pick__title">Añadir receta a ${escapeHtml(targetLabel)}</h3>
+      <h3 class="recipe-pick__title"></h3>
+      <div class="recipe-pick__target">
+        <label class="recipe-pick__field" for="recipe-pick-day">Día
+          <select id="recipe-pick-day">
+            <option value="*">Toda la semana</option>
+            ${DAY_KEYS.map((d) => `<option value="${d}">${DAY_LABELS[d]}</option>`).join("")}
+          </select>
+        </label>
+        <label class="recipe-pick__field" for="recipe-pick-meal">Comida
+          <select id="recipe-pick-meal">
+            ${MEAL_KEYS.map((m) => `<option value="${m}">${MEAL_LABELS[m]}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <p class="recipe-pick__week-hint hidden" aria-live="polite">Se añade una vez a la semana y NO se multiplica
+        por los comensales (p. ej. una masa de pizza para toda la semana).</p>
       <div class="recipe-pick__toolbar">
         <input type="search" id="recipe-pick-search" class="recipe-pick__search"
           placeholder="Buscar receta…" aria-label="Buscar receta" autocomplete="off" />
@@ -389,8 +437,28 @@ function renderRecipePicker() {
       <div id="recipe-pick-list" class="recipe-pick__list"></div>
     </div>`;
 
+  // Estado inicial de los selectores de destino (día / comida). Con
+  // «Toda la semana» la comida no aplica: el selector queda desactivado.
+  const daySel = content.querySelector("#recipe-pick-day");
+  const mealSel = content.querySelector("#recipe-pick-meal");
+  daySel.value = pickerDay === "*" ? "*" : pickerDay;
+  mealSel.value = pickerMeal || MEAL_KEYS[0];
+  if (wholeWeek) mealSel.disabled = true;
+  updatePickerTargetUi(content);
+
   bindRecipePickerEvents(content);
   renderRecipePickerList();
+}
+
+// Título del buscador y aviso de «Toda la semana» según el destino.
+function updatePickerTargetUi(content) {
+  const title = content.querySelector(".recipe-pick__title");
+  const targetLabel = pickerDay === "*"
+    ? "toda la semana"
+    : `${DAY_LABELS[pickerDay]} · ${MEAL_LABELS[pickerMeal]}`;
+  title.textContent = `Añadir receta a ${targetLabel}`;
+  const hint = content.querySelector(".recipe-pick__week-hint");
+  if (hint) hint.classList.toggle("hidden", pickerDay !== "*");
 }
 
 function bindRecipePickerEvents(content) {
@@ -401,6 +469,29 @@ function bindRecipePickerEvents(content) {
   // Búsqueda en vivo.
   content.querySelector("#recipe-pick-search").addEventListener("input", (e) => {
     pickerQuery = e.target.value.trim().toLowerCase();
+    renderRecipePickerList();
+  });
+
+  // Selector de destino: día (o toda la semana) y comida. Cambiar el
+  // día a «Toda la semana» desactiva la comida y muestra el aviso.
+  const daySel = content.querySelector("#recipe-pick-day");
+  const mealSel = content.querySelector("#recipe-pick-meal");
+  daySel.addEventListener("change", () => {
+    pickerDay = daySel.value === "*" ? "*" : daySel.value;
+    if (pickerDay === "*") {
+      pickerMeal = null;
+      mealSel.disabled = true;
+    } else {
+      pickerMeal = mealSel.value || MEAL_KEYS[0];
+      mealSel.disabled = false;
+    }
+    updatePickerTargetUi(content);
+    renderRecipePickerList();
+  });
+  mealSel.addEventListener("change", () => {
+    if (pickerDay === "*") return;
+    pickerMeal = mealSel.value;
+    updatePickerTargetUi(content);
     renderRecipePickerList();
   });
 
@@ -581,6 +672,20 @@ function syncPickerFilterPanel(scope, panel) {
   });
 }
 
+// Etiquetas de una receta (alérgenos + tipo de plato) como HTML de
+// píldoras .recipe-card__tag: misma fuente de verdad para las
+// tarjetas del buscador y las tarjetas en miniatura de la rejilla.
+function recipeTagsHtml(r) {
+  const alergenos = mergeTags(ALERGEN_TAGS, getCustomTags().filter((t) => t.tipo === "alergeno"))
+    .filter((t) => (r.alergenos || []).includes(t.id));
+  const tipos = mergeTags(MEAL_TYPES, getCustomTags().filter((t) => t.tipo === "tipo"))
+    .filter((t) => (r.tipos || []).includes(t.id));
+  return [
+    ...alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`),
+    ...tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`),
+  ].join("");
+}
+
 // Lista de tarjetas del buscador: foto a la izquierda (si la tiene),
 // nombre como título arriba a la derecha y etiquetas de alérgenos y
 // tipo de plato abajo. La tarjeta entera abre la lectura; el botón
@@ -589,8 +694,12 @@ function renderRecipePickerList() {
   const list = document.getElementById("recipe-pick-list");
   if (!list) return;
   const menu = activeMenu();
+  // Ya añadidas al destino elegido: la comida del día (días concretos)
+  // o las recetas de la semana (destino «Toda la semana»).
   const existing = new Set(
-    (menu.dias?.[pickerDay]?.[pickerMeal] || []).map((e) => (typeof e === "string" ? e : e.recipeId))
+    pickerDay === "*"
+      ? (menu.recetasPorSemana || []).map((e) => e.recipeId)
+      : (menu.dias?.[pickerDay]?.[pickerMeal] || []).map((e) => (typeof e === "string" ? e : e.recipeId))
   );
   const candidates = getRecipes().filter((r) => {
     if (existing.has(r.id)) return false;
@@ -602,22 +711,20 @@ function renderRecipePickerList() {
 
   if (!candidates.length) {
     const all = getRecipes();
+    const allInTarget = pickerDay === "*"
+      ? "Ya están todas tus recetas en la semana."
+      : "Ya están todas tus recetas en esta comida.";
     const msg = !all.length
       ? "Aún no hay recetas. Crea la primera en la pestaña Recetas."
       : existing.size === all.length
-        ? "Ya están todas tus recetas en esta comida."
+        ? allInTarget
         : "Ninguna receta coincide con la búsqueda o los filtros.";
     list.innerHTML = `<p class="recipe-pick__empty">${msg}</p>`;
     return;
   }
 
   list.innerHTML = candidates.map((r) => {
-    const alergenos = mergeTags(ALERGEN_TAGS, getCustomTags().filter((t) => t.tipo === "alergeno"))
-      .filter((t) => (r.alergenos || []).includes(t.id));
-    const tipos = mergeTags(MEAL_TYPES, getCustomTags().filter((t) => t.tipo === "tipo"))
-      .filter((t) => (r.tipos || []).includes(t.id));
-    const tagHtml = [...alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`),
-      ...tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`)].join("");
+    const tagHtml = recipeTagsHtml(r);
     return `<article class="recipe-pick__card" role="button" tabindex="0" data-pick-card="${escapeHtml(r.id)}"
         aria-label="Ver receta ${escapeHtml(r.nombre)}">
       <div class="recipe-pick__card-main">
@@ -679,11 +786,26 @@ function collapseComensalesRow(card) {
   if (addBtn) addBtn.hidden = false;
 }
 
-// Añade la receta a la comida con sus comensales propios (o null si
-// no se indicó → hereda el global del menú). Devuelve true si se
-// añadió y false si ya estaba (el buscador sigue abierto).
+// Añade la receta al destino con sus comensales propios (o null si
+// no se indicó → hereda el global del menú). Con day "*" la receta va
+// a «recetas a la semana» (NO se multiplica por los comensales).
+// Devuelve true si se añadió y false si ya estaba (el buscador sigue
+// abierto).
 async function addRecipeToMeal(day, meal, recipeId, comensales = null) {
   const current = activeMenu();
+  if (day === "*") {
+    const list = current.recetasPorSemana || [];
+    if (list.some((e) => e.recipeId === recipeId)) {
+      showToast("Esa receta ya está en la semana.");
+      renderMenu();
+      return false;
+    }
+    await updateActiveMenu({ recetasPorSemana: [...list, { recipeId, cantidad: 1 }] });
+    closeRecipePicker();
+    renderMenu();
+    showToast("Receta añadida a la semana.");
+    return true;
+  }
   const entries = (current.dias[day][meal] || []).map(mealEntryOf).map((e) => e.recipe);
   if (entries.includes(recipeId)) {
     showToast("Esa receta ya está en esa comida.");
@@ -716,18 +838,6 @@ function renderWeeklyRecipes(menu) {
   const recipes = getRecipes();
   const byId = new Map(recipes.map((r) => [r.id, r]));
 
-  // Si el picker de «añadir» consumió el botón estático, lo
-  // reconstruimos para que el flujo vuelva a estar disponible.
-  if (!document.getElementById("btn-add-weekly-recipe")) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "btn-add-weekly-recipe";
-    btn.className = "btn btn--primary btn--small";
-    btn.textContent = "+ Añadir receta a la semana";
-    btn.addEventListener("click", addWeeklyRecipe);
-    list.insertAdjacentElement("beforebegin", btn);
-  }
-
   if (!menu.recetasPorSemana?.length) {
     list.innerHTML = `<p class="menu-weekly__empty">Ninguna receta a la semana.</p>`;
     return;
@@ -737,44 +847,9 @@ function renderWeeklyRecipes(menu) {
     if (!recipe) return "";
     return `<div class="menu-weekly__item">
       <span>${escapeHtml(recipe.nombre)}</span>
-      <button type="button" class="btn btn--small btn--danger" data-weekly-remove="${entry.recipeId}">Quitar</button>
+      <button type="button" class="btn btn--small btn--danger" data-weekly-remove="${escapeHtml(entry.recipeId)}">Quitar</button>
     </div>`;
   }).join("");
-}
-
-function addWeeklyRecipe() {
-  const menu = activeMenu();
-  const recipes = getRecipes();
-  const candidates = recipes.filter((r) => !(menu.recetasPorSemana || []).some((e) => e.recipeId === r.id));
-  if (!candidates.length) {
-    showToast("No hay recetas nuevas para añadir a la semana.");
-    return;
-  }
-  const wrapper = document.createElement("div");
-  wrapper.className = "menu-weekly__addrow";
-  wrapper.innerHTML = `<select aria-label="Elegir receta a la semana">
-      ${candidates.map((r) => `<option value="${r.id}">${escapeHtml(r.nombre)}</option>`).join("")}
-    </select>
-    <button type="button" class="btn btn--small btn--primary">Añadir</button>`;
-  document.getElementById("btn-add-weekly-recipe").replaceWith(wrapper);
-
-  wrapper.querySelector("button").addEventListener("click", async () => {
-    const current = activeMenu();
-    const list = current.recetasPorSemana || [];
-    const recipeId = wrapper.querySelector("select").value;
-    // Guard contra duplicados (el wrapper puede quedar vivo si el
-    // render no llegó a reconstruir el botón a tiempo).
-    if (list.some((e) => e.recipeId === recipeId)) {
-      showToast("Esa receta ya está en la semana.");
-      wrapper.remove();
-      renderMenu();
-      return;
-    }
-    const entry = { recipeId, cantidad: 1 };
-    await updateActiveMenu({ recetasPorSemana: [...list, entry] });
-    wrapper.remove();
-    renderMenu();
-  });
 }
 
 async function removeWeeklyRecipe(recipeId) {
