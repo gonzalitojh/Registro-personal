@@ -331,7 +331,8 @@ manualmente»** (más en [sección 10.3](#103-añadir-manualmente)).
 
 En tu lista, cada película tiene un botón **«Vista»**. Al pulsarlo se
 registra el visionado con la fecha de hoy y se abre la ventana de
-**valoración** para que la puntúes de 1 a 5 estrellas (puedes pulsar
+**valoración** para que la puntúes de 1 a 5 estrellas (con medias,
+pulsando dos veces el mismo número; puedes pulsar
 **«Ahora no»**). Si te arrepientes del marcado, pulsa **«Deshacer»** en
 esa ventana: el visionado se anula y no se añade al historial.
 
@@ -1030,7 +1031,7 @@ verás:
   las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
   con títulos similares que puedes añadir directamente.
-- **Tu valoración** (1-5 estrellas) y **tus notas** (por ejemplo,
+- **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
   «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
   **«Eliminar»** para borrar el título.
 
@@ -1045,7 +1046,8 @@ juego** (más en [sección 7.4](#74-historial-de-sesiones)).
 
 ## 13. Valoraciones con estrellas
 
-Puedes valorar de **1 a 5 estrellas**:
+Puedes valorar de **1 a 5 estrellas**, incluidas las **medias estrellas**
+(por ejemplo, 2.5):
 
 - **Películas**: al marcarla como vista se abre la ventana de valoración.
 - **Libros**: al terminar la lectura se abre la misma ventana.
@@ -1058,22 +1060,24 @@ En la ficha de una **serie**, debajo de la valoración general, se muestra
 la **media de tus valoraciones de episodios** (por ejemplo
 «Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
 vistos sin valorar no se tienen en cuenta (la valoración mínima de un
-episodio es 1 estrella). Si todavía no has valorado ningún episodio, la
-media no aparece. Se actualiza sola en cuanto valoras un episodio, quitas
-una valoración o desmarcas episodios.
+episodio es media estrella, 0.5). Si todavía no has valorado ningún
+episodio, la media no aparece. Se actualiza sola en cuanto valoras un
+episodio, quitas una valoración o desmarcas episodios.
 
 En la ventana emergente puedes pulsar **«Ahora no»** para valorar más
 tarde, o elegir estrellas y pulsar **«Guardar valoración»**. Si pulsas
-guardar sin elegir, la web te lo recuerda. Pulsando otra vez sobre la
-misma estrella quitas la valoración.
+guardar sin elegir, la web te lo recuerda. Si vuelves a pulsar el mismo
+número, la valoración se queda en **media estrella** (por ejemplo:
+pulsas 3 y luego otra vez 3 → 2.5). Un **tercer pulso** sobre el mismo
+número quita la valoración por completo.
 
 También puedes pulsar **«Deshacer»**: anula el marcado recién hecho
 (el visionado de la película, el fin de la lectura o el episodio
 marcado) y te deja como estabas. En episodios, el deshacer se ofrece
 solo mientras la ventana está abierta.
 
-En tu lista, cada título muestra tus estrellas (★) y la nota de la
-comunidad.
+En tu lista, cada título muestra tus estrellas (★, con «½» para las
+medias, por ejemplo ★★½) y la nota de la comunidad.
 
 ## 14. Acciones rápidas
 

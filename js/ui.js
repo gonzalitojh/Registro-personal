@@ -381,7 +381,7 @@ function renderGrid(gridEl, items, onOpen) {
   gridEl.className = "library-grid";
   gridEl.innerHTML = items
     .map((item, index) => {
-      const stars = item.rating ? "★".repeat(item.rating) : "";
+      const stars = ratingStarsHtml(item.rating);
       const communityBadge = communityRatingHtml(item);
       const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
@@ -552,21 +552,54 @@ export function renderLibrary(gridEl, emptyEl, items, viewMode, { onOpen, onQuic
 
 /* ---------- Campos comunes ---------- */
 
-// HTML del picker de estrellas (1-5). idPrefix evita ids duplicados
-// cuando hay varios pickers en pantalla a la vez (p. ej. el de la
-// ventana de valoración emergente, que usa "rm-rating").
+// Normaliza una valoración a pasos de 0.5 (0, 0.5, 1, ... 5). Los
+// pickers admiten medias estrellas (issue #276), así que todo punto
+// de entrada pasa por aquí para sanear valores externos.
+function normalizeRating(value) {
+  const v = Number(value);
+  if (!Number.isFinite(v)) return 0;
+  const half = Math.round(v * 2) / 2;
+  if (half < 0) return 0;
+  if (half > 5) return 5;
+  return half;
+}
+
+// Etiqueta accesible de un botón del picker para el valor N (1-5).
+function ratingButtonAriaLabel(n) {
+  return n === 1 ? "1 estrella" : `${n} estrellas`;
+}
+
+// HTML informativo de las estrellas de un ítem (tarjetas y ficha de
+// solo lectura). Las medias estrellas se muestran como «½» tras las
+// completas (p. ej. 2.5 → «★★½») — issue #276.
+export function ratingStarsHtml(rating) {
+  const v = normalizeRating(rating);
+  if (!v) return "";
+  const full = "★".repeat(Math.floor(v));
+  return v % 1 === 0 ? full : full + "½";
+}
+
+// HTML del picker de estrellas (1-5, con medias desde la issue #276).
+// idPrefix evita ids duplicados cuando hay varios pickers en pantalla
+// a la vez (p. ej. el de la ventana de valoración emergente, que usa
+// "rm-rating"). Un valor como 2.5 pinta «is-active» en 1-2 y la media
+// estrella («½») en el botón 3 (clase is-half).
 export function ratingPickerHtml(rating, idPrefix = "field-rating", extraHtml = "") {
+  const value = normalizeRating(rating);
   return `
     <div class="field-group">
       <label>Valoración</label>
       <div class="rating-picker" id="${idPrefix}">
         ${[1, 2, 3, 4, 5]
-          .map(
-            (n) =>
-              `<button type="button" data-value="${n}" class="${
-                rating >= n ? "is-active" : ""
-              }">${n}</button>`
-          )
+          .map((n) => {
+            const full = value >= n;
+            const half = value === n - 0.5;
+            return `<button type="button" data-value="${n}" class="${
+              full ? "is-active" : ""
+            }${half ? " is-half" : ""}" aria-label="${
+              half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+            }">${half ? "½" : n}</button>`;
+          })
           .join("")}
       </div>
       ${extraHtml}
@@ -592,18 +625,37 @@ function notesFieldHtml(notes) {
     </div>`;
 }
 
+// Wiring del picker con medias estrellas (issue #276). Ciclo de
+// pulsación sobre el mismo botón N: 1er pulso → N; 2º pulso → N−0.5;
+// 3er pulso → 0 (quitar valoración, como antes). Devuelve un getter
+// con el valor seleccionado (0 o múltiplo de 0.5 entre 0.5 y 5).
 export function wireRatingAndGetValue(content, initialRating, idPrefix = "field-rating") {
-  let selectedRating = initialRating || 0;
+  let selectedRating = normalizeRating(initialRating);
   const buttons = content.querySelectorAll(`#${idPrefix} button`);
+  const repaint = () => {
+    buttons.forEach((b) => {
+      const n = Number(b.dataset.value);
+      const full = selectedRating >= n;
+      const half = selectedRating === n - 0.5;
+      b.classList.toggle("is-active", full && !half);
+      b.classList.toggle("is-half", half);
+      b.textContent = half ? "½" : n;
+      b.setAttribute(
+        "aria-label",
+        half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+      );
+    });
+  };
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const value = Number(btn.dataset.value);
-      selectedRating = value === selectedRating ? 0 : value;
-      buttons.forEach((b) =>
-        b.classList.toggle("is-active", Number(b.dataset.value) <= selectedRating)
-      );
+      if (selectedRating === value) selectedRating = value - 0.5;
+      else if (selectedRating === value - 0.5) selectedRating = 0;
+      else selectedRating = value;
+      repaint();
     });
   });
+  repaint();
   return () => selectedRating;
 }
 
@@ -1525,9 +1577,19 @@ function applyEpisodeRowState(row, entry) {
   meta.classList.toggle("hidden", !checked);
   if (times > 1) visual.setAttribute("data-count", String(times));
   else visual.removeAttribute("data-count");
-  ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) =>
-    s.classList.toggle("is-active", Number(s.dataset.value) <= ((checked ? entry.rating : null) || 0))
-  );
+  ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => {
+    const n = Number(s.dataset.value);
+    const value = normalizeRating(checked ? entry.rating : 0);
+    const full = value >= n;
+    const half = value === n - 0.5;
+    s.classList.toggle("is-active", full && !half);
+    s.classList.toggle("is-half", half);
+    s.textContent = half ? "½" : "★";
+    s.setAttribute(
+      "aria-label",
+      half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+    );
+  });
 }
 
 function renderSeasonBlock(s, watched) {
@@ -1595,12 +1657,16 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
         <div class="episode-row__meta ${checked ? "" : "hidden"}">
           <div class="episode-rating">
             ${[1, 2, 3, 4, 5]
-              .map(
-                (n) =>
-                  `<button type="button" class="episode-rating__star ${
-                    rating >= n ? "is-active" : ""
-                  }" data-value="${n}">★</button>`
-              )
+              .map((n) => {
+                const value = normalizeRating(rating);
+                const full = value >= n;
+                const half = value === n - 0.5;
+                return `<button type="button" class="episode-rating__star ${
+                  full ? "is-active" : ""
+                }${half ? " is-half" : ""}" data-value="${n}" aria-label="${
+                  half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+                }">${half ? "½" : "★"}</button>`;
+              })
               .join("")}
           </div>
           <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
@@ -1851,14 +1917,34 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       starButtons.forEach((btn) => {
         btn.addEventListener("click", async () => {
           const value = Number(btn.dataset.value);
-          const currentlyActive = ratingWrap.querySelectorAll(".is-active").length;
-          const newValue = value === currentlyActive ? null : value;
-          starButtons.forEach((b) => b.disabled = true);
+          // Estado REAL del rating (patrón issue #136: derivar del dato,
+          // no del conteo visual de estrellas activas).
+          const current = normalizeRating(
+            normalizeEntry(
+              (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
+            )?.rating
+          );
+          // Ciclo de medias estrellas (issue #276): N → N−0.5 → quitar.
+          let newValue;
+          if (current === value) newValue = value - 0.5;
+          else if (current === value - 0.5) newValue = null;
+          else newValue = value;
+          starButtons.forEach((b) => (b.disabled = true));
           try {
             await onSetEpisodeRating(seasonNumber, episodeNumber, newValue);
-            starButtons.forEach((b) =>
-              b.classList.toggle("is-active", Number(b.dataset.value) <= (newValue || 0))
-            );
+            starButtons.forEach((b) => {
+              const n = Number(b.dataset.value);
+              const v = normalizeRating(newValue || 0);
+              const full = v >= n;
+              const half = v === n - 0.5;
+              b.classList.toggle("is-active", full && !half);
+              b.classList.toggle("is-half", half);
+              b.textContent = half ? "½" : "★";
+              b.setAttribute(
+                "aria-label",
+                half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+              );
+            });
             updateEpisodeAverage();
           } finally {
             starButtons.forEach((b) => (b.disabled = false));
@@ -2186,7 +2272,7 @@ export function openReadOnlyModal(item, ownerName) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = metaLineFor(item);
-  const stars = item.rating ? "★".repeat(item.rating) : "";
+  const stars = ratingStarsHtml(item.rating);
   const progress = progressLine(item);
 
   content.innerHTML = `

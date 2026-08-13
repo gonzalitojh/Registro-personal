@@ -1,0 +1,36 @@
+{
+  "title": "Medias estrellas de valoración",
+  "description": "El usuario quiere poder dar medias estrellas en las valoraciones. Propuesta: al pulsar una vez sobre el 3 (por ejemplo), se marcarían 3 estrellas; si se vuelve a pulsar sobre el 3, se marcaría la mitad y por tanto sería 2.5.",
+  "status": "review",
+  "acceptance criteria": [
+    "Al pulsar una vez sobre un valor N del picker de valoración se seleccionan N estrellas.",
+    "Al pulsar de nuevo sobre el mismo valor N se selecciona media estrella (N - 0.5).",
+    "Un tercer pulso sobre el mismo valor quita la valoración (comportamiento de deshacer actual).",
+    "La media estrella seleccionada se muestra de forma visible (visual half-star) en el picker.",
+    "Las valoraciones con media estrella se guardan correctamente (números como 2.5, 4.5) y se muestran en tarjetas, fichas y medias.",
+    "Los estilos respetan los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro).",
+    "El manual de usuario (docs/manual-de-usuario.md, sección de valoraciones) se actualiza con el nuevo comportamiento."
+  ],
+  "definition of done": [
+    "Plan de implementación elaborado (planning).",
+    "Implementación completada según el plan.",
+    "Validación contra criterios de aceptación y DoD (QA).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado (con 'Related issue: #276').",
+    "PR creado contra dev SIN keyword de cierre; task file actualizado (status review + bloque pr) subido a la rama.",
+    "Issue #276 actualizada a su estado final (status: done al fusionar vía issues-done-on-dev.yml)."
+  ],
+  "issue": {
+    "number": 276,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/276",
+    "title": "Medias estrellas de valoración"
+  },
+  "pr": {
+    "number": 278,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/278",
+    "title": "Medias estrellas de valoración (issue #276)",
+    "branch": "feature/issue-276-medias-estrellas",
+    "commit": "6e00853",
+    "closes": "#276"
+  }
+}
