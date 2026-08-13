@@ -485,7 +485,9 @@
 [data-theme="black"] .tab--ingredients.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 [data-theme="black"] .tab--menu.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--shopping.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
-/* Pestañas de Gimnasio (issue #62): mismo patrón que el resto. */
+/* Pestañas de Gimnasio (issue #62): mismo patrón que el resto.
+   Resumen (issue #269) reutiliza el violeta de los videojuegos. */
+[data-theme="black"] .tab--gym-summary.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 [data-theme="black"] .tab--gym-workouts.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--gym-exercises.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
 
@@ -1203,8 +1205,10 @@ body.is-back-to-top-visible .back-to-top {
 .tab--menu { --tab-accent: var(--teal-reel); }
 .tab--shopping { --tab-accent: var(--stamp); }
 /* Pestañas de Gimnasio (issue #62): acentos de la paleta existente
-   (Entrenos teal, Ejercicios ocre), con sus variantes -dark para
-   negro puro en los overrides de [data-theme="black"]. */
+   (Resumen morado, Entrenos teal, Ejercicios ocre), con sus
+   variantes -dark para negro puro en los overrides de
+   [data-theme="black"]. */
+.tab--gym-summary { --tab-accent: var(--games); }
 .tab--gym-workouts { --tab-accent: var(--teal-reel); }
 .tab--gym-exercises { --tab-accent: var(--ochre-spine); }
 

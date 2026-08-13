@@ -1,9 +1,11 @@
 // =============================================================
-// Sección de Gimnasio (issue #62) — pestañas «Entrenos» y
-// «Ejercicios».
-// Gestiona el registro de entrenos (fecha, nombre, nota y
-// ejercicios con series de peso × repeticiones) y el catálogo de
-// ejercicios del usuario (users/{uid}/gym-workouts y
+// Sección de Gimnasio (issue #62) — pestañas «Resumen», «Entrenos»
+// y «Ejercicios».
+// La pestaña Resumen (issue #269) agrega los entrenos de un periodo
+// elegido (semana/mes en curso o rango libre) en totales y desglose
+// por ejercicio. Gestiona además el registro de entrenos (fecha,
+// nombre, nota y ejercicios con series de peso × repeticiones) y el
+// catálogo de ejercicios del usuario (users/{uid}/gym-workouts y
 // users/{uid}/gym-exercises).
 //
 // Peso y unidad (issue #62): el peso canónico en Firestore es
@@ -56,7 +58,8 @@ let workouts = [];
 let exercises = [];
 // Pestaña de Gimnasio activa: se re-renderiza solo la pestaña a la
 // vista cuando llegan datos nuevos (patrón de recipes.js #209).
-let currentTab = "entrenos";
+// El default es «resumen»: la primera pestaña de la sección (#269).
+let currentTab = "resumen";
 
 // Modales: null = cerrado; "read" | "edit" | "new". El flag edit
 // bloquea el cierre por backdrop/Escape (patrón recipes.js:159-186).
@@ -135,6 +138,26 @@ export function setupGym(opts) {
   document.querySelectorAll("[data-gym-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       navigate({ section: "gimnasio", tab: btn.dataset.gymTab });
+    });
+  });
+
+  // Selector de periodo del resumen (issue #269): el click en un chip
+  // sincroniza la UI (is-active/aria-pressed), y si el periodo cambió
+  // se re-renderiza el resumen (lee el periodo nuevo del DOM). Los
+  // inputs de fecha solo re-renderizan cuando el chip activo es
+  // «Rango» (en semana/mes en curso no aplican).
+  document.querySelectorAll("[data-summary-period]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const previous = document.querySelector(".gym-summary-chip.is-active")?.dataset.summaryPeriod || null;
+      syncSummaryPeriodUI(chip.dataset.summaryPeriod);
+      if (previous !== chip.dataset.summaryPeriod) renderSummary();
+    });
+  });
+  const fromInput = document.getElementById("gym-summary-from");
+  const toInput = document.getElementById("gym-summary-to");
+  [fromInput, toInput].forEach((input) => {
+    input?.addEventListener("change", () => {
+      if (summaryPeriodRange().custom) renderSummary();
     });
   });
 
@@ -218,12 +241,19 @@ export function subscribeGymData(uid, onChange, onError) {
   subs.push(ctx.subscribeToGymWorkouts(uid, (items) => {
     workouts = items;
     if (currentTab === "entrenos") renderWorkouts();
+    // El resumen (issue #269) vive de los entrenos: se re-renderiza
+    // en tiempo real al alta/edición/eliminación.
+    if (currentTab === "resumen") renderSummary();
     if (onChange) onChange();
   }, onError));
 
   subs.push(ctx.subscribeToGymExercises(uid, (items) => {
     exercises = items;
     if (currentTab === "ejercicios") renderCatalog();
+    // El resumen (issue #269) usa el catálogo para resolver el grupo
+    // muscular y el nombre canónico de los ejercicios: si llega un
+    // snapshot nuevo con la pestaña a la vista, se repinta.
+    if (currentTab === "resumen") renderSummary();
     // Constructor de entreno abierto (alta/edición): el catálogo puede
     // llegar después que el modal (issue #62, primer ejercicio desde
     // «Ver catálogo de ejercicios»). El borrador está en kg, así que
@@ -246,7 +276,7 @@ export function subscribeGymData(uid, onChange, onError) {
 export function resetGymData() {
   workouts = [];
   exercises = [];
-  currentTab = "entrenos";
+  currentTab = "resumen";
   editingWorkoutId = null;
   workoutDraft = null;
   editingExerciseId = null;
@@ -256,7 +286,7 @@ export function resetGymData() {
 
 // ---------- Apertura / cierre de la vista ----------
 
-export function openGym({ tab = "entrenos", fromRouter = false } = {}) {
+export function openGym({ tab = "resumen", fromRouter = false } = {}) {
   if (!fromRouter) {
     navigate({ section: "gimnasio", tab });
   }
@@ -273,6 +303,7 @@ export function openGym({ tab = "entrenos", fromRouter = false } = {}) {
   });
 
   const panels = {
+    resumen: "panel-gym-summary-tab",
     entrenos: "panel-gym-workouts-tab",
     ejercicios: "panel-gym-exercises-tab",
   };
@@ -281,11 +312,10 @@ export function openGym({ tab = "entrenos", fromRouter = false } = {}) {
     if (panel) panel.classList.toggle("hidden", key !== tab);
   });
 
-  if (tab === "entrenos") {
-    renderWorkouts();
-  } else {
-    renderCatalog();
-  }
+  // Dispatch de render por pestaña (#269): el resumen entra como una
+  // pestaña más, sin if/else encadenados.
+  const renderers = { resumen: renderSummary, entrenos: renderWorkouts, ejercicios: renderCatalog };
+  renderers[tab]?.();
 }
 
 // ---------- Unidad de peso: re-render global (issue #62) ----------
@@ -294,8 +324,11 @@ export function openGym({ tab = "entrenos", fromRouter = false } = {}) {
 // pesos: la pestaña activa y, si el modal de entreno está abierto,
 // su vista (lectura o edición, desde el borrador en memoria).
 function renderAllWithUnit() {
-  if (currentTab === "entrenos") renderWorkouts();
-  else renderCatalog();
+  // Dispatch de render por pestaña (#269): el resumen muestra pesos
+  // (volumen y peso máx.), así que también se repinta al cambiar la
+  // unidad.
+  const renderers = { resumen: renderSummary, entrenos: renderWorkouts, ejercicios: renderCatalog };
+  renderers[currentTab]?.();
   const workoutModal = document.getElementById("gym-workout-modal");
   if (workoutModal && !workoutModal.classList.contains("hidden")) {
     if (workoutModalMode === "read") {
@@ -365,6 +398,18 @@ function exerciseCardHtml(ex) {
     <h3 class="gym-card__title">${escapeHtml(ex.nombre)}</h3>
     ${group ? `<span class="gym-muscle-chip">${escapeHtml(group)}</span>` : ""}
   </article>`;
+}
+
+// ---------- Pestaña Resumen (issue #269) ----------
+
+// Stub de infraestructura: pinta un empty-state genérico en
+// #gym-summary-data para que la pestaña sea funcional desde el
+// primer commit. La lógica completa (rango de periodo, totales y
+// desglose por ejercicio) llega en la siguiente iteración.
+function renderSummary() {
+  const container = document.getElementById("gym-summary-data");
+  if (!container) return;
+  container.innerHTML = `<p class="empty-state">Aún no hay entrenos registrados.</p>`;
 }
 
 // ---------- Modal de entreno ----------
