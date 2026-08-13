@@ -570,7 +570,9 @@ todo se añade con el mismo «+ Añadir receta».
 En **«Recetas a la semana»** se guardan las recetas que eliges con
 **«Toda la semana»**: se preparan una vez para toda la semana (por
 ejemplo, una **masa de pizza**) y **no se multiplican por los
-comensales**. Quita una con «Quitar».
+comensales**. Aparecen como **tarjetas iguales a las de cada día**
+(foto, nombre y etiquetas): púlsalas para **verlas** o quítalas con
+la **✕**.
 
 Para marcar una receta como «ya hecha» (para que **no** entre en la
 lista de la compra), exclúyela desde la lista de la compra (ver 8.4).

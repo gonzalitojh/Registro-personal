@@ -3381,11 +3381,16 @@ body.is-back-to-top-visible .back-to-top {
    familia oscura, tinta translúcida en la clara: visible sobre el
    chip en ambas) y al pulsar el botón se encoge ligeramente (patrón
    de .btn:active / .trailer-btn:active). Área táctil de 1.5rem
-   (24 px, WCAG 2.2 AA 2.5.8). */
+   (24 px, WCAG 2.2 AA 2.5.8).
+   Rojo claro hardcodeado #d16a59 (≈ 4.7:1, AA) porque --stamp
+   (#a63b2e ≈ 2:1) no llega al umbral 3:1 de componentes gráficos
+   sobre el chip oscuro — mismo patrón y comentario que
+   .shopping-line__remove (issue #225); en la familia clara se
+   oscurece al --stamp (≈ 5.3:1 sobre el chip claro, AA). */
 .menu-meal__remove {
   background: none;
   border: none;
-  color: var(--stamp);
+  color: #d16a59;
   cursor: pointer;
   font-size: 0.8rem;
   flex-shrink: 0;
@@ -3397,7 +3402,7 @@ body.is-back-to-top-visible .back-to-top {
   padding: 0;
   border-radius: 999px;
   line-height: 1;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+  transition: background 0.15s ease, transform 0.12s ease;
 }
 
 .menu-meal__remove:hover,
@@ -4676,6 +4681,15 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .menu-meal__card,
 [data-theme="white"] .menu-meal__card {
   background: var(--ink-alpha-10);
+}
+
+/* ✕ de las tarjetas del menú en la familia clara (issue #242,
+   iteración): la base usa el rojo claro #d16a59 pensado para el chip
+   oscuro; sobre el chip claro vuelve al --stamp (≈ 5.3:1, AA), patrón
+   de .shopping-line__remove en la familia clara. */
+[data-theme="light"] .menu-meal__remove,
+[data-theme="white"] .menu-meal__remove {
+  color: var(--stamp);
 }
 
 /* Distintivo de comensales en la familia clara (issue #242,

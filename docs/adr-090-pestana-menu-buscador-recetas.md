@@ -272,6 +272,58 @@ Cambios aplicados (js/menu.js, css/styles.css, index.html y manual
 5. **Manual de usuario §8.3**: describe el botón único, el selector
    de destino y las tarjetas clicables de las celdas.
 
+## Iteración 5 (2026-08-13): tarjetas en «recetas a la semana» y hover/animación en la ✕
+
+Comentario del usuario (2026-08-13T09:42:41Z): (1) en «recetas a la
+semana» las tarjetas añadidas deben **verse igual que en la tabla del
+menú por días**, en lugar de solo el nombre; (2) el botón **«X»** de
+las tarjetas del menú debe tener **hover o animación** al pasar por
+encima o al presionarlo.
+
+Cambios aplicados (js/menu.js, css/styles.css, manual §8.3 y bump
+PWA `20260921 → 20260922`):
+
+1. **«Recetas a la semana» como tarjetas** (`renderWeeklyRecipes` en
+   js/menu.js): cada receta semanal se renderiza con las **mismas
+   clases** `.menu-meal__card` que las celdas (foto en miniatura,
+   nombre, etiquetas con el mismo `recipeTagsHtml` y ✕). El bloque
+   `.menu-weekly` ya comparte fondo con las celdas (`--ink-raised`),
+   así que los overrides de tema de `.menu-meal__card` (familia clara
+   `--ink-alpha-10` y negro puro `--paper-alpha-10`) cubren la lista
+   semanal sin reglas nuevas; `#menu-weekly-list` solo apila las
+   tarjetas con `gap: 0.3rem` (se elimina `.menu-weekly__item`, su
+   fila de texto con botón «Quitar» y sus bordes separadores). La
+   tarjeta semanal es **clicable** (click, Enter o Espacio, con el
+   mismo `openRecipeModal(recipe, { readOnly: true })` que las
+   celdas) y la ✕ la quita (`removeWeeklyRecipe`); el teclado no
+   interfiere con el botón interno (guard `closest("button")`).
+2. **Hover y animación de la ✕** (`.menu-meal__remove`, compartida
+   por celdas y semana): pasa a botón **circular** de 1.5rem
+   (24 px, WCAG 2.2 AA 2.5.8) con `border-radius: 999px` y
+   `transition`; `:hover`/`:focus-visible` rellenan el círculo con
+   `--paper-alpha-14` (papel translúcido en la familia oscura, tinta
+   translúcida en la clara: visible sobre el chip en ambas) y
+   `:active` lo encoge (`transform: scale(0.8)`, patrón de
+   `.btn:active`/`.trailer-btn:active`). La media query global de
+   `prefers-reduced-motion` anula las animaciones.
+3. **Contraste AA de la ✕ en la familia oscura** (hallazgo de la
+   re-validación QA): `--stamp` (#a63b2e) sobre el chip daba ≈ 2:1 en
+   Oscuro y ≈ 2.6:1 en Negro puro (por debajo del 3:1 de componentes
+   gráficos, WCAG 1.4.11). Se aplica el patrón de
+   `.shopping-line__remove` (issue #225): base con el rojo claro
+   hardcodeado `#d16a59` (≈ 4.7:1, AA, comentado) y override agrupado
+   `[data-theme="light"]/[data-theme="white"]` a `--stamp` (≈ 5.3:1,
+   AA). En negro puro la base ya funciona (≈ 4.7:1), sin override.
+4. **Responsividad y temas**: verificado en navegador headless a
+   360 / 768 / 1280 px en los cuatro temas — sin scroll horizontal
+   (12/12 combinaciones) y con tarjetas semanales con nombre largo
+   (120+ chars sin espacios) ajustado por `overflow-wrap: break-word`
+   y `min-width: 0`.
+5. **Manual §8.3**: la sección «Recetas a la semana» describe las
+   tarjetas iguales a las de cada día (verlas pulsando, quitarlas con
+   la ✕). **PWA**: bump `20260921 → 20260922` en js/config.js,
+   index.html y service-worker.js.
+
 ## Consecuencias
 
 - **Positivas**: añadir recetas a una comida deja de ser un
@@ -284,7 +336,7 @@ Cambios aplicados (js/menu.js, css/styles.css, index.html y manual
   el desayuno guardado en documentos existentes queda sin uso visible;
   «recetas a la semana» se añade con el mismo botón único eligiendo
   «Toda la semana» (iteración 4; ya no tiene desplegable propio);
-  bump PWA `20260920 → 20260921`.
+  bump PWA `20260920 → 20260922` (iteraciones 4 y 5).
 - **Negativas**: ninguna conocida. Se prevé validar los criterios de
   aceptación (sin desayuno, ventana con tarjetas con foto/nombre/
   etiquetas, búsqueda y filtros por las dos etiquetas, lectura de
