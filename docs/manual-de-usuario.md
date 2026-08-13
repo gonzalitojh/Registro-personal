@@ -171,23 +171,23 @@ Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 ### 3.2 La cabecera y las pestañas al hacer scroll
 
 Al bajar por una lista de **Ocio** (series, películas, libros o
-videojuegos), la barra de búsqueda de arriba y las pestañas se ocultan
+videojuegos) o de **Recetas** (Recetas, Ingredientes, Menú o Compra),
+la barra de búsqueda de arriba y las pestañas se ocultan
 deslizándose hacia el borde de la pantalla, como si salieran de ella,
 para que la lista ocupe todo el espacio. En cuanto desplazas hacia
 arriba, vuelven a aparecer deslizándose desde su borde.
 
-En **Recetas** la cabecera y su barra de pestañas (Recetas, Ingredientes,
-Menú, Compra) **siempre están visibles**: el auto-ocultado al
-desplazarse solo ocurre en las listas de **Ocio**. En **tu perfil** no
-hay cabecera global: tiene su propia cabecera con la flecha de volver
-y las pestañas en la misma fila. La flecha de volver del perfil te
-lleva de vuelta a la sección desde la que entraste, **Ocio** o
-**Recetas**, con la pestaña que tenías activa.
+En **tu perfil** no hay cabecera global: tiene su propia cabecera con
+la flecha de volver y las pestañas en la misma fila. La flecha de
+volver del perfil te lleva de vuelta a la sección desde la que
+entraste, **Ocio** o **Recetas**, con la pestaña que tenías activa.
 
-Si sigues bajando y los filtros de la lista (estado, orden y vista)
-quedan también fuera de la pantalla, verás un pequeño botón redondeado
-**«Volver arriba»** flotando en el centro, arriba, sobre la lista:
-púlsalo para volver al principio de la lista de un salto.
+Si sigues bajando y los controles de la lista (los filtros de estado,
+orden y vista en Ocio, o la barra de herramientas de la pestaña de
+Recetas activa) quedan también fuera de la pantalla, verás un pequeño
+botón redondeado **«Volver arriba»** flotando en el centro, arriba,
+sobre la lista: púlsalo para volver al principio de la lista de un
+salto.
 
 La navegación nunca se oculta mientras la estás usando: si estás
 escribiendo una búsqueda, o tienes abierto un menú (notificaciones,
