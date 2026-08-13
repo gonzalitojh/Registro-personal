@@ -11,6 +11,11 @@
    hacen zoom si el font-size del campo es < 16px. Todos los campos >= 16px. */
 input, textarea, select { font-size: 16px; }
 
+/* Issue #275: nunca zoom por doble toque en interacciones.
+   touch-action: manipulation mantiene el panning y el pinch zoom
+   (accesibilidad: no deshabilita el zoom manual, ADR-042/ADR-016). */
+button, a, input, select, textarea { touch-action: manipulation; }
+
 /* =========================================================
    Botones con los colores de acento de ocio (pelis/series vs libros)
    ========================================================= */
