@@ -736,21 +736,24 @@ con el selector que hay bajo las pestañas, con tres opciones:
   por defecto).
 - **«Mes en curso»**: del día 1 del mes a hoy.
 - **«Rango»**: eliges tú las fechas **desde** y **hasta**, lo que
-  quieras. El rango incluye los dos días elegidos; si pones las
-  fechas al revés (desde más tarde que hasta), la web **las da la
-  vuelta** por ti.
+  quieras. Solo con esta opción se muestra el **recuadro del rango**:
+  al pulsar «Rango» se despliega y ahí eliges las dos fechas (puedes
+  volver a pulsar su cabecera para cerrarlo). El rango incluye los dos
+  días elegidos; si pones las fechas al revés (desde más tarde que
+  hasta), la web **las da la vuelta** por ti. Si dejas una fecha sin
+  elegir, ese extremo queda **sin límite** (p. ej. «desde» vacío
+  significa desde el primer entreno).
 
-El resumen muestra cuatro **tarjetas con los totales del periodo** —
-entrenos, series, repeticiones y volumen total — y, debajo, una
-**tabla con cada ejercicio**: cuántas veces lo hiciste, sus series,
-sus repeticiones, su volumen y su peso máximo; ordenados de **mayor a
-menor volumen**. Si un ejercicio **ya no está en tu catálogo**, el
-resumen **conserva su nombre** igualmente.
+El resumen muestra **dos tarjetas con los totales del periodo** — el
+**número de entrenos** y el **número de ejercicios distintos** que
+trabajaste — y, debajo, el desglose **por grupos musculares**: para
+cada grupo, cuántos ejercicios distintos y en cuántos entrenos
+apareció. Por último, una lista **por ejercicio** con las veces que lo
+hiciste (en cuántos entrenos aparece). Si un ejercicio **ya no está
+en tu catálogo**, el resumen **conserva su nombre** igualmente.
 
-Los pesos y el volumen se muestran en la unidad que tengas elegida
-(kg o lbs, ver 9.4) y se actualizan al cambiar de unidad. El resumen
-se actualiza solo al añadir, editar o borrar entrenos. Si no hay
-entrenos en el periodo, la web te lo indica con un aviso.
+El resumen se actualiza solo al añadir, editar o borrar entrenos. Si
+no hay entrenos en el periodo, la web te lo indica con un aviso.
 
 ### 9.2 Tus entrenos
 

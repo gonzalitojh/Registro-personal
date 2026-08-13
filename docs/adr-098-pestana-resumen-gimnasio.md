@@ -42,6 +42,44 @@ en esta misma tarea (regla 3 de AGENTS.md, §9.1). Este ADR documenta
 la decisión a posteriori, como los recientes (ADR-093, ADR-094,
 ADR-095, ADR-096, ADR-097).
 
+### Iteración (segundo comentario de 2026-08-13)
+
+El usuario dejó un segundo comentario en la issue con tres peticiones
+nuevas, incorporadas en la misma PR:
+
+1. **Los selectores de fecha deben estar ocultos salvo con la opción
+   «Rango» activa**: en la versión primera los dos `input[type="date"]`
+   (desde/hasta) estaban siempre visibles junto a los chips. Ahora
+   viven dentro de un **único recuadro** (`<details
+   id="gym-summary-range">`) que solo se muestra al activar el chip
+   «Rango» (atributo `hidden` controlado por
+   `syncSummaryPeriodUI()`); con «Semana en curso» o «Mes en curso»
+   el recuadro permanece oculto para no estorbar.
+2. **Fusionar las dos fechas en un único recuadro**: el `<details>`
+   nace **abierto** al pulsar «Rango» y muestra las dos fechas dentro;
+   su cabecera (sin marcador nativo, `list-style: none`) resume el
+   rango ya elegido («desde – hasta», o «sin límite» en los extremos
+   vacíos) vía `updateSummaryRangeSummary()`, que se repinta también
+   al cambiar cualquier fecha.
+3. **Cambiar los totales: nada de sumatorios de series,
+   repeticiones o volumen**: las tarjetas pasan a **nº de entrenos** y
+   **nº de ejercicios distintos** del periodo; se añade un desglose
+   **«Por grupos musculares»** (ejercicios distintos y entrenos por
+   grupo) y la tabla por ejercicio se simplifica a **ejercicio +
+   veces** (entrenos en que aparece). La agregación
+   (`summarizeWorkouts()`) ya no acumula reps/volumen ni peso máximo;
+   los grupos se resuelven como antes (grupo de la entrada, del
+   catálogo por id o por nombre normalizado). Las entradas sin grupo
+   muscular siguen contando en los totales pero no en el desglose por
+   grupos.
+
+Revalidado en esta iteración: sandbox de lógica 42/42 (agregación por
+ejercicio y por grupos, rangos con límites abiertos e intercambio
+`from > to`, torneos del selector con el recuadro oculto/visible y su
+resumen de fechas) y revisión estática de las reglas 2 y 4 de
+AGENTS.md (360/768/1280 px sin scroll horizontal y cuatro modos de
+tema); escaneo de seguridad sin hallazgos.
+
 Related issue: #269 — https://github.com/gonzalitojh/Registro-personal/issues/269
 
 ## Decisión
@@ -107,24 +145,34 @@ latencia):
 - **Las series con reps ≤ 0 no suman** reps ni volumen; el peso no
   numérico cuenta como 0; una entrada sin id ni nombre no agrupa ni
   cuenta sus series en el total (guard del fix de QA).
-- **Salida**: tarjetas con los totales del periodo (entrenos, series,
-  repeticiones y volumen total) y una tabla por ejercicio — veces
-  (entrenos distintos en que aparece), series, reps, volumen y peso
-  máximo — **ordenada por volumen desc** (tie-break por nombre).
+- **Salida (iteración del segundo comentario de 2026-08-13)**: ya no
+  hay sumatorios de series, repeticiones ni volumen. Las tarjetas son
+  **nº de entrenos** y **nº de ejercicios distintos** del periodo; el
+  desglose **«Por grupos musculares»** da ejercicios distintos y
+  entrenos por grupo; la tabla **«Por ejercicio»** se reduce a
+  **veces** (entrenos distintos en que aparece), ordenada por
+  frecuencia desc (tie-break alfabético). Los grupos se resuelven del
+  mismo modo que antes (entrada → catálogo por id → por nombre
+  normalizado); sin grupo muscular, la entrada solo cuenta en los
+  totales.
 
 ### 5. Selector de periodo con el DOM como fuente de verdad
 
 - Tres chips (**«Semana en curso»**, **«Mes en curso»**, **«Rango»**)
-  con `aria-pressed` y los dos inputs `date` (desde/hasta) **siempre
-  presentes** en el DOM: **sin estado de módulo ni persistencia** — el
-  periodo activo se lee del DOM en cada render
-  (`summaryPeriodRange()`: chip `.is-active` + valores de los
-  inputs), con el patrón UTC de `ctx.todayISO()`.
+  con `aria-pressed`; los inputs `date` (desde/hasta) viven dentro de
+  un **único recuadro** `<details id="gym-summary-range">` que, en la
+  iteración del segundo comentario, **solo se muestra con la opción
+  «Rango»** (`hidden` controlado por `syncSummaryPeriodUI()`; al
+  activarlo nace abierto y su cabecera resume el rango elegido):
+  **sin estado de módulo ni persistencia** — el periodo activo se lee
+  del DOM en cada render (`summaryPeriodRange()`: chip `.is-active` +
+  valores de los inputs), con el patrón UTC de `ctx.todayISO()`.
 - El rango libre es **inclusivo**, **intercambia `from > to`** y
   trata los **extremos vacíos como límite abierto**.
-- El click en un chip sincroniza la UI (`is-active`/`aria-pressed`) y
-  re-renderiza solo si el periodo cambió; los inputs re-renderizan al
-  emitir `change` y solo cuando el chip activo es «Rango».
+- El click en un chip sincroniza la UI (`is-active`/`aria-pressed` y
+  la visibilidad del recuadro) y re-renderiza solo si el periodo
+  cambió; los inputs re-renderizan al emitir `change` y solo cuando
+  el chip activo es «Rango».
 
 ### 6. Re-render en tiempo real y seguridad de salida
 
@@ -132,9 +180,11 @@ latencia):
   `workouts` Y de `exercises` (el catálogo afecta a los nombres y
   grupos musculares de la tabla), siempre que la pestaña activa sea
   `resumen`.
-- **`renderAllWithUnit` repinta el resumen al cambiar kg/lbs**: los
-  pesos y volúmenes se convierten al momento sin re-calcular la
-  agregación (el acumulado sigue canónico en kg).
+- **`renderAllWithUnit` repinta el resumen al cambiar kg/lbs**: en la
+  iteración del segundo comentario el resumen ya no muestra pesos ni
+  volúmenes, pero se mantiene el repintado por uniformidad del
+  dispatch de renders por pestaña (sin coste: la agregación no
+  depende de la unidad).
 - **Todos los valores pintados pasan por `escapeHtml`** (nombres,
   fechas, unidades y cifras), patrón del resto de la sección; el
   contenedor del resumen usa `aria-live="polite"`.
@@ -155,11 +205,12 @@ latencia):
   pestaña; la convención del repo (primera pestaña = default) lo
   convierte automáticamente en la vista de entrada, que además es la
   más informativa de la sección.
-- **Acumular el volumen convertido por serie en la unidad de
-  presentación**: descartado — alternar kg/lbs re-calcularía los
-  acumulados con redondeos intermedios; acumular en kg (canónico) y
-  convertir solo al pintar es la misma garantía del resto de la
-  sección (ADR-095).
+- **Conservar los sumatorios de series, repeticiones y volumen en el
+  resumen**: descartado — el segundo comentario de la issue los pide
+  explícitamente fuera («no me sirven de nada») a favor del nº de
+  entrenos, ejercicios totales y el desglose por grupos musculares;
+  eliminarlos simplifica además la agregación (una pasada sin
+  acumulados por serie).
 - **Tratar el rango `from > to` como inválido (error)**: descartado —
   pedir al usuario que corrija el orden añade fricción sin beneficio;
   intercambiar los límites devuelve exactamente el mismo rango
@@ -180,8 +231,12 @@ latencia):
 - **Cero coste de datos y offline-first**: sin queries nuevas; el
   resumen vive de las suscripciones existentes y se actualiza en
   tiempo real al añadir, editar o borrar entrenos o ejercicios.
-- **Sin deriva de conversión**: la agregación en kg con conversión
-  solo al pintar garantiza totales estables al alternar la unidad.
+- **Resumen centrado en lo que pide el usuario** (iteración del
+  segundo comentario): las tarjetas de entrenos y ejercicios totales
+  y el desglose por grupos musculares responden «¿cuánto y qué he
+  entrenado?» sin ruido de sumatorios que al usuario no le aportan;
+  el selector de periodo queda más limpio al ocultar el recuadro del
+  rango salvo cuando se usa.
 
 ### Neutras
 
@@ -193,18 +248,23 @@ latencia):
 - **El periodo no se recuerda entre visitas**: cada apertura de la
   sección empieza en «Semana en curso»; el usuario vuelve a elegir si
   quiere otro periodo.
-- **Revalidado en iteración** (reanudación de la sesión): QA PASS —
-  sandbox 20/20 de lógica (selector de periodo, rangos, agregación,
-  unidades) y 11/11 de router (canonización y normalización de
-  `#/gimnasio/resumen`), revisión estática de las reglas 2 y 4 de
+- **Revalidado en iteración** (segundo comentario de 2026-08-13): QA
+  PASS — sandbox 42/42 de lógica (agregación por ejercicio y por
+  grupos, rangos con límites abiertos e intercambio `from > to`,
+  visibilidad y resumen del recuadro del rango) y 11/11 de router
+  (canonización y normalización de `#/gimnasio/resumen`, sin cambios
+  en esta iteración), revisión estática de las reglas 2 y 4 de
   AGENTS.md (360/768/1280 px sin scroll horizontal y cuatro modos de
-  tema) y escaneo de seguridad sin hallazgos. La iteración corrigió
-  los inputs de fecha invisibles en Negro puro y el guard de series
-  sin ejercicio, y este ADR se actualizó en consecuencia.
+  tema, incluido el recuadro del rango en Negro puro) y escaneo de
+  seguridad sin hallazgos. Esta iteración oculta el recuadro del
+  rango salvo con «Rango», lo fusiona en una única caja y sustituye
+  los sumatorios por entrenos/ejercicios/grupos musculares; el ADR se
+  actualizó en consecuencia.
 - **Manual de usuario actualizado** (§9.1 «Tu resumen», regla 3 de
-  AGENTS.md): selector de periodo, tarjetas y tabla del resumen,
-  unidad activa y aviso de periodo vacío documentados en lenguaje no
-  técnico.
+  AGENTS.md): selector de periodo con el recuadro del rango oculto
+  salvo en «Rango», tarjetas de entrenos/ejercicios y desgloses por
+  grupos musculares y por ejercicio, y aviso de periodo vacío
+  documentados en lenguaje no técnico.
 
 ### Negativas / Riesgos
 
@@ -213,23 +273,24 @@ latencia):
   instantánea (las mismas cargas que el resto de vistas de la
   sección); si el histórico creciera mucho cabría cachear por
   periodo, pero no hace falta en v1.
-- **Ninguna otra conocida.** Validado: QA PASS (sandbox 20/20 lógica
-  + 11/11 router; revisión estática reglas 2 y 4 de AGENTS.md) y
-  escaneo de seguridad sin hallazgos; todos los valores pintados
-  pasan por `escapeHtml`, continuando el patrón de validación y
-  seguridad del resto de la sección (ADR-095, ADR-097).
+- **Ninguna otra conocida.** Validado en la iteración del segundo
+  comentario: QA PASS (sandbox 42/42 lógica + 11/11 router; revisión
+  estática reglas 2 y 4 de AGENTS.md) y escaneo de seguridad sin
+  hallazgos; todos los valores pintados pasan por `escapeHtml`,
+  continuando el patrón de validación y seguridad del resto de la
+  sección (ADR-095, ADR-097).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `index.html` | **Modificado**: panel `#panel-gym-summary-tab` como primer panel de `#gym-view` (pestaña `tab--gym-summary` como primera, selector de periodo con chips e inputs date, tarjetas de totales y tabla por ejercicio) |
-| `js/gym.js` | **Modificado**: `renderSummary()` / `summarizeWorkouts()` / `summaryPeriodRange()` / `summaryExerciseKey()` / `summaryGroupFor()` (agregación en cliente, filtro lexicográfico por `fechaISO`, volumen canónico en kg, clave por `ejercicioId` o nombre snapshot, tabla ordenada por volumen desc), selector de periodo con el DOM como fuente de verdad (`syncSummaryPeriodUI`), dispatch de renders por pestaña con `resumen`, re-render desde `subscribeGymData` y `renderAllWithUnit`, `escapeHtml` en todos los valores pintados; **iteración**: guard de series sin ejercicio (entrada sin id ni nombre excluida) |
+| `index.html` | **Modificado**: panel `#panel-gym-summary-tab` como primer panel de `#gym-view` (pestaña `tab--gym-summary` como primera, selector de periodo con chips y recuadro del rango, tarjetas de totales y desgloses); **iteración**: las dos fechas del rango dentro del `<details id="gym-summary-range">` (única caja, `hidden` salvo con «Rango») |
+| `js/gym.js` | **Modificado**: `renderSummary()` / `summarizeWorkouts()` / `summaryPeriodRange()` / `summaryExerciseKey()` / `summaryGroupFor()` (agregación en cliente, filtro lexicográfico por `fechaISO`, clave por `ejercicioId` o nombre snapshot, tabla ordenada por frecuencia desc), selector de periodo con el DOM como fuente de verdad (`syncSummaryPeriodUI`), dispatch de renders por pestaña con `resumen`, re-render desde `subscribeGymData` y `renderAllWithUnit`, `escapeHtml` en todos los valores pintados; **iteración 1**: guard de series sin ejercicio (entrada sin id ni nombre excluida); **iteración 2**: `summarizeWorkouts()` sin sumatorios (totales entrenos/ejercicios distintos + `perGroup` por grupos musculares), tarjetas y desgloses nuevos, `syncSummaryPeriodUI()` oculta/muestra el recuadro del rango, `updateSummaryRangeSummary()` pinta el rango elegido en la cabecera del recuadro |
 | `js/router.js` | **Modificado**: `GYM_TAB_TO_PANEL` con `resumen` como primera clave, `GYM_DEFAULT_TAB = "resumen"`, canonización de `#/gimnasio` (normaliza `#/gimnasio/resumen` con `invalid: true`), `lastGymTab` arranca en `"resumen"` |
 | `js/settings.js` | **Modificado**: `visibleTabs.resumen: true` en `DEFAULT_SETTINGS` y `resumen` como primera clave de `SECTION_REGISTRY.gimnasio.tabs` (ocultable desde Ajustes; `sanitizeVisibility` cubre a usuarios con ajustes antiguos) |
-| `css/styles.css` | **Modificado**: estilos del resumen (`.gym-summary-selector`, chips `.gym-summary-chip`, `.gym-summary-grid`/`.gym-summary-card`, `.gym-summary-table` con `overflow-x: auto`), `.tab--gym-summary` con acento `--games` y overrides agrupados de las cuatro familias; **iteración**: override `[data-theme="black"] .gym-summary-selector input[type="date"]` (inputs invisibles en Negro puro) |
+| `css/styles.css` | **Modificado**: estilos del resumen (`.gym-summary-selector`, chips `.gym-summary-chip`, `.gym-summary-grid`/`.gym-summary-card`, `.gym-summary-table` con `overflow-x: auto`, `.gym-summary-section-title`), `.tab--gym-summary` con acento `--games` y overrides agrupados de las cuatro familias; **iteración 1**: override de los inputs de fecha en Negro puro; **iteración 2**: estilos del recuadro único `.gym-summary-range` (summary sin marcador, campos en fila) y overrides de Negro puro del recuadro y sus textos |
 | `tasks/task-issue-269.json` | **Nuevo**: task file de la issue #269 |
-| `docs/manual-de-usuario.md` | **Modificado**: §3 y §9 con la tercera pestaña de Gimnasio; nueva subsección **§9.1 «Tu resumen»** (renumeradas 9.2, 9.3 y 9.4); §17 Ajustes con las tres pestañas |
+| `docs/manual-de-usuario.md` | **Modificado**: §3 y §9 con la tercera pestaña de Gimnasio; nueva subsección **§9.1 «Tu resumen»** (renumeradas 9.2, 9.3 y 9.4); §17 Ajustes con las tres pestañas; **iteración**: §9.1 con el recuadro del rango (oculto salvo «Rango»), tarjetas de entrenos/ejercicios y desgloses por grupos musculares y por ejercicio |
 | `docs/adr-098-pestana-resumen-gimnasio.md` | **Nuevo**: este documento |
 
 Related issue: #269 — https://github.com/gonzalitojh/Registro-personal/issues/269
