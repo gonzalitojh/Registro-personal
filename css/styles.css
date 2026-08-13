@@ -4944,6 +4944,22 @@ body.is-back-to-top-visible .back-to-top {
   min-width: 0;
 }
 
+/* Cabecera de la tabla de series (etiquetas Peso/Repeticiones, #265):
+   misma rejilla que las filas para alinear las columnas; texto
+   pequeño y atenuado que no compite con los inputs. Sin overrides de
+   tema: usa var(--ink-soft), ya cubierta en las cuatro familias. */
+.gym-series-row--head {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 0.35rem;
+}
+
+.gym-series-row--head span:last-child {
+  visibility: hidden;
+}
+
 /* Botones del constructor: añadir serie (ghost con borde punteado) y
    quitar serie/ejercicio (texto rojo). */
 .gym-add-series-btn {

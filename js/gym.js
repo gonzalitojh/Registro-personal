@@ -593,6 +593,13 @@ function renderWorkoutEditorHtml() {
       <textarea id="gym-wk-nota" rows="3" placeholder="Cómo fue el entreno, sensaciones, progreso…">${escapeHtml(d.nota)}</textarea>
     </div>
     <div class="gym-form__field">
+      <label for="gym-wk-unit">Unidad de peso</label>
+      <select id="gym-wk-unit" aria-label="Unidad de peso del entreno">
+        <option value="kg"${unit() === "kg" ? " selected" : ""}>kg</option>
+        <option value="lbs"${unit() === "lbs" ? " selected" : ""}>lbs</option>
+      </select>
+    </div>
+    <div class="gym-form__field">
       <label>Ejercicios</label>
       ${hint}
       ${exercisesHtml}
@@ -621,6 +628,14 @@ function workoutExerciseBlockHtml(ex, i) {
   // muestra el nombre como placeholder para no perder la referencia.
   const placeholderLabel = ex.ejercicioId === null && ex.nombre ? ex.nombre : "Elige un ejercicio…";
   const seriesRows = ex.series.map((s, si) => workoutSeriesRowHtml(i, si, s)).join("");
+  // Cabecera de la tabla de series (etiquetas peso/reps, #265): misma
+  // rejilla que las filas para que las columnas queden alineadas; la
+  // tercera celda está vacía porque en las filas es el botón ✕.
+  const seriesHead = `<div class="gym-series-row gym-series-row--head" aria-hidden="true">
+    <span>Peso (${escapeHtml(unitLabel())})</span>
+    <span>Repeticiones</span>
+    <span></span>
+  </div>`;
 
   return `<div class="gym-exercise-block" data-gym-ex-idx="${i}">
     <div class="gym-exercise-block__header">
@@ -630,7 +645,7 @@ function workoutExerciseBlockHtml(ex, i) {
       </select>
       <button type="button" class="gym-remove-btn" data-gym-ex-remove="${i}" aria-label="Quitar ejercicio ${i + 1}">✕</button>
     </div>
-    <div class="gym-series-table">${seriesRows}</div>
+    <div class="gym-series-table">${seriesHead}${seriesRows}</div>
     <div class="gym-block-button-row">
       <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
       <button type="button" class="gym-add-series-btn" data-gym-dup-series="${i}">Duplicar serie</button>
@@ -679,6 +694,17 @@ function syncWorkoutDraftFromDom() {
 }
 
 function bindWorkoutEditorHandlers(content) {
+  // Selector de unidad de peso del modal (alta/edición, #265): misma
+  // lógica y persistencia que el global #gym-unit-select, así que
+  // solo se re-renderiza lo que muestra pesos (renderAllWithUnit
+  // repinta pestaña, editor abierto y deja el select global en sync).
+  content.querySelector("#gym-wk-unit")?.addEventListener("change", (e) => {
+    setUnit(e.target.value);
+    const globalSelect = document.getElementById("gym-unit-select");
+    if (globalSelect) globalSelect.value = unit();
+    renderAllWithUnit();
+  });
+
   // Selección de ejercicio del catálogo: se sincroniza el borrador (el
   // nombre snapshot puede cambiar al pasar de un ejercicio a otro) y se
   // pre-rellenan las series con las de la última vez (#265).
