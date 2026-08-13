@@ -775,8 +775,12 @@ verde, películas en rojo, libros en ocre, videojuegos en violeta) y el
 icono 🍽️ para recetas. Pulsa un resultado para abrir su ficha (o la
 receta, según la sección).
 
-El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
-la **✕** que aparece dentro de la barra (que además borra lo escrito).
+El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con la
+**✕** que aparece dentro de la barra (que además borra lo escrito). También
+puedes cerrarlo con el botón de la **esquina izquierda de la cabecera**:
+mientras la búsqueda está abierta, el botón de menú **☰ se convierte en una
+✕** (con una pequeña animación); pulsa esa ✕ para cerrar el panel y el
+botón vuelve a ser ☰, listo para abrir el menú lateral como siempre.
 
 ### 9.3 Añadir manualmente
 

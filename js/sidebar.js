@@ -12,7 +12,7 @@
 // =============================================================
 
 import { trapFocus } from "./focus-utils.js";
-import { closeGlobalSearch } from "./global-search.js";
+import { closeGlobalSearch, isGlobalSearchOpen } from "./global-search.js";
 import { navigate, getLastRecipesTab } from "./router.js";
 
 // Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
@@ -138,8 +138,18 @@ export function setupSidebar(opts) {
   });
 
   toggle.addEventListener("click", () => {
+    // Orden deliberado (issue #253): PRIMERO el drawer, LUEGO la
+    // búsqueda. openGlobalSearch marca isOpen=true antes de disparar
+    // toggle.click() para auto-cerrar el drawer; si este check de la
+    // búsqueda fuera el primero, ese click interno no cerraría la
+    // barra lateral y su backdrop taparía el dropdown.
     if (sidebar.classList.contains("is-open")) {
       closeSidebar();
+    } else if (isGlobalSearchOpen()) {
+      // Modo ✕: con la búsqueda abierta, la hamburguesa se convierte
+      // en una ✕ (animación CSS, clase is-search-open) y pulsarla
+      // cierra la búsqueda en lugar de abrir el menú lateral.
+      closeGlobalSearch();
     } else {
       openSidebar();
     }
