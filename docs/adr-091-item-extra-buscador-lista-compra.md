@@ -50,6 +50,16 @@ ADR de la issue #242).
    `renderIngredienteComboList(combo, emptyText)`, con un mensaje
    «sin coincidencias» propio para la compra que remite a la pestaña
    Ingredientes.
+   - **Unidad de medida como desplegable** (iteración, comentario de
+     la issue): `#extra-unidad` deja de ser un `<input>` de texto
+     libre y pasa a ser un `<select>` con las opciones exactas que
+     pidió el usuario — **g, Kg, mL, L y Unidades** —, servidas por la
+     constante compartida `SHOPPING_UNITS` de js/recipes-data.js
+     (misma lista para el modal del ingrediente, punto 2, y con la
+     primera opción «g» preseleccionada por el navegador). El valor se
+     normaliza igual con `normalizeUnit` antes de persistir (g, kg, ml,
+     l, unidades), así que la lectura no cambia y los datos quedan
+     compatibles con las familias de unidades existentes (ADR-086).
    - **Categoría y comestible derivados del catálogo**: el ítem toma
      `categoriaId` del ingrediente elegido y `comestible` se deduce
      como `categoriaId !== "hogar"` (la categoría «hogar» es la de los
@@ -70,7 +80,11 @@ ADR de la issue #242).
    una vista nueva `ingredientShoppingHtml`: nombre del ingrediente en
    **solo lectura**, cantidad y unidad de medida, y botones
    Cancelar (vuelve al detalle) / Añadir a la lista. La ventana solo
-   permite esos dos campos, como pide la issue.
+   permite esos dos campos, como pide la issue. La **unidad de medida**
+   es igualmente un `<select>` con los valores de `SHOPPING_UNITS`
+   (g, Kg, mL, L, Unidades) — iteración del comentario de la issue —;
+   el estilo lo aporta el patrón `.ingredient-modal__field` ya
+   existente (selects incluidos, ADR-089), sin reglas nuevas.
    - **Dependencia inyectada sin import circular**: recipes.js no
      importa shopping-list.js (que a su vez importa recipes.js): el
      modal persiste el ítem vía una función registrada por
@@ -116,7 +130,8 @@ ADR de la issue #242).
    unidad).
 7. **PWA**: bump `20260922 → 20260923` en js/config.js
    (`APP_VERSION`), index.html (`?v=`) y service-worker.js
-   (`STATIC_ASSETS`).
+   (`STATIC_ASSETS`); en la iteración del desplegable de unidades
+   (comentario de la issue) se sube a `20260924`.
 
 ## Consecuencias
 
@@ -134,7 +149,16 @@ ADR de la issue #242).
   reglas se eliminan); el `min="0"` de la cantidad en el form extra
   sigue siendo decorativo (el form es un `<div>`, no un `<form>`; el
   modal shopping sí lo aplica porque usa un `<form>` real) — hallazgo
-  preexistente, sin regresión.
+  preexistente, sin regresión. En la iteración del desplegable, la
+  unidad de medida pasa de texto libre a selección cerrada: los ítems
+  que se añadan desde ahora llevan siempre una de las cinco unidades
+  normalizadas (g, kg, ml, l, unidades), de modo que la comparación de
+  paquetes (ADR-086) y la agregación por «nombre|unidad» (ADR-086,
+  issue #225) quedan más consistentes; la lectura/persistencia no
+  cambia (mismo `normalizeUnit` sobre `.value` del select). Los CSS del
+  select reutilizan las reglas de píldora existentes del form extra
+  (añadiendo `select` a los selectores agrupados base, claro y negro
+  puro).
 - **Negativas**: ninguna conocida. Validado: sintaxis JS, criterios de
   aceptación 1-7 (el 8, este ADR, se documenta ahora), responsividad
   360 / 768 / 1280 px sin scroll horizontal, cuatro modos de tema con
