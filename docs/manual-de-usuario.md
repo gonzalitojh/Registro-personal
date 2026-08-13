@@ -463,10 +463,11 @@ receta»** creas una con:
   se abre la misma ventana de creación de la pestaña Ingredientes
   (nombre y categoría, y si quieres supermercados y cantidad de
   paquete) y el ingrediente queda ya elegido en la receta. A cada
-  ingrediente le pones **cantidad** y **unidad** (g, ml, unidades…);
-  la **categoría no se elige aquí**: viene de la ficha del ingrediente
-  en el catálogo y puedes cambiarla en la pestaña Ingredientes (ver
-  8.5). Puedes añadir tantas filas como quieras.
+  ingrediente le pones la **cantidad** y eliges su **unidad de medida**
+  en un desplegable con las opciones **g, Kg, mL, L y Unidades** (puedes
+  dejarla sin elegir); la **categoría no se elige aquí**: viene de la
+  ficha del ingrediente en el catálogo y puedes cambiarla en la pestaña
+  Ingredientes (ver 8.5). Puedes añadir tantas filas como quieras.
 - **Instrucciones**: los pasos, en orden.
 - **Etiquetas de alérgenos** (Sin gluten, Vegetariano, Vegano, Sin
   lactosa, Sin frutos secos, Sin huevo) y **tipo de comida** (Entrante,

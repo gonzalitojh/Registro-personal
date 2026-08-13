@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260924',
-  './css/ocio.css?v=20260924',
-  './js/app.js?v=20260924',
+  './css/styles.css?v=20260925',
+  './css/ocio.css?v=20260925',
+  './js/app.js?v=20260925',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -75,10 +75,10 @@ const STATIC_ASSETS = [
   './js/menu.js',
   './js/shopping-list.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260924',
-  './ocio/peliculas.html?v=20260924',
-  './ocio/libros.html?v=20260924',
-  './ocio/videojuegos.html?v=20260924',
+  './ocio/series.html?v=20260925',
+  './ocio/peliculas.html?v=20260925',
+  './ocio/libros.html?v=20260925',
+  './ocio/videojuegos.html?v=20260925',
 ];
 
 // -------------------------------------------------------------
