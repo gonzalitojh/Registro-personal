@@ -1052,6 +1052,51 @@ function renderRecommendations(items, existingIds, group, interactive) {
     </div>`;
 }
 
+/**
+ * Genera el HTML de la sección «Otras películas de la saga» (issue
+ * #280): las películas de la colección/saga a la que pertenece el
+ * ítem abierto, en tarjetas con el mismo aspecto que las
+ * recomendaciones. Reutiliza las clases de tarjeta de
+ * renderRecommendations (.rec-card, .recommendations__scroll); el
+ * botón usa .saga-card__add (clase propia, distinta de
+ * .rec-card__add, para no interferir con el wiring de
+ * recomendaciones).
+ * @param {Array}  sagaParts   - [{externalId, title, year, posterUrl}]
+ * @param {Set}    existingIds - Set de externalId ya añadidos
+ * @param {boolean} interactive - true si se muestran botones "Añadir"
+ * @returns {string} HTML de la sección, o cadena vacía
+ */
+function renderSagaMovies(sagaParts, existingIds, interactive) {
+  if (!sagaParts || !sagaParts.length) return "";
+  const cardsHtml = sagaParts
+    .map((m, index) => {
+      const added = existingIds.has(String(m.externalId));
+      const btnHtml = interactive
+        ? `<button class="btn btn--small btn--accent-media saga-card__add" data-saga-index="${index}" ${added ? "disabled" : ""}>
+             ${added ? "Añadida" : "Añadir"}
+           </button>`
+        : "";
+      return `
+        <div class="rec-card saga-card" data-saga-index="${index}">
+          <img class="rec-card__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+          <div class="rec-card__body">
+            <div class="rec-card__title">${escapeHtml(m.title)}</div>
+            <div class="rec-card__year">${escapeHtml(m.year || "")}</div>
+            ${btnHtml}
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  return `
+    <div class="saga-movies">
+      <h4 class="saga-movies__title">Otras películas de la saga</h4>
+      <div class="recommendations__scroll">
+        ${cardsHtml}
+      </div>
+    </div>`;
+}
+
 /* ---------- Modal de detalle: películas ---------- */
 
 function renderWatchLogRows(watchLog) {
@@ -1071,8 +1116,8 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set()) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation } = callbacks;
+export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null) {
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -1097,7 +1142,8 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     <div class="saga-banner">
       <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
       <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
-    </div>` : ""}
+    </div>
+    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie)}` : ""}
 
     ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation)}
 
@@ -1122,7 +1168,11 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   `;
 
   const getRating = wireRatingAndGetValue(content, item.rating);
-  const rerender = () => openMovieModal(item, callbacks);
+  // Propaga todos los argumentos en el re-render (issue #280): tras
+  // marcar como vista, la sección de saga (y las recomendaciones)
+  // permanece, y el botón "Añadida" se mantiene gracias al Set
+  // existingIds compartido.
+  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts);
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
@@ -1140,6 +1190,18 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
         const index = Number(btn.dataset.recIndex);
         const recItem = recommendations[index];
         if (recItem) onAddRecommendation(recItem, btn);
+      });
+    });
+  }
+
+  // Wire saga "Añadir" buttons (issue #280). Clase propia
+  // .saga-card__add para no interferir con las recomendaciones.
+  if (onAddSagaMovie) {
+    content.querySelectorAll(".saga-card__add").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.sagaIndex);
+        const movie = sagaParts[index];
+        if (movie) onAddSagaMovie(movie, btn);
       });
     });
   }
