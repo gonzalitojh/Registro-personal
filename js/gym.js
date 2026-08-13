@@ -400,8 +400,9 @@ export function openGym({ tab = "resumen", fromRouter = false } = {}) {
 // su vista (lectura o edición, desde el borrador en memoria).
 function renderAllWithUnit() {
   // Dispatch de render por pestaña (#269): el resumen se repinta por
-  // uniformidad (ya no muestra pesos desde la iteración del segundo
-  // comentario: la agregación no depende de la unidad).
+  // uniformidad y porque desde las iteraciones 3/4 muestra pesos (la
+  // columna Diferencia) convertidos una sola vez al pintar: al
+  // cambiar la unidad debe repintarse con la conversión nueva.
   const renderers = { resumen: renderSummary, entrenos: renderWorkouts, ejercicios: renderCatalog };
   renderers[currentTab]?.();
   const workoutModal = document.getElementById("gym-workout-modal");
