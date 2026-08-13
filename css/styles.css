@@ -3305,10 +3305,13 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Comensales propios de una receta del menú (issue #242): distintivo
    pequeño junto al nombre; si no aparece, la receta hereda los
-   comensales globales de la semana. */
+   comensales globales de la semana. Sobre el chip .menu-meal__item
+   (--paper-alpha-10 sobre la celda --ink-raised), --ink-soft solo da
+   ≈ 3.73:1 en el tema Oscuro (no AA): se usa papel translúcido al 92%,
+   mismo patrón que .recipe-pick__empty (issue #242, iteración). */
 .menu-meal__comensales {
   font-size: 0.68rem;
-  color: var(--ink-soft);
+  color: var(--paper-alpha-92);
   margin-left: 0.2rem;
 }
 
@@ -4548,6 +4551,15 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .menu-meal__add:hover,
 [data-theme="white"] .menu-meal__add:hover {
   background: var(--ink-alpha-10);
+}
+
+/* Distintivo de comensales en la familia clara (issue #242,
+   iteración): en Claro/Blanco puro el papel translúcido de la base
+   es blanco y quedaría invisible sobre el chip claro; vuelve a la
+   tinta suave (5.93:1, AA), patrón agrupado de .menu-meal__add. */
+[data-theme="light"] .menu-meal__comensales,
+[data-theme="white"] .menu-meal__comensales {
+  color: var(--ink-soft);
 }
 
 /* Tarjeta del buscador de recetas (issue #242, iteración): chip de
