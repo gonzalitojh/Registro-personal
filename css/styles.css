@@ -515,6 +515,11 @@
    hacen zoom si el font-size del campo es < 16px. Todos los campos >= 16px. */
 input, textarea, select { font-size: 16px; }
 
+/* Issue #275: nunca zoom por doble toque en interacciones.
+   touch-action: manipulation mantiene el panning y el pinch zoom
+   (accesibilidad: no deshabilita el zoom manual, ADR-042/ADR-016). */
+button, a, input, select, textarea { touch-action: manipulation; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -3077,7 +3082,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.45rem 0.6rem;
-  font-size: 0.9rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   min-width: 0;
 }
 
@@ -3770,7 +3775,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
-  font-size: 0.85rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   min-width: 0;
 }
 
@@ -4250,7 +4255,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.4rem 0.6rem;
-  font-size: 0.85rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
 }
 
 .recipe-form__hint {
@@ -4283,7 +4288,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.45rem 0.6rem;
-  font-size: 0.88rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   font-family: var(--font-body);
   min-width: 0;
 }
@@ -5210,7 +5215,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.45rem 0.6rem;
-  font-size: 0.9rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   font-family: var(--font-body);
   min-width: 0;
   width: 100%;
@@ -5256,7 +5261,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.45rem 0.6rem;
-  font-size: 0.9rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   font-family: var(--font-body);
   min-width: 0;
   width: 100%;
@@ -5289,7 +5294,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.4rem 0.55rem;
-  font-size: 0.9rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
   font-family: var(--font-body);
   min-width: 0;
   width: 100%;
