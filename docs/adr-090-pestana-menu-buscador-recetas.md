@@ -155,6 +155,24 @@ puro) / 14.65:1 y 21:1 (claro y blanco puro); mensaje vacío 15.2:1 /
 de comportamiento, HTML ni JS: solo CSS de tema, por lo que el manual
 de usuario no requiere actualización.
 
+## Iteración 2 (2026-08-13): AA del distintivo de comensales de la rejilla
+
+Hallazgo de la re-validación QA de la iteración anterior: el distintivo
+`.menu-meal__comensales` (`· N` junto al nombre de la receta en la
+rejilla del menú, nuevo en esta PR) usaba `--ink-soft` y sobre el chip
+`.menu-meal__item` (`--paper-alpha-10` sobre la celda `--ink-raised`)
+daba ≈ **3.73:1** en el tema Oscuro — por debajo de AA 4.5:1 para
+texto de 0.68rem.
+
+Corrección aplicada (mismo patrón que `.recipe-pick__empty` de la
+iteración anterior): la base pasa a `--paper-alpha-92` sobre el chip
+oscuro (blend ≈ 9.24:1 en Oscuro, 12.2:1 en Negro puro) y la familia
+clara recupera `--ink-soft` en un override agrupado
+`[data-theme="light"]/[data-theme="white"]` (5.02:1 y 5.44:1, AA) — en
+esos temas el papel translúcido de la base es blanco y quedaría
+invisible sobre el chip claro. Sin cambios de comportamiento, HTML ni
+JS: solo CSS de tema.
+
 ## Consecuencias
 
 - **Positivas**: añadir recetas a una comida deja de ser un
