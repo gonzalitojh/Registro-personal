@@ -4704,6 +4704,17 @@ body.is-back-to-top-visible .back-to-top {
   border-color: var(--paper-alpha-20);
 }
 
+/* Campo de búsqueda del buscador en negro puro: sin override, la
+   base (--ink-raised) quedaría con el mismo fondo que el modal
+   (también --ink-raised en este tema), y el campo no se distinguiría
+   del modal; se usa el patrón de los demás inputs (--ink + borde
+   claro), mismo bloque que .recipe-pick__comensales input. */
+[data-theme="black"] .recipe-pick__search {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
 /* Mensaje de lista vacía del buscador en negro puro: la base usa
    --ink (la tinta del contenido), que en este tema es #000 y quedaría
    invisible sobre el modal oscuro (--ink-raised): vuelve a papel,
