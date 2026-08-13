@@ -1866,8 +1866,18 @@ input, textarea, select { font-size: 16px; }
 .saga-card__hint {
   font-family: var(--font-mono);
   font-size: 0.62rem;
-  color: var(--ink-soft);
+  /* Contraste AA en la familia oscura por defecto (regla 4 AGENTS.md):
+     --ink-soft (#948a76) sobre --paper-dim (#e3dac4) = 2.45:1, insuficiente;
+     #5f5849 ≈ 5.1:1. Negro puro y familia clara sí cumplen con
+     --ink-soft (6.2 / 5.2 / 5.9:1), por eso se restaura ahí. */
+  color: #5f5849;
   text-decoration: underline;
+}
+
+[data-theme="black"] .saga-card__hint,
+[data-theme="light"] .saga-card__hint,
+[data-theme="white"] .saga-card__hint {
+  color: var(--ink-soft);
 }
 
 .saga-card__open:focus-visible {
