@@ -224,6 +224,17 @@ export function subscribeGymData(uid, onChange, onError) {
   subs.push(ctx.subscribeToGymExercises(uid, (items) => {
     exercises = items;
     if (currentTab === "ejercicios") renderCatalog();
+    // Constructor de entreno abierto (alta/edición): el catálogo puede
+    // llegar después que el modal (issue #62, primer ejercicio desde
+    // «Ver catálogo de ejercicios»). El borrador está en kg, así que
+    // re-renderizar es seguro; el editor se repinta con el select
+    // actualizado.
+    const workoutModal = document.getElementById("gym-workout-modal");
+    if (workoutModal && !workoutModal.classList.contains("hidden")) {
+      if (workoutModalMode === "edit" || workoutModalMode === "new") {
+        renderWorkoutEditor();
+      }
+    }
     if (onChange) onChange();
   }, onError));
 
@@ -606,13 +617,17 @@ function syncWorkoutDraftFromDom() {
   workoutDraft.fechaISO = form.querySelector("#gym-wk-fecha").value;
   workoutDraft.nombre = form.querySelector("#gym-wk-nombre").value;
   workoutDraft.nota = form.querySelector("#gym-wk-nota").value;
-  workoutDraft.ejercicios = Array.from(form.querySelectorAll(".gym-exercise-block")).map((block) => {
+  workoutDraft.ejercicios = Array.from(form.querySelectorAll(".gym-exercise-block")).map((block, idx) => {
     const select = block.querySelector("[data-gym-ex-select]");
     const customName = block.querySelector(".gym-custom-name");
     const ejercicioId = select.value === "__custom__" ? null : select.value || null;
+    // Si el ejercicio se borró del catálogo tras guardarse el entreno,
+    // el select ya no tiene su opción: se conserva el nombre snapshot
+    // del borrador (los entrenos guardados conservan su nombre).
+    const found = exercises.find((e) => e.id === select.value);
     const nombre = select.value === "__custom__"
       ? customName.value.trim()
-      : (exercises.find((e) => e.id === select.value)?.nombre || "");
+      : (found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "");
     const series = Array.from(block.querySelectorAll(".gym-series-row")).map((row) => ({
       pesoKg: displayToKg(parseFloat(row.querySelector("[data-gym-series-peso]").value) || 0),
       reps: parseInt(row.querySelector("[data-gym-series-reps]").value, 10) || 0,

@@ -1,7 +1,7 @@
 {
   "title": "Nueva sección de gimnasio",
   "description": "Quiero implementar una nueva sección de gimnasio con su propio endpoint /gimnasio. Esta debe ser incluida en la barra lateral de navegación (igual que la sección de ocio).\n\nHaz una primera versión de esta sección. Quiero utilizarla para:\n\n- Registrar entrenos\n- Registrar los pesos y repeticiones que utilizo para cada ejercicio\n- Registrar diferentes ejercicios\n\nNo sé si existe alguna API o algo de donde se pudiese extraer información sobre ejercicios.\n\nQuiero que se pueda cambiar el peso entre lbs y kgs en todo momento.\n\nCualquiero otra idea que creas que puede ser útil, documéntala con detalle.\n\nAl igual que el resto de secciones, las características en lo que se refiere a la barra superior y a las pestañas se deben respetar.",
-  "status": "planned",
+  "status": "implemented",
   "acceptance criteria": [
     "AC1: Existe una sección «Gimnasio» de primer nivel accesible desde la barra lateral de navegación (igual que Ocio y Recetas).",
     "AC2: La sección tiene endpoint/ruta propia /gimnasio (hash #/gimnasio) gestionada por el router de hash, con sus pestañas internas.",

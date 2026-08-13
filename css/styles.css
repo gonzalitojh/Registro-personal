@@ -5445,10 +5445,11 @@ body.is-back-to-top-visible .back-to-top {
 /* --- Gimnasio (issue #62) en negro puro --- */
 
 /* Las tarjetas pasan a la superficie oscura levantada (mismo patrón
-   que .recipe-card en negro puro). */
+   que .recipe-card en negro puro: texto papel sobre --ink-raised). */
 [data-theme="black"] .gym-workout-card,
 [data-theme="black"] .gym-exercise-card {
   background: var(--ink-raised);
+  color: var(--paper);
 }
 
 /* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
