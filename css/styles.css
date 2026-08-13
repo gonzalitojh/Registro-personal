@@ -3985,7 +3985,10 @@ body.is-back-to-top-visible .back-to-top {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--ink-soft);
+  /* Tinta plena (no --ink-soft): sobre el fondo del input (--paper-dim)
+     el --ink-soft del modo oscuro daba ≈ 2.4:1, por debajo del 3:1 AA
+     para componentes gráficos (hallazgo de QA, issue #240). */
+  color: var(--ink);
   font-size: 0.8rem;
   line-height: 1;
   padding: 0.35rem 0.45rem;
@@ -4026,7 +4029,10 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .ing-combo__list .ing-combo__empty {
-  color: var(--ink-soft);
+  /* Tinta plena (no --ink-soft): el --ink-soft del modo oscuro sobre
+     --paper daba ≈ 2.8:1, por debajo del 4.5:1 AA para texto (hallazgo
+     de QA, issue #240); en negro puro un override lo devuelve a papel. */
+  color: var(--ink);
   cursor: default;
 }
 
@@ -4532,6 +4538,12 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 [data-theme="black"] .ing-combo__toggle {
+  color: var(--paper);
+}
+
+/* El mensaje «Sin coincidencias…» vuelve a papel en negro puro (el
+   --ink base sería tinta #000 sobre la superficie oscura del listado). */
+[data-theme="black"] .ing-combo__list .ing-combo__empty {
   color: var(--paper);
 }
 

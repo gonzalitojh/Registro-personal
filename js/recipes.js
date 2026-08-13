@@ -1490,8 +1490,12 @@ function bindIngredienteCombo(combo) {
     } else if (e.key === "Enter") {
       if (!list.hidden) {
         e.preventDefault();
-        const optionsActive = [...list.querySelectorAll('[role="option"]')];
-        selectOption(optionsActive[activeIndex] || optionsActive[0]);
+        const opts = [...list.querySelectorAll('[role="option"]')];
+        const target = opts[activeIndex] || opts[0];
+        // Sin opciones elegibles (p. ej. solo el mensaje «Sin
+        // coincidencias»): Enter no selecciona y cierra el desplegable.
+        if (!target || target.getAttribute("aria-disabled") === "true") close();
+        else selectOption(target);
       }
     } else if (e.key === "Escape" && !list.hidden) {
       e.preventDefault();
@@ -1641,16 +1645,18 @@ function readRecipeFromForm(content) {
   }
 
   // Ingredientes (issue #240): solo cuenta la selección del combobox
-  // (el valor oculto que escribe una opción del catálogo). El texto
-  // libre sin selección se avisa y se descarta; la categoría se toma
-  // del catálogo (o de la guardada en la receta si ya no está en él).
+  // (el valor oculto que escribe una opción del catálogo), y solo si
+  // el texto visible sigue siendo el de esa selección: si el usuario
+  // tecleó encima (texto libre), la fila se descarta con aviso. La
+  // categoría se toma del catálogo (o de la guardada en la receta si
+  // ya no está en él).
   const sinSeleccion = [];
   const ingredientes = [...content.querySelectorAll("#recipe-ingredientes .recipe-form__ingrediente")]
     .map((row) => {
       const ingNombre = row.querySelector(".ing-nombre-valor").value.trim();
-      if (!ingNombre) {
-        const textoLibre = row.querySelector(".ing-nombre").value.trim();
-        if (textoLibre) sinSeleccion.push(textoLibre);
+      const textoVisible = row.querySelector(".ing-nombre").value.trim();
+      if (!ingNombre || normalizeIngredientName(textoVisible) !== normalizeIngredientName(ingNombre)) {
+        if (textoVisible) sinSeleccion.push(textoVisible);
         return null;
       }
       return {
