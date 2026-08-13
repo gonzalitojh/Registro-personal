@@ -1,17 +1,20 @@
 // =============================================================
-// Comprobación diaria: estrenos y refresco de metadatos. Extraída
+// Comprobación diaria: estrenos y episodios pendientes. Extraída
 // de app.js para aislar la lógica de revisión periódica.
-// Una vez al día se piden datos frescos a TMDB / Open Library para
-// TODOS los ítems no manuales (películas, series y libros, incluidos
-// los abandonados) y se sobrescriben los metadatos con política
-// "truthy-only": un campo se actualiza solo si el valor fresco es
-// no vacío (overview/arrays no vacíos, communityRating != null, ...);
-// si la API devuelve vacío/null se conserva lo guardado. Excepción:
-// nextEpisodeToAir se sobrescribe siempre (comportamiento histórico).
-// En videojuegos no hay refresco de metadatos (la pasada no consulta
-// IGDB): solo se avisa del lanzamiento con los datos guardados.
-// También soporta sincronización manual forzada (syncNow) con
-// cooldown de 30 minutos persistido en profile.lastManualSyncAt.
+// Una vez al día se piden datos frescos a TMDB / Open Library SOLO
+// para lo que puede generar un aviso (pasada mínima A5-a del
+// estudio de almacenamiento mínimo, issue #183/#200):
+//   - películas que buscan estreno (awaitingRelease),
+//   - series que esperan estreno o con el próximo episodio sin
+//     estrenar (hoy o en el futuro) — avisos y auto-standby,
+//   - libros de Open Library (/works/) sin sinopsis guardada,
+//   - videojuegos: sin red (el aviso de lanzamiento se decide con
+//     los datos guardados, ADR-071).
+// El resto de metadatos de ficha ya NO se cura a diario: con el
+// almacenamiento mínimo los detalles se piden bajo demanda al
+// abrir la ficha (issue #200). También soporta sincronización
+// manual forzada (syncNow, «Comprobar estrenos») con cooldown de
+// 30 minutos persistido en profile.lastManualSyncAt.
 // =============================================================
 
 import { isNextEpisodeUnreleased, getNextEpisodeAirInfo } from "./sorting.js";
@@ -95,66 +98,38 @@ async function mapConcurrent(items, limit, fn) {
   return results;
 }
 
-// Política truthy-only para películas: cada campo se sobrescribe solo
-// si el valor fresco es no vacío; si la API devuelve vacío/null se
-// conserva lo guardado. No toca title, year, externalId, manual,
-// status, watchLog, notas, addedAt/updatedAt ni flags de notificación.
-function buildMovieUpdates(movie, fresh) {
-  const updates = {};
-  if (fresh.runtime) updates.runtime = fresh.runtime;
-  if (fresh.overview) updates.overview = fresh.overview;
-  if (fresh.genres && fresh.genres.length) updates.genres = fresh.genres;
-  if (fresh.cast && fresh.cast.length) updates.cast = fresh.cast;
-  if (fresh.director) updates.director = fresh.director;
-  if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
-    updates.releaseDate = fresh.releaseDate;
-  }
-  if (fresh.communityRating != null) updates.communityRating = fresh.communityRating;
-  if (fresh.trailerUrl) updates.trailerUrl = fresh.trailerUrl;
-  if (fresh.collectionId) updates.collectionId = fresh.collectionId;
-  if (fresh.collectionName) updates.collectionName = fresh.collectionName;
-  if (fresh.collectionPoster) updates.collectionPoster = fresh.collectionPoster;
-  if (fresh.coverUrl) updates.coverUrl = fresh.coverUrl;
-  return updates;
+// Pasada mínima (A5-a): ¿una película necesita consultar la API hoy?
+// Solo las que buscan estreno: el flag awaitingRelease (puesto al
+// alta) o una fecha de estreno futura sin avisar todavía (cubre
+// ítems antiguos guardados antes de existir el flag).
+function movieNeedsCheck(movie) {
+  if (movie.manual || !movie.externalId) return false;
+  if (movie.awaitingRelease) return true;
+  return (
+    !!movie.releaseDate &&
+    isUnreleasedDate(movie.releaseDate) &&
+    !(movie.watchLog && movie.watchLog.length)
+  );
 }
 
-// Política truthy-only para series (misma semántica que películas).
-// nextEpisodeToAir se sobrescribe siempre que la API lo devuelva.
-function buildTvUpdates(show, fresh) {
-  const updates = {};
-  if (fresh.episodeRuntime) updates.episodeRuntime = fresh.episodeRuntime;
-  if (fresh.overview) updates.overview = fresh.overview;
-  if (fresh.genres && fresh.genres.length) updates.genres = fresh.genres;
-  if (fresh.cast && fresh.cast.length) updates.cast = fresh.cast;
-  if (fresh.creators && fresh.creators.length) updates.creators = fresh.creators;
-  if (fresh.firstAirDate && fresh.firstAirDate !== show.firstAirDate) {
-    updates.firstAirDate = fresh.firstAirDate;
-  }
-  if (fresh.nextEpisodeToAir) {
-    updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
-    // Copia local de la fecha del próximo episodio: sobrevive aunque
-    // TMDB deje de devolver next_episode_to_air (serie entre
-    // temporadas sin fecha anunciada) y permite seguir avisando del
-    // "no estrenado" sin consultar la temporada.
-    updates.nextEpisodeAirDate = {
-      season: fresh.nextEpisodeToAir.season,
-      episode: fresh.nextEpisodeToAir.episode,
-      airDate: fresh.nextEpisodeToAir.airDate || null,
-    };
-  }
-  if (fresh.communityRating != null) updates.communityRating = fresh.communityRating;
-  if (fresh.trailerUrl) updates.trailerUrl = fresh.trailerUrl;
-  if (fresh.tmdbStatus) updates.tmdbStatus = fresh.tmdbStatus;
-  if (fresh.coverUrl) updates.coverUrl = fresh.coverUrl;
-  // Excepción documentada a la política truthy-only: seasonAirDates se
-  // sobrescribe siempre que la llamada tenga éxito (el array de
-  // temporadas es completo entonces), porque un null dentro del mapa es
-  // información real (temporada sin fecha de estreno oficial), no un
-  // dato ausente que haya que conservar.
-  if (fresh.seasonAirDates && Object.keys(fresh.seasonAirDates).length) {
-    updates.seasonAirDates = fresh.seasonAirDates;
-  }
-  return updates;
+// Pasada mínima (A5-a): ¿una serie necesita consultar la API hoy?
+// Las que esperan estreno (awaitingRelease), las que aún no han
+// estrenado (flag antiguo pendiente de backfill) o cuyo siguiente
+// episodio está sin estrenar HOY o en el futuro (fuente de los
+// avisos de episodio nuevo y del auto-standby con datos frescos).
+// Las series con el próximo episodio ya emitido no se consultan:
+// su auto-standby se evalúa sin red con los datos guardados.
+function showNeedsCheck(show, today) {
+  if (show.manual || !show.externalId) return false;
+  if (show.awaitingRelease) return true;
+  // Estreno pendiente de producirse: mismo tratamiento que una
+  // película que busca estreno (cubre ítems antiguos guardados
+  // antes de existir el flag awaitingRelease).
+  if (!hasAnyWatchedEpisode(show) && isUnreleasedDate(show.firstAirDate)) return true;
+  const info = getNextEpisodeAirInfo(show);
+  // info.airDate >= today: hoy se emite o aún no → se vigila. La
+  // comparación es de strings "YYYY-MM-DD" (formato canónico).
+  return !!info && (!info.airDate || info.airDate >= today);
 }
 
 // Política truthy-only para libros: la sinopsis se sobrescribe solo si
@@ -268,14 +243,22 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     let consecutiveFailures = 0;
     let aborted = false;
 
-    // Películas: aviso de estreno + refresco de metadatos (todos los ítems
-    // no manuales, aunque estén completos).
-    const movies = allMovies.filter((m) => !m.manual && m.externalId);
+    // Películas: pasada mínima (A5-a) — solo las que buscan estreno.
+    // Ya no se curan metadatos de ficha (con el almacenamiento mínimo
+    // se piden bajo demanda al abrir la ficha, issue #200).
+    const movies = allMovies.filter((m) => movieNeedsCheck(m));
     await mapConcurrent(movies, REFRESH_CONCURRENCY, async (movie) => {
       if (aborted) return;
       try {
         const fresh = await getMovieDetails(movie.externalId);
-        const updates = buildMovieUpdates(movie, fresh);
+        const updates = {};
+
+        // La fecha de estreno se mantiene al día: si cambió, se
+        // refresca (el badge de "no estrenada" y el aviso dependen
+        // de ella).
+        if (fresh.releaseDate && fresh.releaseDate !== movie.releaseDate) {
+          updates.releaseDate = fresh.releaseDate;
+        }
 
         if (!movie.awaitingRelease && fresh.releaseDate !== undefined && !(movie.watchLog && movie.watchLog.length) && isUnreleasedDate(fresh.releaseDate)) {
           updates.awaitingRelease = true;
@@ -306,15 +289,36 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     });
     if (aborted) return { aborted: true };
 
-    // Series: aviso de estreno / episodio nuevo + refresco de metadatos.
-    // Se revisan TODAS las no manuales, incluidas las abandonadas.
-    const shows = allTv.filter((s) => !s.manual && s.externalId);
+    // Series: pasada mínima (A5-a) — solo las que esperan estreno o cuyo
+    // próximo episodio está por emitirse. Se conserva la lógica de avisos
+    // (estreno, episodio nuevo, liberación de bloqueado) y el auto-standby
+    // evaluado con los datos frescos del episodio.
+    const shows = allTv.filter((s) => showNeedsCheck(s, today));
     await mapConcurrent(shows, REFRESH_CONCURRENCY, async (show) => {
       if (aborted) return;
       try {
         const wasEpisodeBlocked = isNextEpisodeUnreleased(show);
         const fresh = await getTvExtraDetails(show.externalId);
-        const updates = buildTvUpdates(show, fresh);
+        const updates = {};
+
+        // Campos de emisión que alimentan badges y avisos: se
+        // sobrescriben cuando la API los devuelve (nextEpisodeToAir
+        // siempre; seasonAirDates siempre que la llamada tenga éxito,
+        // porque un null dentro del mapa es información real).
+        if (fresh.nextEpisodeToAir) {
+          updates.nextEpisodeToAir = fresh.nextEpisodeToAir;
+          updates.nextEpisodeAirDate = {
+            season: fresh.nextEpisodeToAir.season,
+            episode: fresh.nextEpisodeToAir.episode,
+            airDate: fresh.nextEpisodeToAir.airDate || null,
+          };
+        }
+        if (fresh.firstAirDate && fresh.firstAirDate !== show.firstAirDate) {
+          updates.firstAirDate = fresh.firstAirDate;
+        }
+        if (fresh.seasonAirDates && Object.keys(fresh.seasonAirDates).length) {
+          updates.seasonAirDates = fresh.seasonAirDates;
+        }
 
         // Backfill de nextEpisodeAirDate: si ni next_episode_to_air ni
         // el dato guardado coinciden con el siguiente episodio (serie
@@ -396,6 +400,24 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     });
     if (aborted) return { aborted: true };
 
+    // Series no incluidas en la pasada mínima (su próximo episodio ya se
+    // emitió o no buscan estreno): el auto-standby por inactividad
+    // (ADR-033) se evalúa SIN red, con los datos guardados. Fail-open: un
+    // error de escritura no aborta la pasada ni cuenta como fallo de API.
+    const offlineStandbyShows = allTv.filter(
+      (s) => !s.manual && s.externalId && s.status === "en_curso" && !showNeedsCheck(s, today)
+    );
+    for (const show of offlineStandbyShows) {
+      if (aborted) break;
+      try {
+        if (shouldAutoStandby(show, today)) {
+          await updateItem(user.uid, "tv", show.id, { status: "standby", autoStandbyAt: today });
+        }
+      } catch (err) {
+        console.error("No se pudo pausar automáticamente", show.title, err);
+      }
+    }
+
     // Series manuales en curso: mismo auto-standby, evaluado solo con datos
     // guardados (no hay datos TMDB). Sin red. Fail-open: un error de
     // escritura no aborta la pasada ni cuenta como fallo de API.
@@ -411,8 +433,12 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
       }
     }
 
-    // Libros: refresco de sinopsis (solo si la nueva es no vacía).
-    const books = allBooks.filter((b) => !b.manual && b.externalId && b.externalId.startsWith("/works/"));
+    // Libros: sinopsis solo para los de Open Library que aún no la
+    // tienen guardada (pasada mínima A5-a). Truthy-only: la nueva
+    // sinopsis solo se sobrescribe si es no vacía.
+    const books = allBooks.filter(
+      (b) => !b.manual && b.externalId && b.externalId.startsWith("/works/") && !b.description
+    );
     await mapConcurrent(books, REFRESH_CONCURRENCY, async (book) => {
       if (aborted) return;
       try {
@@ -484,7 +510,7 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
 }
 
 /**
- * Sincronización manual forzada ("Sincronizar ahora" en Ajustes).
+ * Sincronización manual forzada ("Comprobar estrenos" en Ajustes).
  * Aplica el cooldown de MANUAL_SYNC_COOLDOWN_MS persistido en
  * profile.lastManualSyncAt. El flag anti-concurrencia isRefreshing
  * lo gestiona checkForUpdates (cubre también la pasada diaria), así
@@ -541,7 +567,7 @@ export async function syncNow(ctx) {
 
 /**
  * Indica si hay una sincronización en curso (diaria o manual). La usa
- * settings.js para deshabilitar el botón "Sincronizar ahora".
+ * settings.js para deshabilitar el botón "Comprobar estrenos".
  */
 export function isSyncRunning() {
   return isRefreshing;

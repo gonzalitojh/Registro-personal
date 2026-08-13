@@ -133,16 +133,24 @@ function _extractTrailerUrl(videos) {
 }
 
 // Datos ampliados de una película: duración, sinopsis, género,
-// director, reparto principal, colección/saga y tráiler. Se piden
-// una sola vez, al añadirla.
+// director, reparto principal, colección/saga y tráiler. Con el
+// almacenamiento mínimo (issue #200) se piden bajo demanda al
+// abrir la ficha (y de paso al alta para conocer la fecha de
+// estreno), con caché en memoria de 24 h (la misma compartida que
+// los watch providers): una ficha recién añadida o ya visitada no
+// vuelve a llamar a la API.
 export async function getMovieDetails(id) {
+  const cacheKey = `details_movie_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const url = `${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   const director = ((data.credits && data.credits.crew) || []).find(
     (c) => c.job === "Director"
   );
-  return {
+  const result = {
     runtime: data.runtime || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
@@ -158,6 +166,8 @@ export async function getMovieDetails(id) {
       : null,
     coverUrl: data.poster_path ? `${IMG_BASE}${data.poster_path}` : null,
   };
+  setCache(cacheKey, result);
+  return result;
 }
 
 // Datos de una colección/saga de TMDB: nombre, póster y lista de
@@ -186,12 +196,19 @@ export async function getCollectionDetails(collectionId) {
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,
 // género, creadores, reparto principal, estado de emisión, próximo
-// episodio a emitir (si lo hay) y tráiler. También se piden una sola vez.
+// episodio a emitir (si lo hay) y tráiler. Con el almacenamiento
+// mínimo (issue #200) se piden bajo demanda al abrir la ficha (y de
+// paso al alta para conocer estrenos/fechas de temporada), con caché
+// en memoria de 24 h (misma caché compartida que los watch providers).
 export async function getTvExtraDetails(id) {
+  const cacheKey = `details_tv_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
-  return {
+  const result = {
     episodeRuntime: (data.episode_run_time && data.episode_run_time[0]) || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
@@ -214,6 +231,8 @@ export async function getTvExtraDetails(id) {
     // aunque TMDB deje de devolver next_episode_to_air.
     seasonAirDates: seasonAirDateMap(data.seasons),
   };
+  setCache(cacheKey, result);
+  return result;
 }
 
 // =============================================================

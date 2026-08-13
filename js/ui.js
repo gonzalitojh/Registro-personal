@@ -11,6 +11,7 @@ import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
+import { needsDetailFetch, loadItemDetails } from "./item-details.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : type === "game" ? "game" : "media";
@@ -695,8 +696,29 @@ function extraInfoHtml(item) {
   }
   const overview = item.overview || item.description;
   if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
-  if (!lines.length) return "";
+  if (!lines.length) return detailStatusHtml(item);
   return `<div class="extra-info">${lines.join("")}</div>`;
+}
+
+// Estado de los detalles de ficha bajo demanda (issue #200): si el
+// documento guarda solo la tarjeta (almacenamiento mínimo) y la ficha
+// aún está cargando —o la red falló— se muestra una línea informativa
+// en lugar de un bloque vacío (degradación elegante a «solo tarjeta»).
+// Los libros conservan la sinopsis en el documento y los ítems
+// manuales no tienen API que consultar: nunca aplican.
+function detailStatusHtml(item) {
+  if (item._detailsFailed) {
+    return `<p class="extra-info__loading">No se pudieron cargar los detalles (revisa tu conexión).</p>`;
+  }
+  if (!item.manual && item.externalId) {
+    if ((item.type === "movie" || item.type === "tv") && !item.overview) {
+      return `<p class="extra-info__loading">Cargando detalles…</p>`;
+    }
+    if (item.type === "game" && !item.description) {
+      return `<p class="extra-info__loading">Cargando detalles…</p>`;
+    }
+  }
+  return "";
 }
 
 // Bloque de temporadas para la vista previa de una serie: lista de
@@ -2196,6 +2218,22 @@ export function openReadOnlyModal(item, ownerName) {
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
   modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
+
+  // Ficha de amigo bajo demanda (issue #200): el documento del amigo
+  // puede guardar solo la tarjeta (almacenamiento mínimo). Los
+  // detalles se piden a la API del LECTOR (con caché de 24 h) y se
+  // re-renderiza la ficha; nunca se escribe en Firestore (solo
+  // lectura). Si falla la red, degrada a «solo tarjeta» y no se
+  // reintenta en esta sesión.
+  if (needsDetailFetch(item) && !item._detailsFailed) {
+    item._detailsFailed = false;
+    loadItemDetails(item).then((details) => {
+      if (!document.getElementById("item-modal")?.classList.contains("hidden")) {
+        if (!details) item._detailsFailed = true;
+        openReadOnlyModal(item, ownerName);
+      }
+    });
+  }
 }
 
 /* ---------- Amigos ---------- */

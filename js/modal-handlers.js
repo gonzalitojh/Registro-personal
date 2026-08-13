@@ -15,9 +15,42 @@ import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
 import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
+import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
+import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+
+// Detalles de ficha bajo demanda (issue #200, almacenamiento mínimo):
+// si el documento no trae la ficha (solo tarjeta + avisos), el modal
+// se abre al momento con un placeholder y los detalles se cargan en
+// segundo plano (caché en memoria de 24 h). Al llegar, se re-renderiza
+// el modal completo y se revalida la tarjeta guardada (portada y rating
+// comunitario, stale-while-revalidate del estudio §9 R3: 1 escritura
+// solo si cambian). Si la red falla, la ficha queda «solo tarjeta»
+// (degradación elegante) y no se reintenta en esa sesión.
+function loadDetailsForModal(item, ctx, rerender) {
+  const prevCoverUrl = item.coverUrl;
+  const prevCommunityRating = item.communityRating;
+  loadItemDetails(item).then((details) => {
+    if (!details) {
+      item._detailsFailed = true;
+      rerender();
+      return;
+    }
+    const changes = {};
+    if (item.coverUrl && item.coverUrl !== prevCoverUrl) changes.coverUrl = item.coverUrl;
+    if (item.communityRating != null && item.communityRating !== prevCommunityRating) {
+      changes.communityRating = item.communityRating;
+    }
+    if (Object.keys(changes).length) {
+      ctx
+        .updateItem(ctx.getCurrentUser().uid, item.type, item.id, changes)
+        .catch((err) => console.error("No se pudo revalidar la tarjeta:", item.title, err));
+    }
+    rerender();
+  });
+}
 
 // Abre la ventana de valoración tras marcar como vista/leída una
 // película o un libro (issue #21). Nunca lanza: si algo falla, se
@@ -97,8 +130,8 @@ function getUserCountry() {
     || "ES";
 }
 
-async function openMovieItem(item, ctx) {
-  const reopen = () => openMovieItem(item, ctx);
+async function openMovieItem(item, ctx, isRerender = false) {
+  const reopen = () => openMovieItem(item, ctx, true);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     // awaitingRelease se limpia siempre al marcar como vista: un ítem
@@ -162,6 +195,13 @@ async function openMovieItem(item, ctx) {
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
   }, recommendations, existingIds);
+
+  // Ficha bajo demanda: cargar detalles ampliados en segundo plano
+  // (solo la primera apertura; los re-render no vuelven a pedirlos).
+  if (!isRerender && needsDetailFetch(item)) {
+    item._detailsFailed = false;
+    loadDetailsForModal(item, ctx, reopen);
+  }
 }
 
 /* ---------- Lógica de colecciones/sagas ---------- */
@@ -178,7 +218,9 @@ async function addSagaMovie(movie, ctx) {
     rating: null,
     notes: "",
     watchLog: [],
-    ...details,
+    // Almacenamiento mínimo (issue #200): solo tarjeta + avisos + rating
+    // comunitario; el resto de la ficha se pide bajo demanda.
+    ...minimalStoredFields(details, "movie"),
   };
   if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
     draft.awaitingRelease = true;
@@ -209,7 +251,8 @@ async function addFromRecommendation(item, btn, ctx) {
       draft.watchLog = [];
       try {
         const details = await getMovieDetails(item.externalId);
-        Object.assign(draft, details);
+        // Almacenamiento mínimo: solo tarjeta + avisos + rating comunitario.
+        Object.assign(draft, minimalStoredFields(details, "movie"));
         if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
           draft.awaitingRelease = true;
         }
@@ -226,10 +269,8 @@ async function addFromRecommendation(item, btn, ctx) {
       draft.history = [];
       try {
         const details = await getTvExtraDetails(item.externalId);
-        Object.assign(draft, details);
-        if (details.seasonAirDates && Object.keys(details.seasonAirDates).length) {
-          draft.seasonAirDates = details.seasonAirDates;
-        }
+        // Almacenamiento mínimo: los campos de avisos sí se persisten.
+        Object.assign(draft, minimalStoredFields(details, "tv"));
         if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) {
           draft.awaitingRelease = true;
         }
@@ -344,31 +385,13 @@ function openBookItem(item, ctx) {
   });
 }
 
-async function openGameItem(item, ctx) {
-  const reopen = () => openGameItem(item, ctx);
+async function openGameItem(item, ctx, isRerender = false) {
+  const reopen = () => openGameItem(item, ctx, true);
   async function persist(newLog) {
     const status = statusFromPlayLog(newLog);
     await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, { playLog: newLog, status });
     item.playLog = newLog;
     item.status = status;
-  }
-
-  // Tráiler de IGDB (extra no crítico): los juegos añadidos antes de
-  // existir esta consulta no traen trailerUrl guardado; se pide al
-  // abrir la ficha y se persiste fuego-y-olvido. Si falla, el modal
-  // se abre igualmente (mismo espíritu que los watch providers).
-  if (item.externalId && !item.trailerUrl) {
-    try {
-      const details = await getGameDetails(item.externalId);
-      if (details.trailerUrl) {
-        item.trailerUrl = details.trailerUrl;
-        await ctx.updateItem(ctx.getCurrentUser().uid, "game", item.id, {
-          trailerUrl: details.trailerUrl,
-        });
-      }
-    } catch (err) {
-      // no bloqueamos la apertura del modal
-    }
   }
 
   ui.openGameModal(item, {
@@ -403,9 +426,17 @@ async function openGameItem(item, ctx) {
     onDelete: confirmDelete(item, "game", ctx),
     onEdit: editHandlerFor(item, "game", reopen, ctx),
   });
+
+  // Ficha bajo demanda: cargar detalles ampliados en segundo plano
+  // (solo la primera apertura; los re-render no vuelven a pedirlos).
+  if (!isRerender && needsDetailFetch(item)) {
+    item._detailsFailed = false;
+    loadDetailsForModal(item, ctx, reopen);
+  }
 }
 
-async function openTvItem(item, ctx) {
+async function openTvItem(item, ctx, isRerender = false) {
+  const reopen = () => openTvItem(item, ctx, true);
   let seasonsMeta;
   try {
     seasonsMeta = await getSeasonsMetaFor(item, ctx);
@@ -435,7 +466,6 @@ async function openTvItem(item, ctx) {
   }
 
   const progress = progressWithStatus(seasonsMeta, item);
-  const reopen = () => openTvItem(item, ctx);
 
   // Obtener watch providers
   if (item.externalId) {
@@ -609,6 +639,13 @@ async function openTvItem(item, ctx) {
     onEdit: editHandlerFor(item, "tv", reopen, ctx),
     onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
   }, recommendations, existingIds);
+
+  // Ficha bajo demanda: cargar detalles ampliados en segundo plano
+  // (solo la primera apertura; los re-render no vuelven a pedirlos).
+  if (!isRerender && needsDetailFetch(item)) {
+    item._detailsFailed = false;
+    loadDetailsForModal(item, ctx, reopen);
+  }
 }
 
 export function openItem(item, ctx) {
