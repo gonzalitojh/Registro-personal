@@ -47,6 +47,7 @@ import {
   INGREDIENT_CATEGORIES,
   DAY_KEYS,
   MEAL_KEYS,
+  SHOPPING_UNITS,
   normalizeIngredientName,
   normalizeUnit,
   escapeHtml,
@@ -762,7 +763,9 @@ function renderExtraForm() {
         <input type="hidden" class="ing-categoria-valor" />
       </div>
       <input type="number" id="extra-cantidad" placeholder="Cant." step="any" min="0" />
-      <input type="text" id="extra-unidad" placeholder="Unidad" maxlength="30" />
+      <select id="extra-unidad" aria-label="Unidad de medida">
+        ${SHOPPING_UNITS.map((u) => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("")}
+      </select>
     </div>
     <p class="shopping-extra-form__hint">Elige un ingrediente del catálogo: la categoría (y si es
       producto del hogar) se toma de su ficha. Si no está, créalo en la pestaña Ingredientes.</p>

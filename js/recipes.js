@@ -19,6 +19,7 @@ import {
   SUPERMARKETS,
   CUSTOM_CATEGORY_ICON,
   UNCATEGORIZED_ICON,
+  SHOPPING_UNITS,
   normalizeIngredientName,
   normalizeUnit,
   mergeTags,
@@ -1127,7 +1128,9 @@ function ingredientShoppingHtml(ing) {
     </div>
     <div class="ingredient-modal__field">
       <label for="ing-shopping-unidad">Unidad de medida</label>
-      <input type="text" id="ing-shopping-unidad" placeholder="P. ej. g" maxlength="30" />
+      <select id="ing-shopping-unidad">
+        ${SHOPPING_UNITS.map((u) => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("")}
+      </select>
     </div>
     <div class="ingredient-modal__actions">
       <button type="button" class="btn btn--small btn--outline" data-ing-shopping-cancel>Cancelar</button>
