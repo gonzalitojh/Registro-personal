@@ -523,6 +523,50 @@ function renderWorkoutEditor() {
   bindWorkoutEditorHandlers(content);
 }
 
+// Series de la última vez que se trabajó un ejercicio (#265): recorre
+// workouts (ya ordenados por fechaISO desc desde db.js) y devuelve
+// una copia {pesoKg, reps} de la ocurrencia más reciente con series,
+// o null. Prioridad estricta del match por ejercicioId (canónico):
+// solo si no hay ningún entreno con una entrada canónica de ese
+// ejercicio se usa el fallback por nombre snapshot normalizado para
+// datos antiguos sin id (legacy «Otro…»).
+function lastWorkoutSeriesForExercise(exerciseId, nombre) {
+  const norm = (s) => String(s || "").trim().toLowerCase();
+  const nameNorm = norm(nombre);
+  let legacy = null;
+  for (const w of workouts) {
+    for (const ex of w.ejercicios || []) {
+      if (!(ex.series || []).length) continue;
+      if (exerciseId && ex.ejercicioId === exerciseId) {
+        return ex.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 }));
+      }
+      if (legacy === null && !ex.ejercicioId && nameNorm && norm(ex.nombre) === nameNorm) {
+        legacy = ex;
+      }
+    }
+  }
+  return legacy ? legacy.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 })) : null;
+}
+
+// Pre-relleno (#265): solo si el bloque aún no tiene series (no pisa
+// lo ya escrito ni lo traído de un entreno en edición). Re-renderiza
+// y devuelve el foco al select (patrón de «Añadir serie»).
+function maybePrefillSeriesFromLastWorkout(select) {
+  if (!workoutDraft) return;
+  const block = select.closest(".gym-exercise-block");
+  if (!block) return;
+  const idx = parseInt(block.dataset.gymExIdx, 10);
+  const entry = workoutDraft.ejercicios[idx];
+  const exerciseId = select.value || null;
+  if (!exerciseId || !entry || entry.series.length) return;
+  const prev = lastWorkoutSeriesForExercise(exerciseId, entry.nombre);
+  if (!prev) return;
+  workoutDraft.ejercicios[idx].series = prev;
+  renderWorkoutEditor();
+  document.querySelector(`[data-gym-ex-idx="${idx}"]`)
+    ?.querySelector("[data-gym-ex-select]")?.focus();
+}
+
 function renderWorkoutEditorHtml() {
   const d = workoutDraft;
   const exercisesHtml = d.ejercicios.map((ex, i) => workoutExerciseBlockHtml(ex, i)).join("");
@@ -549,11 +593,21 @@ function renderWorkoutEditorHtml() {
       <textarea id="gym-wk-nota" rows="3" placeholder="Cómo fue el entreno, sensaciones, progreso…">${escapeHtml(d.nota)}</textarea>
     </div>
     <div class="gym-form__field">
+      <label for="gym-wk-unit">Unidad de peso</label>
+      <select id="gym-wk-unit" aria-label="Unidad de peso del entreno">
+        <option value="kg"${unit() === "kg" ? " selected" : ""}>kg</option>
+        <option value="lbs"${unit() === "lbs" ? " selected" : ""}>lbs</option>
+      </select>
+    </div>
+    <div class="gym-form__field">
       <label>Ejercicios</label>
       ${hint}
       ${exercisesHtml}
       ${emptyCatalogHint}
-      <button type="button" class="btn btn--small" data-gym-add-exercise>+ Añadir ejercicio</button>
+      <div class="gym-block-button-row">
+        <button type="button" class="btn btn--small" data-gym-add-exercise>+ Añadir ejercicio</button>
+        <button type="button" class="btn btn--small" data-gym-new-exercise>Nuevo ejercicio</button>
+      </div>
     </div>
     <div class="gym-modal__actions">
       <button type="button" class="btn btn--small" data-gym-wk-cancel>Cancelar</button>
@@ -562,34 +616,40 @@ function renderWorkoutEditorHtml() {
   </form>`;
 }
 
-// Bloque de un ejercicio del constructor: select del catálogo (con la
-// opción «Otro…» para escribir un nombre libre, ejercicioId null),
+// Bloque de un ejercicio del constructor: select del catálogo (con
+// placeholder del nombre snapshot en los datos antiguos sin id),
 // filas de serie (peso en la unidad activa + reps) y botones de
 // quitar serie/ejercicio.
 function workoutExerciseBlockHtml(ex, i) {
   const options = exercises.map((e) =>
     `<option value="${escapeHtml(e.id)}"${e.id === ex.ejercicioId ? " selected" : ""}>${escapeHtml(e.nombre)}</option>`
   ).join("");
-  const customSelected = ex.ejercicioId === null;
-  const customNameInput = customSelected
-    ? `<input type="text" class="gym-custom-name" maxlength="200" autocomplete="off"
-         placeholder="Nombre del ejercicio" aria-label="Nombre del ejercicio"
-         value="${escapeHtml(ex.nombre)}" />`
-    : "";
+  // Datos antiguos (legacy «Otro…»): sin id y con nombre snapshot; se
+  // muestra el nombre como placeholder para no perder la referencia.
+  const placeholderLabel = ex.ejercicioId === null && ex.nombre ? ex.nombre : "Elige un ejercicio…";
   const seriesRows = ex.series.map((s, si) => workoutSeriesRowHtml(i, si, s)).join("");
+  // Cabecera de la tabla de series (etiquetas peso/reps, #265): misma
+  // rejilla que las filas para que las columnas queden alineadas; la
+  // tercera celda está vacía porque en las filas es el botón ✕.
+  const seriesHead = `<div class="gym-series-row gym-series-row--head" aria-hidden="true">
+    <span>Peso (${escapeHtml(unitLabel())})</span>
+    <span>Repeticiones</span>
+    <span></span>
+  </div>`;
 
   return `<div class="gym-exercise-block" data-gym-ex-idx="${i}">
     <div class="gym-exercise-block__header">
       <select data-gym-ex-select aria-label="Ejercicio ${i + 1}">
-        <option value="">Elige un ejercicio…</option>
+        <option value="">${escapeHtml(placeholderLabel)}</option>
         ${options}
-        <option value="__custom__"${customSelected ? " selected" : ""}>Otro (escribir nombre)…</option>
       </select>
       <button type="button" class="gym-remove-btn" data-gym-ex-remove="${i}" aria-label="Quitar ejercicio ${i + 1}">✕</button>
     </div>
-    ${customNameInput}
-    <div class="gym-series-table">${seriesRows}</div>
-    <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
+    <div class="gym-series-table">${seriesHead}${seriesRows}</div>
+    <div class="gym-block-button-row">
+      <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
+      <button type="button" class="gym-add-series-btn" data-gym-dup-series="${i}">Duplicar serie</button>
+    </div>
   </div>`;
 }
 
@@ -619,16 +679,16 @@ function syncWorkoutDraftFromDom() {
   workoutDraft.nota = form.querySelector("#gym-wk-nota").value;
   workoutDraft.ejercicios = Array.from(form.querySelectorAll(".gym-exercise-block")).map((block, idx) => {
     const select = block.querySelector("[data-gym-ex-select]");
-    const customName = block.querySelector(".gym-custom-name");
-    const ejercicioId = select.value === "__custom__" ? null : select.value || null;
+    const ejercicioId = select.value || null;
     // Si el ejercicio se borró del catálogo tras guardarse el entreno,
     // el select ya no tiene su opción: se conserva el nombre snapshot
     // del borrador (los entrenos guardados conservan su nombre).
     const found = exercises.find((e) => e.id === select.value);
-    const nombre = select.value === "__custom__"
-      ? customName.value.trim()
-      : (found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "");
-    const series = Array.from(block.querySelectorAll(".gym-series-row")).map((row) => ({
+    const nombre = found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "";
+    // Las filas de serie son las .gym-series-row SIN la cabecera de
+    // etiquetas (.gym-series-row--head, #265): la cabecera solo tiene
+    // spans y no debe leerse como una fila de datos.
+    const series = Array.from(block.querySelectorAll(".gym-series-row:not(.gym-series-row--head)")).map((row) => ({
       pesoKg: displayToKg(parseFloat(row.querySelector("[data-gym-series-peso]").value) || 0),
       reps: parseInt(row.querySelector("[data-gym-series-reps]").value, 10) || 0,
     }));
@@ -637,29 +697,28 @@ function syncWorkoutDraftFromDom() {
 }
 
 function bindWorkoutEditorHandlers(content) {
-  // Selección de ejercicio del catálogo («Otro…» revela el input de
-  // nombre libre). Se sincroniza el borrador y se alterna el input en
-  // sitio (sin re-render, para no perder el foco del select).
+  // Selector de unidad de peso del modal (alta/edición, #265): misma
+  // lógica y persistencia que el global #gym-unit-select, así que
+  // solo se re-renderiza lo que muestra pesos (renderAllWithUnit
+  // repinta pestaña, editor abierto y deja el select global en sync).
+  content.querySelector("#gym-wk-unit")?.addEventListener("change", (e) => {
+    // Guardar lo tecleado antes de re-renderizar: el re-render parte
+    // del borrador (kg canónico) y convertiría y conservaría lo
+    // escrito en lugar de perderlo.
+    syncWorkoutDraftFromDom();
+    setUnit(e.target.value);
+    const globalSelect = document.getElementById("gym-unit-select");
+    if (globalSelect) globalSelect.value = unit();
+    renderAllWithUnit();
+  });
+
+  // Selección de ejercicio del catálogo: se sincroniza el borrador (el
+  // nombre snapshot puede cambiar al pasar de un ejercicio a otro) y se
+  // pre-rellenan las series con las de la última vez (#265).
   content.querySelectorAll("[data-gym-ex-select]").forEach((select) => {
     select.addEventListener("change", () => {
       syncWorkoutDraftFromDom();
-      const block = select.closest(".gym-exercise-block");
-      const customInput = block.querySelector(".gym-custom-name");
-      if (select.value === "__custom__") {
-        if (!customInput) {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.className = "gym-custom-name";
-          input.maxLength = 200;
-          input.autocomplete = "off";
-          input.placeholder = "Nombre del ejercicio";
-          input.setAttribute("aria-label", "Nombre del ejercicio");
-          select.closest(".gym-exercise-block__header").insertAdjacentElement("afterend", input);
-          input.focus();
-        }
-      } else if (customInput) {
-        customInput.remove();
-      }
+      maybePrefillSeriesFromLastWorkout(select);
     });
   });
 
@@ -671,6 +730,25 @@ function bindWorkoutEditorHandlers(content) {
       workoutDraft.ejercicios[idx].series.push({ pesoKg: 0, reps: 0 });
       renderWorkoutEditor();
       const row = document.querySelector(`[data-gym-series-peso="${idx}-${workoutDraft.ejercicios[idx].series.length - 1}"]`);
+      row?.focus();
+    });
+  });
+
+  // Duplicar serie (#265): copia la última serie del ejercicio (peso y
+  // reps) al final, sin tener que reescribirla. Avisa si no hay ninguna.
+  content.querySelectorAll("[data-gym-dup-series]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      syncWorkoutDraftFromDom();
+      const idx = parseInt(btn.dataset.gymDupSeries, 10);
+      const series = workoutDraft.ejercicios[idx].series;
+      if (!series.length) {
+        showToast("No hay ninguna serie que duplicar.");
+        return;
+      }
+      const last = series[series.length - 1];
+      series.push({ pesoKg: last.pesoKg, reps: last.reps });
+      renderWorkoutEditor();
+      const row = document.querySelector(`[data-gym-series-peso="${idx}-${series.length - 1}"]`);
       row?.focus();
     });
   });
@@ -706,6 +784,12 @@ function bindWorkoutEditorHandlers(content) {
     renderWorkoutEditor();
     const block = document.querySelector(".gym-exercise-block:last-of-type");
     block?.querySelector("[data-gym-ex-select]")?.focus();
+  });
+
+  // Nuevo ejercicio (#265): abre el mismo modal de alta que la pestaña
+  // Ejercicios sin cerrar el del entreno (patrón de open-catalog).
+  content.querySelector("[data-gym-new-exercise]")?.addEventListener("click", () => {
+    openExerciseModal();
   });
 
   // Atajo al catálogo (hint cuando el catálogo está vacío y el
