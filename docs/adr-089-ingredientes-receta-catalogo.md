@@ -119,4 +119,31 @@ la rama de trabajo se crea desde ahí y la PR va **también a
   sin hallazgos (todo dato de usuario pasa por `escapeHtml`, incluidos
   los `data-nombre`/`data-categoria` de las opciones).
 
+## Iteración (2026-08-13, hallazgos de QA)
+
+La revisión QA validó los criterios de aceptación y señaló cuatro
+puntos de severidad baja, corregidos en la iteración:
+
+1. **Contraste AA en modo Oscuro**: el glifo ▾ del toggle (antes
+   `--ink-soft`, ≈ 2.4:1 sobre `--paper-dim`) y el mensaje «Sin
+   coincidencias…» (antes `--ink-soft` ≈ 2.8:1 sobre `--paper`) pasan
+   a tinta plena `--ink` en la regla base, con override
+   `[data-theme="black"] .ing-combo__list .ing-combo__empty` a
+   `--paper` (en negro puro `--ink` es negro sobre superficie oscura).
+   Comentarios en el CSS documentan los ratios (AGENTS.md §4.4).
+2. **Enter sin opciones elegibles**: si el desplegable solo muestra el
+   mensaje de «Sin coincidencias» (opción `aria-disabled`), Enter ya
+   no intenta seleccionar: cierra el desplegable (antes requería
+   Escape + Enter).
+3. **Coherencia texto visible / selección al guardar**: si el usuario
+   teclea encima de una selección (texto libre), la fila se descarta
+   con el toast de aviso (antes se conservaba silenciosamente la
+   selección anterior). La selección válida exige que el texto visible
+   normalizado coincida con el valor oculto de la fila.
+
+Validación: los criterios de aceptación se re-verifican sin regresión;
+contraste AA del toggle y del mensaje vacío en los cuatro temas;
+`node --check js/recipes.js` OK; escaneo de seguridad sin hallazgos
+(todo dato de usuario pasa por `escapeHtml`).
+
 Related issue: #240
