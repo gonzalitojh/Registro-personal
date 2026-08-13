@@ -847,7 +847,8 @@ button {
    La clase is-search-open la gestiona js/global-search.js. La ✕ hereda
    currentColor de .icon-btn (var(--paper); var(--ink) en claro/blanco
    puro), así que no necesita overrides de tema. Con prefers-reduced-
-   motion la transición se anula globalmente (§ line 610). */
+   motion la transición se anula globalmente (media query de la línea
+   623). */
 #btn-sidebar-toggle svg line {
   transform-box: fill-box;
   transform-origin: center;

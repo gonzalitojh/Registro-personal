@@ -71,7 +71,7 @@ Estado previo:
    existente). La ✕ hereda `currentColor` de `.icon-btn`: **sin
    overrides de tema** (correcta en Oscuro, Negro puro, Claro y Blanco
    puro).
-5. **Manual de usuario** (sección 8.2): se documenta la nueva forma de
+5. **Manual de usuario** (sección 9.2): se documenta la nueva forma de
    cerrar el panel (la ☰ se convierte en ✕ mientras la búsqueda está
    abierta).
 
