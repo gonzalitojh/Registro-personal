@@ -122,6 +122,39 @@ ahí y la PR va **también a `content/issue-64-seccion-recetas`, no a
    (`APP_VERSION`), index.html (`?v=`) y service-worker.js
    (`STATIC_ASSETS`).
 
+## Iteración (2026-08-13): contraste del buscador en modo oscuro y negro puro
+
+Hallazgo del usuario tras la PR inicial: **el modo oscuro no se veía
+bien en la ventana de búsqueda de recetas**. Causa raíz: las tarjetas
+`.recipe-pick__card` y el mensaje vacío `.recipe-pick__empty` no
+declaraban color de texto explícito y **heredaban `--ink` del modal**
+(que en la familia oscura es papel claro con tinta oscura); sobre el
+chip `--ink-raised` de la tarjeta, la tinta daba ≈ **1.1:1**
+(invisible) y el mensaje con `--ink-soft` ≈ **2.84:1** (no AA).
+
+Corrección aplicada (mismo patrón que `.recipes-filter__btn` y
+`.recipe-view__meta`, selectores agrupados con una sola fuente de
+verdad por regla):
+
+- `.recipe-pick__card`: `color: var(--paper)` explícito en la base
+  (familia oscura) y override agrupado
+  `[data-theme="light"]/[data-theme="white"]` a `--ink`.
+- `.recipe-pick__empty`: `--ink → --ink` (tinta del contenido, 15.2:1
+  sobre el modal papel) y override `[data-theme="black"]` a
+  `--paper` (en negro puro el modal es superficie oscura y `--ink` es
+  #000 invisible).
+- `.recipe-pick__search` en negro puro: override a
+  `--ink` + borde `--paper-alpha-20`, patrón de
+  `ingredient-modal__field` / `.recipe-pick__comensales input` — sin
+  él, el campo (base `--ink-raised`) compartiría el fondo con el modal
+  negro puro y no se distinguiría.
+
+Contrastes resultantes: tarjeta 13.85:1 (oscuro) / 16.51:1 (negro
+puro) / 14.65:1 y 21:1 (claro y blanco puro); mensaje vacío 15.2:1 /
+16.51:1; placeholder del buscador 6.16:1 (negro puro, AA). Sin cambios
+de comportamiento, HTML ni JS: solo CSS de tema, por lo que el manual
+de usuario no requiere actualización.
+
 ## Consecuencias
 
 - **Positivas**: añadir recetas a una comida deja de ser un
