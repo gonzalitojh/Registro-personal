@@ -32,7 +32,7 @@
     "title": "[content] Pestaña menú: buscador de recetas con tarjetas, comensales por receta y sin desayuno",
     "branch": "content/issue-242-pestana-menu",
     "base": "content/issue-64-seccion-recetas",
-    "commit": "e8f4204",
+    "commit": "9bf3657",
     "closes": "#242"
   }
 }
