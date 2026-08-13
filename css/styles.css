@@ -2993,6 +2993,32 @@ body.is-back-to-top-visible .back-to-top {
   min-width: 0;
 }
 
+/* Vista de solo lectura (issue #232): foto opcional (solo se muestra
+   si el ingrediente tiene una; sin ella no aparece ningún placeholder),
+   etiquetas de campo y valores como texto corriente. */
+.ingredient-modal__photo {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 0.8rem;
+}
+
+.ingredient-modal__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.ingredient-modal__text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
 .ingredient-modal__field {
   display: flex;
   flex-direction: column;
@@ -4422,6 +4448,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .ingredients-count,
 [data-theme="black"] .ingredient-modal__used,
 [data-theme="black"] .ingredient-modal__cat-hint,
+[data-theme="black"] .ingredient-modal__label,
+[data-theme="black"] .ingredient-modal__text,
 [data-theme="black"] .menu-weekly__hint,
 [data-theme="black"] .menu-weekly__empty,
 [data-theme="black"] .shopping-line__qty,
