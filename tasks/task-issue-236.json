@@ -1,7 +1,7 @@
 {
   "title": "Ventana recetas modo lectura",
   "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLa ventana en modo lectura de las recetas debe verse diferente de la ventana de edición, en lugar de simplemente no permitir editar. En primer lugar la foto y justo debajo el nombre con las etiquetas de alérgenos y tipo de plato, la descripción y las porciones. Bajo ello los ingredientes en forma de lista, sin opción de eliminar ni la categoría, solo nombre y cantidad. Debajo las instrucciones, también en forma de lista y sin opción de eliminar. Al final, los enlaces de referencia, si los hay.\n\nLas etiquetas de alérgenos y tipo de plato, cambiar el color para que no se confundan entre ellas.\n\nEn esta vista de modo lectura, no se debe ver como recuadros sin opción a editar, sino como texto. De esta forma, los nombres de los campos (Nombre, Descripción, Porciones...) no deben mostrarse. El nombre de la receta aparecería como un título y luego los ingredientes y las instrucciones si tendrían un encabezado de título.",
-  "status": "created",
+  "status": "documented",
   "acceptance criteria": [
     "La ventana en modo lectura de una receta se ve distinta de la ventana de edición (no es el formulario con los campos deshabilitados).",
     "En modo lectura se muestra primero la foto y justo debajo el nombre, con las etiquetas de alérgenos y tipo de plato.",
