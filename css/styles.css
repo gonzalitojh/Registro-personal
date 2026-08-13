@@ -3408,7 +3408,13 @@ body.is-back-to-top-visible .back-to-top {
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  /* Chip de la familia oscura (patrón de .recipes-filter__btn): el
+     modal es papel, así que la tarjeta va en --ink-raised con texto
+     --paper EXPLÍCITO — sin el color, el texto heredaría --ink del
+     modal y quedaría invisible (1.1:1) en el tema Oscuro. La familia
+     clara lo invierte en los overrides de abajo. */
   background: var(--ink-raised);
+  color: var(--paper);
   border: 1px solid var(--paper-alpha-20);
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
@@ -3489,7 +3495,10 @@ body.is-back-to-top-visible .back-to-top {
 .recipe-pick__empty {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--ink-soft);
+  /* Sobre el modal de papel en el tema Oscuro, --ink-soft (#948a76)
+     solo da ≈ 2.8:1 (no alcanza AA): se usa la tinta del contenido,
+     mismo patrón que .recipe-view__meta (issue #242, iteración). */
+  color: var(--ink);
 }
 
 /* Recetas a la semana (no escalan) */
@@ -4541,6 +4550,15 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--ink-alpha-10);
 }
 
+/* Tarjeta del buscador de recetas (issue #242, iteración): chip de
+   la familia oscura con texto papel explícito; en la familia clara
+   --ink-raised es blanco y el texto pasa a --ink (mismo patrón que
+   .recipes-filter__btn). */
+[data-theme="light"] .recipe-pick__card,
+[data-theme="white"] .recipe-pick__card {
+  color: var(--ink);
+}
+
 [data-theme="light"] .menu-comensales input,
 [data-theme="white"] .menu-comensales input,
 [data-theme="light"] .recipe-pick__search,
@@ -4684,6 +4702,14 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
+}
+
+/* Mensaje de lista vacía del buscador en negro puro: la base usa
+   --ink (la tinta del contenido), que en este tema es #000 y quedaría
+   invisible sobre el modal oscuro (--ink-raised): vuelve a papel,
+   patrón de .recipe-view__meta en negro puro. */
+[data-theme="black"] .recipe-pick__empty {
+  color: var(--paper);
 }
 
 [data-theme="black"] .recipe-form__import {
