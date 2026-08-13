@@ -1243,14 +1243,12 @@ function closeRecipeModal() {
     modalCleanup = null;
   }
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
+  editingRecipeId = null;
+  modalReadOnly = false;
   // Callback de cierre (issue #242): restaurar el buscador del menú.
   const cb = recipeModalCloseCb;
   recipeModalCloseCb = null;
   if (cb) cb();
-}
-  if (modal._previousActiveElement) modal._previousActiveElement.focus();
-  editingRecipeId = null;
-  modalReadOnly = false;
 }
 
 function recipeModalHtml(recipe) {
