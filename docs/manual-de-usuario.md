@@ -456,10 +456,17 @@ receta»** creas una con:
 - **Foto**: una dirección (URL) de imagen.
 - **Enlaces de referencia**: la web de donde sacaste la receta, uno por
   línea.
-- **Ingredientes**: nombre, cantidad, unidad (g, ml, unidades…) y
-  categoría (Frutas y verduras, Carnes, Pescado, Lácteos, Legumbres,
-  Despensa, Especias, Dulces, Hogar, Bebidas, Congelados u Otros).
-  Puedes añadir tantas filas como quieras.
+- **Ingredientes**: se eligen de tu **catálogo de ingredientes** con
+  un **desplegable con buscador**: escribe para filtrar y elige una
+  opción de la lista (no se puede escribir un nombre libre). Si el
+  ingrediente no está en el catálogo, pulsa **«Nuevo ingrediente»**:
+  se abre la misma ventana de creación de la pestaña Ingredientes
+  (nombre y categoría, y si quieres supermercados y cantidad de
+  paquete) y el ingrediente queda ya elegido en la receta. A cada
+  ingrediente le pones **cantidad** y **unidad** (g, ml, unidades…);
+  la **categoría no se elige aquí**: viene de la ficha del ingrediente
+  en el catálogo y puedes cambiarla en la pestaña Ingredientes (ver
+  8.5). Puedes añadir tantas filas como quieras.
 - **Instrucciones**: los pasos, en orden.
 - **Etiquetas de alérgenos** (Sin gluten, Vegetariano, Vegano, Sin
   lactosa, Sin frutos secos, Sin huevo) y **tipo de comida** (Entrante,
