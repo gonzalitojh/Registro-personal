@@ -77,8 +77,8 @@ export const TAGS_BY_TYPE = {
   tipo: MEAL_TYPES,
 };
 
-// Días de la semana y comidas del menú (primera versión fija:
-// desayuno / almuerzo / cena, no configurables).
+// Días de la semana y comidas del menú (fijos, no configurables). El
+// desayuno se eliminó en la issue #242: el menú cubre almuerzo y cena.
 export const DAY_KEYS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 export const DAY_LABELS = {
   lunes: "Lunes",
@@ -89,8 +89,8 @@ export const DAY_LABELS = {
   sabado: "Sábado",
   domingo: "Domingo",
 };
-export const MEAL_KEYS = ["desayuno", "almuerzo", "cena"];
-export const MEAL_LABELS = { desayuno: "Desayuno", almuerzo: "Almuerzo", cena: "Cena" };
+export const MEAL_KEYS = ["almuerzo", "cena"];
+export const MEAL_LABELS = { almuerzo: "Almuerzo", cena: "Cena" };
 
 // Normalización a slug para claves de etiqueta e ingrediente:
 // quita tildes, pasa a minúsculas y sustituye separadores por "_".

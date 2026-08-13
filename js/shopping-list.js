@@ -263,14 +263,23 @@ function computeLines(weekStarts) {
       eliminados.has(`${normalizeIngredientName(nombre)}|${normalizeUnit(unidad)}`);
 
     // Recetas del menú (por día y comida), escaladas por comensales.
+    // Desde la issue #242 cada entrada puede ser un string (id) o un
+    // objeto { recipeId, comensales } con sus propios comensales:
+    // si los lleva, escalan con ellos; si no, con los globales.
     const comensales = Number(data.comensales) || 1;
     DAY_KEYS.forEach((day) => {
       MEAL_KEYS.forEach((meal) => {
-        (data.dias?.[day]?.[meal] || []).forEach((recipeId) => {
+        (data.dias?.[day]?.[meal] || []).forEach((entry) => {
+          const recipeId = typeof entry === "string" ? entry : entry?.recipeId;
+          if (!recipeId) return;
           if (excluded.has(recipeId)) return;
           const recipe = byId.get(recipeId);
           if (!recipe) return;
-          const factor = Number(recipe.porciones) > 0 ? comensales / Number(recipe.porciones) : comensales;
+          const entryComensales = typeof entry === "object" && entry !== null && entry.comensales
+            ? Number(entry.comensales)
+            : null;
+          const factorBase = entryComensales || comensales;
+          const factor = Number(recipe.porciones) > 0 ? factorBase / Number(recipe.porciones) : factorBase;
           (recipe.ingredientes || []).forEach((ing) => {
             if (skip(ing.nombre, ing.unidad)) return;
             addLine(ing.nombre, Number(ing.cantidad || 0) * factor, ing.unidad, ing.categoriaId, true, recipe.nombre);
