@@ -35,6 +35,15 @@ name: auto-resolve-issues
 #     NO vuelve a disparar el workflow (publicarlos con el PAT del
 #     propietario hacía que el comentario apareciera firmado por él y
 #     relanzara el workflow sobre la misma issue).
+#   - Toda la sesión SDD publica como github-actions[bot] (issue #257): la
+#     sesión se lanza con GH_TOKEN=${{ github.token }} (override de step),
+#     así que las PRs que crea el publisher (gh pr create), los gh pr
+#     edit/comment de las iteraciones, los comentarios en issues y el sync
+#     de labels (scripts/gh-issue.sh) aparecen firmados por el bot, nunca
+#     por el propietario (extensión de la issue #245 a todo el flujo). El
+#     PAT del job (GH_TOKEN del env) se reserva para los pasos que requieren
+#     actions: write fuera de la sesión (relanzamiento con gh workflow run y
+#     dispatch de deploy-all-branches).
 #
 # "Apagar el servidor" = cuando el selector devuelve NONE (no quedan issues
 # elegibles), el workflow termina sin lanzar ninguna sesión.
@@ -353,6 +362,22 @@ jobs:
       - name: Sesión OpenCode (agente sdd-master, watchdog + transcripción)
         if: steps.candidate.outputs.selected != 'NONE' && inputs.dry_run != 'true'
         timeout-minutes: 90
+        # Issue #257: TODA la sesión SDD se publica con el GITHUB_TOKEN del
+        # run (autor: github-actions[bot]) en lugar del PAT del job: las PRs
+        # que crea el publisher (gh pr create), los gh pr edit/comment de las
+        # iteraciones, los comentarios en issues y el sync de labels vía
+        # scripts/gh-issue.sh. El trigger issue_comment del workflow excluye
+        # a github-actions[bot], así que los comentarios de la sesión ya no
+        # re-disparan el workflow (sesiones duplicadas; extensión de la
+        # issue #245 a TODO, no solo a los comentarios de fallo). El
+        # permissions: del job ya concede contents/pull-requests/issues/
+        # actions: write al GITHUB_TOKEN (push de git no afectado: git no
+        # usa GH_TOKEN, usa las credenciales de actions/checkout). El PAT
+        # del job sigue para los pasos que requieren actions: write fuera
+        # del alcance de la sesión (relanzamiento con gh workflow run y
+        # dispatch de deploy-all-branches).
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
           echo "Lanzando sesión automática para la issue #$N (watchdog: estancamiento 20 min por actividad BD, total 90 min)..."
