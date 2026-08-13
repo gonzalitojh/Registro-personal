@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mi Registro — pelis, series, libros, videojuegos y recetas</title>
-  <meta name="description" content="Registro personal de películas, series, libros, videojuegos y recetas." />
+  <title>Mi Registro — pelis, series, libros, videojuegos, recetas y gimnasio</title>
+  <meta name="description" content="Registro personal de películas, series, libros, videojuegos, recetas y gimnasio." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
   <link rel="apple-touch-icon" href="resources/icon.png">
@@ -635,6 +635,77 @@
     </div>
   </div>
 
+  <!-- Vista de gimnasio (issue #62): registra entrenos (fecha,
+       ejercicios, series con peso y repeticiones) y un catálogo de
+       ejercicios. Hermana de recipes-view: vista de primer nivel,
+       fuera de #app, sin botón de volver ni título (issue #206): la
+       navegación vive en la cabecera global. Barra de pestañas propia
+       tipo Ocio (issue #208), ocultables en Ajustes, con el selector
+       de unidad de peso (kg/lbs) bajo las pestañas. -->
+  <div id="gym-view" class="gym-view hidden" role="main" aria-label="Vista de gimnasio">
+    <nav class="tabs--bar" aria-label="Secciones de gimnasio">
+      <div class="tabs" role="tablist" aria-label="Secciones de gimnasio">
+        <button class="tab tab--gym-workouts is-active" role="tab" aria-selected="true"
+                aria-controls="panel-gym-workouts-tab" data-gym-tab="entrenos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6.5 6.5 17.5 17.5" />
+            <path d="M21 17 17 21" />
+            <path d="M3 7 7 3" />
+            <path d="m2.5 12.5 9-9" />
+            <path d="m12.5 2.5 9 9" />
+            <path d="M6 21h.01" />
+            <path d="M18 3h.01" />
+          </svg>
+          <span>Entrenos</span>
+        </button>
+        <button class="tab tab--gym-exercises" role="tab" aria-selected="false"
+                aria-controls="panel-gym-exercises-tab" data-gym-tab="ejercicios">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 11 12 14 22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <span>Ejercicios</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="gym-units">
+      <label for="gym-unit-select">Unidad de peso</label>
+      <select id="gym-unit-select" aria-label="Unidad de peso">
+        <option value="kg">kg</option>
+        <option value="lbs">lbs</option>
+      </select>
+    </div>
+
+    <div class="gym-view__body">
+      <!-- Pestaña Entrenos: listado de entrenos ordenados por fecha
+           (desc). El contenido lo renderiza js/gym.js. -->
+      <section id="panel-gym-workouts-tab" role="tabpanel" aria-labelledby="panel-gym-workouts-tab-heading">
+        <h2 id="panel-gym-workouts-tab-heading" class="visually-hidden">Entrenos</h2>
+        <div class="gym-toolbar">
+          <button type="button" id="btn-new-workout" class="btn btn--primary btn--small">
+            + Nuevo entreno
+          </button>
+        </div>
+        <div id="gym-workouts-list" aria-live="polite"></div>
+      </section>
+
+      <!-- Pestaña Ejercicios: catálogo de ejercicios con su grupo
+           muscular. El contenido lo renderiza js/gym.js. -->
+      <section id="panel-gym-exercises-tab" class="hidden" role="tabpanel" aria-labelledby="panel-gym-exercises-tab-heading">
+        <h2 id="panel-gym-exercises-tab-heading" class="visually-hidden">Ejercicios</h2>
+        <div class="gym-toolbar">
+          <button type="button" id="btn-new-exercise" class="btn btn--primary btn--small">
+            + Nuevo ejercicio
+          </button>
+        </div>
+        <div id="gym-exercises-catalog" class="gym-exercises-catalog"></div>
+      </section>
+    </div>
+  </div>
+
   <!-- Modal de receta (issue #64): alta / edición / importación
        desde URL. El contenido lo renderiza js/recipes.js. -->
   <div id="recipe-modal" class="modal hidden">
@@ -666,6 +737,30 @@
     <div class="modal__card" role="dialog" aria-modal="true" aria-label="Ingrediente">
       <button id="ingredient-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
       <div id="ingredient-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal de entreno (issue #62): lectura (con Editar/Eliminar) y
+       alta/edición con fecha, nombre, nota y constructor de ejercicios
+       (select del catálogo + filas de serie peso/reps). El contenido
+       lo renderiza js/gym.js. -->
+  <div id="gym-workout-modal" class="modal hidden">
+    <div class="modal__backdrop" id="gym-workout-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Entreno">
+      <button id="gym-workout-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="gym-workout-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal de ejercicio (issue #62): lectura (nombre/grupo/notas con
+       Editar/Eliminar) y alta/edición con nombre requerido, grupo
+       muscular presets + «Otro» y notas. El contenido lo renderiza
+       js/gym.js. -->
+  <div id="gym-exercise-modal" class="modal hidden">
+    <div class="modal__backdrop" id="gym-exercise-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Ejercicio">
+      <button id="gym-exercise-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="gym-exercise-modal-content"></div>
     </div>
   </div>
 

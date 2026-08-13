@@ -485,6 +485,9 @@
 [data-theme="black"] .tab--ingredients.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 [data-theme="black"] .tab--menu.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--shopping.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
+/* Pestañas de Gimnasio (issue #62): mismo patrón que el resto. */
+[data-theme="black"] .tab--gym-workouts.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
+[data-theme="black"] .tab--gym-exercises.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
 
 /* Iconos de los títulos de grupo de la búsqueda global: acentos
    claros sobre el dropdown oscuro (en oscuro ya estaban sobre
@@ -1199,6 +1202,11 @@ body.is-back-to-top-visible .back-to-top {
 .tab--ingredients { --tab-accent: var(--games); }
 .tab--menu { --tab-accent: var(--teal-reel); }
 .tab--shopping { --tab-accent: var(--stamp); }
+/* Pestañas de Gimnasio (issue #62): acentos de la paleta existente
+   (Entrenos teal, Ejercicios ocre), con sus variantes -dark para
+   negro puro en los overrides de [data-theme="black"]. */
+.tab--gym-workouts { --tab-accent: var(--teal-reel); }
+.tab--gym-exercises { --tab-accent: var(--ochre-spine); }
 
 .tab svg {
   display: block;
@@ -4661,6 +4669,330 @@ body.is-back-to-top-visible .back-to-top {
   }
 }
 
+/* =========================================================
+   Sección de gimnasio (issue #62): Entrenos y Ejercicios.
+   Vista de primer nivel hermana de recipes-view.
+   ========================================================= */
+
+/* --- Vista y cabecera (patrón recipes-view, issue #208) --- */
+
+.gym-view {
+  /* Padding superior: hueco para la cabecera global fija (--header-h)
+     + 1rem de aire (issue #206). Padding inferior: hueco para la
+     barra de pestañas fija (--tabs-bar-h + margen seguro) + 1.5rem,
+     mismo patrón que .recipes-view (issue #208). */
+  padding: calc(var(--header-h) + 1rem) 1.25rem
+           calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  /* Ancho alineado con #app y .recipes-view (max-width 980px). */
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .gym-view {
+    padding: calc(var(--header-h) + var(--tabs-bar-h) + 1rem) 1.25rem 4rem;
+  }
+}
+
+/* --- Selector de unidad de peso (kg/lbs, issue #62) --- */
+
+/* Fila bajo las pestañas, visible en toda la sección. El select es
+   una píldora compacta (patrón de .recipes-filter__btn: fondo
+   --ink-raised y texto --paper, invertidos en la familia clara). */
+.gym-units {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.gym-units label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.gym-units select {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 0;
+}
+
+/* --- Barra de herramientas de las pestañas (patrón .recipes-toolbar) --- */
+
+.gym-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Grids de entrenos y catálogo de ejercicios --- */
+
+.gym-workouts-grid,
+.gym-exercises-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 0.9rem;
+}
+
+/* --- Tarjetas (patrón .recipe-card, issue #234) --- */
+
+/* Toda la tarjeta es el botón: click (o Enter/Espacio) abre el
+   detalle en modo lectura. Mismo armazón para entrenos y ejercicios. */
+.gym-workout-card,
+.gym-exercise-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.gym-workout-card:hover,
+.gym-exercise-card:hover {
+  box-shadow: var(--shadow-pop);
+}
+
+.gym-workout-card:focus-visible,
+.gym-exercise-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+.gym-card__title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.gym-card__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+/* --- Chip de grupo muscular --- */
+
+.gym-muscle-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  align-self: flex-start;
+}
+
+/* --- Modal de entreno: constructor de ejercicios --- */
+
+.gym-modal__title {
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Etiquetas y valores de la vista de lectura (patrón
+   .ingredient-modal__field / __label / __text). */
+.gym-modal__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.gym-modal__text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.gym-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.7rem;
+  min-width: 0;
+}
+
+.gym-form__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.gym-form__field input,
+.gym-form__field select,
+.gym-form__field textarea {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  min-width: 0;
+  width: 100%;
+}
+
+.gym-form__field textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+/* Bloque de un ejercicio dentro del constructor del entreno: panel
+   con el nombre/selección arriba y la tabla de series debajo. */
+.gym-exercise-block {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.gym-exercise-block__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.gym-exercise-block__name {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.gym-exercise-block select,
+.gym-exercise-block input[type="text"] {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  min-width: 0;
+  width: 100%;
+}
+
+/* --- Tabla de series (peso × repeticiones) --- */
+
+/* Filas en edición: dos inputs (peso y reps) + botón de quitar. En
+   lectura se reutiliza la misma fila con spans (la tercera columna
+   queda vacía), para que el contenido ajuste igual en móvil. */
+.gym-series-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.gym-series-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.gym-series-row input {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  min-width: 0;
+  width: 100%;
+}
+
+.gym-series-row span {
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Botones del constructor: añadir serie (ghost con borde punteado) y
+   quitar serie/ejercicio (texto rojo). */
+.gym-add-series-btn {
+  background: none;
+  border: 1px dashed var(--paper-line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.gym-add-series-btn:hover {
+  border-color: var(--ink-soft);
+}
+
+.gym-remove-btn {
+  background: none;
+  border: none;
+  color: var(--stamp);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: var(--radius);
+}
+
+.gym-remove-btn:hover {
+  background: var(--ink-alpha-10);
+}
+
+/* Aviso del constructor cuando el catálogo de ejercicios está vacío
+   (con botón que abre el modal de alta de ejercicio). */
+.gym-empty-hint {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+}
+
+.gym-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 /* --- Overrides de la familia clara (Claro / Blanco puro) --- */
 
 [data-theme="light"] .recipe-card,
@@ -4694,7 +5026,11 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .ingredients-filter__btn,
 [data-theme="white"] .ingredients-filter__btn,
 [data-theme="light"] .recipes-filter__btn,
-[data-theme="white"] .recipes-filter__btn {
+[data-theme="white"] .recipes-filter__btn,
+[data-theme="light"] .gym-units select,
+[data-theme="white"] .gym-units select,
+[data-theme="light"] .gym-muscle-chip,
+[data-theme="white"] .gym-muscle-chip {
   color: var(--ink);
 }
 
@@ -4760,7 +5096,19 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .shopping-extra-form__row select,
 [data-theme="white"] .shopping-extra-form__row select,
 [data-theme="light"] .recipe-form__ingrediente select,
-[data-theme="white"] .recipe-form__ingrediente select {
+[data-theme="white"] .recipe-form__ingrediente select,
+[data-theme="light"] .gym-form__field input,
+[data-theme="white"] .gym-form__field input,
+[data-theme="light"] .gym-form__field select,
+[data-theme="white"] .gym-form__field select,
+[data-theme="light"] .gym-form__field textarea,
+[data-theme="white"] .gym-form__field textarea,
+[data-theme="light"] .gym-exercise-block select,
+[data-theme="white"] .gym-exercise-block select,
+[data-theme="light"] .gym-exercise-block input[type="text"],
+[data-theme="white"] .gym-exercise-block input[type="text"],
+[data-theme="light"] .gym-series-row input,
+[data-theme="white"] .gym-series-row input {
   background: var(--paper-dim);
   color: var(--ink);
   border-color: var(--ink-alpha-20);
@@ -5092,4 +5440,43 @@ body.is-back-to-top-visible .back-to-top {
    umbral gráfico 3:1 sobre negro (patrón de episode-checkbox). */
 [data-theme="black"] .shopping-line__main input[type="checkbox"] {
   accent-color: var(--stamp-dark);
+}
+
+/* --- Gimnasio (issue #62) en negro puro --- */
+
+/* Las tarjetas pasan a la superficie oscura levantada (mismo patrón
+   que .recipe-card en negro puro). */
+[data-theme="black"] .gym-workout-card,
+[data-theme="black"] .gym-exercise-card {
+  background: var(--ink-raised);
+}
+
+/* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
+   con texto papel (la base --paper-dim sería gris #111 casi igual a
+   la superficie del modal; patrón de .ingredient-modal__field). */
+[data-theme="black"] .gym-form__field input,
+[data-theme="black"] .gym-form__field select,
+[data-theme="black"] .gym-form__field textarea,
+[data-theme="black"] .gym-exercise-block select,
+[data-theme="black"] .gym-exercise-block input[type="text"],
+[data-theme="black"] .gym-series-row input {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+/* El panel del ejercicio del constructor usa el borde claro del
+   resto de superficies en negro puro. */
+[data-theme="black"] .gym-exercise-block {
+  border-color: var(--paper-alpha-20);
+}
+
+/* El botón «+ Añadir serie» (borde punteado y texto suave) y el chip
+   de grupo muscular conservan su contraste sobre negro: texto papel. */
+[data-theme="black"] .gym-add-series-btn {
+  color: var(--paper);
+}
+
+[data-theme="black"] .gym-muscle-chip {
+  color: var(--paper);
 }
