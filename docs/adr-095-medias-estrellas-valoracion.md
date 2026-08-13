@@ -60,7 +60,7 @@ personal, centralizando la lógica en `js/ui.js`:
    baja de 1 a 0.5 (las medias estrellas cuentan como valoración
    válida); el display con `toFixed(1)` ya era compatible.
 6. **Manual de usuario** (`docs/manual-de-usuario.md`, regla 3 de
-   AGENTS.md): se actualizan las secciones 5.3, 12 y 13.2 con el nuevo
+   AGENTS.md): se actualizan las secciones 5.3, 11 y 12 con el nuevo
    ciclo y los ejemplos «★★½» / 2.5.
 
 Alternativas descartadas:

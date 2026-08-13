@@ -7,9 +7,10 @@
 // picker de estrellas de ui.js.
 //
 // La promesa que devuelve openRatingModal() se resuelve con el
-// rating guardado (1-5), con RATING_MODAL_UNDONE si se deshizo el
-// marcado, o con null si se descartó. Nunca rechaza: los errores de
-// guardado/deshacer se notifican con un toast y la ventana permanece
+// rating guardado (1-5, con medias desde la issue #276), con
+// RATING_MODAL_UNDONE si se deshizo el marcado, o con null si se
+// descartó. Nunca rechaza: los errores de guardado/deshacer se
+// notifican con un toast y la ventana permanece
 // abierta.
 // =============================================================
 
@@ -85,11 +86,11 @@ document.getElementById("rating-modal-backdrop").addEventListener("click", () =>
  * @param {string} [opts.episodeLabel]  - Línea opcional del episodio ("T1E3 · Piloto")
  * @param {number|null} opts.communityRating - Nota de la comunidad (o null → "Sin puntuaciones")
  * @param {string} opts.communityLabel  - "TMDB" o "TMDB · episodio"
- * @param {number|null} opts.initialRating - Valoración previa del usuario (1-5)
+ * @param {number|null} opts.initialRating - Valoración previa del usuario (1-5, con medias)
  * @param {Function} opts.onSave        - async (rating) => {}, persiste la valoración
  * @param {Function} [opts.onUndo]      - async () => {}, anula el marcado recién hecho
  * @param {string} [opts.undoLabel]     - Texto del botón «Deshacer» (por defecto "Deshacer")
- * @returns {Promise<number|string|null>} Rating 1-5 guardado, RATING_MODAL_UNDONE si se
+ * @returns {Promise<number|string|null>} Rating 1-5 guardado (pasos de 0.5), RATING_MODAL_UNDONE si se
  *          deshizo el marcado, o null si se descartó.
  */
 export function openRatingModal({ type, title, coverUrl, episodeLabel, communityRating, communityLabel, initialRating, onSave, onUndo, undoLabel = "Deshacer" }) {

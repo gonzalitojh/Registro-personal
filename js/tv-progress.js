@@ -4,7 +4,8 @@
 // - watched: datos por episodio del visionado actual, con forma
 //   { "1": { "1": { date: "2026-01-05", rating: 4, times: 2 }, "2": {...} }, "2": {...} }
 //   (temporada -> episodio -> { fecha de la última vez que se vio,
-//   valoración 1-5 o null, veces visto con 1 por defecto })
+//   valoración 1-5 (pasos de 0.5 desde la issue #276) o null, veces visto
+//   con 1 por defecto })
 // No depende del DOM ni de Firebase: es pura lógica, reutilizable
 // tanto desde ui.js (para refrescar la vista al vuelo) como desde
 // app.js (para decidir qué guardar).
@@ -24,7 +25,8 @@ export function normalizeEntry(entry) {
 
 // Media de valoración de los episodios valorados de una serie (issue #80).
 // No tiene en cuenta los episodios sin valorar: un episodio visto sin
-// valorar (rating null) nunca cuenta como 0, la valoración mínima es 1.
+// valorar (rating null) nunca cuenta como 0. Desde la issue #276 la
+// valoración mínima válida es media estrella (0.5).
 // Entrada: item.watched completo ({ temporada: { episodio: {date, rating} } }).
 // Salida: null si no hay ningún episodio con valoración válida; si no,
 // { count, average } con average sin redondear (total/count).

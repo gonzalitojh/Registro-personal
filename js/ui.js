@@ -1583,6 +1583,10 @@ function applyEpisodeRowState(row, entry) {
     s.classList.toggle("is-active", full && !half);
     s.classList.toggle("is-half", half);
     s.textContent = half ? "½" : "★";
+    s.setAttribute(
+      "aria-label",
+      half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+    );
   });
 }
 
@@ -1934,6 +1938,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
               b.classList.toggle("is-active", full && !half);
               b.classList.toggle("is-half", half);
               b.textContent = half ? "½" : "★";
+              b.setAttribute(
+                "aria-label",
+                half ? `${String(n - 0.5).replace(".", ",")} estrellas` : ratingButtonAriaLabel(n)
+              );
             });
             updateEpisodeAverage();
           } finally {
