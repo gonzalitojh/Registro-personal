@@ -618,7 +618,7 @@ function renderRecipePickerList() {
       .filter((t) => (r.tipos || []).includes(t.id));
     const tagHtml = [...alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`),
       ...tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`)].join("");
-    return `<article class="recipe-pick__card" role="button" tabindex="0" data-pick-card="${r.id}"
+    return `<article class="recipe-pick__card" role="button" tabindex="0" data-pick-card="${escapeHtml(r.id)}"
         aria-label="Ver receta ${escapeHtml(r.nombre)}">
       <div class="recipe-pick__card-main">
         ${r.fotoUrl ? `<img class="recipe-pick__photo" src="${escapeHtml(r.fotoUrl)}" alt="" loading="lazy" />` : ""}
@@ -627,7 +627,7 @@ function renderRecipePickerList() {
           ${tagHtml ? `<span class="recipe-pick__tags">${tagHtml}</span>` : ""}
         </span>
       </div>
-      <button type="button" class="btn btn--small btn--primary recipe-pick__add" data-pick-add="${r.id}">+ Añadir</button>
+      <button type="button" class="btn btn--small btn--primary recipe-pick__add" data-pick-add="${escapeHtml(r.id)}">+ Añadir</button>
     </article>`;
   }).join("");
 }
@@ -661,9 +661,10 @@ function expandComensalesRow(addBtn) {
   const card = addBtn.closest("[data-pick-card]");
   if (!card) return;
   const global = Number(activeMenu().comensales) || 1;
+  const pickId = escapeHtml(card.dataset.pickCard);
   addBtn.insertAdjacentHTML("beforebegin", `<span class="recipe-pick__comensales">
-      <label for="pick-com-${card.dataset.pickCard}">Comensales</label>
-      <input type="number" id="pick-com-${card.dataset.pickCard}" min="1" max="99" inputmode="numeric"
+      <label for="pick-com-${pickId}">Comensales</label>
+      <input type="number" id="pick-com-${pickId}" min="1" max="99" inputmode="numeric"
         placeholder="Menú (${global})" aria-label="Comensales de esta receta (vacío = los del menú)" />
       <button type="button" class="btn btn--small btn--primary recipe-pick__confirm" data-pick-confirm>Añadir</button>
       <button type="button" class="btn btn--small recipe-pick__cancel" data-pick-cancel>Cancelar</button>
