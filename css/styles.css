@@ -3301,6 +3301,15 @@ body.is-back-to-top-visible .back-to-top {
   text-decoration: line-through;
 }
 
+/* Comensales propios de una receta del menú (issue #242): distintivo
+   pequeño junto al nombre; si no aparece, la receta hereda los
+   comensales globales de la semana. */
+.menu-meal__comensales {
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  margin-left: 0.2rem;
+}
+
 .menu-meal__remove {
   background: none;
   border: none;
@@ -3327,14 +3336,33 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-10);
 }
 
-.menu-meal__picker {
+/* Buscador de recetas del menú (issue #242): ventana modal que
+   sustituye al desplegable de añadir receta. Tarjetas con foto a la
+   izquierda, nombre arriba y etiquetas de alérgenos / tipo de plato
+   debajo; toolbar con buscador de texto y filtros por etiquetas. */
+
+.recipe-pick {
   display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.7rem;
 }
 
-.menu-meal__picker select {
-  flex: 1 1 120px;
+.recipe-pick__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.recipe-pick__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+/* El campo de búsqueda crece y los filtros se mantienen a la
+   derecha; en móvil todo pasa a columna (sin desbordar). */
+.recipe-pick__search {
+  flex: 1 1 200px;
   min-width: 0;
   max-width: 100%;
   background: var(--ink-raised);
@@ -3342,12 +3370,119 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.recipe-pick__search::placeholder {
+  color: var(--ink-soft);
+}
+
+.recipe-pick__search:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* Paneles de filtro a la derecha del campo: anclados debajo del
+   botón, anchos limitados para no salirse de la tarjeta del modal. */
+.recipe-pick__panel.recipes-filter__panel {
+  width: min(300px, calc(100vw - 3.5rem));
+  max-width: calc(100vw - 3.5rem);
+}
+
+.recipe-pick__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.recipe-pick__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: var(--ink-raised);
+  border: 1px solid var(--paper-alpha-20);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.recipe-pick__card:hover,
+.recipe-pick__card:focus-visible {
+  border-color: var(--teal-reel);
+  outline: none;
+}
+
+.recipe-pick__card-main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.recipe-pick__photo {
+  width: 2.9rem;
+  height: 2.9rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  background: var(--paper-alpha-10);
+}
+
+.recipe-pick__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.recipe-pick__name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  overflow-wrap: break-word;
+}
+
+.recipe-pick__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.recipe-pick__add {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Fila de comensales de la tarjeta (issue #242): número opcional
+   (vacío = hereda los del menú) y botones Añadir / Cancelar. */
+.recipe-pick__comensales {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.recipe-pick__comensales input {
+  width: 4.6rem;
+  min-width: 0;
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.28rem 0.5rem;
   font-size: 0.85rem;
 }
 
-.menu-meal__picker select:focus-visible {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 2px;
+.recipe-pick__empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
 }
 
 /* Recetas a la semana (no escalan) */
