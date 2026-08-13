@@ -1,0 +1,45 @@
+{
+  "title": "Nueva sección de gimnasio",
+  "description": "Quiero implementar una nueva sección de gimnasio con su propio endpoint /gimnasio. Esta debe ser incluida en la barra lateral de navegación (igual que la sección de ocio).\n\nHaz una primera versión de esta sección. Quiero utilizarla para:\n\n- Registrar entrenos\n- Registrar los pesos y repeticiones que utilizo para cada ejercicio\n- Registrar diferentes ejercicios\n\nNo sé si existe alguna API o algo de donde se pudiese extraer información sobre ejercicios.\n\nQuiero que se pueda cambiar el peso entre lbs y kgs en todo momento.\n\nCualquiero otra idea que creas que puede ser útil, documéntala con detalle.\n\nAl igual que el resto de secciones, las características en lo que se refiere a la barra superior y a las pestañas se deben respetar.",
+  "status": "planned",
+  "acceptance criteria": [
+    "AC1: Existe una sección «Gimnasio» de primer nivel accesible desde la barra lateral de navegación (igual que Ocio y Recetas).",
+    "AC2: La sección tiene endpoint/ruta propia /gimnasio (hash #/gimnasio) gestionada por el router de hash, con sus pestañas internas.",
+    "AC3: Se pueden registrar entrenos (fecha, ejercicios, series).",
+    "AC4: Para cada ejercicio de un entreno se registran pesos y repeticiones por serie.",
+    "AC5: Se puede registrar/main(s) diferentes ejercicios (catálogo propio de ejercicios).",
+    "AC6: El peso se puede cambiar entre lbs y kgs en todo momento (select persistente, afecta a entradas, listados y resúmenes).",
+    "AC7: Se documenta la investigación sobre APIs de ejercicios (hallazgos y decisión tomada).",
+    "AC8: Se respeta la barra superior global y las pestañas (estética Ocio, ocultables en Ajustes, router, cabecera) y el resto de convenciones: responsividad (360/768/1280 px, sin scroll horizontal), cuatro modos de tema (WCAG AA), manual de usuario actualizado.",
+    "AC9: Las ideas útiles adicionales (propuestas de valor) se documentan con detalle en el ADR/manual."
+  ],
+  "definition of done": [
+    "DoD1: Planificación realizada (task-architect) y aceptada.",
+    "DoD2: Implementación completada y publicada en rama de trabajo con micro-commits.",
+    "DoD3: Validación QA superada: aceptación + definición de done (qa-reviewer).",
+    "DoD4: Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "DoD5: ADR creado siguiendo el formato habitual, con «Related issue: #62».",
+    "DoD6: PR creada contra dev SIN keyword de cierre; task file subido con status review + bloque pr.",
+    "DoD7: Issue #62 label actualizada a su estado final (workflow issues-done-on-dev al fusionar)."
+  ],
+  "issue": {
+    "number": 62,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/62",
+    "title": "Nueva sección de gimnasio"
+  },
+  "notes": {
+    "plan": {
+      "summary": "Nueva sección de primer nivel Gimnasio (hermana de recipes-view): vista #gym-view con barra de pestañas propia (Entrenos/Ejercicios), ruta #/gimnasio (y #/gimnasio/ejercicios), entrada en la barra lateral, registrada en SECTION_REGISTRY (ocultable en Ajustes).",
+      "modelo_datos": {
+        "coleccion_entrenos": "users/{uid}/gym-workouts/{id} — campos: fechaISO (string YYYY-MM-DD, orden desc), nombre?, nota?, ejercicios: [{ejercicioId|null, nombre(snapshot), series:[{pesoKg, reps}]}], addedAt/updatedAt (serverTimestamp). Peso canónico SIEMPRE en kg.",
+        "coleccion_ejercicios": "users/{uid}/gym-exercises/{id} — campos: nombre, grupoMuscular (presets), notas?, timestamps. Orden por nombre asc.",
+        "unidad": "settings.unidadPeso (kg|lbs) en localStorage + sync a Firestore preferences; conversión 1 kg = 2.20462 lbs; display 1 decimal; los valores guardados no cambian."
+      },
+      "api_ejercicios": "Investigadas: wger API v2 (gratis, CORS abierto, ~845 ejercicios multilingüe — candidata nº1 para futuro), ExerciseDB (RapidAPI key+proxy, descartada), API Ninjas (key, descartada), exercise-api estática bilingüe marcmayol (JSON estático, útil para seed). Decisión v1: catálogo manual propio (offline-first, igual que ingredientes/etiquetas) + integración wger documentada como iteración futura.",
+      "extras_v1": "snapshot nombre en entrenos (robustez a borrados del catálogo), resumen 'N ejercicios · M series' en tarjeta, hint catálogo vacío, sync unidad entre dispositivos.",
+      "ideas_futuras": "volumen total, récords personales, historial por ejercicio, resumen semanal, plantillas de rutinas, búsqueda/filtro de ejercicios, integración wger, ampliar backup a familia registro propio, temporizador descanso, recordatorios.",
+      "decisiones_autonomas": "Acentos: Entrenos=teal, Ejercicios=ochre. Etiqueta 'Entrenos'. Grupos musculares: select presets + 'Otro'. Borrados: confirm() nativo. Sync unidadPeso a Firestore preferences. Manual: capítulo 9 insertado con renumeración de capítulos (precedente Recetas). export-backup y global-search: gym fuera de scope v1 (guard obligatorio en global-search).",
+      "riesgos_clave": "wiring de .tab acotado a .tab[data-panel] (evita colisión con recetas y gym); applyTabVisibility solo añade hidden; TDZ gymApi antes de initRouter; NO copiar remove hidden de #app; data-gym-tab exclusivo; 4 temas y 3 anchos obligatorios."
+    }
+  }
+}
