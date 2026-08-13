@@ -706,6 +706,12 @@ function renderSummary() {
     const d = kgToDisplay(kg);
     return escapeHtml(d > 0 ? `+${d}` : String(d));
   };
+  // Iteración 5: la diferencia se pinta con color semántico — verde si
+  // aumentó, rojo si bajó — y SIN clase cuando es cero (hereda el
+  // color normal de la celda, «blanco como ahora»). El matiz lo
+  // aplica css/styles.css con variantes AA por familia de tema.
+  const diffClass = (kg) =>
+    kg == null || kg === 0 ? "" : `gym-summary-table__diff--${kg > 0 ? "up" : "down"}`;
   const rows = [...perExercise.values()]
     .sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, "es"))
     .map((agg) => {
@@ -719,7 +725,7 @@ function renderSummary() {
           ${agg.grupoMuscular ? `<span class="gym-muscle-chip">${escapeHtml(groupLabel(agg.grupoMuscular))}</span>` : ""}
         </td>
         <td>${agg.veces}</td>
-        <td>${fmtDiff(diffKg)}</td>
+        <td class="${diffClass(diffKg)}">${fmtDiff(diffKg)}</td>
       </tr>`;
     })
     .join("");

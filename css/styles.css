@@ -5135,6 +5135,35 @@ body.is-back-to-top-visible .back-to-top {
   margin-left: 0.4rem;
 }
 
+/* Diferencia de peso con color semántico (issue #269, iteración 5):
+   verde si aumentó (+), rojo si bajó (−) y color normal de la celda
+   si es cero (o sin pesos, «—»). Mismo patrón documentado que
+   .shopping-line__pkgreset (issue #225): en la familia oscura los
+   acentos base no llegan a AA 4.5:1 sobre --ink (--stamp #a63b2e
+   ≈ 2.85:1 y --teal-reel #2b6459 ≈ 2.66:1), así que se hardcodean
+   variantes claras con su contraste anotado; la familia clara usa
+   los acentos base (ambos AA sobre --paper-dim/--paper). El cero no
+   lleva clase: hereda --paper (oscuro) / --ink (claro), «blanco
+   como está ahora» de la iteración anterior. */
+.gym-summary-table__diff--up {
+  /* #4f9c8e ≈ 5.6:1 sobre --ink y ≈ 6.5:1 sobre #000 (AA) */
+  color: #4f9c8e;
+}
+.gym-summary-table__diff--down {
+  /* #d16a59 ≈ 5.1:1 sobre --ink y ≈ 5.9:1 sobre #000 (AA) */
+  color: #d16a59;
+}
+[data-theme="light"] .gym-summary-table__diff--up,
+[data-theme="white"] .gym-summary-table__diff--up {
+  /* --teal-reel ≈ 6.0:1 sobre --paper-dim (AA) */
+  color: var(--teal-reel);
+}
+[data-theme="light"] .gym-summary-table__diff--down,
+[data-theme="white"] .gym-summary-table__diff--down {
+  /* --stamp ≈ 5.6:1 sobre --paper-dim (AA) */
+  color: var(--stamp);
+}
+
 /* --- Modal de entreno: constructor de ejercicios --- */
 
 .gym-modal__title {
