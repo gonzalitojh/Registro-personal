@@ -1,6 +1,6 @@
 {
   "title": "Nueva pestaña Resumen en la sección de Gimnasio",
-  "description": "Añadir una nueva pestaña «Resumen» a la sección de gimnasio, que debe ser la primera pestaña (antes de «Entrenos»). En ella se debe poder ver un resumen de los ejercicios hechos durante un periodo elegido (semana en curso, mes en curso, selector libre de fechas).\n\nLa base de trabajo es la rama `feat/issue-62-seccion-gimnasio` (la sección de Gimnasio aún no está en dev; PR #262 pendiente). Se crea una rama nueva desde ahí y la PR también se hace a esa rama (no a dev).\n\nIteración (segundo comentario de 2026-08-13): los selectores de fecha de rango deben estar ocultos salvo con la opción «Rango» activa y, si es posible, fusionados en un único recuadro donde elegir el rango (no dos fechas independientes). Los sumatorios de series, repeticiones o volumen total no interesan: el resumen debe mostrar nº de entrenos, nº de ejercicios totales y el desglose por grupos musculares.",
+  "description": "Añadir una nueva pestaña «Resumen» a la sección de gimnasio, que debe ser la primera pestaña (antes de «Entrenos»). En ella se debe poder ver un resumen de los ejercicios hechos durante un periodo elegido (semana en curso, mes en curso, selector libre de fechas).\n\nLa base de trabajo es la rama `feat/issue-62-seccion-gimnasio` (la sección de Gimnasio aún no está en dev; PR #262 pendiente). Se crea una rama nueva desde ahí y la PR también se hace a esa rama (no a dev).\n\nIteración (segundo comentario de 2026-08-13): los selectores de fecha de rango deben estar ocultos salvo con la opción «Rango» activa y, si es posible, fusionados en un único recuadro donde elegir el rango (no dos fechas independientes). Los sumatorios de series, repeticiones o volumen total no interesan: el resumen debe mostrar nº de entrenos, nº de ejercicios totales y el desglose por grupos musculares.\n\nIteración 3 (tercer comentario de 2026-08-13): el rango para elegir sigue separado en dos recuadros — debe ser UN único recuadro donde elegir fecha de inicio y fin a la vez. Además, añadir en el resumen de cada ejercicio el aumento de peso que ha habido: el menor registrado en el periodo y el mayor.",
   "status": "review",
   "acceptance criteria": [
     "La sección de Gimnasio tiene una pestaña «Resumen» como PRIMERA pestaña de la barra, antes de «Entrenos» y «Ejercicios», con su propio icono y color de acento, visible en los cuatro modos de tema.",
@@ -13,15 +13,17 @@
     "El enrutado soporta #/gimnasio/resumen y el default de la sección pasa a ser la primera pestaña (Resumen), coherente con la convención del resto de secciones.",
     "Responsividad: sin scroll horizontal a nivel de página en 360/768/1280 px (regla 2 de AGENTS.md); el resumen (tablas y recuadro del rango si los hay) se adapta o usa contenedor con scroll propio.",
     "Manual de usuario actualizado (regla 3 de AGENTS.md): descripción de la nueva pestaña, del selector de periodo con el recuadro oculto salvo en «Rango» y de los totales/desgloses, y las referencias a «dos pestañas» pasan a tres.",
-    "ADR que documenta la decisión (contexto, decisión y resultado), con «Related issue: #269», incluyendo la iteración del segundo comentario."
+    "ADR que documenta la decisión (contexto, decisión y resultado), con «Related issue: #269», incluyendo la iteración del segundo comentario.",
+    "ITERACIÓN 3: el rango se elige en UN ÚNICO recuadro con calendario propio (primer click = desde, segundo click = hasta, con intercambio automático si el segundo es anterior): nada de dos inputs de fecha independientes; navegación de mes (‹ ›), botones «Borrar» (vuelve a límites abiertos) y «Listo», cierre con Escape o click fuera, y foco devuelto al trigger al cerrar.",
+    "ITERACIÓN 3: la tabla «Por ejercicio» muestra el aumento de peso del periodo — columnas Peso mín, Peso máx y Aumento (máx − mín) en la unidad de presentación activa; las series sin peso (null o ≤ 0) no cuentan como extremos y «—» si no hay ningún peso en el periodo.",
+    "ITERACIÓN 3: responsividad — sin scroll horizontal de página en ningún ancho (medido 360/500/560/600/620/680/720/768/1280 px con Chromium headless: el popover pasa a flujo normal en ≤767 px) y contraste AA en los cuatro modos de tema (weekday y bordes con --ink/--games, hover que conserva el día seleccionado)."
   ],
   "definition of done": [
     "Planificación realizada (plan del task-architect).",
     "Implementación completada con micro-commits incrementales en rama `feat/issue-269-pestana-resumen` creada desde `feat/issue-62-seccion-gimnasio`.",
-    "Validación QA PASS contra los criterios de aceptación (incluida responsividad 360/768/1280 px y cuatro modos de tema) y sandbox de lógica de la iteración (agregación por ejercicio y por grupos, rango con límites abiertos e intercambio from>to, visibilidad del recuadro del rango).",
     "Escaneo de seguridad sin hallazgos HIGH.",
     "ADR actualizado (docs/adr-098-*.md) con «Related issue: #269» y la iteración documentada.",
-    "PR existente #274 contra la rama `feat/issue-62-seccion-gimnasio` (NO dev, sin keyword de cierre) actualizada con gh pr edit + comentario de la iteración, task file subido (status 'review' + bloque pr) e issue #269 en `status: needs-review`."
+    "PR existente #274 contra la rama `feat/issue-62-seccion-gimnasio` (NO dev, sin keyword de cierre) actualizada con gh pr edit + comentario de la iteración 3, task file subido (status 'review' + bloque pr) e issue #269 en `status: needs-review`."
   ],
   "issue": {
     "number": 269,
