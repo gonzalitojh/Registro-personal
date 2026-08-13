@@ -2598,6 +2598,18 @@ body.is-back-to-top-visible .back-to-top {
   gap: 0.5rem;
   min-width: 0;
   overflow-wrap: break-word;
+  /* Toda la tarjeta es el botón (issue #234): se abre el detalle en
+     modo lectura al pulsarla. */
+  cursor: pointer;
+}
+
+.recipe-card:hover {
+  box-shadow: var(--shadow-pop);
+}
+
+.recipe-card:focus-visible {
+  outline: 2px solid var(--ochre-spine);
+  outline-offset: 2px;
 }
 
 .recipe-card--review {
@@ -2665,11 +2677,116 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
 }
 
-.recipe-card__actions {
+/* --- Filtros de la pestaña Recetas (issue #234) --- */
+
+/* Desplegables de filtro por alérgenos y por tipo de comida
+   (multiselección, todas marcadas por defecto). Mismo patrón visual
+   que el filtro por categorías de Ingredientes, con el acento ocre de
+   la pestaña Recetas para la marca de seleccionado. */
+.recipes-filter {
+  position: relative;
+  display: inline-flex;
+}
+
+.recipes-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-30);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.recipes-filter__btn svg {
+  flex-shrink: 0;
+}
+
+.recipes-filter__panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  width: min(320px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: 0.4rem;
+  z-index: 40;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+}
+
+.recipes-filter__all,
+.recipes-filter__item {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-top: auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.recipes-filter__item {
+  color: var(--ink);
+}
+
+.recipes-filter__item:hover,
+.recipes-filter__all:hover {
+  background: var(--paper-dim);
+}
+
+.recipes-filter__all {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Marca del checkbox (ocre, acento de la pestaña) con el mismo
+   patrón que el filtro de Ingredientes: input oculto + estado en el
+   label. Texto blanco sobre --ochre-spine-dark ≈ 6.2:1 (AA; el ocre
+   claro --ochre-spine no alcanza 4.5:1 con blanco). En negro puro
+   --ochre-spine-dark es la variante clara (#c99a4e) y el texto pasa
+   a --white (casi negro): contraste ≈ 7.4:1. */
+.recipes-filter__all.is-checked,
+.recipes-filter__item.is-checked {
+  background: var(--ochre-spine-dark);
+  color: var(--white);
+  font-weight: 600;
+}
+
+.recipes-filter__separator {
+  height: 1px;
+  margin: 0.3rem 0.4rem;
+  background: var(--paper-line);
+  opacity: 0.5;
+}
+
+.recipes-filter__all input,
+.recipes-filter__item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* En móvil el panel se ancla al viewport (patrón de Ingredientes). */
+@media (max-width: 767px) {
+  .recipes-filter__panel {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: calc(var(--header-h) + 0.75rem);
+    width: auto;
+    max-width: none;
+  }
 }
 
 /* --- Catálogo de ingredientes (issue #218): estética tipo Ocio --- */
@@ -2859,6 +2976,14 @@ body.is-back-to-top-visible .back-to-top {
 .ingredients-filter__item:focus-visible,
 .ingredient-card:focus-visible {
   outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+
+/* El acento de la pestaña Recetas es ocre (mismo patrón que la tarjeta). */
+.recipes-filter__btn:focus-visible,
+.recipes-filter__all:focus-visible,
+.recipes-filter__item:focus-visible {
+  outline: 2px solid var(--ochre-spine);
   outline-offset: 2px;
 }
 
@@ -3947,6 +4072,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="white"] .ingredient-card,
 [data-theme="light"] .ingredients-filter__panel,
 [data-theme="white"] .ingredients-filter__panel,
+[data-theme="light"] .recipes-filter__panel,
+[data-theme="white"] .recipes-filter__panel,
 [data-theme="light"] .menu-grid__cell,
 [data-theme="white"] .menu-grid__cell,
 [data-theme="light"] .menu-weekly,
@@ -3962,7 +4089,9 @@ body.is-back-to-top-visible .back-to-top {
 /* La píldora del filtro usa --ink-raised como fondo y --paper como
    texto (como .sort-select de ocio): en la familia clara se invierte. */
 [data-theme="light"] .ingredients-filter__btn,
-[data-theme="white"] .ingredients-filter__btn {
+[data-theme="white"] .ingredients-filter__btn,
+[data-theme="light"] .recipes-filter__btn,
+[data-theme="white"] .recipes-filter__btn {
   color: var(--ink);
 }
 
@@ -4087,6 +4216,33 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .ingredients-filter__all.is-checked:hover,
 [data-theme="black"] .ingredients-filter__item.is-checked:hover {
   background: var(--games-dark);
+}
+
+/* Filtro de Recetas (issue #234): en negro puro el panel usa superficie
+   oscura (--ink-raised) y texto papel, como el filtro de Ingredientes.
+   El hover genérico (--paper-alpha-10) ganaría al .is-checked y dejaría
+   el texto --white ilegible: el hover de un ítem marcado mantiene el
+   ocre (--ochre-spine-dark es la variante clara #c99a4e en negro puro
+   con texto casi negro, contraste ≈ 7.4:1). */
+[data-theme="black"] .recipes-filter__panel {
+  background: var(--ink-raised);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-20);
+}
+
+[data-theme="black"] .recipes-filter__all,
+[data-theme="black"] .recipes-filter__item {
+  color: var(--paper);
+}
+
+[data-theme="black"] .recipes-filter__item:hover,
+[data-theme="black"] .recipes-filter__all:hover {
+  background: var(--paper-alpha-10);
+}
+
+[data-theme="black"] .recipes-filter__all.is-checked:hover,
+[data-theme="black"] .recipes-filter__item.is-checked:hover {
+  background: var(--ochre-spine-dark);
 }
 
 [data-theme="black"] .ingredient-modal__link {
