@@ -759,9 +759,11 @@ hiciste (en cuántos entrenos aparece) y su **diferencia de peso** en
 el periodo: cuánto ha cambiado entre el **peso más antiguo** y el
 **más nuevo** que registraste, con **signo** — **+** si aumentó y
 **−** si bajó (en la unidad de peso que tengas elegida; si un
-ejercicio lo hiciste sin registrar peso, verás «—»). Si un ejercicio
-**ya no está en tu catálogo**, el resumen **conserva su nombre**
-igualmente.
+ejercicio lo hiciste sin registrar peso, verás «—»). Además, la
+diferencia se **colorea**: **verde** si aumentó, **roja** si bajó y
+con el color normal de la tabla si no cambió (o si no hay pesos).
+Si un ejercicio **ya no está en tu catálogo**, el resumen
+**conserva su nombre** igualmente.
 
 El resumen se actualiza solo al añadir, editar o borrar entrenos. Si
 no hay entrenos en el periodo, la web te lo indica con un aviso.
