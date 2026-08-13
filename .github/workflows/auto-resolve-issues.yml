@@ -29,6 +29,12 @@ name: auto-resolve-issues
 #     la issue vuelve a la cola con un comentario. Así un fallo (tokens del
 #     modelo free, watchdog, timeout) no deja la issue abandonada esperando
 #     un disparo manual.
+#   - Los comentarios de fallo se publican con el GITHUB_TOKEN integrado
+#     (autor: github-actions[bot], issue #245): el trigger issue_comment
+#     excluye a ese actor (if del job), por lo que el propio aviso de fallo
+#     NO vuelve a disparar el workflow (publicarlos con el PAT del
+#     propietario hacía que el comentario apareciera firmado por él y
+#     relanzara el workflow sobre la misma issue).
 #
 # "Apagar el servidor" = cuando el selector devuelve NONE (no quedan issues
 # elegibles), el workflow termina sin lanzar ninguna sesión.
@@ -423,13 +429,19 @@ jobs:
 
           # Agota los reintentos (o el dispatch de relanzamiento falla): la
           # issue vuelve a la cola con un comentario que lo explica.
+          # Los comentarios de fallo se publican con el GITHUB_TOKEN integrado
+          # (autor: github-actions[bot], issue #245): el trigger issue_comment
+          # del workflow excluye a ese actor (if del job), así que el propio
+          # aviso de fallo NO relanza el workflow (con el PAT del propietario
+          # el comentario aparecía firmado por él y volvía a disparar el
+          # workflow sobre la misma issue, duplicando el relanzamiento).
           return_to_queue() {
             local MOTIVO="$1"
             local PREV_STATUS="${{ steps.candidate.outputs.prev_status }}"
             [[ -n "$PREV_STATUS" && "$PREV_STATUS" != "null" && "$PREV_STATUS" != "in-progress" ]] || PREV_STATUS="todo"
             echo "$MOTIVO: la issue #$N vuelve a la cola (status: $PREV_STATUS)."
             bash scripts/gh-issue.sh set-state "$N" "status: $PREV_STATUS" >/dev/null 2>&1 || true
-            gh issue comment "$N" --body "⚠️ $MOTIVO.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
+            GH_TOKEN="$GITHUB_TOKEN" gh issue comment "$N" --body "⚠️ $MOTIVO.${FAIL_REASON} Se devuelve la issue a la cola (status: $PREV_STATUS). Detalles en el run de GitHub Actions." >/dev/null 2>&1 || true
           }
 
           if [[ "$NEXT_RETRY" -le "$MAX_RELAUNCHES" ]]; then
@@ -441,7 +453,10 @@ jobs:
             bash scripts/gh-issue.sh set-state "$N" "status: in-progress" >/dev/null 2>&1 || true
             if gh workflow run auto-resolve-issues.yml --ref dev -f "issue_number=$N" -f "retry=$NEXT_RETRY"; then
               echo "Relanzamiento encolado: run de la issue #$N con retry=$NEXT_RETRY (esperará en la cola del concurrency)."
-              gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se relanza automáticamente (intento $((NEXT_RETRY + 1)) de $((MAX_RELAUNCHES + 1)))." >/dev/null 2>&1 || true
+              # Comentario con GITHUB_TOKEN (autor: github-actions[bot], issue
+              # #245): el trigger issue_comment excluye a ese actor, así que el
+              # aviso de fallo no duplica el relanzamiento ya encolado.
+              GH_TOKEN="$GITHUB_TOKEN" gh issue comment "$N" --body "⚠️ La sesión automática de SDD falló.${FAIL_REASON} Se relanza automáticamente (intento $((NEXT_RETRY + 1)) de $((MAX_RELAUNCHES + 1)))." >/dev/null 2>&1 || true
             else
               # Ventana pre-merge (el input retry aún no existe en dev) o error
               # de API: no dejar la issue colgada en in-progress → a la cola.
