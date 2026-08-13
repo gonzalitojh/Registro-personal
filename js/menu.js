@@ -338,14 +338,20 @@ function closeRecipePicker() {
 }
 
 // Restaura el buscador tras cerrar la ventana de lectura de una
-// receta (callback onClose de openRecipeModal). El estado (búsqueda,
-// filtros, scroll) se conserva porque no se re-renderiza.
+// receta (callback onClose de openRecipeModal). El estado (día,
+// comida, búsqueda y filtros) vive en las variables de módulo y no se
+// resetea al re-renderizar, así que el buscador reaparece tal como se
+// dejó.
 function restoreRecipePicker() {
   const modal = document.getElementById("recipe-picker-modal");
-  if (!modal || modal.classList.contains("hidden")) return;
+  if (!modal) return;
+  renderRecipePicker();
+  modal.classList.remove("hidden");
   if (pickerCleanup) pickerCleanup();
   pickerCleanup = trapFocus(modal.querySelector(".modal__card"));
-  document.getElementById("recipe-pick-search")?.focus({ preventScroll: false });
+  requestAnimationFrame(() => {
+    document.getElementById("recipe-pick-search")?.focus({ preventScroll: false });
+  });
 }
 
 function renderRecipePicker() {
