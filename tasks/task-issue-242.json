@@ -31,10 +31,10 @@
   "pr": {
     "number": 246,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/246",
-    "title": "[content] Pestaña menú: buscador de recetas con tarjetas, comensales por receta, sin desayuno y botón único de añadir",
+    "title": "[content] Pestaña menú: buscador con tarjetas, comensales por receta, botón único y tarjetas en recetas a la semana con hover en la ✕",
     "branch": "content/issue-242-pestana-menu",
     "base": "content/issue-64-seccion-recetas",
-    "commit": "c96ef3e",
+    "commit": "3320131",
     "closes": "#242"
   }
 }
