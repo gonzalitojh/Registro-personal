@@ -839,6 +839,30 @@ button {
   height: 1.15rem;
 }
 
+/* Issue #253: con la búsqueda global abierta, la hamburguesa del
+   toggle de la cabecera se transforma en una ✕ (al pulsarla se cierra
+   la búsqueda). Las 3 líneas del SVG (viewBox 24x24, y=6/12/18) rotan
+   sobre su propio centro (transform-box: fill-box) y las líneas 1 y 3
+   se trasladan 6px para cruzarse en (12,12); la central se desvanece.
+   La clase is-search-open la gestiona js/global-search.js. La ✕ hereda
+   currentColor de .icon-btn (var(--paper); var(--ink) en claro/blanco
+   puro), así que no necesita overrides de tema. Con prefers-reduced-
+   motion la transición se anula globalmente (§ line 610). */
+#btn-sidebar-toggle svg line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+#btn-sidebar-toggle.is-search-open svg line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+#btn-sidebar-toggle.is-search-open svg line:nth-child(2) {
+  opacity: 0;
+}
+#btn-sidebar-toggle.is-search-open svg line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 /* =========================================================
    Barra lateral de navegación (issue #46)
    Drawer fijo a la izquierda estilo Gmail: sale de pantalla con
