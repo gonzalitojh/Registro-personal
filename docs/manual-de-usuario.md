@@ -615,11 +615,17 @@ recetas «a la semana» se apuntan con su cantidad fija.
   recetas dejan de calcularse en las semanas marcadas (al pie de la
   lista aparece «Quitados de la lista» y puedes volver a incluirlos
   pulsando su nombre).
-- Con **«+ Ítem extra»** añades cosas a mano: ingredientes que falten,
-  cosas para congelar, **productos de limpieza y otros objetos no
-  comestibles** (marca «No es comestible»). El ítem se añade a todas
-  las semanas seleccionadas y se quita igual que el resto (deslizando
-  o con la ✕).
+- Con **«+ Ítem extra»** añades cosas a mano: se abre un campo con
+  **buscador de ingredientes** del catálogo (el mismo desplegable que
+  al añadir ingredientes a una receta): elige uno, escribe la
+  **cantidad** y la **unidad de medida** y pulsa «Añadir». No hay que
+  elegir categoría ni marcar si es de limpieza: eso se toma de la ficha
+  del ingrediente del catálogo (p. ej. un ingrediente con la categoría
+  «Artículos del hogar» se trata como producto no comestible). Si el
+  ingrediente no está en el catálogo, créalo antes con «+ Nuevo
+  ingrediente» en la pestaña Ingredientes (ver 8.5). El ítem se añade a
+  todas las semanas seleccionadas y se quita igual que el resto
+  (deslizando o con la ✕).
 - Si una receta del menú ya la tienes hecha o no necesitas comprar sus
   ingredientes, **exclúyela**: al pie de la lista aparecen las recetas
   excluidas y puedes volver a incluirlas pulsando su nombre. También se
@@ -659,13 +665,17 @@ etiquetas de color de Lidl, Aldi, Mercadona, Día, Carrefour y El Corte
 Inglés), la **cantidad del paquete** (número y unidad) y, si tiene, una
 **foto**. Si el ingrediente no tiene foto no se muestra nada de imagen.
 La ventana también indica **en qué recetas se usa** (pulsa el nombre de
-una receta para abrirla en modo lectura) y tiene un botón **«Eliminar»**
-para quitarlo del catálogo (no afecta a las recetas que lo usan) y un
-botón **✏️ Editar** para modificarlo: con el lápiz se abre la misma
-ventana en modo edición, donde puedes cambiar el **nombre**, la
-**foto** (pegando una URL de imagen), la **categoría**, los
-**supermercados** y la **cantidad del paquete**; los cambios se guardan
-todos juntos con el botón **«Guardar»** (o se descartan con
+una receta para abrirla en modo lectura) y tiene un botón
+**«Añadir a la lista de la compra»** (con el carrito 🛒): se abre una
+ventana para elegir **solo la cantidad y la unidad de medida**, y el
+ingrediente se apunta en la lista de la compra de las semanas
+seleccionadas (igual que un ítem extra). También tiene un botón
+**«Eliminar»** para quitarlo del catálogo (no afecta a las recetas que
+lo usan) y un botón **✏️ Editar** para modificarlo: con el lápiz se
+abre la misma ventana en modo edición, donde puedes cambiar el
+**nombre**, la **foto** (pegando una URL de imagen), la **categoría**,
+los **supermercados** y la **cantidad del paquete**; los cambios se
+guardan todos juntos con el botón **«Guardar»** (o se descartan con
 «Cancelar»). La ventana no tiene botón «Cerrar» abajo: se cierra con la
 ✕ de arriba.
 
