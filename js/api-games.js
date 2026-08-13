@@ -22,6 +22,22 @@ function requireProxy() {
   }
 }
 
+// IGDB limita a 4 peticiones por segundo (cloudflare/igdb-proxy/README.md).
+// Con el almacenamiento mínimo los detalles de la ficha se piden bajo
+// demanda (issue #200), así que varias fichas seguidas podrían encadenar
+// peticiones: se serializan con un intervalo mínimo de 250 ms entre cada
+// una (equivalente a un semáforo ≤ 4 req/s), reutilizando la disciplina
+// del pool de la pasada diaria (mapConcurrent en daily-check.js).
+const IGDB_MIN_INTERVAL_MS = 250;
+let igdbLastRequestAt = 0;
+
+async function igdbThrottle() {
+  const now = Date.now();
+  const wait = Math.max(0, igdbLastRequestAt + IGDB_MIN_INTERVAL_MS - now);
+  igdbLastRequestAt = now + wait; // reserva el hueco para la siguiente
+  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+}
+
 // Petición POST al proxy, que la reenvía a api.igdb.com/v4 con las
 // cabeceras Client-ID y Authorization ya puestas. Normaliza los
 // errores de transporte (red caída, proxy inalcanzable, CORS
@@ -31,6 +47,7 @@ function requireProxy() {
 // transitorios; el límite de IGDB es 4 req/s, un reintento es seguro).
 async function igdbPost(endpoint, body) {
   requireProxy();
+  await igdbThrottle();
   const doFetch = () =>
     fetch(`${PROXY_BASE}/v4/${endpoint}`, {
       method: "POST",

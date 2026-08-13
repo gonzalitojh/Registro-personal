@@ -63,6 +63,35 @@ export function seenActionLabels(type) {
 // ítem ("movie", "tv", "book", "game") que se guarda en Firestore.
 export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book", games: "game" };
 
+// Campos de ficha servidos BAJO DEMANDA (almacenamiento mínimo A2,
+// estudio de la issue #183, sección 8.2): con el almacenamiento
+// mínimo no se persisten en Firestore; se piden a la API al abrir la
+// ficha (con caché en memoria de 24 h) y la limpieza migratoria
+// (js/migration.js) los elimina de los documentos existentes.
+// Excepción: los libros conservan `description` (sección 8.1: la
+// tarjeta y la ficha de libro lo pintan al instante, y no hay llamada
+// de detalle que lo recupere sin coste).
+export const ON_DEMAND_DETAIL_FIELDS = [
+  "runtime",
+  "episodeRuntime",
+  "overview",
+  "description",
+  "genres",
+  "cast",
+  "director",
+  "creators",
+  "trailerUrl",
+  "collectionId",
+  "collectionName",
+  "collectionPoster",
+  "platforms",
+  "developers",
+  "publishers",
+  "esrbName",
+  "metacritic",
+  "playtime",
+];
+
 // Iconos SVG de los tipos de medio: MISMO markup que las pestañas de
 // index.html (tab--tv / tab--movies / tab--books, líneas 155-177) —
 // fuente canónica: si cambian las pestañas, actualizar aquí (issue #134).
