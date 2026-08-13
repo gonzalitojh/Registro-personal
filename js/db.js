@@ -220,10 +220,12 @@ export async function addIngredient(uid, ingredient) {
     categoriaId: ingredient.categoriaId || "",
     // Campos opcionales de la ficha (issue #224): tiendas donde se
     // puede comprar el ingrediente y cantidad del paquete (número +
-    // unidad). Solo se persisten si vienen definidos en el alta.
+    // unidad). La foto (URL, issue #232) sigue el patrón de las recetas.
+    // Solo se persisten si vienen definidos en el alta.
     ...(ingredient.supermercados !== undefined && { supermercados: ingredient.supermercados }),
     ...(ingredient.paqueteCantidad !== undefined && { paqueteCantidad: ingredient.paqueteCantidad }),
     ...(ingredient.paqueteUnidad !== undefined && { paqueteUnidad: ingredient.paqueteUnidad }),
+    ...(ingredient.fotoUrl !== undefined && { fotoUrl: ingredient.fotoUrl }),
     addedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

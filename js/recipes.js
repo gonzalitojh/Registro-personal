@@ -57,6 +57,11 @@ let ingredientModalCleanup = null;
 let modalCleanup = null;
 let editingRecipeId = null;
 let modalReadOnly = false;
+// Modo de la ventana de ingrediente (issue #232): true cuando se está
+// editando. El cierre por backdrop/Escape solo aplica en modo lectura
+// (patrón de la ventana de receta, issue #234); en edición las vías de
+// salida son la ✕, «Cancelar» y «Guardar».
+let ingredientEditMode = false;
 let onRecipeDeleted = null;
 // Filtros de la pestaña Recetas (issue #234): alérgenos y tipo de
 // comida, multiselección con «todas» marcadas por defecto. El flag de
@@ -140,10 +145,15 @@ export function setupRecipes(opts) {
   });
 
   // Modal de ingrediente (issue #218): cierre por ✕, backdrop y Escape.
+  // Backdrop y Escape (issue #232): solo cierran en modo lectura; en
+  // edición se bloquean para no perder el progreso del formulario (la
+  // ✕, «Cancelar» y «Guardar» son las vías explícitas).
   document.getElementById("ingredient-modal-close").addEventListener("click", closeIngredientModal);
-  document.getElementById("ingredient-modal-backdrop").addEventListener("click", closeIngredientModal);
+  document.getElementById("ingredient-modal-backdrop").addEventListener("click", () => {
+    if (!ingredientEditMode) closeIngredientModal();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !document.getElementById("ingredient-modal").classList.contains("hidden")) {
+    if (e.key === "Escape" && !document.getElementById("ingredient-modal").classList.contains("hidden") && !ingredientEditMode) {
       e.preventDefault();
       closeIngredientModal();
     }
@@ -888,28 +898,42 @@ function packageQtyRowHtml(ing = {}) {
   </div>`;
 }
 
-// Abre el modal de ingrediente: con id = detalle ampliado (categoría,
-// recetas que lo usan, eliminar); sin id = alta manual.
-function openIngredientModal(id) {
+// Abre el modal de ingrediente: con id = ventana de información del
+// ingrediente (issue #232) en modo lectura por defecto y, si `edit` es
+// true, directamente en modo edición; sin id = alta manual. Si el modal
+// ya está visible (p. ej. lectura → edición) re-renderiza en caliente:
+// libera el trap de foco previo antes de crear el nuevo y no vuelve a
+// guardar el elemento con foco anterior.
+function openIngredientModal(id, { edit = false } = {}) {
   const modal = document.getElementById("ingredient-modal");
   const content = document.getElementById("ingredient-modal-content");
   const ingredient = id ? ingredients.find((i) => i.id === id) : null;
+  const wasHidden = modal.classList.contains("hidden");
+  ingredientEditMode = edit;
 
   modal.querySelector(".modal__card").setAttribute(
     "aria-label",
     ingredient ? `Ingrediente: ${ingredient.nombre}` : "Nuevo ingrediente"
   );
-  content.innerHTML = ingredient ? ingredientDetailHtml(ingredient) : ingredientNewHtml();
+  content.innerHTML = ingredient
+    ? (edit ? ingredientEditHtml(ingredient) : ingredientDetailHtml(ingredient))
+    : ingredientNewHtml();
   bindIngredientModalHandlers(content, ingredient);
 
-  modal._previousActiveElement = document.activeElement;
-  modal.classList.remove("hidden");
+  if (wasHidden) {
+    modal._previousActiveElement = document.activeElement;
+    modal.classList.remove("hidden");
+  }
+  // Re-render en caliente (lectura → edición o viceversa): liberar el
+  // trap de foco anterior antes de crear el nuevo.
+  if (ingredientModalCleanup) ingredientModalCleanup();
   ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
-  // En el alta manual, foco directo al nombre para escribir ya. Se hace
-  // en un segundo rAF tras el de trapFocus (que enfoca la ✕, el primer
-  // enfocable): los callbacks del mismo frame corren en orden, así el
-  // foco final queda en el input y el trap no se rompe.
-  if (!ingredient) {
+  // En el alta manual y al entrar en edición, foco directo al nombre
+  // para escribir ya. Se hace en un segundo rAF tras el de trapFocus
+  // (que enfoca la ✕, el primer enfocable): los callbacks del mismo
+  // frame corren en orden, así el foco final queda en el input y el
+  // trap no se rompe.
+  if (!ingredient || edit) {
     requestAnimationFrame(() => {
       content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
     });
@@ -920,6 +944,7 @@ function closeIngredientModal() {
   const modal = document.getElementById("ingredient-modal");
   if (!modal || modal.classList.contains("hidden")) return;
   modal.classList.add("hidden");
+  ingredientEditMode = false;
   if (ingredientModalCleanup) {
     ingredientModalCleanup();
     ingredientModalCleanup = null;
@@ -927,13 +952,69 @@ function closeIngredientModal() {
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
 }
 
+// Vista de solo lectura de la ventana de ingrediente (issue #232): el
+// nombre como título, la foto solo si existe (sin placeholder ni "sin
+// imagen" cuando no hay), la categoría y la cantidad del paquete como
+// texto y los supermercados como etiquetas no interactivas. Sin botón
+// «Cerrar» (queda la ✕) y sin el texto «Categoría actual: …».
 function ingredientDetailHtml(ing) {
   const byName = getUsageIndex();
   const usedRecipes = recipes.filter((r) =>
     (byName.get(normalizeIngredientName(ing.nombre)) || new Set()).has(r.id)
   );
   const catLabel = tagLabel("ingrediente", ing.categoriaId);
-  return `<h3 class="ingredient-modal__title">${escapeHtml(ing.nombre)}</h3>
+  const qtyText = ing.paqueteCantidad != null && ing.paqueteCantidad !== ""
+    ? `${ing.paqueteCantidad}${ing.paqueteUnidad ? ` ${ing.paqueteUnidad}` : ""}`
+    : "Sin indicar";
+  const supers = (ing.supermercados || [])
+    .map((id) => SUPERMARKETS.find((s) => s.id === id))
+    .filter(Boolean);
+  return `<div class="ingredient-modal__view">
+    ${ing.fotoUrl ? `<img class="ingredient-modal__photo" src="${escapeHtml(ing.fotoUrl)}" alt="" loading="lazy" />` : ""}
+    <h3 class="ingredient-modal__title">${escapeHtml(ing.nombre)}</h3>
+    <div class="ingredient-modal__field">
+      <span class="ingredient-modal__label">Categoría</span>
+      <p class="ingredient-modal__text">${catLabel ? escapeHtml(catLabel) : "Sin categoría"}</p>
+    </div>
+    <div class="ingredient-modal__field">
+      <span class="ingredient-modal__label">Supermercados</span>
+      ${supers.length
+        ? `<div class="ingredient-modal__chips">${supers.map((s) => `<span class="supermarket-tag supermarket-tag--${s.id}">${escapeHtml(s.label)}</span>`).join("")}</div>`
+        : `<p class="ingredient-modal__text">Sin indicar</p>`}
+    </div>
+    <div class="ingredient-modal__field">
+      <span class="ingredient-modal__label">Cantidad del paquete</span>
+      <p class="ingredient-modal__text">${escapeHtml(qtyText)}</p>
+    </div>
+    ${usedRecipes.length ? `<p class="ingredient-modal__used">Usada en ${usedRecipes.length}
+      ${usedRecipes.length === 1 ? "receta" : "recetas"}:
+      ${usedRecipes.map((r) =>
+        `<button type="button" class="ingredient-modal__link" data-recipe-id="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}</p>`
+      : `<p class="ingredient-modal__used">No se usa en ninguna receta aún.</p>`}
+    <div class="ingredient-modal__actions">
+      <button type="button" class="btn btn--small btn--danger" data-ing-delete>Eliminar</button>
+      <button type="button" class="btn btn--small" data-ing-edit>✏️ Editar</button>
+    </div>
+  </div>`;
+}
+
+// Vista de edición de la ventana de ingrediente (issue #232): se editan
+// nombre, foto (URL), categoría, supermercados y cantidad del paquete,
+// y se guardan todos juntos con «Guardar» (a diferencia del guardado
+// inmediato anterior, aquí el formulario persiste en bloque).
+function ingredientEditHtml(ing) {
+  return `<form id="ingredient-edit-form" class="ingredient-modal__form">
+    <h3 class="ingredient-modal__title">Editar ingrediente</h3>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-nombre">Nombre *</label>
+      <input type="text" id="ing-modal-nombre" required maxlength="200" autocomplete="off"
+             value="${escapeHtml(ing.nombre)}" />
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-modal-foto">Foto (URL)</label>
+      <input type="url" id="ing-modal-foto" placeholder="https://…" autocomplete="off"
+             value="${escapeHtml(ing.fotoUrl || "")}" />
+    </div>
     <div class="ingredient-modal__field">
       <label for="ing-modal-categoria">Categoría</label>
       <select id="ing-modal-categoria" aria-label="Categoría de ${escapeHtml(ing.nombre)}">
@@ -950,17 +1031,11 @@ function ingredientDetailHtml(ing) {
       <label for="ing-modal-paquete">Cantidad del paquete</label>
       ${packageQtyRowHtml(ing)}
     </div>
-    ${usedRecipes.length ? `<p class="ingredient-modal__used">Usada en ${usedRecipes.length}
-      ${usedRecipes.length === 1 ? "receta" : "recetas"}:
-      ${usedRecipes.map((r) =>
-        `<button type="button" class="ingredient-modal__link" data-recipe-id="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}</p>`
-      : `<p class="ingredient-modal__used">No se usa en ninguna receta aún.</p>`}
-    <p class="ingredient-modal__cat-hint">${catLabel ? `Categoría actual: ${escapeHtml(catLabel)}.` : "Sin categoría."}
-      La lista de la compra se agrupa por esta categoría.</p>
     <div class="ingredient-modal__actions">
-      <button type="button" class="btn btn--small btn--danger" data-ing-delete>Eliminar</button>
-      <button type="button" class="btn btn--small btn--outline" data-ing-close>Cerrar</button>
-    </div>`;
+      <button type="button" class="btn btn--small btn--outline" data-ing-cancel>Cancelar</button>
+      <button type="submit" class="btn btn--small btn--primary">Guardar</button>
+    </div>
+  </form>`;
 }
 
 function ingredientNewHtml() {
@@ -996,78 +1071,31 @@ function ingredientNewHtml() {
 }
 
 function bindIngredientModalHandlers(content, ingredient) {
+  // Alta manual: Cancelar cierra la ventana.
   content.querySelector("[data-ing-close]")?.addEventListener("click", closeIngredientModal);
 
-  // Cambio de categoría en el detalle: inmediato + toast (como antes).
-  content.querySelector("#ing-modal-categoria")?.addEventListener("change", async (e) => {
-    try {
-      await ctx.updateIngredient(currentUser, ingredient.id, { categoriaId: e.target.value });
-      showToast("Categoría actualizada.");
-    } catch (err) {
-      console.error("No se pudo actualizar la categoría:", err);
-    }
+  // Edición (issue #232): Cancelar vuelve a la vista de lectura sin
+  // guardar; el formulario Guardar persiste en bloque todos los campos.
+  content.querySelector("[data-ing-cancel]")?.addEventListener("click", () => {
+    openIngredientModal(ingredient.id);
   });
 
-  // Supermercados (issue #224): la marca visual cambia al instante en
-  // el alta y en el detalle; el guardado inmediato solo aplica en el
-  // detalle (patrón del cambio de categoría). El array de ids se
-  // recalcula entero y se envía como array completo nuevo.
+  // Chips de supermercados: la marca visual cambia al instante en el
+  // alta y en la edición; el guardado de la edición se hace en bloque
+  // con «Guardar» (issue #232), no al momento.
   content.querySelectorAll(".ingredient-modal__chips").forEach((chips) => {
-    chips.addEventListener("change", async (e) => {
+    chips.addEventListener("change", (e) => {
       const label = e.target.closest("[data-supermercado]");
       if (!label) return;
       label.classList.toggle("is-checked", e.target.checked);
-      if (!ingredient) return;
-      try {
-        const ids = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
-        await ctx.updateIngredient(currentUser, ingredient.id, { supermercados: ids });
-        showToast("Supermercados actualizados.");
-      } catch (err) {
-        console.error("No se pudo actualizar los supermercados:", err);
-      }
     });
   });
 
-  // Cantidad del paquete en el detalle (issue #224): guardado inmediato
-  // al dejar el campo (patrón de la categoría). Vacío = sin cantidad;
-  // valores inválidos o negativos se descartan (se revierte a vacío).
-  if (ingredient) {
-    content.querySelector("#ing-modal-paquete")?.addEventListener("change", async (e) => {
-      let value = e.target.value === "" ? null : Number(e.target.value);
-      if (value !== null && (!Number.isFinite(value) || value < 0)) {
-        e.target.value = "";
-        value = null;
-      }
-      try {
-        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteCantidad: value });
-        showToast("Cantidad de paquete actualizada.");
-      } catch (err) {
-        console.error("No se pudo actualizar la cantidad de paquete:", err);
-      }
-    });
-
-    content.querySelector("#ing-modal-unidad")?.addEventListener("change", async (e) => {
-      try {
-        await ctx.updateIngredient(currentUser, ingredient.id, { paqueteUnidad: e.target.value });
-        showToast("Unidad actualizada.");
-      } catch (err) {
-        console.error("No se pudo actualizar la unidad:", err);
-      }
-    });
-  }
-
-  // Links «Usada en»: abren la receta en modo lectura; el modal de
-  // ingrediente se cierra antes (ambos comparten z-index).
-  content.querySelectorAll("[data-recipe-id]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const recipe = recipes.find((r) => r.id === btn.dataset.recipeId);
-      if (!recipe) return;
-      closeIngredientModal();
-      openRecipeModal(recipe, { readOnly: true });
-    });
+  // Vista de lectura (issue #232): el lápiz pasa a modo edición; el
+  // botón «Cerrar» inferior desapareció (queda la ✕ superior).
+  content.querySelector("[data-ing-edit]")?.addEventListener("click", () => {
+    openIngredientModal(ingredient.id, { edit: true });
   });
-
-  // Eliminar el ingrediente del catálogo (no afecta a las recetas).
   content.querySelector("[data-ing-delete]")?.addEventListener("click", async () => {
     if (!confirm(`¿Eliminar el ingrediente «${ingredient.nombre}» del catálogo? No afecta a las recetas que lo usan.`)) return;
     try {
@@ -1078,6 +1106,50 @@ function bindIngredientModalHandlers(content, ingredient) {
       console.error("No se pudo eliminar el ingrediente:", err);
       showToast("No se pudo eliminar el ingrediente.");
     }
+  });
+
+  // Guardado en bloque de la vista de edición (issue #232): nombre,
+  // foto (URL), categoría, supermercados y cantidad del paquete se
+  // persisten de una vez con updateIngredient; luego se vuelve a la
+  // vista de lectura mostrando los datos guardados.
+  content.querySelector("#ingredient-edit-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nombre = content.querySelector("#ing-modal-nombre").value.trim();
+    if (!nombre) return;
+    const fotoUrl = content.querySelector("#ing-modal-foto").value.trim();
+    const categoriaId = content.querySelector("#ing-modal-categoria").value;
+    const supermercados = [...content.querySelectorAll(".ingredient-modal__chips input:checked")].map((i) => i.value);
+    const qtyRaw = content.querySelector("#ing-modal-paquete").value;
+    const qtyNum = qtyRaw === "" ? null : Number(qtyRaw);
+    const paqueteCantidad = qtyNum !== null && Number.isFinite(qtyNum) && qtyNum >= 0 ? qtyNum : null;
+    const paqueteUnidad = content.querySelector("#ing-modal-unidad").value;
+    try {
+      await ctx.updateIngredient(currentUser, ingredient.id, {
+        nombre, fotoUrl, categoriaId, supermercados, paqueteCantidad, paqueteUnidad,
+      });
+      // Refresco local inmediato (el snapshot de Firestore llega
+      // después): la vista de lectura muestra ya los datos guardados.
+      const idx = ingredients.findIndex((i) => i.id === ingredient.id);
+      if (idx !== -1) {
+        ingredients[idx] = { ...ingredients[idx], nombre, fotoUrl, categoriaId, supermercados, paqueteCantidad, paqueteUnidad };
+      }
+      openIngredientModal(ingredient.id);
+      showToast("Ingrediente actualizado.");
+    } catch (err) {
+      console.error("No se pudo actualizar el ingrediente:", err);
+      showToast("No se pudo actualizar el ingrediente.");
+    }
+  });
+
+  // Links «Usada en»: abren la receta en modo lectura; el modal de
+  // ingrediente se cierra antes (ambos comparten z-index).
+  content.querySelectorAll("[data-recipe-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const recipe = recipes.find((r) => r.id === btn.dataset.recipeId);
+      if (!recipe) return;
+      closeIngredientModal();
+      openRecipeModal(recipe, { readOnly: true });
+    });
   });
 
   // Alta manual: el nombre se guarda tal cual se escribió (tildes y
