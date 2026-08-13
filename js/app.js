@@ -49,6 +49,7 @@ import * as ui from "./ui.js";
 import { setupModalCloseListeners, openItem } from "./modal-handlers.js";
 import { quickAction } from "./quick-actions.js";
 import { checkForUpdates } from "./daily-check.js";
+import { runStorageMigration } from "./migration.js";
 import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey } from "./settings.js";
@@ -705,6 +706,14 @@ async function init() {
     } catch (err) {
       console.error("No se pudo guardar el perfil de usuario:", err);
     }
+
+    // Migración de almacenamiento mínimo (issue #200): poda una sola
+    // vez por usuario los campos de ficha que dejaron de persistirse.
+    // Best-effort y fail-open: si falla, no bloquea la entrada y se
+    // reintenta en la próxima sesión.
+    runStorageMigration(user.uid, createCtx()).catch((err) => {
+      console.error("No se pudo ejecutar la migración de almacenamiento:", err);
+    });
 
     // Suscripciones en tiempo real, lazy por pestaña (issue #178):
     // solo arranca la del grupo de la pestaña activa de Ocio; las

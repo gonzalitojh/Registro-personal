@@ -26,6 +26,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  deleteField,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 import { firebaseConfig } from "./config.js";
@@ -64,4 +65,5 @@ export {
   query,
   orderBy,
   serverTimestamp,
+  deleteField,
 };

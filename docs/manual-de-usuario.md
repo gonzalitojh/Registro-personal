@@ -1099,11 +1099,11 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     debe estar instalada como app ([sección 18](#18-instalar-la-web-en-tu-teléfono))
     y en iPhone hace falta **iOS 16.4 o superior**; en el ordenador
     funciona con la pestaña abierta en segundo plano.
-- **Sincronización de datos → «Sincronizar ahora»**: fuerza la actualización
-  de tus fichas con los datos más recientes (sinopsis, sagas, valoraciones,
-  portadas, tráilers...). Solo puedes usarlo una vez cada **30 minutos**
-  (la web te avisa si lo intentas antes). No hace falta usarlo: la web ya
-  se actualiza sola a diario (ver siguiente sección).
+- **Sincronización de datos → «Comprobar estrenos»**: revisa en ese
+  momento si algo se ha estrenado o ha salido un episodio nuevo (lo que la
+  web comprueba sola cada día). Solo puedes usarlo una vez cada **30
+  minutos** (la web te avisa si lo intentas antes). No hace falta usarlo:
+  la web ya lo comprueba sola a diario (ver siguiente sección).
 - **Datos**: exporta, importa o descarga tus datos:
   - **Exportar copia de seguridad**: descarga un archivo con TODOS tus
     datos (películas, series, libros, videojuegos, perfil y
@@ -1123,21 +1123,21 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   pasado algo: estrenos de tus películas y series pendientes, episodios
   nuevos de las series que sigues... Si hay novedades, aparecen en el
   icono de campana.
-- Esa misma comprobación diaria **rellena la información que falte** en tus
-  fichas (sinopsis, reparto, director, fechas...). Si añadiste un título
-  con datos incompletos, al día siguiente estará completo (si el catálogo
-  ya lo tiene). Con los videojuegos no pasa eso: su información
-  (sinopsis, plataformas, valoraciones de IGDB...) se rellena en el
-  momento de añadirlos y no se vuelve a pedir. La comprobación diaria
-  sí se ocupa de sus **lanzamientos**: si uno de tus videojuegos con
-  fecha de lanzamiento conocida sale a la venta, te llega el aviso
-  correspondiente (los juegos sin fecha no tienen nada que avisar). Un
-  caso aparte: al abrir la ficha de un videojuego, si IGDB tiene
-  tráiler, se guarda en ese momento.
-- El botón **«Sincronizar ahora»** de Ajustes hace lo mismo en el momento
+- Los datos «extra» de las fichas (sinopsis, reparto, director, tráiler,
+  plataformas...) **no se guardan**: se consultan al catálogo cuando abres
+  la ficha y se recuerdan durante un tiempo para no pedirlos a cada rato.
+  Si falla la conexión en ese momento, la ficha se muestra con los datos
+  básicos (portada, título, fechas) y los detalles se cargan en cuanto haya
+  red. Por eso una ficha puede mostrarse sin sinopsis unos segundos: se
+  está pidiendo al catálogo. Los datos de episodios y plataformas de
+  streaming también se recuerdan durante un tiempo. Los videojuegos: su
+  información (sinopsis, plataformas, valoraciones de IGDB...) se pide al
+  abrir la ficha igualmente, y la comprobación diaria se ocupa de sus
+  **lanzamientos**: si uno con fecha de lanzamiento conocida sale a la
+  venta, te llega el aviso correspondiente (los juegos sin fecha no tienen
+  nada que avisar).
+- El botón **«Comprobar estrenos»** de Ajustes hace lo mismo en el momento
   (máx. una vez cada 30 minutos).
-- Los datos de episodios y plataformas de streaming se recuerdan durante
-  un tiempo para no pedirlos a cada rato.
 - Si al entrar hay un **fallo de conexión puntual** (un momento sin red
   o un error pasajero del servidor), la web **reintenta sola durante
   unos segundos** antes de avisarte. Puede aparecer el aviso «Hay
