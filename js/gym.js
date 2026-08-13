@@ -474,9 +474,11 @@ function summarizeWorkouts(workoutsList, from, to) {
     totals.entrenos += 1;
     for (const e of w.ejercicios || []) {
       const series = e.series || [];
-      totals.series += series.length;
       const key = summaryExerciseKey(e);
-      if (!key) continue; // entrada sin id ni nombre: no agrupa
+      // Entrada sin id ni nombre: no agrupa ni cuenta sus series en
+      // el total (no hay ejercicio al que atribuirlas).
+      if (!key) continue;
+      totals.series += series.length;
       let agg = perExercise.get(key);
       if (!agg) {
         const catalogEx = e.ejercicioId ? exercises.find((x) => x.id === e.ejercicioId) : null;

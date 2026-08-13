@@ -194,7 +194,7 @@ export function parseHash(hash = location.hash) {
     // #/gimnasio/<tab>: solo valen las pestañas conocidas.
     if (segments.length === 2 && GYM_TAB_TO_PANEL[segments[1]]) {
       if (segments[1] === GYM_DEFAULT_TAB) {
-        // #/gimnasio/entrenos no es canónico: se normaliza a #/gimnasio.
+        // #/gimnasio/resumen no es canónico: se normaliza a #/gimnasio.
         return { section: "gimnasio", tab: GYM_DEFAULT_TAB, panelId: GYM_TAB_TO_PANEL[GYM_DEFAULT_TAB], default: true, invalid: true };
       }
       return { section: "gimnasio", tab: segments[1], panelId: GYM_TAB_TO_PANEL[segments[1]] };

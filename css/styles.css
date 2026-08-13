@@ -5615,13 +5615,17 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
    con texto papel (la base --paper-dim sería gris #111 casi igual a
-   la superficie del modal; patrón de .ingredient-modal__field). */
+   la superficie del modal; patrón de .ingredient-modal__field). El
+   selector de fechas del Resumen (issue #269) sigue el mismo patrón:
+   en negro puro el valor y el calendario nativo quedarían negros
+   sobre casi negro. */
 [data-theme="black"] .gym-form__field input,
 [data-theme="black"] .gym-form__field select,
 [data-theme="black"] .gym-form__field textarea,
 [data-theme="black"] .gym-exercise-block select,
 [data-theme="black"] .gym-exercise-block input[type="text"],
-[data-theme="black"] .gym-series-row input {
+[data-theme="black"] .gym-series-row input,
+[data-theme="black"] .gym-summary-selector input[type="date"] {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
