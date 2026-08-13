@@ -4880,7 +4880,11 @@ body.is-back-to-top-visible .back-to-top {
   white-space: nowrap;
 }
 .gym-summary-range__value {
-  color: var(--ink-soft);
+  /* --ink (no --ink-soft): sobre la superficie nueva --paper-dim el
+     suave daría ~2.45:1 en la familia oscura (regla 4 de
+     AGENTS.md); el override de Negro puro lo cubre el selector
+     agrupado de abajo. */
+  color: var(--ink);
   overflow-wrap: break-word;
   min-width: 0;
 }
@@ -4936,8 +4940,12 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .gym-summary-card__label {
+  /* --ink (no --ink-soft): el suave daría ~2.45:1 sobre --paper en la
+     familia oscura (regla 4 de AGENTS.md); mismo criterio que el
+     texto del recuadro del rango. La jerarquía la mantienen
+     tamaño/peso (0.85rem normal vs 1.4rem bold del valor). */
   font-size: 0.85rem;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 .gym-summary-card__value {

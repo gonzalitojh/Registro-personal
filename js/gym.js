@@ -328,9 +328,9 @@ export function openGym({ tab = "resumen", fromRouter = false } = {}) {
 // pesos: la pestaña activa y, si el modal de entreno está abierto,
 // su vista (lectura o edición, desde el borrador en memoria).
 function renderAllWithUnit() {
-  // Dispatch de render por pestaña (#269): el resumen muestra pesos
-  // (volumen y peso máx.), así que también se repinta al cambiar la
-  // unidad.
+  // Dispatch de render por pestaña (#269): el resumen se repinta por
+  // uniformidad (ya no muestra pesos desde la iteración del segundo
+  // comentario: la agregación no depende de la unidad).
   const renderers = { resumen: renderSummary, entrenos: renderWorkouts, ejercicios: renderCatalog };
   renderers[currentTab]?.();
   const workoutModal = document.getElementById("gym-workout-modal");
@@ -476,7 +476,6 @@ function summarizeWorkouts(workoutsList, from, to) {
   const perExercise = new Map();
   const perGroup = new Map();
   const seenWorkouts = new Map(); // clave de ejercicio → Set de ids de entreno
-  const groupWorkouts = new Map(); // grupo → Set de ids de entreno
 
   for (const w of workoutsList) {
     if (from && w.fechaISO < from) continue;

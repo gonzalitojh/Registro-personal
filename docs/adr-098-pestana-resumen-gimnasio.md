@@ -75,7 +75,7 @@ nuevas, incorporadas en la misma PR:
 
 Revalidado en esta iteración: sandbox de lógica 42/42 (agregación por
 ejercicio y por grupos, rangos con límites abiertos e intercambio
-`from > to`, torneos del selector con el recuadro oculto/visible y su
+`from > to`, cambios del selector con el recuadro oculto/visible y su
 resumen de fechas) y revisión estática de las reglas 2 y 4 de
 AGENTS.md (360/768/1280 px sin scroll horizontal y cuatro modos de
 tema); escaneo de seguridad sin hallazgos.
