@@ -1,0 +1,33 @@
+{
+  "title": "Comentarios de error de auto-resolve-issues publicados por github-actions[bot]",
+  "description": "Issue #245: los comentarios que el workflow auto-resolve-issues publica en la issue en caso de error de la sesión (fallo → relanzamiento o devolución a la cola) se publican con el token GH_TOKEN del job (secrets.WORKFLOW_GIT_TOKEN, PAT del propietario), por lo que aparecen como autor el usuario del propietario (gonzalitojh) en lugar de github-actions[bot].\n\nPor qué es un bug: el workflow se dispara con el evento issue_comment:created y el job filtra solo github.actor != 'github-actions[bot]' (línea 95 del YAML). Como los comentarios de error se publican con el PAT del propietario, ese filtro no los excluye: el comentario de fallo vuelve a disparar el workflow (iteración) sobre la misma issue. En el caso de relanzamiento la issue se mantiene en status: in-progress, así que el comentario de fallo lanza una sesión de iteración nueva duplicando el relanzamiento ya encolado (o ejecutando sesiones no deseadas).\n\nSolución: publicar los comentarios de fallo con el GITHUB_TOKEN integrado del runner (autor: github-actions[bot]), que el filtro del trigger ya excluye. El resto de operaciones (labels set-state, dispatch del relanzamiento, commits/push) siguen usando el PAT del job (GH_TOKEN) porque requieren permisos actions/workflow que el GITHUB_TOKEN no tiene.\n\nUbicación del cambio: .github/workflows/auto-resolve-issues.yml, paso 'Relanzar o devolver a la cola en fallo de sesión', función return_to_queue (comentario 'Se devuelve la issue a la cola') y comentario de relanzamiento 'La sesión automática de SDD falló... Se relanza automáticamente'.",
+  "status": "review",
+  "acceptance criteria": [
+    "AC1: Los comentarios de fallo de la sesión (devolución a la cola y relanzamiento automático) se publican con el token automático GITHUB_TOKEN, de modo que el autor es github-actions[bot].",
+    "AC2: Como consecuencia, esos comentarios NO vuelven a disparar el workflow (el if del job excluye github.actor != 'github-actions[bot]' en issue_comment), evitando sesiones duplicadas/indeseadas.",
+    "AC3: El resto de operaciones del paso (set-state de labels, gh workflow run del relanzamiento) sigue usando GH_TOKEN (PAT del propietario): el cambio es mínimo y quirúrgico solo sobre los gh issue comment.",
+    "AC4: Documentado: comentario en el YAML explicando el porqué (token automático vs PAT) y ADR nuevo con 'Related issue: #245'.",
+    "AC5: Validación: YAML parseable (actionlint o python yaml), lógica del filtro issue_comment revisada y ausencia de regresiones en el flujo de fallo."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada (.github/workflows/auto-resolve-issues.yml: gh issue comment de fallo con GITHUB_TOKEN; comentario explicativo en el paso).",
+    "Validación QA: criterios de aceptación y DoD verificados (YAML parseable, lógica de trigger revisada).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #245'.",
+    "PR contra dev SIN keyword de cierre; issue #245 con label actualizada a su estado final (cierre vía issues-done-on-dev al fusionar)."
+  ],
+  "issue": {
+    "number": 245,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/245",
+    "title": "Comentarios en error de auto-resolve-issues"
+  },
+  "pr": {
+    "number": 247,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/247",
+    "title": "fix: comentarios de fallo de auto-resolve-issues publicados por github-actions[bot] (issue #245)",
+    "branch": "fix/issue-245-comentarios-fallo-github-actions",
+    "commit": "40a2627",
+    "closes": "#245"
+  }
+}
