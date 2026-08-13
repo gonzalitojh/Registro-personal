@@ -394,6 +394,14 @@ input, textarea, select { font-size: 16px; }
   border-color: var(--ochre-spine);
   color: var(--ink);
 }
+/* Media estrella (issue #276): el botón afectado se pinta igual que un
+   botón activo (mismas variables de tema, sin overrides extra) y su
+   contenido pasa a «½». */
+.rating-picker button.is-half {
+  background: var(--ochre-spine);
+  border-color: var(--ochre-spine);
+  color: var(--ink);
+}
 
 /* Media de valoración de episodios junto al picker de la serie (issue #80) */
 .episode-average {
@@ -1199,6 +1207,11 @@ input, textarea, select { font-size: 16px; }
 .episode-rating__star.is-active {
   color: var(--ochre-spine);
 }
+/* Media estrella de episodio (issue #276): mismo acento que la activa
+   (mismas variables de tema), distingue con el glifo «½». */
+.episode-rating__star.is-half {
+  color: var(--ochre-spine);
+}
 .episode-rating__star:disabled {
   opacity: 0.5;
 }
@@ -1987,7 +2000,8 @@ input, textarea, select { font-size: 16px; }
    variantes claras (los sellos de las tarjetas se mantienen
    claros y usan los hex originales, regla siguiente) */
 [data-theme="black"] .item-card__rating,
-[data-theme="black"] .episode-rating__star.is-active {
+[data-theme="black"] .episode-rating__star.is-active,
+[data-theme="black"] .episode-rating__star.is-half {
   color: var(--ochre-spine-dark);
 }
 [data-theme="black"] .item-card__upcoming,
