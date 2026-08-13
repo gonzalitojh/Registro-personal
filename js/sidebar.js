@@ -12,12 +12,15 @@
 // =============================================================
 
 import { trapFocus } from "./focus-utils.js";
-import { closeGlobalSearch } from "./global-search.js";
+import { closeGlobalSearch, isGlobalSearchOpen } from "./global-search.js";
+import { navigate, getLastRecipesTab } from "./router.js";
 
 // Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
 // "Ocio" es la web actual (pestañas Series / Películas / Libros);
 // al pulsarla se cierra el drawer, se hace scroll suave al top y se
 // vuelve a la primera pestaña sincronizando la URL (issue #59).
+// "Recetas" (issue #64) abre la nueva sección de recetas
+// (#/recetas, pestaña que quedó activa la última vez).
 // "Ajustes" (pinned) abre el perfil en la sección Ajustes: el
 // callback lo inyecta app.js vía setupSidebar({ onOpenSettings }).
 export const SECTIONS = [
@@ -50,6 +53,22 @@ export const SECTIONS = [
     },
   },
   {
+    id: "recetas",
+    label: "Recetas",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 11h16a1.6 1.6 0 0 1 1.6 1.6V14A5.6 5.6 0 0 1 16 19.6H8A5.6 5.6 0 0 1 2.4 14v-1.4A1.6 1.6 0 0 1 4 11z" />
+      <path d="M2.5 12.3h19" />
+      <path d="M8.5 8.5h7" />
+      <path d="M7.5 5.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0" />
+    </svg>`,
+    onClick: () => {
+      // Abrir la sección Recetas sincronizando la URL: vuelve a la
+      // pestaña que quedó activa la última vez (issue #64).
+      navigate({ section: "recetas", tab: getLastRecipesTab() });
+    },
+  },
+  {
     id: "settings",
     label: "Ajustes",
     pinned: true,
@@ -68,6 +87,12 @@ export const SECTIONS = [
 // openSettings para «Ajustes» y onGoOcio para «Ocio» (router de hash).
 let openSettings = null;
 let onGoOcio = null;
+
+// Sección activa para el marcado de la barra lateral (issue #206,
+// iteración 2026-08-11): antes el marcado estaba fijo en «Ocio» y no
+// cambiaba al navegar. La actualiza app.js vía setActiveSection en
+// cada cambio de ruta; renderSidebar la respeta al re-renderizar.
+let activeSection = "ocio";
 
 // Predicado de visibilidad de secciones, inyectado por app.js vía
 // setupSidebar({ isSectionVisible }) (issue #97): con solo una
@@ -113,8 +138,18 @@ export function setupSidebar(opts) {
   });
 
   toggle.addEventListener("click", () => {
+    // Orden deliberado (issue #253): PRIMERO el drawer, LUEGO la
+    // búsqueda. openGlobalSearch marca isOpen=true antes de disparar
+    // toggle.click() para auto-cerrar el drawer; si este check de la
+    // búsqueda fuera el primero, ese click interno no cerraría la
+    // barra lateral y su backdrop taparía el dropdown.
     if (sidebar.classList.contains("is-open")) {
       closeSidebar();
+    } else if (isGlobalSearchOpen()) {
+      // Modo ✕: con la búsqueda abierta, la hamburguesa se convierte
+      // en una ✕ (animación CSS, clase is-search-open) y pulsarla
+      // cierra la búsqueda en lugar de abrir el menú lateral.
+      closeGlobalSearch();
     } else {
       openSidebar();
     }
@@ -205,10 +240,11 @@ export function renderSidebar() {
   // Render de las entradas a partir del array SECTIONS. Los ids son
   // literales controlados por este módulo (sin datos de usuario).
   // Solo se listan las secciones visibles; las pinned (p. ej.
-  // «Ajustes») van siempre al footer.
+  // «Ajustes») van siempre al footer. La sección activa (marcada con
+  // .is-active) la decide setActiveSection desde app.js.
   nav.innerHTML = SECTIONS.filter((s) => !s.pinned && isSectionVisible(s.id))
     .map(
-      (s) => `<button type="button" class="app-sidebar__link${s.id === "ocio" ? " is-active" : ""}"
+      (s) => `<button type="button" class="app-sidebar__link${s.id === activeSection ? " is-active" : ""}"
                data-section="${s.id}">
         <span aria-hidden="true">${s.icon}</span>
         <span>${s.label}</span>
@@ -223,7 +259,7 @@ export function renderSidebar() {
   // contenido ocultable.)
   footer.innerHTML = SECTIONS.filter((s) => s.pinned)
     .map(
-      (s) => `<button type="button" class="app-sidebar__link"
+      (s) => `<button type="button" class="app-sidebar__link${s.id === activeSection ? " is-active" : ""}"
                data-section="${s.id}">
         <span aria-hidden="true">${s.icon}</span>
         <span>${s.label}</span>
@@ -232,4 +268,22 @@ export function renderSidebar() {
     .join("");
 
   updateHeaderNavButtons();
+}
+
+// Marca la entrada de la sección activa en la barra lateral (issue
+// #206, iteración 2026-08-11): al cambiar de sección (Ocio, Recetas
+// o Ajustes vía el perfil), el marcado .is-active debe moverse y no
+// quedar anclado a «Ocio». Lo llama app.js en el onRoute del router.
+// Recibe el id de sección del array SECTIONS (ocio, recetas,
+// settings) o null para no marcar ninguna (p. ej. en el perfil fuera
+// de Ajustes, que no tiene entrada propia en la barra).
+export function setActiveSection(sectionId) {
+  activeSection = sectionId || null;
+  // Aplicar el marcado sin re-renderizar: las entradas ya existentes
+  // conservan su estado; renderSidebar lo respeta al reconstruir.
+  [nav, footer].forEach((container) => {
+    container?.querySelectorAll(".app-sidebar__link").forEach((el) => {
+      el.classList.toggle("is-active", el.dataset.section === activeSection);
+    });
+  });
 }

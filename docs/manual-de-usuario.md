@@ -18,18 +18,19 @@ en la web. Léelo por secciones según lo que necesites.
 5. [Películas](#5-películas)
 6. [Libros](#6-libros)
 7. [Videojuegos](#7-videojuegos)
-8. [Cómo buscar](#8-cómo-buscar)
-9. [Organizar y ordenar tu registro](#9-organizar-y-ordenar-tu-registro)
-10. [La ficha de cada película, serie, libro o videojuego](#10-la-ficha-de-cada-película-serie-libro-o-videojuego)
-11. [Valoraciones con estrellas](#11-valoraciones-con-estrellas)
-12. [Acciones rápidas](#12-acciones-rápidas)
-13. [Notificaciones](#13-notificaciones)
-14. [Tu perfil](#14-tu-perfil)
-15. [Ajustes](#15-ajustes)
-16. [¿Cuándo se actualizan los datos?](#16-cuándo-se-actualizan-los-datos)
-17. [Privacidad](#17-privacidad)
-18. [Instalar la web en tu teléfono](#18-instalar-la-web-en-tu-teléfono)
-19. [Problemas frecuentes](#19-problemas-frecuentes)
+8. [Recetas](#8-recetas)
+9. [Cómo buscar](#9-cómo-buscar)
+10. [Organizar y ordenar tu registro](#10-organizar-y-ordenar-tu-registro)
+11. [La ficha de cada película, serie, libro o videojuego](#11-la-ficha-de-cada-película-serie-libro-o-videojuego)
+12. [Valoraciones con estrellas](#12-valoraciones-con-estrellas)
+13. [Acciones rápidas](#13-acciones-rápidas)
+14. [Notificaciones](#14-notificaciones)
+15. [Tu perfil](#15-tu-perfil)
+16. [Ajustes](#16-ajustes)
+17. [¿Cuándo se actualizan los datos?](#17-cuándo-se-actualizan-los-datos)
+18. [Privacidad](#18-privacidad)
+19. [Instalar la web en tu teléfono](#19-instalar-la-web-en-tu-teléfono)
+20. [Problemas frecuentes](#20-problemas-frecuentes)
 
 ---
 
@@ -69,42 +70,55 @@ elige **«Cerrar sesión»** en el menú que se despliega.
 
 Nada más entrar verás:
 
-- **Arriba, la cabecera**:
+- **Arriba, la cabecera** (visible en las secciones de **Ocio** y
+  **Recetas**; en **tu perfil no aparece**: allí tienes la flecha de
+  volver y las pestañas en la misma fila, ver
+  [sección 15](#15-tu-perfil); en la pantalla de acceso tampoco):
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
     deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
     devuelve a las pestañas de Series, Películas, Libros y Videojuegos,
-    y, en la parte de abajo, **«Ajustes»**, que abre la sección de
-    ajustes de tu perfil (más en [sección 14](#14-ajustes)). Se cierra
-    pulsando fuera, la ✕, la tecla **Esc** o la propia entrada. Si en
-    [Ajustes → Secciones y pestañas](#14-ajustes) dejas solo **una
-    sección visible**, la barra lateral se sustituye por un botón
-    **engranaje ⚙** en la cabecera que abre directamente Ajustes; en
-    cuanto vuelvas a tener más de una sección visible, la barra
+    **«Recetas»** y, en la parte de abajo, **«Ajustes»**, que abre la
+    sección de ajustes de tu perfil (más en [sección 14](#14-ajustes)).
+    Se cierra pulsando fuera, la ✕, la tecla **Esc** o la propia
+    entrada. Si en [Ajustes → Secciones y pestañas](#14-ajustes) dejas
+    solo **una sección visible**, la barra lateral se sustituye por un
+    botón **engranaje ⚙** en la cabecera que abre directamente Ajustes;
+    en cuanto vuelvas a tener más de una sección visible, la barra
     lateral reaparece.
-  - **Barra de búsqueda** (en el centro): la búsqueda global
-    (más en [sección 8](#8-cómo-buscar)). Al entrar, la barra muestra
-    brevemente el nombre de la web —**«Mi Registro»**— y a los pocos
-    segundos pasa a «Buscar películas, series, libros, videojuegos o
-    amigos...».
+  - **Barra de búsqueda** (en el centro): busca **dentro de la sección
+    en la que estés** (más en [sección 9](#9-cómo-buscar)). Al entrar,
+    la barra muestra brevemente el nombre de la web —**«Mi Registro»**—
+    y a los pocos segundos pasa al texto de la sección: «Buscar
+    películas, series, libros y videojuegos...» en Ocio y «Buscar
+    recetas...» en Recetas.
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 13](#13-notificaciones)).
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
-      opción **«Cerrar sesión»**.
-  - La cabecera **se oculta al bajar por la lista y vuelve al subir**:
-    siempre está ahí cuando la necesitas
+      opción **«Cerrar sesión»**. Desde aquí entras y sales del perfil:
+      en la sección de Recetas no hay botón de «volver» — la navegación
+      siempre está en la cabecera.
+  - La cabecera **se oculta al bajar por las listas de Ocio o de
+    Recetas y vuelve al subir**: siempre está ahí cuando la necesitas
     ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
-- **Las pestañas**: **Series**, **Películas**, **Libros** y
-  **Videojuegos**. En el **móvil** están en una barra fija en la parte
-  inferior de la pantalla; en el **ordenador y la tablet**, en una barra
-  fija justo bajo la barra de búsqueda superior. Cada pestaña lleva un
-  icono y tiene su propio color: **Series en verde**, **Películas en
-  rojo**, **Libros en ocre** y **Videojuegos en violeta**. La pestaña
-  activa se marca con una franja de su color y un fondo claro. Pulsa una
-  pestaña para ver tu lista de ese tipo, con sus filtros y su orden. Como
-  la cabecera, la barra de pestañas se oculta al bajar por la lista y
+- **Las pestañas** (en la barra fija bajo la cabecera en el ordenador
+  y la tablet, o anclada abajo en el móvil): **Series**, **Películas**,
+  **Libros** y **Videojuegos**. Cada pestaña lleva un icono y tiene su
+  propio color: **Series en verde**, **Películas en rojo**, **Libros en
+  ocre** y **Videojuegos en violeta**. La pestaña activa se marca con
+  una franja de su color y un fondo claro. Pulsa una pestaña para ver
+  tu lista de ese tipo, con sus filtros y su orden. Como la cabecera,
+  la barra de pestañas se oculta al bajar por la lista y
   reaparece al subir
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
+- **La sección de Recetas tiene su propia barra de pestañas, igual que
+  Ocio**: **Recetas en ocre**, **Ingredientes en violeta**, **Menú en
+  verde** y **Compra en rojo**, cada una con su icono. Es
+  fija de la misma manera (abajo en el móvil, bajo la barra de búsqueda
+  en ordenador y tableta), se oculta al bajar por la lista como la de
+  Ocio y sus pestañas se pueden ocultar desde
+  [Ajustes → Secciones y pestañas](#16-ajustes) igual que las de Ocio
+  (más en [sección 8](#8-recetas)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
@@ -125,12 +139,12 @@ Cada pestaña se divide en dos zonas:
 
 - **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
   por estado, ordenar y cambiar la vista entre cuadrícula y lista
-  (más en [sección 9](#9-organizar-y-ordenar-tu-registro)).
+  (más en [sección 10](#10-organizar-y-ordenar-tu-registro)).
 - **Debajo**: la lista de tus títulos de ese tipo.
 
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
-(más en [sección 8](#8-cómo-buscar)).
+(más en [sección 9](#9-cómo-buscar)).
 
 ### 3.1 Compartir direcciones y volver a las pestañas
 
@@ -156,16 +170,24 @@ Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 
 ### 3.2 La cabecera y las pestañas al hacer scroll
 
-Al bajar por una lista (series, películas, libros o videojuegos), la
-barra de búsqueda de arriba y las pestañas se ocultan deslizándose hacia
-el borde de la pantalla, como si salieran de ella, para que la lista
-ocupe todo el espacio. En cuanto desplazas hacia arriba, vuelven a
-aparecer deslizándose desde su borde.
+Al bajar por una lista de **Ocio** (series, películas, libros o
+videojuegos) o de **Recetas** (Recetas, Ingredientes, Menú o Compra),
+la barra de búsqueda de arriba y las pestañas se ocultan
+deslizándose hacia el borde de la pantalla, como si salieran de ella,
+para que la lista ocupe todo el espacio. En cuanto desplazas hacia
+arriba, vuelven a aparecer deslizándose desde su borde.
 
-Si sigues bajando y los filtros de la lista (estado, orden y vista)
-quedan también fuera de la pantalla, verás un pequeño botón redondeado
-**«Volver arriba»** flotando en el centro, arriba, sobre la lista:
-púlsalo para volver al principio de la lista de un salto.
+En **tu perfil** no hay cabecera global: tiene su propia cabecera con
+la flecha de volver y las pestañas en la misma fila. La flecha de
+volver del perfil te lleva de vuelta a la sección desde la que
+entraste, **Ocio** o **Recetas**, con la pestaña que tenías activa.
+
+Si sigues bajando y los controles de la lista (los filtros de estado,
+orden y vista en Ocio, o la barra de herramientas de la pestaña de
+Recetas activa) quedan también fuera de la pantalla, verás un pequeño
+botón redondeado **«Volver arriba»** flotando en el centro, arriba,
+sobre la lista: púlsalo para volver al principio de la lista de un
+salto.
 
 La navegación nunca se oculta mientras la estás usando: si estás
 escribiendo una búsqueda, o tienes abierto un menú (notificaciones,
@@ -206,7 +228,7 @@ pierde nada.
    resultado: se abrirá una vista previa con los detalles.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
-aparece **«Añadir manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+aparece **«Añadir manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -286,7 +308,7 @@ Igual que con las series: escribe el título en la **barra de búsqueda
 de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
 el resultado que quieras, o usa la vista previa pulsando sobre la fila.
 Si no la encuentras, al final de los resultados aparece **«Añadir
-manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -329,7 +351,7 @@ Si el libro tiene varias ediciones, la web te deja **elegir portada y
 sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
 se muestra como «Añadido». Si no lo encuentras, al final de los
 resultados aparece **«Añadir manualmente»**
-(más en [sección 8.3](#83-añadir-manualmente)).
+(más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -385,7 +407,7 @@ valoración de la comunidad y más datos.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Si no lo encuentras, al final de los resultados aparece **«Añadir
-  manualmente»** (más en [sección 8.3](#83-añadir-manualmente)).
+  manualmente»** (más en [sección 9.3](#93-añadir-manualmente)).
 
 ### 7.3 Empezar y terminar partidas
 
@@ -411,15 +433,277 @@ sesiones adicionales. Cada sesión tiene además un campo opcional de
 hora); ese campo se usa para la estadística de **horas jugadas** de tu
 perfil (sección 14.1).
 
-## 8. Cómo buscar
+## 8. Recetas
 
-### 8.1 Buscar en el catálogo
+La sección **Recetas** (en la barra lateral, junto a «Ocio») te permite
+guardar tus recetas, planificar el menú de la semana y generar la lista
+de la compra automáticamente. Tiene cuatro pestañas — **Recetas**,
+**Ingredientes**, **Menú** y **Compra** — en una barra fija
+**igual que las de Ocio**: abajo en el móvil y bajo la barra de
+búsqueda en el ordenador y la tableta, cada una con su icono y su color
+(**ocre**, **violeta**, **verde** y **rojo**). La pestaña activa se
+marca con una franja de su color. Puedes ocultarlas desde [Ajustes →
+Secciones y pestañas](#16-ajustes), igual que las de Ocio.
 
-Todo se busca desde la **barra de búsqueda de la cabecera**
+### 8.1 Tus recetas
+
+En la pestaña «Recetas» ves tus recetas en tarjetas. Con **«+ Nueva
+receta»** creas una con:
+
+- **Nombre** (obligatorio) y descripción.
+- **Porciones**: cuántas raciones salen (se usa para calcular la lista
+  de la compra).
+- **Foto**: una dirección (URL) de imagen.
+- **Enlaces de referencia**: la web de donde sacaste la receta, uno por
+  línea.
+- **Ingredientes**: se eligen de tu **catálogo de ingredientes** con
+  un **desplegable con buscador**: escribe para filtrar y elige una
+  opción de la lista (no se puede escribir un nombre libre). Si el
+  ingrediente no está en el catálogo, pulsa **«Nuevo ingrediente»**:
+  se abre la misma ventana de creación de la pestaña Ingredientes
+  (nombre y categoría, y si quieres supermercados y cantidad de
+  paquete) y el ingrediente queda ya elegido en la receta. A cada
+  ingrediente le pones la **cantidad** y eliges su **unidad de medida**
+  en un desplegable con las opciones **g, Kg, mL, L y Unidades** (puedes
+  dejarla sin elegir); la **categoría no se elige aquí**: viene de la
+  ficha del ingrediente en el catálogo y puedes cambiarla en la pestaña
+  Ingredientes (ver 8.5). Puedes añadir tantas filas como quieras.
+- **Instrucciones**: los pasos, en orden.
+- **Etiquetas de alérgenos** (Sin gluten, Vegetariano, Vegano, Sin
+  lactosa, Sin frutos secos, Sin huevo) y **tipo de comida** (Entrante,
+  Plato de cuchara, Plato principal, Masas y panes, Postres y dulces,
+  Salsas y guarniciones, Desayunos, Bebidas). Marca los que apliquen.
+
+En los desplegables de categorías y etiquetas puedes **crear etiquetas
+propias**: escribe el nombre en el campo «Nueva etiqueta propia…» y
+pulsa «Añadir». Las etiquetas propias se guardan en tu cuenta y aparecen
+marcadas como «(propia)».
+
+La **barra de búsqueda de la cabecera** busca **dentro de tus recetas**
+(más en [sección 9.2](#92-buscar-en-tu-registro)): encuentra recetas
+**por nombre, por ingrediente** (por ejemplo «huevo» muestra todas las
+recetas que lo usan) y **por etiqueta** (por ejemplo «vegetariano»).
+Pulsa un resultado para abrir la receta en modo lectura.
+
+Encima del listado hay dos **filtros desplegables**: uno de
+**alérgenos** y otro de **tipo de comida**. Púlsalos para marcar o
+desmarcar opciones (puedes seleccionar **varias a la vez** o «Todos»);
+las tarjetas se filtran al momento. Una receta se muestra si lleva
+**al menos una** de las etiquetas marcadas en cada filtro, y las
+recetas sin etiquetas de ese tipo se ven siempre.
+
+Las tarjetas de las recetas muestran sus **etiquetas en píldoras de
+colores**: las de **alérgenos en verde** y las de **tipo de comida en
+ocre**, igual que dentro de la ventana de información, para
+distinguirlas de un vistazo.
+
+Para abrir una receta **pulsa sobre su tarjeta, en cualquier sitio de
+ella**: se abre su ventana de información en **modo lectura** (no se
+puede modificar nada). Esta ventana es una **vista de texto**: no ves
+un formulario con casillas, sino **la foto de la receta** (si tiene) y,
+justo debajo, **el nombre como título** con las **etiquetas** de
+alérgenos y tipo de comida en **píldoras de colores** (las de
+**alérgenos en verde** y las de **tipo de comida en ocre**, para
+distinguirlas de un vistazo). Después se muestra la **descripción** y
+las **porciones**.
+
+Bajo eso aparecen los **ingredientes en forma de lista** (cada uno con
+su nombre y cantidad, por ejemplo «Harina — 200 g») y las
+**instrucciones numeradas paso a paso**. Al final, si la receta tiene,
+se muestran los **enlaces de referencia** (la web de donde la sacaste),
+que se abren en otra pestaña al pulsarlos (si un enlace no empieza por
+`http://` o `https://` se muestra como texto, sin pulsar).
+
+Dentro de la ventana hay dos botones: **«✎ Editar»** y **«Eliminar»**.
+Con **«Eliminar»** la borras (se quita del menú y de la lista de la
+compra); con **«Editar»** (el botón con el lápiz ✎) pasas al modo de
+edición con el mismo formulario de alta.
+
+La ventana se cierra con la **✕** de arriba. En modo lectura también
+se cierra al **pulsar fuera** de ella; en modo **edición** no, para
+que no se pierda lo que estés escribiendo si pulsas fuera por error
+(ciérrala con «Cancelar» o con la ✕).
+
+### 8.2 Importar una receta desde una web
+
+En el formulario de nueva receta hay una casilla **«Importar desde una
+URL»**: pega el enlace de la receta y pulsa «Importar». Si la web lo
+permite, se rellenan solos el nombre, la foto y la descripción. Muchas
+webs bloquean esta lectura desde otra página: en ese caso solo se
+guarda la URL.
+
+En cualquier caso, una receta importada queda **marcada con el
+distintivo «Revisar»** (borde naranja y etiqueta), para que la abras,
+completes los datos que falten y la guardes sin revisar cuando esté
+lista.
+
+### 8.3 El menú semanal
+
+En la pestaña **«Menú»** planificas la semana. Con las flechas eliges
+la semana; con **«Comensales»** indicas cuántas personas comen. Con
+**«Borrar semana»** vacías por completo el menú de la semana que
+tengas a la vista (se te pedirá confirmación).
+
+En cada día (Lunes a Domingo) y comida (**Almuerzo** y **Cena**)
+puedes añadir recetas con el botón **«+ Añadir receta»** de la barra
+superior. Se abre una ventana en la que primero eliges el **destino**:
+el **día** de la semana o **«Toda la semana»**, y la **comida**
+(**Almuerzo** o **Cena**; la comida solo aplica cuando eliges un día
+concreto).
+Después verás **todas tus recetas** en forma de tarjetas: la **foto**
+(si la tiene) a la izquierda, el **nombre** como título y las
+**etiquetas de alérgenos y tipos de plato** debajo. Puedes **buscar**
+por texto y **filtrar** por las dos etiquetas con los botones del
+buscador. Pulsa una tarjeta para **ver la receta** con la misma
+ventana de la pestaña Recetas (ciérrala y volverás al buscador).
+
+Para **añadirla**, pulsa **«+ Añadir»** y, si quieres, indica los
+**comensales de esa receta** (por si no todos comen de todo): si lo
+dejas vacío, la receta usa los **comensales globales del menú**. El
+número elegido aparece junto al nombre de la receta en la comida.
+
+Puedes añadir **varias recetas en la misma comida**: cada persona
+puede comer una opción distinta. Cada receta aparece en su día como
+una **tarjeta en miniatura** (foto, nombre y etiquetas); púlsala para
+**verla** o quítala con la **✕**. Ya no hace falta un botón por celda:
+todo se añade con el mismo «+ Añadir receta».
+
+En **«Recetas a la semana»** se guardan las recetas que eliges con
+**«Toda la semana»**: se preparan una vez para toda la semana (por
+ejemplo, una **masa de pizza**) y **no se multiplican por los
+comensales**. Aparecen como **tarjetas iguales a las de cada día**
+(foto, nombre y etiquetas): púlsalas para **verlas** o quítalas con
+la **✕**.
+
+Para marcar una receta como «ya hecha» (para que **no** entre en la
+lista de la compra), exclúyela desde la lista de la compra (ver 8.4).
+
+### 8.4 La lista de la compra
+
+La pestaña **«Compra»** calcula sola lo que necesitas
+comprar: cada ingrediente de cada receta se multiplica por
+(comensales ÷ porciones de la receta). Por ejemplo, una receta de 4
+porciones con 200 g de arroz, para 2 comensales, pedirá 100 g. Las
+recetas «a la semana» se apuntan con su cantidad fija.
+
+- **Varias semanas a la vez**: bajo la barra superior hay unos chips
+  con las fechas de las semanas. Marca los que quieras (al menos uno)
+  y la lista **suma los ingredientes** de todas las semanas
+  seleccionadas; con las flechas ← y → ves las semanas anteriores o
+  siguientes. Mientras no toques los chips, la lista sigue la semana
+  que tengas abierta en el Menú.
+- Las líneas se **agrupan por categoría** (Frutas, Carnes, Despensa…).
+- Marca la casilla de una línea para tacharla cuando la cojas en el
+  supermercado.
+- **Cantidad en paquetes**: si un ingrediente tiene marcada la
+  **cantidad del paquete** en su ficha (ver 8.5), la lista compara lo
+  que necesitas con el paquete y lo redondea al alza: si necesitas
+  550 g de harina y la harina se vende en paquetes de 1 Kg, aparecerá
+  el número **1**; si necesitas 2,5 Kg, el **3**. Junto al número
+  puedes **ajustar los paquetes** con los botones − y + (¿te sobra
+  harina de la semana pasada? quita un paquete; ¿quieres tener de
+  sobra? añade uno) y el ajuste se guarda en ese dispositivo; el
+  botón ↺ vuelve al cálculo automático. Si el ingrediente no tiene
+  cantidad de paquete (o las unidades no se pueden comparar), se
+  muestra lo que necesites.
+- **Quitar un ítem**: desliza una línea **hacia la izquierda** y
+  continúa deslizando un poco más (en el móvil) o pulsa la **✕ roja
+  de la derecha** (en ordenador) para quitarla de la lista; puedes
+  deshacerlo en el aviso que aparece al momento. Solo el gesto
+  horizontal de deslizar revela el fondo rojo con su ✕ (que se ve
+  únicamente mientras deslizas); desplazarte por la lista con el
+  dedo hacia arriba o abajo **no marca** ninguna línea. Los ítems de
+  recetas dejan de calcularse en las semanas marcadas (al pie de la
+  lista aparece «Quitados de la lista» y puedes volver a incluirlos
+  pulsando su nombre).
+- Con **«+ Ítem extra»** añades cosas a mano: se abre un campo con
+  **buscador de ingredientes** del catálogo (el mismo desplegable que
+  al añadir ingredientes a una receta): elige uno, escribe la
+  **cantidad** y elige la **unidad de medida** en un desplegable
+  (**g, Kg, mL, L o Unidades**) y pulsa «Añadir». No hay que
+  elegir categoría ni marcar si es de limpieza: eso se toma de la ficha
+  del ingrediente del catálogo (p. ej. un ingrediente con la categoría
+  «Artículos del hogar» se trata como producto no comestible). Si el
+  ingrediente no está en el catálogo, créalo antes con «+ Nuevo
+  ingrediente» en la pestaña Ingredientes (ver 8.5). El ítem se añade a
+  todas las semanas seleccionadas y se quita igual que el resto
+  (deslizando o con la ✕).
+- Si una receta del menú ya la tienes hecha o no necesitas comprar sus
+  ingredientes, **exclúyela**: al pie de la lista aparecen las recetas
+  excluidas y puedes volver a incluirlas pulsando su nombre. También se
+  indican en el menú (tachadas).
+
+### 8.5 El catálogo de ingredientes
+
+La pestaña **«Ingredientes»** muestra el catálogo de ingredientes de tu
+cuenta, agrupados **por categorías**. Se rellena solo con los que usas
+en tus recetas, y también puedes añadir ingredientes a mano con el
+botón **«+ Nuevo ingrediente»** (arriba a la izquierda): escribe el
+nombre y elige la categoría. También puedes rellenar, si quieres, los
+**supermercados** donde se puede comprar (Lidl, Aldi, Mercadona, Día,
+Carrefour y El Corte Inglés, cada uno con su etiqueta de color) y la
+**cantidad del paquete** (número y unidad: g, Kg, mL, L, unidades).
+
+Los ingredientes se guardan y muestran **tal y como los escribes**, con
+sus mayúsculas y tildes. Si escribes uno que ya existe (aunque lo
+escribas con otras mayúsculas o sin tildes), no se añade otra vez: se
+conserva la primera vez que lo escribiste.
+
+Sobre la lista tienes un control:
+
+- **Filtro por categorías**: un desplegable con una casilla por
+  categoría, todas marcadas por defecto. Desmarca las que no quieras
+  ver; la etiqueta del botón indica cuántas categorías se están
+  mostrando. El filtro se aplica **al momento, sin cerrar el
+  desplegable**: en cuanto marcas o desmarcas una casilla se colorea
+  para que veas qué está seleccionado y la lista se actualiza sola.
+  Con la casilla **«Todas»** marcas o desmarcas todas de una vez. Los
+  ingredientes **sin categoría** se muestran siempre.
+
+Cada ingrediente es una tarjeta con su **nombre**. Al pulsarla se abre
+una ventana **en modo lectura** con la información ampliada: la
+**categoría**, los **supermercados** donde se puede comprar (las
+etiquetas de color de Lidl, Aldi, Mercadona, Día, Carrefour y El Corte
+Inglés), la **cantidad del paquete** (número y unidad) y, si tiene, una
+**foto**. Si el ingrediente no tiene foto no se muestra nada de imagen.
+La ventana también indica **en qué recetas se usa** (pulsa el nombre de
+una receta para abrirla en modo lectura) y tiene un botón
+**«Añadir a la lista de la compra»** (con el carrito 🛒): se abre una
+  ventana para elegir **solo la cantidad y la unidad de medida** (la
+  unidad se elige en un desplegable con **g, Kg, mL, L y Unidades**),
+  y el ingrediente se apunta en la lista de la compra de las semanas
+  seleccionadas (igual que un ítem extra). También tiene un botón
+  **«Eliminar»** para quitarlo del catálogo (no afecta a las recetas
+  que lo usan) y un botón **✏️ Editar** para modificarlo: con el lápiz
+  se abre la misma ventana en modo edición, donde puedes cambiar el
+  **nombre**, la **foto** (pegando una URL de imagen), la **categoría**,
+  los **supermercados** y la **cantidad del paquete**; los cambios se
+  guardan todos juntos con el botón **«Guardar»** (o se descartan con
+  «Cancelar»). La ventana no tiene botón «Cerrar» abajo: se cierra con
+  la ✕ de arriba.
+
+Puedes ocultar esta pestaña desde [Ajustes → Secciones y
+pestañas](#16-ajustes) igual que el resto.
+
+### 8.6 Datos y sincronización
+
+Las recetas, el catálogo de ingredientes, las etiquetas propias y los
+menús se guardan en tu cuenta y se sincronizan en tiempo real entre
+tus dispositivos, igual que el resto de la web. Los menús de semanas
+anteriores se conservan.
+
+## 9. Cómo buscar
+
+### 9.1 Buscar en el catálogo
+
+Todo se busca desde la **barra de búsqueda de la cabecera** (en Ocio
+y en Recetas; en tu perfil no hay barra de búsqueda)
 (también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
-Al escribir el título (mínimo 2 caracteres) verás los resultados, y en
-la parte superior del panel hay cuatro botones, siempre visibles:
-**«Serie»**, **«Película»**, **«Libro»** y **«Videojuego»**. Pulsa el
+En la sección de **Ocio**, al escribir el título (mínimo 2 caracteres)
+verás los resultados, y en la parte superior del panel hay cuatro
+botones, siempre visibles: **«Serie»**, **«Película»**, **«Libro»** y
+**«Videojuego»** (en Recetas no aparecen: allí el buscador solo mira
+dentro de la sección). Pulsa el
 que corresponda para **buscar en el catálogo**:
 
 - Películas y series se buscan en **TMDB** (el mismo catálogo de
@@ -456,7 +740,7 @@ igual). Para cada resultado:
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
   **«¿No la encuentras? Añadir manualmente…»**
-  (más en [sección 8.3](#83-añadir-manualmente)).
+  (más en [sección 9.3](#93-añadir-manualmente)).
 
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
@@ -472,24 +756,33 @@ Si una portada no se puede cargar (imagen rota o bloqueada por la web
 que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
 el resultado sigue funcionando igual.
 
-### 8.2 Buscar en tu registro
+### 9.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
-**Cmd+K** en Mac, o **/**) también busca a la vez en lo que ya tienes
-anotado: **películas, series, libros** (también por autor),
-**videojuegos** y en tus **amigos** (por nombre o correo).
+**Cmd+K** en Mac, o **/**) busca **solo dentro de la sección en la que
+estás** (está disponible en **Ocio** y en **Recetas**; en tu perfil no
+hay barra de búsqueda):
+
+- En **Ocio**: en lo que ya tienes anotado — **películas, series,
+  libros** (también por autor) y **videojuegos**.
+- En **Recetas**: en tus **recetas** (por nombre, ingrediente o
+  etiqueta). Al pulsar un resultado se abre la receta en modo lectura.
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
-desplegable** bajo ella con los resultados. Los resultados se agrupan con
-iconos: los mismos de las pestañas, cada uno en su color (series en verde,
-películas en rojo, libros en ocre, videojuegos en violeta) y el icono 👤
-para amigos. Pulsa un resultado para abrir su ficha; si pulsas un amigo,
-de momento verás el aviso de que pronto podrás ver su perfil.
+desplegable** bajo ella con los resultados. Los resultados se agrupan
+con iconos: los mismos de las pestañas, cada uno en su color (series en
+verde, películas en rojo, libros en ocre, videojuegos en violeta) y el
+icono 🍽️ para recetas. Pulsa un resultado para abrir su ficha (o la
+receta, según la sección).
 
-El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con
-la **✕** que aparece dentro de la barra (que además borra lo escrito).
+El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con la
+**✕** que aparece dentro de la barra (que además borra lo escrito). También
+puedes cerrarlo con el botón de la **esquina izquierda de la cabecera**:
+mientras la búsqueda está abierta, el botón de menú **☰ se convierte en una
+✕** (con una pequeña animación); pulsa esa ✕ para cerrar el panel y el
+botón vuelve a ser ☰, listo para abrir el menú lateral como siempre.
 
-### 8.3 Añadir manualmente
+### 9.3 Añadir manualmente
 
 Si un título no aparece en el catálogo, usa el enlace
 **«¿No la encuentras? Añadir manualmente»** que aparece al final de los
@@ -504,7 +797,7 @@ resultados de catálogo del buscador. Rellena:
 Los títulos añadidos manualmente no tienen datos automáticos (fechas de
 episodios, sinopsis...), pero se comportan igual que el resto en tu lista.
 
-## 9. Organizar y ordenar tu registro
+## 10. Organizar y ordenar tu registro
 
 En la barra de cada biblioteca tienes:
 
@@ -539,7 +832,7 @@ Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
 en rojo con el texto tachado.
 
-## 10. La ficha de cada película, serie, libro o videojuego
+## 11. La ficha de cada película, serie, libro o videojuego
 
 Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
 verás:
@@ -577,7 +870,7 @@ tus notas de episodios** (ver sección 11).
 En los videojuegos, la ficha incluye además el **historial de sesiones de
 juego** (más en [sección 7.4](#74-historial-de-sesiones)).
 
-## 11. Valoraciones con estrellas
+## 12. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**:
 
@@ -609,9 +902,9 @@ solo mientras la ventana está abierta.
 En tu lista, cada título muestra tus estrellas (★) y la nota de la
 comunidad.
 
-## 12. Acciones rápidas
+## 13. Acciones rápidas
 
-### 12.1 El botón grande de cada fila
+### 13.1 El botón grande de cada fila
 
 En la vista de **lista**, cada título tiene un botón grande con la acción
 más probable:
@@ -622,7 +915,7 @@ más probable:
 - **Libro**: «Empezar ✓», «Terminar ✓» o «Releer ↺».
 - **Videojuego**: «Empezar ✓», «Terminar ✓» o «Rejugar ↺».
 
-### 12.2 Deslizar en el móvil
+### 13.2 Deslizar en el móvil
 
 En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
@@ -634,7 +927,7 @@ cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
 series en pausa o abandonadas no funciona: la web te avisa de que la
 abras para retomarla.
 
-### 12.3 Deshacer un borrado
+### 13.3 Deshacer un borrado
 
 Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
 instante: aparece el aviso ««Título» se eliminará…» con un botón
@@ -642,7 +935,7 @@ instante: aparece el aviso ««Título» se eliminará…» con un botón
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
 
-## 13. Notificaciones
+## 14. Notificaciones
 
 El **icono de campana** de la cabecera te avisa (solo dentro de la web, una vez al
 día) de:
@@ -665,7 +958,7 @@ avisos aparecen también como **notificación del sistema** (en la pantalla
 del teléfono o en el escritorio) cuando la web está abierta pero no la
 estás mirando.
 
-## 14. Tu perfil
+## 15. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
 elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
@@ -673,10 +966,14 @@ o Ajustes**. Cada opción del menú lleva su icono. Desde el mismo menú
 también puedes **cerrar sesión**.
 El botón muestra únicamente tu foto, sin tu nombre, en cualquier
 dispositivo (móvil, tablet u ordenador).
-En la cabecera del perfil, la flecha de la izquierda te devuelve a la última pestaña de Ocio (Series, Películas, Libros o Videojuegos) que tenías abierta.
+En tu perfil **no aparece la cabecera global** (barra lateral,
+búsqueda y botón de perfil): arriba tienes la **flecha de volver** y
+las pestañas de tu perfil en la misma fila. La flecha te devuelve a la
+sección **Ocio** o **Recetas** desde la que entraste al perfil, con la
+pestaña que tenías activa.
 Tu perfil tiene cuatro secciones:
 
-### 14.0 Compartir direcciones de tu perfil
+### 15.0 Compartir direcciones de tu perfil
 
 Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
 cada sección del perfil tiene su propia dirección web, que termina en
@@ -696,7 +993,7 @@ Entrar con una dirección de perfil sin sesión iniciada abre primero la
 pantalla de entrada; al iniciar sesión, la web te lleva a la sección
 que pedías.
 
-### 14.1 Estadísticas
+### 15.1 Estadísticas
 
 Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
 Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
@@ -718,7 +1015,7 @@ Debajo hay cinco gráficas:
 - **Géneros**: los 6 géneros más jugados en el periodo.
 - **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
-### 14.2 Amigos
+### 15.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
@@ -740,7 +1037,7 @@ vuelves a la lista de amigos y entras de nuevo en un amigo, se
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
 sus valoraciones episodio a episodio ni sus historiales completos.
 
-### 14.3 Actividad
+### 15.3 Actividad
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
@@ -749,11 +1046,11 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 14.4 Ajustes
+### 15.4 Ajustes
 
 Se explica completo en la [sección 15](#15-ajustes).
 
-## 15. Ajustes
+## 16. Ajustes
 
 Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
@@ -772,21 +1069,24 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   Tu elección se guarda automáticamente y se mantiene la próxima vez
   que entres.
 - **Secciones y pestañas**: elige qué secciones y pestañas de la web
-  ves. Hoy hay una sola sección, **«Ocio»**, con sus cuatro pestañas
-  (**Series**, **Películas**, **Libros** y **Videojuegos**); en el
-  futuro se añadirán más secciones y aparecerán aquí con sus pestañas.
-  Al **ocultar una pestaña**, desaparece de la barra de pestañas y de
-  la vista: tus datos, avisos y actualizaciones siguen funcionando
-  igual, solo deja de verse. Al **ocultar una sección**, desaparece de
-  la barra lateral de navegación; si solo dejas **una sección
-  visible**, la barra lateral (☰) se sustituye por un botón
-  **engranaje ⚙** en la cabecera que abre Ajustes directamente, y
-  vuelve a aparecer cuando tengas más de una sección visible. Siempre
-  queda al menos una sección y una pestaña de cada sección visible: el
-  interruptor de la última que quedaría se muestra apagado (gris) y no
-  se puede tocar, con una nota explicativa. Ocultar algo **no borra
-  tus datos**: solo lo quita de la vista, y puedes volver a mostrarlo
-  cuando quieras. Los cambios se guardan solos.
+  ves. Hoy hay dos secciones: **«Ocio»**, con sus cuatro pestañas
+  (**Series**, **Películas**, **Libros** y **Videojuegos**), y
+  **«Recetas»**, con sus cuatro pestañas (**Recetas**, **Ingredientes**,
+  **Menú** y **Compra**). En el futuro se añadirán más
+  secciones y aparecerán aquí con sus pestañas. Al **ocultar una pestaña**,
+  desaparece de la barra de pestañas de su sección (la de Ocio o la
+  de Recetas) y de la vista: tus datos, avisos y actualizaciones
+  siguen funcionando igual, solo deja de verse. Al **ocultar una
+  sección**, desaparece de la barra lateral de navegación; si solo
+  dejas **una sección visible**, la barra lateral (☰) se sustituye
+  por un botón **engranaje ⚙** en la cabecera que abre Ajustes
+  directamente, y vuelve a aparecer cuando tengas más de una sección
+  visible. Siempre queda al menos una sección y una pestaña de cada
+  sección visible: el interruptor de la última que quedaría se muestra
+  apagado (gris) y no se puede tocar, con una nota explicativa.
+  Ocultar algo **no borra tus datos**: solo lo quita de la vista, y
+  puedes volver a mostrarlo cuando quieras. Los cambios se guardan
+  solos.
 - **Notificaciones**: activa o desactiva cada tipo de aviso:
   - Estrenos de películas
   - Nuevos episodios de series
@@ -821,7 +1121,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     Calendar, Apple Calendar o similar y tener todos los estrenos en tu
     agenda.
 
-## 16. ¿Cuándo se actualizan los datos?
+## 17. ¿Cuándo se actualizan los datos?
 
 - **Una vez al día**, al abrir la web, se comprueba automáticamente si ha
   pasado algo: estrenos de tus películas y series pendientes, episodios
@@ -848,7 +1148,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   problemas de conexión. Reintentando…» mientras lo hace; normalmente
   no tienes que hacer nada.
 
-## 17. Privacidad
+## 18. Privacidad
 
 - **Tu registro es tuyo**: solo tú puedes editar tus películas, series,
   libros, videojuegos y notas.
@@ -860,7 +1160,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Los ajustes de notificaciones se guardan en tu dispositivo y también en
   tu cuenta.
 
-## 18. Instalar la web en tu teléfono
+## 19. Instalar la web en tu teléfono
 
 Mi Registro funciona como una web normal, pero también se puede **instalar**
 para que se comporte como una aplicación:
@@ -874,7 +1174,7 @@ Una vez instalada, tendrás su icono en tu pantalla. La web funciona
 aunque estés sin conexión para **ver lo que ya está cargado**; las
 anotaciones y cambios necesitan conexión a internet.
 
-## 19. Problemas frecuentes
+## 20. Problemas frecuentes
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien

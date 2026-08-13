@@ -1,0 +1,34 @@
+{
+  "title": "Mejora de visualización pestaña de ingredientes",
+  "description": "La pestaña de ingredientes debe tener una estética más similar a las pestañas de la sección de ocio. Arriba un botón para añadir ingredientes nuevos junto a un desplegable para filtrar por categorías (se deben poder seleccionar varios y todos por defecto) y otro desplegable para ordenar. Al mostrarlos, dividirlos por categorías. Las tarjetas de cada ingrediente deben mostrar el nombre nada más. Al pulsar sobre ellas se muestra una ventana con la información ampliada.\n\nNota del flujo: la base de trabajo es la rama content/issue-64-seccion-recetas; se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).\n\nIteración (2026-08-11, comentario de gonzalitojh): el filtro se coloreaba y aplicaba al cerrar el panel; ahora la marca visual (is-checked) y la aplicación del filtro son en vivo, a medida que se selecciona. Fix en js/recipes.js (syncIngredientFilterItems), manual §8.5 y ADR-082 actualizados.",
+  "status": "review",
+  "acceptance criteria": [
+    "La pestaña de ingredientes tiene una barra superior estilo ocio: botón para añadir ingrediente nuevo, desplegable de filtro por categorías (multiselección, todas seleccionadas por defecto) y desplegable de ordenación.",
+    "El catálogo se muestra dividido por categorías.",
+    "Cada ingrediente se muestra como tarjeta con únicamente el nombre.",
+    "Al pulsar una tarjeta se abre una ventana (modal) con la información ampliada del ingrediente.",
+    "Se mantiene la funcionalidad existente: asignar categoría a un ingrediente y ver en qué recetas se usa (accesible desde la ventana ampliada).",
+    "El nuevo botón permite añadir ingredientes al catálogo de forma manual.",
+    "La vista se ve correctamente en móvil (~360px), tablet (~768px) y escritorio (~1280px) sin scroll horizontal.",
+    "El cambio se verifica en los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro).",
+    "Manual de usuario actualizado con el nuevo comportamiento de la pestaña."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA superada (criterios de aceptación y casos borde).",
+    "Escaneo de seguridad PASS.",
+    "ADR creado con 'Related issue: #218'.",
+    "PR creada contra la rama content/issue-64-seccion-recetas (sin keyword de cierre en el body), con task file actualizado (status review + bloque pr) y issue en status: needs-review."
+  ],
+  "issue": {
+    "number": 218,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/218",
+    "title": "Mejora de visualización pestaña de ingredientes"
+  },
+  "pr": {
+    "number": 219,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/219",
+    "base": "content/issue-64-seccion-recetas"
+  }
+}

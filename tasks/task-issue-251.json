@@ -1,0 +1,38 @@
+{
+  "title": "Unidad de medida en recetas como desplegable (g, Kg, mL, L, Unidades)",
+  "description": "La issue #251 pide que, al editar o crear una receta, la unidad de medida de los ingredientes sea un desplegable con las opciones g, Kg, mL, L y Unidades (en lugar del input de texto libre actual, .ing-unidad del formulario de receta). El patrón ya existe en la app: SHOPPING_UNITS en js/recipes-data.js (g, Kg, mL, L, Unidades), usado por el formulario de ítem extra y el modal de añadir a la compra (issue #249, ADR-091).\n\nNota del flujo (misma excepción que ADR-083/085/087/088/089/090/091): la base de trabajo es la rama `content/issue-64-seccion-recetas`; la rama de trabajo se crea desde ahí y la PR va TAMBIÉN a `content/issue-64-seccion-recetas`, no a dev (pedido explícitamente en la issue).",
+  "status": "review",
+  "acceptance criteria": [
+    "Al crear o editar una receta, la unidad de medida de cada ingrediente es un desplegable (select) con las opciones g, Kg, mL, L y Unidades.",
+    "Las unidades ya guardadas en recetas existentes se conservan: si la unidad guardada no está entre las cinco opciones estándar (dato legado de texto libre), se muestra como opción extra seleccionada para no perderla al editar.",
+    "El valor se sigue normalizando con normalizeUnit al guardar (lectura/persistencia sin cambios).",
+    "Fila de ingrediente nueva (sin unidad guardada): el desplegable no fuerza una unidad; permite dejarla sin especificar (opción vacía «—», patrón de PACKAGE_UNITS).",
+    "El select es coherente visualmente con el resto de campos del formulario en los cuatro modos de tema (contraste AA, overrides agrupados de familia clara y negro puro).",
+    "Responsivo: sin scroll horizontal en 360 / 768 / 1280 px.",
+    "Manual de usuario §8.1 actualizado (la unidad se elige en un desplegable).",
+    "ADR documentado con 'Related issue: #251' y bump PWA 20260924 → 20260925."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación en rama creada desde content/issue-64-seccion-recetas.",
+    "Validación QA superada (criterios de aceptación, responsividad 360/768/1280, cuatro modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR escrito (formato estándar, Related issue: #251).",
+    "PR contra content/issue-64-seccion-recetas SIN keyword de cierre (la issue se cierra al fusionar en dev vía issues-done-on-dev.yml, pero aquí la PR va a la rama de sección; igualmente sin keyword).",
+    "Task file actualizado (status review + bloque pr) subido a la rama.",
+    "Issue #251 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 251,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/251",
+    "title": "Unidad de medida en recetas"
+  },
+  "pr": {
+    "number": 252,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/252",
+    "title": "[content] Unidad de medida de los ingredientes de receta como desplegable (g, Kg, mL, L, Unidades) (issue #251)",
+    "branch": "content/issue-251-unidad-medida-recetas",
+    "commit": "cec8200",
+    "closes": "#251"
+  }
+}

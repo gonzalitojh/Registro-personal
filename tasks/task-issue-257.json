@@ -1,0 +1,34 @@
+{
+  "title": "Comentarios workflows publicados por github-actions[bot] (extensión de la issue #245)",
+  "description": "Todos los comentarios que hagan los workflows sobre las issues o PR, así como cualquier issue o PR que creen, deben hacerlo desde el usuario de GitHub Actions (github-actions[bot]) en lugar del usuario propietario. En la issue #245 (PR #247) se corrigió SOLO para los comentarios de fallo del paso de relanzamiento/cola de auto-resolve-issues; esto debe aplicar a todo, mensajes de explicación incluidos. Root cause: el job `resolve` de .github/workflows/auto-resolve-issues.yml define GH_TOKEN=${{ secrets.WORKFLOW_GIT_TOKEN }} (PAT del propietario) a nivel de job, así que TODAS las operaciones gh de la sesión SDD (creación de la PR por el publisher, gh pr edit/comment en iteraciones, comentarios en issues, sync de labels) aparecen firmadas por el propietario. Además, los comentarios de issues publicados con el PAT del propietario NO son excluidos por el filtro github.actor != 'github-actions[bot]' del trigger issue_comment, con lo que pueden re-disparar el workflow (sesiones duplicadas).",
+  "status": "review",
+  "acceptance criteria": [
+    "AC1: Las PRs creadas por el publisher (gh pr create) se publican con el token automático del runner → autor github-actions[bot].",
+    "AC2: Los comentarios de la sesión sobre issues/PRs (gh pr comment, gh pr edit, gh issue comment) se publican con autor github-actions[bot].",
+    "AC3: El sync de labels de la sesión (scripts/gh-issue.sh set-state/set-type) funciona igual con el token automático (issues: write).",
+    "AC4: El resto de pasos del workflow (relanzamiento con gh workflow run, disparo de deploy-all-branches, set-state de los pasos de workflow) sigue usando el PAT del job, documentado por qué.",
+    "AC5: Documentación actualizada: comentarios en el YAML, README sección 6 y ADR con 'Related issue: #257'."
+  ],
+  "definition of done": [
+    "Planning realizado (plan documentado).",
+    "Implementación: override de GH_TOKEN con el token automático (${{ github.token }}) en el paso 'Sesión OpenCode' de auto-resolve-issues.yml.",
+    "Validación: criterios de aceptación verificados (QA).",
+    "Seguridad: escaneo security-champion sin hallazgos HIGH.",
+    "Documentación: ADR nuevo con 'Related issue: #257' + README sección 6 actualizado.",
+    "Publishing: PR contra dev SIN keyword de cierre; task file en estado 'review' con bloque pr; issue en status: needs-review.",
+    "Issue #257 label updated to its final state."
+  ],
+  "issue": {
+    "number": 257,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/257",
+    "title": "Comentarios workflows."
+  },
+  "pr": {
+    "number": 259,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/259",
+    "title": "fix: la sesión SDD publica PRs/comentarios/labels como github-actions[bot] (issue #257)",
+    "branch": "fix/issue-257-comentarios-github-actions",
+    "commit": "c2ee800",
+    "closes": "#257"
+  }
+}
