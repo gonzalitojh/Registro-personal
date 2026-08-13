@@ -523,29 +523,30 @@ function renderWorkoutEditor() {
   bindWorkoutEditorHandlers(content);
 }
 
-// Series de la última vez que se trabajó un ejercicio (#265): recorre
-// workouts (ya ordenados por fechaISO desc desde db.js) y devuelve
-// una copia {pesoKg, reps} de la ocurrencia más reciente con series,
-// o null. Prioridad estricta del match por ejercicioId (canónico):
-// solo si no hay ningún entreno con una entrada canónica de ese
-// ejercicio se usa el fallback por nombre snapshot normalizado para
-// datos antiguos sin id (legacy «Otro…»).
-function lastWorkoutSeriesForExercise(exerciseId, nombre) {
+// Última ocurrencia de un ejercicio (#265, #270): recorre workouts (ya
+// ordenados por fechaISO desc desde db.js) y devuelve la ocurrencia
+// más reciente con series como {fechaISO, series} — copia {pesoKg,
+// reps} — o null. Match canónico por ejercicioId con prioridad
+// estricta; solo si no hay ninguna entrada canónica se usa el fallback
+// por nombre snapshot normalizado (legacy sin id).
+function lastWorkoutForExercise(exerciseId, nombre) {
   const norm = (s) => String(s || "").trim().toLowerCase();
   const nameNorm = norm(nombre);
-  let legacy = null;
+  let legacy = null; // { w, ex } de la primera entrada legacy con series
   for (const w of workouts) {
     for (const ex of w.ejercicios || []) {
       if (!(ex.series || []).length) continue;
       if (exerciseId && ex.ejercicioId === exerciseId) {
-        return ex.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 }));
+        return { fechaISO: w.fechaISO, series: ex.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 })) };
       }
       if (legacy === null && !ex.ejercicioId && nameNorm && norm(ex.nombre) === nameNorm) {
-        legacy = ex;
+        legacy = { w, ex };
       }
     }
   }
-  return legacy ? legacy.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 })) : null;
+  return legacy
+    ? { fechaISO: legacy.w.fechaISO, series: legacy.ex.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 })) }
+    : null;
 }
 
 // Pre-relleno (#265): solo si el bloque aún no tiene series (no pisa
@@ -559,9 +560,9 @@ function maybePrefillSeriesFromLastWorkout(select) {
   const entry = workoutDraft.ejercicios[idx];
   const exerciseId = select.value || null;
   if (!exerciseId || !entry || entry.series.length) return;
-  const prev = lastWorkoutSeriesForExercise(exerciseId, entry.nombre);
+  const prev = lastWorkoutForExercise(exerciseId, entry.nombre);
   if (!prev) return;
-  workoutDraft.ejercicios[idx].series = prev;
+  workoutDraft.ejercicios[idx].series = prev.series;
   renderWorkoutEditor();
   document.querySelector(`[data-gym-ex-idx="${idx}"]`)
     ?.querySelector("[data-gym-ex-select]")?.focus();
@@ -904,9 +905,25 @@ function closeExerciseModal() {
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
 }
 
-// Vista de solo lectura del ejercicio: nombre, grupo muscular y
-// notas; acciones Editar/Eliminar.
+// Vista de solo lectura del ejercicio: nombre, grupo muscular, notas
+// y sección «Última vez» (#270) con la fecha y las series del entreno
+// más reciente donde se trabajó; acciones Editar/Eliminar.
 function exerciseDetailHtml(ex) {
+  const last = lastWorkoutForExercise(ex.id, ex.nombre);
+  const lastSection = last
+    ? `<div class="gym-form__field">
+        <span class="gym-modal__label">Última vez</span>
+        <p class="gym-modal__text">${escapeHtml(ctx.formatDateEs(last.fechaISO) || last.fechaISO || "")}</p>
+        <div class="gym-series-table">
+          ${last.series.map((s) => `
+            <div class="gym-series-row">
+              <span>${s.pesoKg != null ? escapeHtml(String(kgToDisplay(s.pesoKg))) : ""} ${escapeHtml(unitLabel())}</span>
+              <span>${s.reps != null ? escapeHtml(String(s.reps)) : ""} reps</span>
+              <span></span>
+            </div>`).join("")}
+        </div>
+      </div>`
+    : "";
   return `<div class="gym-modal__view">
     <h3 class="gym-modal__title">${escapeHtml(ex.nombre)}</h3>
     <div class="gym-form__field">
@@ -919,6 +936,7 @@ function exerciseDetailHtml(ex) {
       <span class="gym-modal__label">Notas</span>
       <p class="gym-modal__text">${ex.notas ? escapeHtml(ex.notas) : "Sin notas."}</p>
     </div>
+    ${lastSection}
     <div class="gym-modal__actions">
       <button type="button" class="btn btn--small btn--danger" data-gym-ex-delete>Eliminar</button>
       <button type="button" class="btn btn--small" data-gym-ex-edit>✏️ Editar</button>
