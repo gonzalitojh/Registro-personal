@@ -240,7 +240,7 @@ function renderMenuGrid(menu) {
 
   // Botones «+ Receta»: abren el buscador de recetas (issue #242).
   grid.querySelectorAll(".menu-meal__add").forEach((btn) => {
-    btn.addEventListener("click", () => openRecipePicker({ mode: "meal", day: btn.dataset.day, meal: btn.dataset.meal }));
+    btn.addEventListener("click", () => openRecipePicker(btn.dataset.day, btn.dataset.meal));
   });
 
   // Quitar receta de una comida (y de la exclusión si estaba).
@@ -268,7 +268,6 @@ function mealEntryOf(entry) {
 // ventana de la pestaña Recetas); «Añadir» permite elegir los
 // comensales de esa receta (vacío = heredar el global del menú).
 
-let pickerMode = null; // "meal" | "week"
 let pickerDay = null;
 let pickerMeal = null;
 let pickerQuery = "";
@@ -276,7 +275,12 @@ let pickerQuery = "";
 // marcadas por defecto (patrón de la pestaña Recetas, issue #234).
 let pickerAlergenoFilter = new Set();
 let pickerTipoFilter = new Set();
-let pickerFilterTouched = false;
+// Limpieza del trap de foco del modal del buscador.
+let pickerCleanup = null;
+// Los listeners de documento (Escape y cierre de paneles al hacer
+// click fuera) se enlazan una sola vez: el modal se re-renderiza en
+// cada apertura y de otro modo se acumularían.
+let pickerDocEventsBound = false;
 
 // Ids de todas las etiquetas visibles en el panel del buscador
 // (predefinidas + propias del usuario).
@@ -301,17 +305,13 @@ function pickerFilterLabel(scope) {
   return `${n} ${n === 1 ? word : word + "s"}`;
 }
 
-// Apertura del buscador. `target`: { mode: "meal", day, meal } para
-// una comida de la rejilla o { mode: "week" } para «recetas a la
-// semana» (sin selección de comensales: no escalan).
-function openRecipePicker({ mode, day = null, meal = null }) {
-  pickerMode = mode;
+// Apertura del buscador para una comida (día × comida de la rejilla).
+function openRecipePicker(day, meal) {
   pickerDay = day;
   pickerMeal = meal;
   pickerQuery = "";
   pickerAlergenoFilter = new Set(pickerTagIds("alergeno"));
   pickerTipoFilter = new Set(pickerTagIds("tipo"));
-  pickerFilterTouched = false;
 
   const modal = document.getElementById("recipe-picker-modal");
   if (!modal) return;
@@ -350,9 +350,7 @@ function restoreRecipePicker() {
 
 function renderRecipePicker() {
   const content = document.getElementById("recipe-picker-content");
-  const targetLabel = pickerMode === "meal"
-    ? `${DAY_LABELS[pickerDay]} · ${MEAL_LABELS[pickerMeal]}`
-    : "la semana";
+  const targetLabel = `${DAY_LABELS[pickerDay]} · ${MEAL_LABELS[pickerMeal]}`;
   content.innerHTML = `
     <div class="recipe-pick">
       <h3 class="recipe-pick__title">Añadir receta a ${escapeHtml(targetLabel)}</h3>
@@ -393,12 +391,7 @@ function bindRecipePickerEvents(content) {
   const modal = document.getElementById("recipe-picker-modal");
   document.getElementById("recipe-picker-close").addEventListener("click", closeRecipePicker);
   document.getElementById("recipe-picker-backdrop").addEventListener("click", closeRecipePicker);
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
-      e.preventDefault();
-      closeRecipePicker();
-    }
-  });
+  ensureRecipePickerDocEvents();
 
   // Búsqueda en vivo.
   content.querySelector("#recipe-pick-search").addEventListener("input", (e) => {
@@ -424,7 +417,6 @@ function bindRecipePickerEvents(content) {
     panel.addEventListener("change", (e) => {
       const input = e.target.closest("input[type='checkbox']");
       if (!input) return;
-      pickerFilterTouched = true;
       const active = scope === "alergeno" ? pickerAlergenoFilter : pickerTipoFilter;
       if (input.value === "__all__") {
         if (input.checked) {
@@ -443,18 +435,6 @@ function bindRecipePickerEvents(content) {
     });
   });
 
-  // Click fuera del panel: cerrar.
-  document.addEventListener("click", (e) => {
-    ["alergeno", "tipo"].forEach((scope) => {
-      const wrap = content.querySelector(`#recipe-pick-${scope}-filter`);
-      const panel = content.querySelector(`#recipe-pick-${scope}-panel`);
-      if (wrap && panel && !wrap.contains(e.target) && !panel.classList.contains("hidden")) {
-        panel.classList.add("hidden");
-        content.querySelector(`#btn-recipe-pick-${scope}`).setAttribute("aria-expanded", "false");
-      }
-    });
-  });
-
   // Lista de tarjetas: delegación (ver receta en lectura / añadir).
   const list = content.querySelector("#recipe-pick-list");
   list.addEventListener("click", (e) => {
@@ -468,11 +448,8 @@ function bindRecipePickerEvents(content) {
     }
     const addBtn = e.target.closest("[data-pick-add]");
     if (addBtn) {
-      if (pickerMode === "week") {
-        addWeeklyRecipeById(addBtn.dataset.pickAdd);
-        return;
-      }
       expandComensalesRow(list, addBtn);
+      return;
     }
     const confirmBtn = e.target.closest("[data-pick-confirm]");
     if (confirmBtn) {
@@ -490,9 +467,21 @@ function bindRecipePickerEvents(content) {
       collapseComensalesRow(card);
     }
   });
-  // Soporte de teclado: Enter en una tarjeta abre la lectura.
+  // Soporte de teclado: Enter en una tarjeta abre la lectura; Enter en
+  // el número de comensales confirma el alta de la receta.
   list.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " ") return;
+    if (e.target.matches(".recipe-pick__comensales input")) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const card = e.target.closest("[data-pick-card]");
+      if (!card) return;
+      const input = card.querySelector(".recipe-pick__comensales input");
+      const raw = Number(input?.value);
+      const comensales = input && input.value !== "" && Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : null;
+      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
+      return;
+    }
     const card = e.target.closest("[data-pick-card]");
     if (!card) return;
     e.preventDefault();
@@ -500,6 +489,33 @@ function bindRecipePickerEvents(content) {
     if (!recipe) return;
     closeRecipePicker();
     openRecipeModal(recipe, { readOnly: true, onClose: restoreRecipePicker });
+  });
+}
+
+// Listeners globales del buscador (Escape y cierre de paneles con
+// click fuera): se enlazan una vez al abrir por primera vez y se
+// resuelven los elementos del render actual en el momento del evento.
+function ensureRecipePickerDocEvents() {
+  if (pickerDocEventsBound) return;
+  pickerDocEventsBound = true;
+  const modal = document.getElementById("recipe-picker-modal");
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      e.preventDefault();
+      closeRecipePicker();
+    }
+  });
+  document.addEventListener("click", (e) => {
+    const content = document.getElementById("recipe-picker-content");
+    if (!content) return;
+    ["alergeno", "tipo"].forEach((scope) => {
+      const wrap = content.querySelector(`#recipe-pick-${scope}-filter`);
+      const panel = content.querySelector(`#recipe-pick-${scope}-panel`);
+      if (wrap && panel && !wrap.contains(e.target) && !panel.classList.contains("hidden")) {
+        panel.classList.add("hidden");
+        content.querySelector(`#btn-recipe-pick-${scope}`).setAttribute("aria-expanded", "false");
+      }
+    });
   });
 }
 
@@ -551,9 +567,7 @@ function renderRecipePickerList() {
   if (!list) return;
   const menu = activeMenu();
   const existing = new Set(
-    pickerMode === "meal"
-      ? (menu.dias?.[pickerDay]?.[pickerMeal] || []).map((e) => (typeof e === "string" ? e : e.recipeId))
-      : (menu.recetasPorSemana || []).map((e) => e.recipeId)
+    (menu.dias?.[pickerDay]?.[pickerMeal] || []).map((e) => (typeof e === "string" ? e : e.recipeId))
   );
   const candidates = getRecipes().filter((r) => {
     if (existing.has(r.id)) return false;
@@ -613,8 +627,9 @@ function tagLabelInMenu(scope, id) {
   return custom ? custom.nombre || custom.id : id;
 }
 
-// Fila de comensales de la tarjeta: un número opcional. Vacío (o 0)
-// → la receta hereda los comensales globales del menú.
+// Fila de comensales de la tarjeta: un número opcional más los
+// botones «Añadir» (confirma el alta) y «Cancelar». Vacío (o 0) → la
+// receta hereda los comensales globales del menú.
 function expandComensalesRow(list, addBtn) {
   const card = addBtn.closest("[data-pick-card]");
   if (!card) return;
@@ -623,6 +638,8 @@ function expandComensalesRow(list, addBtn) {
       <label for="pick-com-${card.dataset.pickCard}">Comensales</label>
       <input type="number" id="pick-com-${card.dataset.pickCard}" min="1" max="99" inputmode="numeric"
         placeholder="Menú (${global})" aria-label="Comensales de esta receta (vacío = los del menú)" />
+      <button type="button" class="btn btn--small btn--primary recipe-pick__confirm" data-pick-confirm>Añadir</button>
+      <button type="button" class="btn btn--small recipe-pick__cancel" data-pick-cancel>Cancelar</button>
     </span>`);
   addBtn.hidden = true;
   card.querySelector(".recipe-pick__comensales input").focus();
@@ -635,7 +652,8 @@ function collapseComensalesRow(card) {
 }
 
 // Añade la receta a la comida con sus comensales propios (o null si
-// no se indicó → hereda el global del menú).
+// no se indicó → hereda el global del menú). Utilizada también como
+// confirmación de la fila de comensales del buscador.
 async function addRecipeToMeal(day, meal, recipeId, comensales = null) {
   const current = activeMenu();
   const entries = (current.dias[day][meal] || []).map(mealEntryOf).map((e) => e.recipe);
@@ -790,7 +808,9 @@ export async function updateMenuExtras(itemsExtra) {
   await updateActiveMenu({ itemsExtra });
 }
 
-// Limpia referencias a una receta borrada en los menús existentes.
+// Limpia referencias a una receta borrada en los menús existentes
+// (entradas string antiguas y objetos { recipeId, comensales } de la
+// issue #242, a través de mealEntryOf).
 export async function cleanupDeletedRecipe(recipeId) {
   for (const menu of menus) {
     const data = menuDataOf(menu);
@@ -798,9 +818,9 @@ export async function cleanupDeletedRecipe(recipeId) {
     let dias = data.dias;
     DAY_KEYS.forEach((day) => {
       MEAL_KEYS.forEach((meal) => {
-        const ids = (dias[day]?.[meal] || []).filter((id) => id !== recipeId);
-        if (ids.length !== (dias[day]?.[meal] || []).length) {
-          dias = { ...dias, [day]: { ...dias[day], [meal]: ids } };
+        const entries = (dias[day]?.[meal] || []).filter((e) => mealEntryOf(e).recipe !== recipeId);
+        if (entries.length !== (dias[day]?.[meal] || []).length) {
+          dias = { ...dias, [day]: { ...dias[day], [meal]: entries } };
           changed = true;
         }
       });
