@@ -36,6 +36,14 @@ import {
   addMenu,
   updateMenu,
   deleteMenu,
+  subscribeToGymWorkouts,
+  addGymWorkout,
+  updateGymWorkout,
+  deleteGymWorkout,
+  subscribeToGymExercises,
+  addGymExercise,
+  updateGymExercise,
+  deleteGymExercise,
 } from "./db.js";
 import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails } from "./api-movies.js";
 import { getOpenLibraryDescription } from "./api-books.js";
@@ -61,6 +69,7 @@ import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js
 import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.js";
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
+import { setupGym, subscribeGymData, resetGymData } from "./gym.js";
 
 // ---------- Estado ----------
 
@@ -69,6 +78,7 @@ let unsubscribeItems = { movies: null, tv: null, books: null, games: null };
 let unsubscribeNotifications = null;
 let unsubscribeRecipes = null; // recetas (recipes.js)
 let unsubscribeMenuData = null; // menús (menu.js)
+let unsubscribeGymData = null; // gimnasio (gym.js)
 const allItems = { movies: [], tv: [], books: [], games: [] };
 let notifications = [];
 
@@ -137,6 +147,14 @@ function createCtx() {
     addMenu,
     updateMenu,
     deleteMenu,
+    subscribeToGymWorkouts,
+    addGymWorkout,
+    updateGymWorkout,
+    deleteGymWorkout,
+    subscribeToGymExercises,
+    addGymExercise,
+    updateGymExercise,
+    deleteGymExercise,
     todayISO,
     formatDateEs,
     setTheme,
@@ -202,6 +220,8 @@ function stopAllSubscriptions() {
   unsubscribeRecipes = null;
   if (unsubscribeMenuData) unsubscribeMenuData();
   unsubscribeMenuData = null;
+  if (unsubscribeGymData) unsubscribeGymData();
+  unsubscribeGymData = null;
 }
 
 // ---------- Suscripciones a Firestore (lazy, issue #178) ----------
@@ -379,8 +399,10 @@ async function init() {
   // comportamiento clásico (activar pestaña, mover foco al título)
   // y además sincroniza la URL; las activaciones que vienen del
   // router (carga directa, recarga, atrás/adelante) nunca roban
-  // el foco.
-  const tabs = document.querySelectorAll(".tab");
+  // el foco. Solo se wirean las pestañas de datos Ocio (data-panel):
+  // las de Recetas y Gimnasio tienen su propio wiring (issues #64
+  // y #62) y su data-* propio.
+  const tabs = document.querySelectorAll(".tab[data-panel]");
   const panels = {
     "panel-movies": document.getElementById("panel-movies"),
     "panel-tv": document.getElementById("panel-tv"),
@@ -472,6 +494,16 @@ async function init() {
       const panelEl = document.getElementById(tab.panelId);
       if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Pestañas de Gimnasio (issue #62): mismo patrón que Recetas,
+    // con data-gym-tab. Los paneles los re-togglea openGym al abrir
+    // la sección (con normalizeTabKey), así que aquí solo se añade
+    // hidden (nunca se quita; issue #178).
+    Object.entries(SECTION_REGISTRY.gimnasio.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-gym-tab="${tabKey}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = document.getElementById(tab.panelId);
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
+    });
     // Si la pestaña activa quedó oculta, caer a la primera visible
     // (el mismo guard de activatePanel, issue #97): sin esto el área
     // de contenido quedaría en blanco al ocultar la pestaña activa.
@@ -497,6 +529,7 @@ async function init() {
   // login, watchAuthState llama a router.applyRoute() para retomarla.
   let profileApi = null;
   let recipesApi = null;
+  let gymApi = null;
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el
@@ -530,6 +563,7 @@ async function init() {
         // Ruta de perfil: abre la sección pedida (profile.js decide
         // el render y, si viene con uid, el detalle del amigo).
         document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("gym-view")?.classList.add("hidden");
         if (profileApi) {
           profileApi.openProfileSection(route.profileSection, ctx, {
             fromRouter: true,
@@ -541,6 +575,7 @@ async function init() {
         // pedida (#/recetas, #/recetas/menu, #/recetas/compra). Si la
         // pestaña está oculta en Ajustes, se normaliza a la primera
         // visible y se reescribe la URL (mismo guard que Ocio, #97).
+        document.getElementById("gym-view")?.classList.add("hidden");
         if (recipesApi) {
           const tab = normalizeTabKey("recetas", route.tab);
           if (tab !== route.tab) {
@@ -548,11 +583,28 @@ async function init() {
           }
           recipesApi.openRecipes({ tab, fromRouter: true });
         }
+      } else if (route.section === "gimnasio") {
+        // Ruta de Gimnasio (issue #62): abre la sección con la
+        // pestaña pedida (#/gimnasio, #/gimnasio/ejercicios). Mismo
+        // guard de normalización que Ocio/Recetas (#97): si la
+        // pestaña está oculta en Ajustes, se cae a la primera
+        // visible y se reescribe la URL. Sin sesión no se destapa
+        // nada: al entrar, watchAuthState llama a router.applyRoute().
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("recipes-view")?.classList.add("hidden");
+        if (gymApi) {
+          const tab = normalizeTabKey("gimnasio", route.tab);
+          if (tab !== route.tab) {
+            router.navigate({ section: "gimnasio", tab }, { replace: true });
+          }
+          gymApi.openGym({ tab, fromRouter: true });
+        }
       } else if (route.section === "ocio") {
         // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("gym-view")?.classList.add("hidden");
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
@@ -647,6 +699,11 @@ async function init() {
       resetRecipesData();
       resetMenuData();
       resetShoppingListState();
+      // Gimnasio (issue #62): mismo patrón, y además se oculta la
+      // vista si la sesión se cerró desde ella (quedaría sobre la
+      // pantalla de acceso).
+      resetGymData();
+      document.getElementById("gym-view")?.classList.add("hidden");
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya
@@ -685,6 +742,11 @@ async function init() {
     currentUser = user;
     ui.showApp(user);
 
+    // Gimnasio (issue #62): API de apertura para el router. setupGym
+    // es idempotente (solo wirea el DOM la primera vez), así que se
+    // puede llamar en cada login sin acumular listeners.
+    gymApi = setupGym({ ctx });
+
     // Si la carga inicial pedía una ruta de perfil (#/perfil/...) sin
     // sesión, el onRoute la ignoró (profileApi no existía aún). Al
     // entrar, la retomamos para abrir la sección que se solicitó.
@@ -694,6 +756,11 @@ async function init() {
     // Igual con la sección de Recetas (issue #64): si la recarga pedía
     // #/recetas/... y no había sesión, la retomamos al entrar.
     if (router.getCurrentSection() === "recetas") {
+      router.applyRoute();
+    }
+    // Y con Gimnasio (issue #62): si la recarga pedía #/gimnasio/...
+    // sin sesión, se abre la sección al entrar.
+    if (router.getCurrentSection() === "gimnasio") {
       router.applyRoute();
     }
 
@@ -772,6 +839,16 @@ async function init() {
       // Igual que recetas: el render lo hace menu.js; no-op.
       onChange: () => {},
       onError: () => ui.showToast("No se pudo cargar tu menú semanal."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
+
+    // Gimnasio (issue #62): suscripciones en tiempo real de entrenos
+    // y ejercicios, con el mismo reintento con backoff (issue #147).
+    // El render lo hace gym.js con cada snapshot; no-op.
+    unsubscribeGymData = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) => subscribeGymData(user.uid, onChange, onError),
+      onChange: () => {},
+      onError: () => ui.showToast("No se pudieron cargar tus datos de gimnasio."),
       onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
     });
   });
