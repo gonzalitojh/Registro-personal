@@ -246,4 +246,190 @@ necesaria); no se bloquea ninguna otra mejora de esta issue.
   superficie de ataque de Firestore). Manual de usuario actualizado
   (sección 8.4).
 
+## Iteración (2026-08-12): refinamientos de paquetes y de la eliminación
+
+Comentario nuevo del usuario en la issue #225 con cuatro peticiones:
+
+> 1. Si aparece el número de paquetes, no debería aparecer el peso.
+>    Tampoco la palabra «paquetes», simplemente el número.
+> 2. Para eliminar un ítem, añadir a la derecha del todo una X roja
+>    con la que eliminarlo (sobre todo desde PC).
+> 3. Al presionar sobre un item se marca en rojo como para eliminar y
+>    aparece «Eliminar» superponiéndose al peso. Esto no debería
+>    pasar, solo cuando se desplaza, no al pulsar, en cuyo caso
+>    estaría marcando el item, no eliminándolo.
+> 4. Cuando se desplaza el item para eliminarlo, hacer un pequeño
+>    desplazamiento extra para eliminarlo sin necesidad de pulsar
+>    sobre eliminar que se mostraría ahora.
+
+### Decisiones de la iteración
+
+1. **Paquetes: solo el número** — `qtyHtml` muestra únicamente la
+   cifra de paquetes (con `aria-label` «N paquetes» para lectores de
+   pantalla) y elimina el span `.shopping-line__detail` («· 550 g»):
+   ya no se ve el peso ni la palabra «paquetes». Se retira también su
+   CSS (`.shopping-line__detail` y sus overrides) y su referencia en
+   el estado `is-bought`.
+2. **✕ roja siempre visible a la derecha** — cada línea incluye un
+   botón `.shopping-line__remove` (✕) al final del contenido, con
+   área táctil de 1.75rem (≥ 24 px, WCAG 2.2 AA 2.5.8) y el rojo
+   claro `#d16a59` (AA sobre oscuro, patrón del ↺; en la familia
+   clara se oscurece a `--stamp`). Reutiliza el delegado de
+   `data-del-key` existente, así que elimina con el mismo flujo y
+   deshacer.
+3. **El hover ya no revela el estado de eliminar** — se elimina el
+   bloque `@media (hover: hover)` que desplazaba el contenido al
+   pasar el ratón (causa del «marcado en rojo» y del «Eliminar»
+   superpuesto al peso al pulsar). Ahora el hover solo marca la
+   línea (fondo suave `--paper-alpha-10`/`--ink-alpha-10`), igual
+   que antes se marcaba al pulsar. El teclado queda cubierto por la
+   ✕ (botón real, enfocable y activable).
+4. **Swipe con desplazamiento extra elimina directamente** — se
+   añade la constante `SWIPE_DELETE = -112` (24 px más allá del
+   revelado a -88): durante el arrastre el contenido puede llegar a
+   -112 y la clase `.is-deleting` oscurece el fondo rojo
+   (`filter: brightness(0.85)`) para comunicar el umbral; al soltar
+   con `offset <= SWIPE_DELETE` se elimina el ítem directamente (con
+   deshacer), sin botón que pulsar. El botón «Eliminar» del fondo del
+   swipe desaparece (`.shopping-line__del` → icono decorativo
+   `.shopping-line__swipe-icon` con `pointer-events: none`).
+5. **Manual y hint** — sección 8.4 del manual y el hint al pie de la
+   lista se actualizan: número de paquetes sin peso, ✕ de la derecha
+   y swipe con desplazamiento extra.
+6. **PWA**: bump de versión `20260914 → 20260915`.
+
+### Consecuencias de la iteración
+
+- **Positivas**: la cantidad con paquete queda limpia (solo el
+  número, sin duplicar peso); la ✕ roja da un camino de borrado
+  evidente y accesible en escritorio; el hover deja de sugerir un
+  borrado que no ocurre; el swipe gana el patrón estándar «desliza
+  hasta el fondo para borrar» con feedback visual del umbral.
+- **Neutras**: el borrado por swipe sigue pidiendo un gesto completo
+  (revelado + desplazamiento extra), lo que conserva la protección
+  frente a borrados accidentales de la decisión original; la
+  accesibilidad por teclado pasa del botón revelado al botón ✕
+  siempre visible.
+- **Negativas**: ninguna conocida. QA PASS: paquete muestra solo el
+  número y sin peso, ✕ elimina con deshacer, el hover no revela el
+  borrado (solo marca), el swipe con desplazamiento extra elimina al
+  soltar sin pulsar, los cuatro modos de tema con contraste WCAG AA
+  y responsividad en 360 / 768 / 1280 px sin scroll horizontal.
+  Seguridad PASS: sin hallazgos (cambios 100 % presentacionales y de
+  interacción; sin tocar datos).
+
+## Iteración 2 (2026-08-12): el scroll vertical no marca en rojo y la ✕ del swipe solo se ve al deslizar
+
+Comentario nuevo del usuario en la issue #225 con dos últimos
+detalles:
+
+> Cuando me voy desplazando (especialmente en el móvil) se va
+> marcando en rojo (aunque no se seleccione) el ítem sobre el que he
+> puesto el dedo para desplazarme. Corregir eso. Además, al
+> seleccionarse, la x que se muestra al desplazar se ve y se
+> superpone a la otra que hay. Esta x solo debe ser visible con el
+> desplazamiento, no antes de desplazarse.
+
+### Decisiones de la iteración 2
+
+1. **El scroll vertical nunca revela el fondo rojo** — el axis lock
+   (ADR-028) ya distinguía el eje, pero en `touchend` el cálculo del
+   `offset` final usaba la deriva horizontal (`deltaX`) aunque el
+   lock hubiera sido `vertical`: con una deriva de más de 44 px
+   durante un scroll de página, `snap(offset < SWIPE_OPEN/2)` dejaba
+   el ítem revelado (fondo rojo) al soltar el dedo — exactamente el
+   «marcado en rojo» que el usuario veía al desplazarse en el móvil.
+   Ahora:
+   - En `touchmove` el transform y las clases `is-revealed`/
+     `is-deleting` solo se aplican con `lock === "horizontal"` (antes
+     se aplicaban también mientras el lock estaba aún sin decidir).
+   - En `touchend`, con `lock === "vertical"` se hace `snap(false)`
+     (se cierra la línea si estaba revelada); con `lock === null`
+     (toque sin desplazamiento) no se toca el estado. Solo el gesto
+     decidido como horizontal puede revelar o borrar.
+2. **La ✕ del fondo rojo solo se ve durante el arrastre** — la ✕
+   blanca decorativa `.shopping-line__swipe-icon` pasaba de
+   `opacity: 0.9` permanente a `opacity: 0` con transición, visible
+   únicamente mientras la fila tiene la clase `.is-dragging` (activa
+   durante el gesto táctil). Así, al quedar la línea revelada solo
+   se ve la ✕ roja de eliminar (siempre visible) y no se superponen
+   dos ✕; la ✕ blanca es feedback del gesto en curso, no un segundo
+   botón (sigue con `pointer-events: none`, el borrado se dispara
+   con el desplazamiento extra o con la ✕ roja).
+3. **Manual y hint** — sección 8.4 del manual: se aclara que el
+   gesto debe ser horizontal (desplazar la lista arriba/abajo no
+   marca ninguna línea) y que la ✕ del fondo rojo solo se ve mientras
+   se desliza.
+4. **PWA**: bump de versión `20260915 → 20260916`.
+
+### Consecuencias de la iteración 2
+
+- **Positivas**: al hacer scroll en el móvil ninguna línea queda
+  marcada en rojo ni se revela accidentalmente (el gesto solo
+  reacciona a la deriva horizontal decidida por el axis lock); la
+  línea revelada muestra una única ✕ (la roja de eliminar), sin la
+  blanca decorativa superpuesta.
+- **Neutras**: la ✕ blanca ya no acompaña a la línea revelada en
+  reposo; el borrado por swipe y por ✕ roja conservan su
+  comportamiento.
+- **Negativas**: ninguna conocida. QA PASS: scroll vertical con
+  deriva horizontal no revela ni borra, el swipe horizontal sigue
+  revelando y borrando con el desplazamiento extra, la ✕ blanca solo
+  aparece durante el arrastre y la línea revelada muestra una sola ✕,
+  los cuatro modos de tema con contraste WCAG AA y responsividad en
+  360 / 768 / 1280 px sin scroll horizontal. Seguridad PASS: sin
+  hallazgos (cambios 100 % presentacionales y de interacción; sin
+  tocar datos).
+
+## Iteración 3 (2026-08-13): sin halo rojo en las esquinas de los ítems y marcado hover sin velo rojo
+
+Comentario nuevo del usuario en la issue #225 con un último detalle
+visual:
+
+> Los items de la lista, se ve ligeramente en rojo las esquinas
+> redondeadas de cada ítem.
+
+**Causa raíz:** `.shopping-line-wrap` tiene el fondo rojo del swipe
+(`--stamp`, y `--stamp-dark` en negro puro) con
+`border-radius: var(--radius)` (3 px) y `overflow: hidden`;
+`.shopping-line__content` ocupaba el wrap 1:1 con el **mismo**
+`border-radius: var(--radius)`. Dos radios idénticos apilados → el
+anti-aliasing de la esquina redondeada del contenido se fundía con el
+rojo de detrás → halo rojo subpixel en las esquinas redondeadas de
+cada ítem en reposo.
+
+### Decisiones de la iteración 3
+
+1. **Sin radio duplicado en el contenido** — `.shopping-line__content`
+   pierde `border-radius: var(--radius)`: las esquinas ya las recorta
+   el wrap (`overflow: hidden` + `border-radius`), así que el
+   redondeo visual se conserva y el halo rojo desaparece en los
+   cuatro modos.
+2. **Marcado hover sin velo rojo** — el hover pasaba de
+   `background: var(--paper-alpha-10)` (translúcido → dejaba ver el
+   rojo del swipe de detrás y teñía la línea, percibiéndose «como
+   para eliminar», el efecto que el usuario ya rechazó en la
+   iteración 1) a `box-shadow: inset 0 0 0 999px <alpha>`, que se
+   pinta ENCIMA del fondo base `--ink-raised` sin reemplazarlo:
+   mismo marcado neutro, sin transparentar el rojo. Aplicado en las
+   3 reglas: oscura (`--paper-alpha-10`), agrupada light/white
+   (`--ink-alpha-10`) y negro puro (`--paper-alpha-10`).
+3. **PWA**: bump de versión `20260916 → 20260917`.
+
+### Consecuencias de la iteración 3
+
+- **Positivas**: los ítems en reposo ya no muestran esquinas con halo
+  rojo y el hover marca la línea con un fundido neutro (nunca «rojo
+  de borrar»).
+- **Neutras**: ninguna — cambio 100 % presentacional, sin cambios de
+  comportamiento; el manual 8.4 ya describe correctamente que solo el
+  gesto horizontal revela el rojo.
+- **Negativas**: ninguna conocida. QA PASS (qa-reviewer): los 4 modos
+  de tema con contraste WCAG AA (los alfas son los mismos que antes),
+  sin scroll horizontal, sin regresiones en swipe/✕/paquetes/
+  multi-semana; la sombra inset se pinta bajo el borde, el
+  `border-left` ocre de `--hogar` y los hijos (stepper, ✕) quedan
+  intactos. Seguridad PASS (security-champion): sin hallazgos
+  (0 HIGH/MEDIUM/LOW).
+
 Related issue: #225 (https://github.com/gonzalitojh/Registro-personal/issues/225)

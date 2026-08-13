@@ -20,12 +20,16 @@
 //    hay dato de paquete (o las unidades no son comparables) se
 //    muestra la cantidad necesaria.
 //  - Eliminar ítems DESPLAZÁNDOLOS HACIA LA IZQUIERDA: el swipe
-//    revela un botón «Eliminar» (también accesible por hover en
-//    escritorio y por teclado). Los ítems de recetas dejan de
-//    calcularse en las semanas seleccionadas (itemsEliminados del
-//    documento de menú); los ítems extra se quitan de las semanas
-//    donde estaban. Hay deshacer (toast) y una nota para volver a
-//    incluir lo quitado.
+//    revela el fondo rojo y, si se continúa deslizando un poco más
+//    (desplazamiento extra), el ítem se elimina al soltar — sin
+//    necesidad de pulsar ningún botón. También hay una ✕ roja
+//    siempre visible a la derecha de cada línea (sobre todo para
+//    escritorio). Al pasar el ratón por encima la línea solo se
+//    marca (nada de revelar el estado de eliminar). Los ítems de
+//    recetas dejan de calcularse en las semanas seleccionadas
+//    (itemsEliminados del documento de menú); los ítems extra se
+//    quitan de las semanas donde estaban. Hay deshacer (toast) y
+//    una nota para volver a incluir lo quitado.
 // Además permite ítems extra manuales (comestibles y no
 // comestibles) persistidos en el documento del menú (itemsExtra),
 // y marcar lo ya comprado (estado visual de la sesión).
@@ -63,8 +67,12 @@ let userTouchedChips = false;
 // → nº de paquetes. Persiste en localStorage por usuario.
 let pkgOverrides = new Map();
 
-// Desplazamiento del contenido al revelar «Eliminar» (px).
+// Desplazamiento del contenido al revelar el fondo rojo (px).
 const SWIPE_OPEN = -88;
+// Desplazamiento extra que dispara la eliminación directa al
+// soltar (issue #225, iteración): un pequeño empujón más allá de
+// la posición de revelado borra el ítem sin pulsar nada.
+const SWIPE_DELETE = -112;
 
 export function setupShoppingList(opts) {
   ctx = opts?.ctx || null;
@@ -117,7 +125,7 @@ export function setupShoppingList(opts) {
   });
 
   document.getElementById("shopping-list").addEventListener("click", (e) => {
-    // Eliminar un ítem (swipe/hover/teclado, issue #225).
+    // Eliminar un ítem (✕ de la derecha, issue #225 iteración).
     const delBtn = e.target.closest("[data-del-key]");
     if (delBtn) {
       deleteLine(delBtn.dataset.delKey);
@@ -375,8 +383,8 @@ export function renderShoppingList() {
   container.insertAdjacentHTML("beforeend", deletedItemsNote());
   container.insertAdjacentHTML("beforeend", excludedRecipesNote());
   container.insertAdjacentHTML("beforeend", `<p class="shopping-hint">Desliza un ítem hacia la izquierda
-    (o pulsa «Eliminar» en escritorio) para quitarlo de la lista. Los ajustes de paquetes se guardan en este
-    dispositivo.</p>`);
+    y continúa deslizando un poco más (o pulsa la ✕ de la derecha) para quitarlo de la lista. Los ajustes de
+    paquetes se guardan en este dispositivo.</p>`);
 
   // Swipe para eliminar (issue #225): patrón ADR-028 con axis lock.
   container.querySelectorAll(".shopping-line-wrap").forEach((wrap) => {
@@ -387,9 +395,8 @@ export function renderShoppingList() {
 function lineHtml(line) {
   const pkgQty = qtyHtml(line);
   return `<li class="shopping-line-wrap${line.comestible ? "" : " shopping-line-wrap--hogar"}">
-    <div class="shopping-line__swipe-bg">
-      <button type="button" class="shopping-line__del" data-del-key="${escapeHtml(line.key)}"
-        aria-label="Eliminar ${escapeHtml(line.nombre)} de la lista" title="Quitar de la lista">Eliminar</button>
+    <div class="shopping-line__swipe-bg" aria-hidden="true">
+      <span class="shopping-line__swipe-icon">✕</span>
     </div>
     <div class="shopping-line__content">
       <label class="shopping-line__main">
@@ -397,13 +404,16 @@ function lineHtml(line) {
         <span class="shopping-line__name">${escapeHtml(line.nombre)}</span>
       </label>
       ${pkgQty}
+      <button type="button" class="shopping-line__remove" data-del-key="${escapeHtml(line.key)}"
+        aria-label="Eliminar ${escapeHtml(line.nombre)} de la lista" title="Quitar de la lista">✕</button>
     </div>
   </li>`;
 }
 
-// Cantidad de la línea: con paquete → «N paquetes · cantidad
-// necesaria» y stepper −/+ (y ↺ para volver al cálculo automático si
-// hay ajuste manual); sin paquete → la cantidad necesaria.
+// Cantidad de la línea: con paquete → solo el número de paquetes
+// (sin la palabra «paquetes» ni el peso, issue #225 iteración) con
+// stepper −/+ (y ↺ para volver al cálculo automático si hay ajuste
+// manual); sin paquete → la cantidad necesaria.
 function qtyHtml(line) {
   const info = pkgInfo(line);
   if (!info) {
@@ -411,17 +421,17 @@ function qtyHtml(line) {
   }
   const override = pkgOverrides.has(line.key);
   const shown = override ? pkgOverrides.get(line.key) : info.packages;
-  const paqueteLabel = `${formatCantidad(shown)} ${shown === 1 ? "paquete" : "paquetes"}`;
+  const shownText = formatCantidad(shown);
+  const paqueteLabel = `${shownText} ${shown === 1 ? "paquete" : "paquetes"}`;
   return `<span class="shopping-line__qty">
       <button type="button" class="shopping-line__stepper" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="minus"
         aria-label="Quitar un paquete de ${escapeHtml(line.nombre)}" title="Quitar un paquete">−</button>
-      <span class="shopping-line__pkgcount">${paqueteLabel}</span>
+      <span class="shopping-line__pkgcount" aria-label="${paqueteLabel}">${shownText}</span>
       <button type="button" class="shopping-line__stepper" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="plus"
         aria-label="Añadir un paquete de ${escapeHtml(line.nombre)}" title="Añadir un paquete">+</button>
       ${override ? `<button type="button" class="shopping-line__pkgreset" data-pkg-key="${escapeHtml(line.key)}" data-pkg-op="reset"
         aria-label="Volver al cálculo automático de ${escapeHtml(line.nombre)}" title="Volver al cálculo automático">↺</button>` : ""}
-    </span>
-    <span class="shopping-line__detail">· ${formatCantidad(line.cantidad)} ${escapeHtml(line.unidad)}</span>`;
+    </span>`;
 }
 
 // Chips de semanas (issue #225): ventana de 5 alrededor de chipOffset.
@@ -570,10 +580,21 @@ async function includeRecipe(recipeId) {
 }
 
 // Swipe horizontal con axis lock (patrón ADR-028): a la izquierda
-// revela «Eliminar» (no borra al soltar, hay que pulsar el botón);
-// deslizar a la derecha vuelve a cerrar. La posición final la
-// aplica el CSS (.is-revealed → translateX(-88px)); durante el
-// arrastre se usa transform inline, que gana sobre la clase.
+// revela el fondo rojo; si el gesto supera el desplazamiento extra
+// (SWIPE_DELETE) el ítem se elimina directamente al soltar (issue
+// #225, iteración) — sin botón que pulsar. Deslizar a la derecha
+// vuelve a cerrar. La posición final la aplica el CSS
+// (.is-revealed → translateX(-88px)); durante el arrastre se usa
+// transform inline, que gana sobre la clase. El botón ✕ de la
+// derecha queda siempre visible (accesible por teclado) y no
+// depende de este gesto.
+//
+// Iteración 2 (issue #225): el transform y la revelación SOLO se
+// aplican cuando el axis lock decide 'horizontal'. Un scroll
+// vertical (aunque arrastre un poco en horizontal) nunca revela el
+// fondo rojo: al soltar con lock 'vertical' se cierra
+// (snap(false)) — antes, una deriva de >44 px durante el scroll
+// dejaba el ítem marcado en rojo sin haberlo seleccionado.
 function attachLineSwipe(wrap, content) {
   let startX = 0;
   let startY = 0;
@@ -598,7 +619,6 @@ function attachLineSwipe(wrap, content) {
       startY = touch.clientY;
       startTouchId = touch.identifier;
       dragging = true;
-      wrap.classList.add("is-dragging");
     },
     { passive: true }
   );
@@ -612,13 +632,24 @@ function attachLineSwipe(wrap, content) {
       const deltaY = touch.clientY - startY;
       // Axis lock (ADR-028): al cruzar el slop se decide el eje y no
       // se vuelve atrás; el empate gana 'vertical' (el scroll manda).
+      // 'is-dragging' (que muestra la ✕ blanca del fondo y quita la
+      // transición) SOLO se activa si el gesto es horizontal: un
+      // scroll vertical no debe mostrar la ✕ (issue #225, iteración 2).
       if (lock === null && (Math.abs(deltaX) >= lockThreshold || Math.abs(deltaY) >= lockThreshold)) {
         lock = Math.abs(deltaX) > Math.abs(deltaY) ? "horizontal" : "vertical";
+        if (lock === "horizontal") wrap.classList.add("is-dragging");
       }
-      if (lock === "vertical") return;
-      const offset = Math.max(SWIPE_OPEN, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
+      // Hasta que el lock decida, o si es 'vertical', no se mueve
+      // nada: el scroll nunca debe arrastrar el ítem (issue #225,
+      // iteración 2 — antes el dedo desplazando la página podía
+      // revelar el fondo rojo).
+      if (lock !== "horizontal") return;
+      const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
       content.style.transform = `translateX(${offset}px)`;
       wrap.classList.toggle("is-revealed", offset < SWIPE_OPEN / 2);
+      // Al cruzar el umbral de borrado, el fondo rojo lo comunica
+      // visualmente (más oscuro) para que el gesto se perciba.
+      wrap.classList.toggle("is-deleting", offset <= SWIPE_DELETE);
     },
     { passive: true }
   );
@@ -626,6 +657,7 @@ function attachLineSwipe(wrap, content) {
   const resetGesture = () => {
     dragging = false;
     wrap.classList.remove("is-dragging");
+    wrap.classList.remove("is-deleting");
     lock = null;
     startTouchId = null;
     deltaX = 0;
@@ -634,16 +666,36 @@ function attachLineSwipe(wrap, content) {
   wrap.addEventListener(
     "touchend",
     (e) => {
-      const offset = Math.max(SWIPE_OPEN, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
-      snap(offset < SWIPE_OPEN / 2);
+      // Solo se borra o se revela si el gesto fue horizontal (axis
+      // lock): un scroll vertical con deriva horizontal no debe
+      // eliminar ni marcar el ítem en rojo (issue #225, iteración
+      // 2 — antes el ítem quedaba revelado al soltar el scroll).
+      if (lock === "vertical") {
+        snap(false);
+      } else if (lock === "horizontal") {
+        const offset = Math.max(SWIPE_DELETE, Math.min(0, (revealed ? SWIPE_OPEN : 0) + deltaX));
+        if (offset <= SWIPE_DELETE) {
+          // Desplazamiento extra: eliminar directamente (issue #225,
+          // iteración), sin necesidad de pulsar nada.
+          const delBtn = wrap.querySelector(".shopping-line__remove");
+          const key = delBtn?.dataset.delKey;
+          snap(false);
+          if (key) deleteLine(key);
+        } else {
+          snap(offset < SWIPE_OPEN / 2);
+        }
+      }
+      // lock === null (toque sin desplazamiento): no se toca el
+      // estado — un toque sobre una línea revelada la mantiene
+      // revelada; sobre una cerrada, cerrada.
       // Click fantasma (issue #225): tras un gesto horizontal el
       // navegador sintetiza un click al soltar el dedo, que caería
       // sobre el checkbox/stepper de la fila desplazada y los
       // activaría sin querer. Suprimirlo aquí evita esos eventos
-      // sintéticos; los toques deliberados (p. ej. pulsar
-      // «Eliminar») son gestos nuevos con deltaX ≈ 0 y no se ven
-      // afectados. El listener es no-pasivo solo para poder hacer
-      // preventDefault en el touchend (no bloquea el scroll).
+      // sintéticos; los toques deliberados (p. ej. pulsar la ✕) son
+      // gestos nuevos con deltaX ≈ 0 y no se ven afectados. El
+      // listener es no-pasivo solo para poder hacer preventDefault
+      // en el touchend (no bloquea el scroll).
       if (lock === "horizontal" && Math.abs(deltaX) > lockThreshold) {
         e.preventDefault();
       }
@@ -660,17 +712,6 @@ function attachLineSwipe(wrap, content) {
     },
     { passive: true }
   );
-
-  // Accesibilidad por teclado: el «Eliminar» se revela al enfocarlo
-  // (el CSS con :hover solo cubre ratón). El blur cierra solo si no
-  // hay un arrastre en curso.
-  const delBtn = wrap.querySelector(".shopping-line__del");
-  if (delBtn) {
-    delBtn.addEventListener("focus", () => snap(true));
-    delBtn.addEventListener("blur", () => {
-      if (!dragging) snap(false);
-    });
-  }
 }
 
 // ---------- Ítems extra manuales ----------
