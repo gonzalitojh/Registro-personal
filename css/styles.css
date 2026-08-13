@@ -4237,7 +4237,8 @@ body.is-back-to-top-visible .back-to-top {
 .recipe-form__field textarea,
 .recipe-form__newtag input,
 .recipe-form__paso input,
-.recipe-form__ingrediente input {
+.recipe-form__ingrediente input,
+.recipe-form__ingrediente select {
   background: var(--paper-dim);
   color: var(--ink);
   border: 1px solid var(--paper-line);
@@ -4246,6 +4247,15 @@ body.is-back-to-top-visible .back-to-top {
   font-size: 0.88rem;
   font-family: var(--font-body);
   min-width: 0;
+}
+
+/* Select de unidad del formulario de receta (issue #251): rellena su
+   celda del grid (1.4fr 0.7fr 0.9fr auto y las dos columnas de móvil)
+   sin desbordarla; el min-content del select (la opción más ancha, p.
+   ej. una unidad legada larga de texto libre) lo contienen min-width: 0
+   de la regla agrupada y este width: 100% (patrón .ing-combo .ing-nombre). */
+.recipe-form__ingrediente select {
+  width: 100%;
 }
 
 .recipe-form__row {
@@ -4723,7 +4733,9 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="light"] .shopping-extra-form__row input,
 [data-theme="white"] .shopping-extra-form__row input,
 [data-theme="light"] .shopping-extra-form__row select,
-[data-theme="white"] .shopping-extra-form__row select {
+[data-theme="white"] .shopping-extra-form__row select,
+[data-theme="light"] .recipe-form__ingrediente select,
+[data-theme="white"] .recipe-form__ingrediente select {
   background: var(--paper-dim);
   color: var(--ink);
   border-color: var(--ink-alpha-20);
@@ -4940,7 +4952,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .recipe-form__field textarea,
 [data-theme="black"] .recipe-form__newtag input,
 [data-theme="black"] .recipe-form__paso input,
-[data-theme="black"] .recipe-form__ingrediente input {
+[data-theme="black"] .recipe-form__ingrediente input,
+[data-theme="black"] .recipe-form__ingrediente select {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);

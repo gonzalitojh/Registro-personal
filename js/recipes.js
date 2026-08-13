@@ -1571,6 +1571,35 @@ function ingredientCategoriaDe(nombre, guardada) {
   return cat ? (cat.categoriaId || "") : (guardada || "");
 }
 
+// Opciones del desplegable de unidad del formulario de receta (issue
+// #251): la primera opción vacía («—») significa sin especificar
+// (patrón de PACKAGE_UNITS, issue #224) y evita que el navegador
+// preseleccione «g» en filas nuevas; después las cinco unidades
+// estándar de SHOPPING_UNITS (g, Kg, mL, L, Unidades, mismas que el
+// ítem extra y el modal de añadir a la compra, ADR-091). Si la unidad
+// guardada en la receta no coincide con ninguna estándar (dato legado
+// de cuando el campo era texto libre), se añade como opción extra al
+// final, seleccionada, para no perder el dato al editar: es dato de
+// usuario y se escapa con escapeHtml. La comparación se hace siempre
+// normalizando ambos lados (normalizeUnit), así «kg» guardado coincide
+// con la opción «Kg». El selected cae exactamente en una opción.
+function unidadOptionsHtml(unidad) {
+  const norm = normalizeUnit(unidad);
+  const options = [{ value: "", label: "—", selected: !norm }];
+  let matched = false;
+  SHOPPING_UNITS.forEach((u) => {
+    const isMatch = !!norm && normalizeUnit(u) === norm;
+    if (isMatch) matched = true;
+    options.push({ value: u, label: u, selected: isMatch });
+  });
+  if (norm && !matched) {
+    options.push({ value: unidad, label: unidad, selected: true });
+  }
+  return options
+    .map((o) => `<option value="${escapeHtml(o.value)}"${o.selected ? " selected" : ""}>${escapeHtml(o.label)}</option>`)
+    .join("");
+}
+
 // Fila de ingrediente del formulario de receta (issue #240): el nombre
 // ya no se escribe libremente ni se elige categoría. Es un combobox con
 // buscador sobre el catálogo de ingredientes (input + desplegable); la
@@ -1590,7 +1619,7 @@ function ingredienteRowHtml(ing, i) {
       <input type="hidden" class="ing-categoria-valor" value="${escapeHtml(ingredientCategoriaDe(nombre, ing.categoriaId))}" />
     </div>
     <input type="number" class="ing-cantidad" placeholder="Cant." step="any" min="0" value="${escapeHtml(ing.cantidad ?? "")}" />
-    <input type="text" class="ing-unidad" placeholder="Unidad" value="${escapeHtml(ing.unidad || "")}" />
+    <select class="ing-unidad" aria-label="Unidad de medida">${unidadOptionsHtml(ing.unidad || "")}</select>
     <button type="button" class="btn btn--small btn--danger ing-remove" aria-label="Quitar ingrediente">✕</button>
   </div>`;
 }
