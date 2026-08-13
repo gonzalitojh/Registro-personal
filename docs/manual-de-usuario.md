@@ -745,7 +745,10 @@ Con **«+ Nuevo entreno»** creas uno con:
   tienes ejercicios, el botón **«Ver catálogo de ejercicios»** te
   lleva a crearlos. A cada ejercicio le añades **series** con
   **«+ Añadir serie»**: en cada serie escribes el **peso** (en la
-  unidad que tengas elegida, ver 9.3) y las **repeticiones**. Con
+  unidad que tengas elegida, ver 9.3) y las **repeticiones**. La
+  tabla de series tiene **etiquetas** («Peso» y «Repeticiones»)
+  encima de cada columna, para que sepas siempre qué hay que
+  escribir en cada recuadro. Con
   **«Duplicar serie»** copias la última serie del ejercicio (peso y
   repeticiones) para no volver a escribirlos. Puedes quitar una
   serie o un ejercicio con su ✕.
@@ -790,6 +793,12 @@ cualquier momento**, y afecta a **todo lo que se muestra en la
 sección**: las series de las tarjetas y de los detalles, y los campos
 de peso de los formularios (lo que escribes y las sugerencias de los
 campos vacíos).
+
+**También puedes elegir la unidad desde la ventana de creación o
+edición de un entreno**: tiene su propio selector «Unidad de peso»
+(kg o lbs), que está **sincronizado** con el de la sección — al
+cambiar uno, el otro cambia también, y los pesos del formulario se
+convierten al momento.
 
 **Los valores guardados no cambian**: la web guarda siempre el peso en
 kilogramos y solo convierte lo que te muestra (1 kg ≈ 2,2 lbs, con un
