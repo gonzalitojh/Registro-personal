@@ -1,6 +1,6 @@
 {
   "title": "Añadir items a lista de la compra",
-  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nEn la pestaña de _Compra_, el botón \"Item extra\" debe funcionar igual que añadir ingrediente en las recetas. Desplegable con búsqueda de un ingrediente, cantidad y unidad de medida, pero no seleccionar categoría ni checkbox si es producto de limpieza o no.\n\nAdemás, en la pestaña \"Ingredientes\", al pulsar sobre un ingrediente, debe haber un botón para añadir a la lista de la compra, que despliegue una ventana para seleccionar únicamente cantidad y unidad de medida.",
+  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nEn la pestaña de _Compra_, el botón \"Item extra\" debe funcionar igual que añadir ingrediente en las recetas. Desplegable con búsqueda de un ingrediente, cantidad y unidad de medida, pero no seleccionar categoría ni checkbox si es producto de limpieza o no.\n\nAdemás, en la pestaña \"Ingredientes\", al pulsar sobre un ingrediente, debe haber un botón para añadir a la lista de la compra, que despliegue una ventana para seleccionar únicamente cantidad y unidad de medida.\n\nComentario del usuario (2026-08-13T10:48:45Z) — iteración: «Está bien, pero en ambos lugares, la unidad de medida debe ser un desplegable con las opciones g, Kg, mL, L y Unidades.»",
   "status": "review",
   "acceptance criteria": [
     "El botón «Item extra» de la pestaña Compra abre un formulario con desplegable de búsqueda de un ingrediente del catálogo (como añadir ingrediente en las recetas), cantidad y unidad de medida.",
@@ -29,7 +29,7 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/250",
     "title": "[content] Ítem extra con buscador del catálogo y añadir ingrediente a la compra desde su ficha (issue #249)",
     "branch": "content/issue-249-items-extra-buscador",
-    "commit": "4d07940",
+    "commit": "f878ff8",
     "closes": "#249"
   }
 }
