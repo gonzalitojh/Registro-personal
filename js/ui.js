@@ -112,11 +112,13 @@ const SEARCH_PLACEHOLDER_BY_SECTION = {
   ocio: "Buscar películas, series, libros y videojuegos...",
   perfil: "Buscar amigos...",
   recetas: "Buscar recetas...",
+  gimnasio: "Buscar en tu gimnasio...",
 };
 const SEARCH_ARIA_BY_SECTION = {
   ocio: "Buscar en tu registro de ocio",
   perfil: "Buscar en tus amigos",
   recetas: "Buscar en tus recetas",
+  gimnasio: "Buscar en tu registro de gimnasio",
 };
 let currentSearchSection = "ocio";
 

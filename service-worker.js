@@ -76,6 +76,8 @@ const STATIC_ASSETS = [
   './js/recipes.js',
   './js/menu.js',
   './js/shopping-list.js',
+  // Sección de gimnasio (issue #62)
+  './js/gym.js',
   './resources/icon.png',
   './ocio/series.html?v=20260926',
   './ocio/peliculas.html?v=20260926',
