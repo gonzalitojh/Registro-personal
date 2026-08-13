@@ -206,7 +206,14 @@ async function openMovieItem(item, ctx, isRerender = false) {
     onDelete: confirmDelete(item, "movie", ctx),
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
-    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
+    // Al añadir una recomendación se actualiza existingIds (Set
+    // compartido con el render): tras un re-render la tarjeta sigue
+    // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
+    onAddRecommendation: async (recItem, btn) => {
+      if (await addFromRecommendation(recItem, btn, ctx)) {
+        existingIds.add(String(recItem.externalId));
+      }
+    },
     // Alta directa de una película de la saga desde su tarjeta
     // (issue #280). existingIds es un Set compartido con el render,
     // así los rerenders posteriores del modal la muestran como
@@ -264,6 +271,7 @@ async function addSagaMovie(movie, ctx) {
 /**
  * Añade un ítem recomendado (película o serie) al registro del usuario.
  * Reutiliza el mismo flujo que handleAdd en search.js para movies/TV.
+ * @returns {Promise<boolean>} true si se añadió correctamente.
  */
 async function addFromRecommendation(item, btn, ctx) {
   btn.disabled = true;
@@ -315,10 +323,12 @@ async function addFromRecommendation(item, btn, ctx) {
     await addItem(ctx.getCurrentUser().uid, item.type, draft);
     btn.textContent = "Añadido";
     ui.showToast(`«${item.title}» añadido a tu registro.`);
+    return true;
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
+    return false;
   }
 }
 
@@ -670,7 +680,11 @@ async function openTvItem(item, ctx, isRerender = false) {
     onSaveMeta: saveMeta(item, "tv", ctx),
     onDelete: confirmDelete(item, "tv", ctx),
     onEdit: editHandlerFor(item, "tv", reopen, ctx),
-    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
+    onAddRecommendation: async (recItem, btn) => {
+      if (await addFromRecommendation(recItem, btn, ctx)) {
+        existingIds.add(String(recItem.externalId));
+      }
+    },
   }, recommendations, existingIds);
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
