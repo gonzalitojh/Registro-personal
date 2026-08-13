@@ -53,6 +53,8 @@ const STATIC_ASSETS = [
   './js/tv-progress.js',
   './js/watch-log.js',
   './js/daily-check.js',
+  './js/item-details.js',
+  './js/migration.js',
   './js/undo-delete.js',
   './js/api-books.js',
   './js/api-movies.js',
