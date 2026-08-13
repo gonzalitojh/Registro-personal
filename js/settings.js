@@ -19,8 +19,12 @@ const DEFAULT_SETTINGS = {
     friend_activity: true,
     device_push: false,
   },
-  visibleSections: { ocio: true, recetas: true },
-  visibleTabs: { series: true, peliculas: true, libros: true, recetas: true, ingredientes: true, menu: true, compra: true },
+  // Unidad de peso de la sección de Gimnasio (issue #62): "kg" | "lbs".
+  // El peso canónico en Firestore es SIEMPRE kg; esta preferencia solo
+  // cambia la presentación (y las entradas) en la interfaz.
+  unidadPeso: "kg",
+  visibleSections: { ocio: true, recetas: true, gimnasio: true },
+  visibleTabs: { series: true, peliculas: true, libros: true, recetas: true, ingredientes: true, menu: true, compra: true, entrenos: true, ejercicios: true },
 };
 
 // Registro central de secciones y pestañas de la web (issue #97).
@@ -47,6 +51,13 @@ export const SECTION_REGISTRY = {
       ingredientes: { label: "Ingredientes", panelId: "panel-ingredients-tab" },
       menu: { label: "Menú", panelId: "panel-menu-tab" },
       compra: { label: "Compra", panelId: "panel-shopping-tab" },
+    },
+  },
+  gimnasio: {
+    label: "Gimnasio",
+    tabs: {
+      entrenos: { label: "Entrenos", panelId: "panel-gym-workouts-tab" },
+      ejercicios: { label: "Ejercicios", panelId: "panel-gym-exercises-tab" },
     },
   },
 };
@@ -147,6 +158,7 @@ function scheduleFirestoreSync(ctx) {
             notifications: settings.notifications,
             visibleSections: settings.visibleSections,
             visibleTabs: settings.visibleTabs,
+            unidadPeso: settings.unidadPeso,
           },
         });
       }
@@ -383,10 +395,36 @@ let onVisibilityChange = null;
 
 export function setupSettings(ctx, { onVisibilityChange: onChange = null } = {}) {
   onVisibilityChange = onChange;
+  appCtx = ctx;
   wireThemeSelect(ctx);
   wireNotificationToggles(ctx);
   wireSyncButton(ctx);
   wireVisibilityToggles(ctx);
+}
+
+// Contexto de la app capturado en setupSettings: lo usan setUnit y
+// setTheme para sincronizar con Firestore (patrón de scheduleFirestoreSync).
+let appCtx = null;
+
+// ---- Unidad de peso de Gimnasio (issue #62) ----
+
+// Unidad de peso activa ("kg" | "lbs"), leída SIEMPRE fresco desde
+// localStorage (patrón de los helpers de visibilidad). Lo usa gym.js
+// en cada render: los valores guardados en Firestore no cambian al
+// alternar, solo la presentación.
+export function getUnit() {
+  return loadSettings().unidadPeso === "lbs" ? "lbs" : "kg";
+}
+
+// Cambia la unidad de peso y la persiste (localStorage + sync a
+// Firestore preferences con el mismo debounce que el resto de
+// ajustes). Lo llama el select #gym-unit-select al cambiar.
+export function setUnit(unit) {
+  if (unit !== "kg" && unit !== "lbs") return;
+  const s = loadSettings();
+  s.unidadPeso = unit;
+  saveSettings(s);
+  if (appCtx) scheduleFirestoreSync(appCtx);
 }
 
 // Toggles de visibilidad de la card «Secciones y pestañas» (issue
