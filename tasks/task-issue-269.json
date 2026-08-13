@@ -1,7 +1,7 @@
 {
   "title": "Nueva pestaña Resumen en la sección de Gimnasio",
   "description": "Añadir una nueva pestaña «Resumen» a la sección de gimnasio, que debe ser la primera pestaña (antes de «Entrenos»). En ella se debe poder ver un resumen de los ejercicios hechos durante un periodo elegido (semana en curso, mes en curso, selector libre de fechas).\n\nLa base de trabajo es la rama `feat/issue-62-seccion-gimnasio` (la sección de Gimnasio aún no está en dev; PR #262 pendiente). Se crea una rama nueva desde ahí y la PR también se hace a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "La sección de Gimnasio tiene una pestaña «Resumen» como PRIMERA pestaña de la barra, antes de «Entrenos» y «Ejercicios», con su propio icono y color de acento, visible en los cuatro modos de tema.",
     "La pestaña Resumen está registrada en el registro de secciones/pestañas (SECTION_REGISTRY en js/settings.js) y soporta ocultarse desde Ajustes → Secciones y pestañas como el resto de pestañas de Gimnasio.",
