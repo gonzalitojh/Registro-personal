@@ -685,7 +685,10 @@ function syncWorkoutDraftFromDom() {
     // del borrador (los entrenos guardados conservan su nombre).
     const found = exercises.find((e) => e.id === select.value);
     const nombre = found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "";
-    const series = Array.from(block.querySelectorAll(".gym-series-row")).map((row) => ({
+    // Las filas de serie son las .gym-series-row SIN la cabecera de
+    // etiquetas (.gym-series-row--head, #265): la cabecera solo tiene
+    // spans y no debe leerse como una fila de datos.
+    const series = Array.from(block.querySelectorAll(".gym-series-row:not(.gym-series-row--head)")).map((row) => ({
       pesoKg: displayToKg(parseFloat(row.querySelector("[data-gym-series-peso]").value) || 0),
       reps: parseInt(row.querySelector("[data-gym-series-reps]").value, 10) || 0,
     }));
@@ -699,6 +702,10 @@ function bindWorkoutEditorHandlers(content) {
   // solo se re-renderiza lo que muestra pesos (renderAllWithUnit
   // repinta pestaña, editor abierto y deja el select global en sync).
   content.querySelector("#gym-wk-unit")?.addEventListener("change", (e) => {
+    // Guardar lo tecleado antes de re-renderizar: el re-render parte
+    // del borrador (kg canónico) y convertiría y conservaría lo
+    // escrito en lugar de perderlo.
+    syncWorkoutDraftFromDom();
     setUnit(e.target.value);
     const globalSelect = document.getElementById("gym-unit-select");
     if (globalSelect) globalSelect.value = unit();
