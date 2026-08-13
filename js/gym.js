@@ -162,8 +162,9 @@ export function setupGym(opts) {
   });
 
   // Selector de unidad de peso (issue #62): se persiste con setUnit
-  // (localStorage + sync a Firestore) y se re-renderizan las dos
-  // pestañas (y el modal de entreno abierto, si lo hay).
+  // (localStorage + sync a Firestore) y se re-renderiza la pestaña
+  // activa (Resumen incluida, #269) y el modal de entreno abierto,
+  // si lo hay.
   const unitSelect = document.getElementById("gym-unit-select");
   if (unitSelect) {
     unitSelect.addEventListener("change", () => {
@@ -402,14 +403,207 @@ function exerciseCardHtml(ex) {
 
 // ---------- Pestaña Resumen (issue #269) ----------
 
-// Stub de infraestructura: pinta un empty-state genérico en
-// #gym-summary-data para que la pestaña sea funcional desde el
-// primer commit. La lógica completa (rango de periodo, totales y
-// desglose por ejercicio) llega en la siguiente iteración.
+// Rango de fechas (fechaISO YYYY-MM-DD) del periodo activo, leído
+// del DOM (chip .gym-summary-chip.is-active e inputs del rango libre)
+// con el patrón UTC de ctx.todayISO():
+//   - week: lunes de la semana en curso → hoy.
+//   - month: primer día del mes en curso → hoy.
+//   - custom: fechas de #gym-summary-from/#gym-summary-to, inclusivo.
+//     Un input vacío es un límite abierto (null); si from > to se
+//     intercambian.
+function summaryPeriodRange() {
+  const today = ctx.todayISO();
+  const active = document.querySelector(".gym-summary-chip.is-active")?.dataset.summaryPeriod || "week";
+  if (active === "month") {
+    return { period: "month", custom: false, from: today.slice(0, 8) + "01", to: today };
+  }
+  if (active === "custom") {
+    let from = document.getElementById("gym-summary-from")?.value || null;
+    let to = document.getElementById("gym-summary-to")?.value || null;
+    if (from && to && from > to) [from, to] = [to, from];
+    return { period: "custom", custom: true, from, to };
+  }
+  // Semana en curso: el lunes es hoy − ((getUTCDay() + 6) % 7) días
+  // (domingo = 0 → offset 6; lunes = 1 → offset 0).
+  const monday = new Date(`${today}T00:00:00Z`);
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+  return { period: "week", custom: false, from: monday.toISOString().slice(0, 10), to: today };
+}
+
+// Clave de agrupación de una entrada de ejercicio de un entreno: el
+// id canónico si existe y sigue en el catálogo; si no (ejercicio
+// borrado del catálogo o datos legacy sin id) se agrupa por el
+// nombre snapshot normalizado.
+function summaryExerciseKey(e) {
+  if (e?.ejercicioId && exercises.some((x) => x.id === e.ejercicioId)) {
+    return e.ejercicioId;
+  }
+  return String(e?.nombre || "").trim().toLowerCase();
+}
+
+// Grupo muscular de una entrada de entreno: el guardado en la propia
+// entrada si lo tiene; si no, el del catálogo (por ejercicioId o,
+// para legacy sin id, por nombre normalizado).
+function summaryGroupFor(e) {
+  if (e?.grupoMuscular) return e.grupoMuscular;
+  const byId = e?.ejercicioId && exercises.find((x) => x.id === e.ejercicioId);
+  if (byId?.grupoMuscular) return byId.grupoMuscular;
+  const norm = String(e?.nombre || "").trim().toLowerCase();
+  if (!norm) return null;
+  const byName = exercises.find((x) => String(x.nombre || "").trim().toLowerCase() === norm);
+  return byName?.grupoMuscular || null;
+}
+
+// Agrega los entrenos del rango [from, to] (fechas YYYY-MM-DD,
+// comparación lexicográfica; from/to null = límite abierto) en:
+//   - totals { entrenos, series, reps, volumenKg } del periodo.
+//   - perExercise: Map clave → { nombre, grupoMuscular, veces,
+//     series, reps, volumenKg, pesoMaxKg }.
+// Solo suman reps/volumen las series con reps numérico > 0; el peso
+// no numérico cuenta como 0. El volumen se acumula SIEMPRE en kg
+// (pesoKg × reps) y se convierte a la unidad de presentación al
+// pintar (kgToDisplay), nunca por serie.
+function summarizeWorkouts(workoutsList, from, to) {
+  const totals = { entrenos: 0, series: 0, reps: 0, volumenKg: 0 };
+  const perExercise = new Map();
+  const seenWorkouts = new Map(); // clave → Set de ids de entreno
+
+  for (const w of workoutsList) {
+    if (from && w.fechaISO < from) continue;
+    if (to && w.fechaISO > to) continue;
+    totals.entrenos += 1;
+    for (const e of w.ejercicios || []) {
+      const series = e.series || [];
+      totals.series += series.length;
+      const key = summaryExerciseKey(e);
+      if (!key) continue; // entrada sin id ni nombre: no agrupa
+      let agg = perExercise.get(key);
+      if (!agg) {
+        const catalogEx = e.ejercicioId ? exercises.find((x) => x.id === e.ejercicioId) : null;
+        agg = {
+          nombre: catalogEx?.nombre || e.nombre || "",
+          grupoMuscular: summaryGroupFor(e),
+          veces: 0,
+          series: 0,
+          reps: 0,
+          volumenKg: 0,
+          pesoMaxKg: 0,
+        };
+        perExercise.set(key, agg);
+      }
+      agg.series += series.length;
+      if (!seenWorkouts.has(key)) seenWorkouts.set(key, new Set());
+      seenWorkouts.get(key).add(w.id);
+      for (const s of series) {
+        const reps = Number(s.reps);
+        if (!Number.isFinite(reps) || reps <= 0) continue;
+        const pesoKg = Number.isFinite(Number(s.pesoKg)) ? Number(s.pesoKg) : 0;
+        agg.reps += reps;
+        totals.reps += reps;
+        agg.volumenKg += pesoKg * reps;
+        totals.volumenKg += pesoKg * reps;
+        if (pesoKg > agg.pesoMaxKg) agg.pesoMaxKg = pesoKg;
+      }
+    }
+  }
+  // Veces = nº de entrenos distintos en que aparece el ejercicio.
+  for (const [key, agg] of perExercise) {
+    agg.veces = seenWorkouts.get(key)?.size || 0;
+  }
+  return { totals, perExercise };
+}
+
+// Pinta el resumen del periodo activo en #gym-summary-data: cabecera
+// con el rango, tarjetas con los totales y tabla de desglose por
+// ejercicio (ordenado por volumen desc, tie-break por nombre).
 function renderSummary() {
   const container = document.getElementById("gym-summary-data");
   if (!container) return;
-  container.innerHTML = `<p class="empty-state">Aún no hay entrenos registrados.</p>`;
+  const { from, to } = summaryPeriodRange();
+
+  if (!workouts.length) {
+    container.innerHTML = `<p class="empty-state">Aún no has registrado entrenos. Registra entrenos en la pestaña «Entrenos» para ver aquí tu resumen.</p>`;
+    return;
+  }
+
+  const { totals, perExercise } = summarizeWorkouts(workouts, from, to);
+
+  if (!totals.entrenos) {
+    container.innerHTML = `<p class="empty-state">No hay entrenos en este periodo. Registra entrenos en la pestaña «Entrenos» para ver aquí tu resumen.</p>`;
+    return;
+  }
+
+  const fmtDate = (iso) => (iso ? ctx.formatDateEs(iso) : "sin límite");
+  const fmtKg = (kg) => `${escapeHtml(String(kgToDisplay(kg)))} ${escapeHtml(unitLabel())}`;
+
+  const cards = `
+    <div class="gym-summary-grid">
+      <div class="gym-summary-card">
+        <span class="gym-summary-card__label">Entrenos</span>
+        <span class="gym-summary-card__value">${totals.entrenos}</span>
+      </div>
+      <div class="gym-summary-card">
+        <span class="gym-summary-card__label">Series</span>
+        <span class="gym-summary-card__value">${totals.series}</span>
+      </div>
+      <div class="gym-summary-card">
+        <span class="gym-summary-card__label">Repeticiones</span>
+        <span class="gym-summary-card__value">${totals.reps}</span>
+      </div>
+      <div class="gym-summary-card">
+        <span class="gym-summary-card__label">Volumen total</span>
+        <span class="gym-summary-card__value">${fmtKg(totals.volumenKg)}</span>
+      </div>
+    </div>`;
+
+  const rows = [...perExercise.values()]
+    .sort((a, b) => b.volumenKg - a.volumenKg || a.nombre.localeCompare(b.nombre, "es"))
+    .map((agg) => `
+      <tr>
+        <td class="gym-summary-table__name">
+          ${escapeHtml(agg.nombre)}
+          ${agg.grupoMuscular ? `<span class="gym-muscle-chip">${escapeHtml(groupLabel(agg.grupoMuscular))}</span>` : ""}
+        </td>
+        <td>${agg.veces}</td>
+        <td>${agg.series}</td>
+        <td>${agg.reps}</td>
+        <td>${fmtKg(agg.volumenKg)}</td>
+        <td>${fmtKg(agg.pesoMaxKg)}</td>
+      </tr>`)
+    .join("");
+
+  const table = rows.length
+    ? `<div class="gym-summary-table-wrap">
+        <table class="gym-summary-table">
+          <thead>
+            <tr>
+              <th>Ejercicio</th>
+              <th>Veces</th>
+              <th>Series</th>
+              <th>Reps</th>
+              <th>Volumen</th>
+              <th>Peso máx</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`
+    : "";
+
+  container.innerHTML = `
+    <p class="gym-summary-period">Periodo: ${escapeHtml(fmtDate(from))} – ${escapeHtml(fmtDate(to))}</p>
+    ${cards}
+    ${table}`;
+}
+
+// Sincroniza la UI del selector de periodo: is-active/aria-pressed
+// solo en el chip del periodo indicado (los otros quedan inactivos).
+function syncSummaryPeriodUI(period) {
+  document.querySelectorAll("[data-summary-period]").forEach((chip) => {
+    const isActive = chip.dataset.summaryPeriod === period;
+    chip.classList.toggle("is-active", isActive);
+    chip.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
 // ---------- Modal de entreno ----------
