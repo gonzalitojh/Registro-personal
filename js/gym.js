@@ -523,6 +523,44 @@ function renderWorkoutEditor() {
   bindWorkoutEditorHandlers(content);
 }
 
+// Series de la última vez que se trabajó un ejercicio (#265): recorre
+// workouts (ya ordenados por fechaISO desc desde db.js) y devuelve
+// una copia {pesoKg, reps} de la ocurrencia más reciente con series,
+// o null. Match por ejercicioId (canónico); para datos antiguos sin
+// id (legacy «Otro…») hace match por nombre snapshot normalizado.
+function lastWorkoutSeriesForExercise(exerciseId, nombre) {
+  const norm = (s) => String(s || "").trim().toLowerCase();
+  const nameNorm = norm(nombre);
+  for (const w of workouts) {
+    const hit = (w.ejercicios || []).find((ex) => {
+      if (!(ex.series || []).length) return false;
+      if (exerciseId && ex.ejercicioId) return ex.ejercicioId === exerciseId;
+      return !ex.ejercicioId && nameNorm && norm(ex.nombre) === nameNorm;
+    });
+    if (hit) return hit.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 }));
+  }
+  return null;
+}
+
+// Pre-relleno (#265): solo si el bloque aún no tiene series (no pisa
+// lo ya escrito ni lo traído de un entreno en edición). Re-renderiza
+// y devuelve el foco al select (patrón de «Añadir serie»).
+function maybePrefillSeriesFromLastWorkout(select) {
+  if (!workoutDraft) return;
+  const block = select.closest(".gym-exercise-block");
+  if (!block) return;
+  const idx = parseInt(block.dataset.gymExIdx, 10);
+  const entry = workoutDraft.ejercicios[idx];
+  const exerciseId = select.value || null;
+  if (!exerciseId || !entry || entry.series.length) return;
+  const prev = lastWorkoutSeriesForExercise(exerciseId, entry.nombre);
+  if (!prev) return;
+  workoutDraft.ejercicios[idx].series = prev;
+  renderWorkoutEditor();
+  document.querySelector(`[data-gym-ex-idx="${idx}"]`)
+    ?.querySelector("[data-gym-ex-select]")?.focus();
+}
+
 function renderWorkoutEditorHtml() {
   const d = workoutDraft;
   const exercisesHtml = d.ejercicios.map((ex, i) => workoutExerciseBlockHtml(ex, i)).join("");
