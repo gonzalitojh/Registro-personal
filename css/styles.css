@@ -3386,10 +3386,14 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* Paneles de filtro a la derecha del campo: anclados debajo del
-   botón, anchos limitados para no salirse de la tarjeta del modal. */
-.recipe-pick__panel.recipes-filter__panel {
-  width: min(300px, calc(100vw - 3.5rem));
-  max-width: calc(100vw - 3.5rem);
+   botón, anchos limitados para no salirse de la tarjeta del modal.
+   En móvil se conserva el patrón fijo de .recipes-filter__panel
+   (anclado al viewport bajo la cabecera). */
+@media (min-width: 768px) {
+  .recipe-pick__panel.recipes-filter__panel {
+    width: min(300px, calc(100vw - 3.5rem));
+    max-width: calc(100vw - 3.5rem);
+  }
 }
 
 .recipe-pick__list {
