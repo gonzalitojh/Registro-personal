@@ -381,6 +381,8 @@
 [data-theme="black"] .friend-subtab.is-active,
 [data-theme="black"] .friend-card,
 [data-theme="black"] .friend-chip.is-active,
+[data-theme="black"] .gym-summary-chip.is-active,
+[data-theme="black"] .gym-summary-card,
 [data-theme="black"] .settings-card,
 [data-theme="black"] .global-search__results {
   background: var(--ink-raised);
@@ -485,7 +487,9 @@
 [data-theme="black"] .tab--ingredients.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 [data-theme="black"] .tab--menu.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--shopping.is-active { box-shadow: inset 0 3px 0 var(--stamp-dark); }
-/* Pestañas de Gimnasio (issue #62): mismo patrón que el resto. */
+/* Pestañas de Gimnasio (issue #62): mismo patrón que el resto.
+   Resumen (issue #269) reutiliza el violeta de los videojuegos. */
+[data-theme="black"] .tab--gym-summary.is-active { box-shadow: inset 0 3px 0 var(--games-dark); }
 [data-theme="black"] .tab--gym-workouts.is-active { box-shadow: inset 0 3px 0 var(--teal-reel-dark); }
 [data-theme="black"] .tab--gym-exercises.is-active { box-shadow: inset 0 3px 0 var(--ochre-spine-dark); }
 
@@ -1208,8 +1212,10 @@ body.is-back-to-top-visible .back-to-top {
 .tab--menu { --tab-accent: var(--teal-reel); }
 .tab--shopping { --tab-accent: var(--stamp); }
 /* Pestañas de Gimnasio (issue #62): acentos de la paleta existente
-   (Entrenos teal, Ejercicios ocre), con sus variantes -dark para
-   negro puro en los overrides de [data-theme="black"]. */
+   (Resumen morado, Entrenos teal, Ejercicios ocre), con sus
+   variantes -dark para negro puro en los overrides de
+   [data-theme="black"]. */
+.tab--gym-summary { --tab-accent: var(--games); }
 .tab--gym-workouts { --tab-accent: var(--teal-reel); }
 .tab--gym-exercises { --tab-accent: var(--ochre-spine); }
 
@@ -4813,6 +4819,356 @@ body.is-back-to-top-visible .back-to-top {
   align-self: flex-start;
 }
 
+/* --- Resumen de periodo (issue #269) --- */
+
+/* Selector de periodo: chips tipo .friend-chip + recuadro del rango
+   libre, en línea con salto en pantallas estrechas. */
+.gym-summary-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+/* Chips con el armazón de .friend-chip: borde sutil, píldora, sin
+   fondo. .is-active invierte a superficie papel; el override de
+   negro puro lo cubre el selector agrupado que ya incluye
+   .friend-chip.is-active (misma regla, mismo armazón). */
+.gym-summary-chip {
+  background: transparent;
+  border: 1px solid var(--paper-alpha-30);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 0;
+}
+.gym-summary-chip.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+
+/* Recuadro del rango libre (issue #269): un ÚNICO control para
+   elegir desde/hasta (iteración 3 del comentario del usuario). El
+   trigger es el recuadro visible — etiqueta + rango ya elegido — y
+   al pulsarlo se abre el calendario donde el primer click fija
+   «desde» y el segundo «hasta»; oculto salvo con la opción «Rango»
+   (controla el atributo hidden js/gym.js). */
+.gym-summary-range {
+  position: relative;
+  min-width: 0;
+}
+
+.gym-summary-range__trigger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  color: var(--ink);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.gym-summary-range__trigger[aria-expanded="true"] {
+  /* --games (no --ink-soft): el suave da ~2.45:1 sobre --paper-dim en
+     la familia oscura y el borde es un componente gráfico (3:1); el
+     override de Negro puro lo cubre el selector agrupado de abajo. */
+  border-color: var(--games);
+}
+
+.gym-summary-range__label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gym-summary-range__value {
+  /* --ink (no --ink-soft): sobre la superficie nueva --paper-dim el
+     suave daría ~2.45:1 en la familia oscura (regla 4 de
+     AGENTS.md); el override de Negro puro lo cubre el selector
+     agrupado de abajo. */
+  color: var(--ink);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Calendario del rango (popover): una única caja donde elegir las
+   dos fechas (primer click desde, segundo hasta). Superficie papel
+   con sombra de tarjeta; se posiciona bajo el trigger y nunca más
+   ancho que la pantalla (en móvil pasa a flujo normal). */
+.gym-summary-range__popover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 30;
+  min-width: 300px;
+  max-width: calc(100vw - 1.5rem);
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 0.7rem;
+}
+
+.gym-summary-range__cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  min-width: 0;
+}
+.gym-summary-range__cal-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  min-width: 0;
+  text-align: center;
+}
+.gym-summary-range__cal-nav {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.gym-summary-range__cal-nav:hover {
+  background: var(--paper-dim);
+}
+
+.gym-summary-range__cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 2px;
+}
+.gym-summary-range__cal-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  /* --ink (no --ink-soft): sobre la superficie --paper del popover el
+     suave daría ~2.84:1 en la familia oscura (regla 4 de AGENTS.md);
+     el override de Negro puro la cubre el selector agrupado de abajo. */
+  color: var(--ink);
+  padding: 0.2rem 0;
+  min-width: 0;
+}
+
+/* Rejilla de días: 7 columnas de ancho igual (en móvil caben en
+   360 px) y filas con altura fija para no saltar al navegar. */
+.gym-summary-range__cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+.gym-summary-range__cal-blank {
+  height: 2.1rem;
+}
+.gym-summary-range__day {
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  height: 2.1rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.gym-summary-range__day:hover {
+  background: var(--paper-dim);
+}
+/* El hover no puede tapar el estado de extremo del rango: el día
+   seleccionado conserva su fondo en las cuatro familias (especificidad
+   superior a .gym-summary-range__day:hover; el hover de Negro puro lo
+   cubre el selector agrupado de abajo). */
+.gym-summary-range__day--selected:hover {
+  background: var(--games);
+}
+.gym-summary-range__day--today {
+  /* --games (no --ink-soft): el borde es un componente gráfico (3:1)
+     y el suave da ~2.84:1 sobre --paper en la familia oscura. */
+  border-color: var(--games);
+}
+.gym-summary-range__day--selected {
+  background: var(--games);
+  color: var(--paper);
+  font-weight: 600;
+}
+/* Días intermedios del rango: tinte violeta (--games al 22 %, no hay
+   variable alfa del acento; mismo valor en las cuatro familias) con
+   el texto en --ink, muy por encima de AA en todas ellas. */
+.gym-summary-range__day--in-range {
+  background: rgba(122, 90, 158, 0.22);
+  color: var(--ink);
+}
+
+.gym-summary-range__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+/* En pantallas estrechas y tablets (≤767 px; la banda 540–680 px con
+   el popover absoluto desbordaba el borde derecho de la página) el
+   popover pasa a flujo normal — nada de posicionamiento absoluto, no
+   puede desbordar — y el recuadro ocupa toda la fila del selector. */
+@media (max-width: 767px) {
+  .gym-summary-range {
+    flex: 1 1 100%;
+  }
+  .gym-summary-range__popover {
+    position: static;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Cabecera del rango pintado («Periodo: DD/MM/YYYY – DD/MM/YYYY»). */
+.gym-summary-period {
+  margin: 0 0 0.9rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+}
+
+/* Tarjetas de totales: patrón .stat-tile/.friend-card (superficie
+   papel + sombra de tarjeta); el negro puro lo cubre el selector
+   agrupado que ya las incluye. */
+.gym-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.gym-summary-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.gym-summary-card__label {
+  /* --ink (no --ink-soft): el suave daría ~2.45:1 sobre --paper en la
+     familia oscura (regla 4 de AGENTS.md); mismo criterio que el
+     texto del recuadro del rango. La jerarquía la mantienen
+     tamaño/peso (0.85rem normal vs 1.4rem bold del valor). */
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.gym-summary-card__value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Título de sección del resumen («Por grupos musculares»,
+   «Por ejercicio»): misma escala que los títulos de grupo del
+   resto de la web, con salto de palabra en pantallas estrechas. */
+.gym-summary-section-title {
+  margin: 1.1rem 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Desglose por ejercicio y por grupos musculares: tablas con scroll
+   horizontal propio (el de página queda libre, regla 2 de
+   AGENTS.md) y bordes con la misma variable que usan el resto de
+   superficies de Gimnasio. */
+.gym-summary-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.gym-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.gym-summary-table th,
+.gym-summary-table td {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--paper-line);
+  min-width: 0;
+}
+
+.gym-summary-table th {
+  color: var(--ink-soft);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Celda de nombre: nombres largos se ajustan a su contenedor. */
+.gym-summary-table td:first-child {
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.gym-summary-table .gym-muscle-chip {
+  margin-left: 0.4rem;
+}
+
+/* Diferencia de peso con color semántico (issue #269, iteración 5):
+   verde si aumentó (+), rojo si bajó (−) y color normal de la celda
+   si es cero (o sin pesos, «—»). Mismo patrón documentado que
+   .shopping-line__pkgreset (issue #225): en la familia oscura los
+   acentos base no llegan a AA 4.5:1 sobre --ink (--stamp #a63b2e
+   ≈ 2.85:1 y --teal-reel #2b6459 ≈ 2.66:1), así que se hardcodean
+   variantes claras con su contraste anotado; la familia clara usa
+   los acentos base (ambos AA sobre --paper-dim/--paper). El cero no
+   lleva clase: hereda --paper (oscuro) / --ink (claro), «blanco
+   como está ahora» de la iteración anterior. */
+.gym-summary-table__diff--up {
+  /* #4f9c8e ≈ 5.6:1 sobre --ink y ≈ 6.5:1 sobre #000 (AA) */
+  color: #4f9c8e;
+}
+.gym-summary-table__diff--down {
+  /* #d16a59 ≈ 5.1:1 sobre --ink y ≈ 5.9:1 sobre #000 (AA) */
+  color: #d16a59;
+}
+[data-theme="light"] .gym-summary-table__diff--up,
+[data-theme="white"] .gym-summary-table__diff--up {
+  /* --teal-reel ≈ 6.0:1 sobre --paper-dim (AA) */
+  color: var(--teal-reel);
+}
+[data-theme="light"] .gym-summary-table__diff--down,
+[data-theme="white"] .gym-summary-table__diff--down {
+  /* --stamp ≈ 5.6:1 sobre --paper-dim (AA) */
+  color: var(--stamp);
+}
+
 /* --- Modal de entreno: constructor de ejercicios --- */
 
 .gym-modal__title {
@@ -5487,16 +5843,64 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Los inputs/selects/textareas del modal de gimnasio vuelven a --ink
    con texto papel (la base --paper-dim sería gris #111 casi igual a
-   la superficie del modal; patrón de .ingredient-modal__field). */
+   la superficie del modal; patrón de .ingredient-modal__field). El
+   recuadro del rango del Resumen y su calendario (issue #269)
+   siguen el mismo patrón: en negro puro la superficie pasa a tinta
+   (--ink) y el texto a papel. */
 [data-theme="black"] .gym-form__field input,
 [data-theme="black"] .gym-form__field select,
 [data-theme="black"] .gym-form__field textarea,
 [data-theme="black"] .gym-exercise-block select,
 [data-theme="black"] .gym-exercise-block input[type="text"],
-[data-theme="black"] .gym-series-row input {
+[data-theme="black"] .gym-series-row input,
+[data-theme="black"] .gym-summary-range__trigger,
+[data-theme="black"] .gym-summary-range__popover {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);
+}
+
+/* Textos interiores del recuadro del rango y del calendario en negro
+   puro: con el fondo invertido a --ink, la etiqueta, el rango
+   elegido, el título del mes, la navegación y los días pasan a papel
+   (el --ink-soft base quedaría negro sobre negro). */
+[data-theme="black"] .gym-summary-range__label,
+[data-theme="black"] .gym-summary-range__value,
+[data-theme="black"] .gym-summary-range__cal-title,
+[data-theme="black"] .gym-summary-range__cal-weekday,
+[data-theme="black"] .gym-summary-range__cal-nav,
+[data-theme="black"] .gym-summary-range__day {
+  color: var(--paper);
+}
+
+/* Hover del calendario en negro puro: tinte claro sobre la
+   superficie oscura (--paper-dim #111 sería invisible). */
+[data-theme="black"] .gym-summary-range__cal-nav:hover,
+[data-theme="black"] .gym-summary-range__day:hover {
+  background: var(--paper-alpha-10);
+}
+
+/* Extremos del rango en negro puro: acento en su variante clara y
+   texto tinta (la variante base #7a5a9e con texto papel daría
+   ~2:1); los días intermedios usan un tinte claro neutro porque el
+   violeta al 22 % sobre negro casi no se ve. El hover conserva el
+   estado de extremo (regla posterior a la del hover genérico). */
+[data-theme="black"] .gym-summary-range__day--selected {
+  background: var(--games-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .gym-summary-range__day--selected:hover {
+  background: var(--games-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .gym-summary-range__day--in-range {
+  background: var(--paper-alpha-14);
+  color: var(--paper);
+}
+
+/* El trigger abierto marca su borde con el acento claro. */
+[data-theme="black"] .gym-summary-range__trigger[aria-expanded="true"] {
+  border-color: var(--games-dark);
 }
 
 /* El panel del ejercicio del constructor usa el borde claro del

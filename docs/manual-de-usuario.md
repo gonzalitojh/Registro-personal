@@ -125,8 +125,9 @@ Nada más entrar verás:
   [Ajustes → Secciones y pestañas](#17-ajustes) igual que las de Ocio
   (más en [sección 8](#8-recetas)).
 - **La sección de Gimnasio tiene su propia barra de pestañas
-  (Entrenos, Ejercicios), igual que Ocio y Recetas**: **Entrenos en
-  teal** y **Ejercicios en ocre**, cada una con su icono. Es fija de
+  (Resumen, Entrenos, Ejercicios), igual que Ocio y Recetas**:
+  **Resumen en violeta**, **Entrenos en teal** y **Ejercicios en
+  ocre**, cada una con su icono. Es fija de
   la misma manera (abajo en el móvil, bajo la barra de búsqueda en
   ordenador y tableta), se oculta al bajar por la lista como las
   demás y sus pestañas se pueden ocultar desde
@@ -185,7 +186,7 @@ Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
 
 Al bajar por una lista de **Ocio** (series, películas, libros o
 videojuegos), de **Recetas** (Recetas, Ingredientes, Menú o Compra)
-o de **Gimnasio** (Entrenos o Ejercicios),
+o de **Gimnasio** (Resumen, Entrenos o Ejercicios),
 la barra de búsqueda de arriba y las pestañas se ocultan
 deslizándose hacia el borde de la pantalla, como si salieran de ella,
 para que la lista ocupe todo el espacio. En cuanto desplazas hacia
@@ -711,19 +712,63 @@ anteriores se conservan.
 ## 9. Gimnasio
 
 La sección **Gimnasio** (en la barra lateral, junto a «Ocio» y
-«Recetas») te permite registrar tus entrenos y llevar un catálogo
-propio de ejercicios, con los pesos y las repeticiones de cada serie.
-Tiene dos pestañas — **Entrenos** y **Ejercicios** — en una barra fija
-**igual que las de Ocio y Recetas**: abajo en el móvil y bajo la barra
-de búsqueda en el ordenador y la tableta, cada una con su icono y su
-color (**Entrenos en teal** y **Ejercicios en ocre**). La pestaña
+«Recetas») te permite registrar tus entrenos, ver un resumen de lo
+entrenado y llevar un catálogo propio de ejercicios, con los pesos y
+las repeticiones de cada serie.
+Tiene tres pestañas — **Resumen**, **Entrenos** y **Ejercicios** — en
+una barra fija **igual que las de Ocio y Recetas**: abajo en el móvil
+y bajo la barra de búsqueda en el ordenador y la tableta, cada una con
+su icono y su color (**Resumen en violeta**, **Entrenos en teal** y
+**Ejercicios en ocre**). La pestaña
 activa se marca con una franja de su color. Puedes ocultarlas desde
 [Ajustes → Secciones y pestañas](#17-ajustes), igual que las demás.
 
 Justo debajo de las pestañas está el selector **«Unidad de peso»**
-(ver 9.3), visible en toda la sección.
+(ver 9.4), visible en toda la sección.
 
-### 9.1 Tus entrenos
+### 9.1 Tu resumen
+
+La pestaña **«Resumen»** es la primera de la sección y te muestra un
+**resumen de lo que has entrenado en un periodo**. Eliges el periodo
+con el selector que hay bajo las pestañas, con tres opciones:
+
+- **«Semana en curso»**: de lunes a hoy (la opción que viene elegida
+  por defecto).
+- **«Mes en curso»**: del día 1 del mes a hoy.
+- **«Rango»**: eliges tú las fechas **desde** y **hasta**, lo que
+  quieras. Solo con esta opción se muestra el **recuadro del rango**,
+  un único recuadro con un **calendario**: al pulsar «Rango» se abre
+  y eliges las dos fechas allí mismo. El **primer día que pulsas** es
+  el **desde** y el **segundo** el **hasta**; el calendario **se
+  mantiene abierto** hasta que eliges las dos fechas (si pulsas el
+  hasta antes que el desde, la web **los da la vuelta** por ti).
+  Puedes **cambiar de mes** con las flechas ‹ › de la parte de
+  arriba, **borrar** el rango elegido con el botón «Borrar» para
+  empezar de nuevo, y cerrarlo con «Listo», con la tecla **Esc** o
+  pulsando fuera. Si dejas un extremo sin elegir, queda **sin
+  límite** (p. ej. sin desde, el periodo empieza en el primer
+  entreno). El recuadro ya muestra arriba el rango que llevas
+  elegido.
+
+El resumen muestra **dos tarjetas con los totales del periodo** — el
+**número de entrenos** y el **número de ejercicios distintos** que
+trabajaste — y, debajo, el desglose **por grupos musculares**: para
+cada grupo, cuántos ejercicios distintos y en cuántos entrenos
+apareció. Por último, una lista **por ejercicio** con las veces que lo
+hiciste (en cuántos entrenos aparece) y su **diferencia de peso** en
+el periodo: cuánto ha cambiado entre el **peso más antiguo** y el
+**más nuevo** que registraste, con **signo** — **+** si aumentó y
+**−** si bajó (en la unidad de peso que tengas elegida; si un
+ejercicio lo hiciste sin registrar peso, verás «—»). Además, la
+diferencia se **colorea**: **verde** si aumentó, **roja** si bajó y
+con el color normal de la tabla si no cambió (o si no hay pesos).
+Si un ejercicio **ya no está en tu catálogo**, el resumen
+**conserva su nombre** igualmente.
+
+El resumen se actualiza solo al añadir, editar o borrar entrenos. Si
+no hay entrenos en el periodo, la web te lo indica con un aviso.
+
+### 9.2 Tus entrenos
 
 En la pestaña «Entrenos» ves tus entrenos en **tarjetas**, ordenados
 por fecha, del más reciente al más antiguo. Cada tarjeta muestra el
@@ -745,7 +790,7 @@ Con **«+ Nuevo entreno»** creas uno con:
   tienes ejercicios, el botón **«Ver catálogo de ejercicios»** te
   lleva a crearlos. A cada ejercicio le añades **series** con
   **«+ Añadir serie»**: en cada serie escribes el **peso** (en la
-  unidad que tengas elegida, ver 9.3) y las **repeticiones**. La
+  unidad que tengas elegida, ver 9.4) y las **repeticiones**. La
   tabla de series tiene **etiquetas** («Peso» y «Repeticiones»)
   encima de cada columna, para que sepas siempre qué hay que
   escribir en cada recuadro. Con
@@ -768,7 +813,7 @@ con su tabla de series (peso × repeticiones). Dentro hay dos botones:
 tenías, y **«Eliminar»**, que borra el entreno (la web te pide
 confirmación antes).
 
-### 9.2 Tus ejercicios
+### 9.3 Tus ejercicios
 
 La pestaña **«Ejercicios»** muestra tu **catálogo de ejercicios** en
 tarjetas, ordenados por nombre. Con **«+ Nuevo ejercicio»** añades
@@ -792,7 +837,7 @@ entreno más reciente donde lo registraste y su **tabla de series**
 vistazo con qué cargas acabaste la última sesión. Si es un ejercicio
 **nuevo** (nunca lo has trabajado), esta sección no aparece.
 
-### 9.3 Cambiar entre kilos y libras
+### 9.4 Cambiar entre kilos y libras
 
 Bajo las pestañas de la sección hay un selector **«Unidad de peso»**
 con **kg** y **lbs**. Puedes cambiar entre kilos y libras **en
@@ -1200,8 +1245,8 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   ves. Hoy hay tres secciones: **«Ocio»**, con sus cuatro pestañas
   (**Series**, **Películas**, **Libros** y **Videojuegos**),
   **«Recetas»**, con sus cuatro pestañas (**Recetas**, **Ingredientes**,
-  **Menú** y **Compra**), y **«Gimnasio»**, con sus dos pestañas
-  (**Entrenos** y **Ejercicios**). Al **ocultar una pestaña**,
+  **Menú** y **Compra**), y **«Gimnasio»**, con sus tres pestañas
+  (**Resumen**, **Entrenos** y **Ejercicios**). Al **ocultar una pestaña**,
   desaparece de la barra de pestañas de su sección (la de Ocio, la
   de Recetas o la de Gimnasio) y de la vista: tus datos, avisos y
   actualizaciones siguen funcionando igual, solo deja de verse. Al

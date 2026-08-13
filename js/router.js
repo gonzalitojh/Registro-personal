@@ -14,8 +14,8 @@
 //     como alias de Ajustes (issue #135).
 //   - Recetas (issue #64): Recetas, Menú y Lista de la compra
 //     (#/recetas, #/recetas/menu, #/recetas/compra).
-//   - Gimnasio (issue #62): Entrenos y Ejercicios
-//     (#/gimnasio, #/gimnasio/ejercicios).
+//   - Gimnasio (issue #62): Resumen, Entrenos y Ejercicios
+//     (#/gimnasio, #/gimnasio/resumen).
 //
 // Además de las memorias por sección (lastOcioKey, lastRecipesTab,
 // lastGymTab), el router guarda la última sección de primer nivel
@@ -52,15 +52,17 @@ export const RECIPES_TAB_TO_PANEL = {
 export const RECIPES_DEFAULT_TAB = "recetas";
 
 // Mapa token de ruta de Gimnasio → id del panel en index.html
-// (issue #62). Solo la pestaña «Entrenos» (por defecto) se canoniza
-// sin segmento: #/gimnasio.
+// (issue #62; #/gimnasio/resumen añadido en #269). Solo la primera
+// pestaña «Resumen» (por defecto) se canoniza sin segmento:
+// #/gimnasio.
 export const GYM_TAB_TO_PANEL = {
+  resumen: "panel-gym-summary-tab",
   entrenos: "panel-gym-workouts-tab",
   ejercicios: "panel-gym-exercises-tab",
 };
 
-// Pestaña por defecto de Gimnasio (#/gimnasio).
-export const GYM_DEFAULT_TAB = "entrenos";
+// Pestaña por defecto de Gimnasio (#/gimnasio): la primera (Resumen).
+export const GYM_DEFAULT_TAB = "resumen";
 
 // Prefijos de las secciones de primer nivel. Todo lo que no
 // empiece por uno de ellos se considera ajeno al router.
@@ -192,7 +194,7 @@ export function parseHash(hash = location.hash) {
     // #/gimnasio/<tab>: solo valen las pestañas conocidas.
     if (segments.length === 2 && GYM_TAB_TO_PANEL[segments[1]]) {
       if (segments[1] === GYM_DEFAULT_TAB) {
-        // #/gimnasio/entrenos no es canónico: se normaliza a #/gimnasio.
+        // #/gimnasio/resumen no es canónico: se normaliza a #/gimnasio.
         return { section: "gimnasio", tab: GYM_DEFAULT_TAB, panelId: GYM_TAB_TO_PANEL[GYM_DEFAULT_TAB], default: true, invalid: true };
       }
       return { section: "gimnasio", tab: segments[1], panelId: GYM_TAB_TO_PANEL[segments[1]] };

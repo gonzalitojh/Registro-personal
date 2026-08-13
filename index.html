@@ -635,9 +635,11 @@
     </div>
   </div>
 
-  <!-- Vista de gimnasio (issue #62): registra entrenos (fecha,
-       ejercicios, series con peso y repeticiones) y un catálogo de
-       ejercicios. Hermana de recipes-view: vista de primer nivel,
+  <!-- Vista de gimnasio (issue #62): pestañas Resumen, Entrenos y
+       Ejercicios. Resumen (issue #269) agrega totales y desglose por
+       ejercicio de un periodo elegido; Entrenos registra entrenos
+       (fecha, ejercicios, series con peso y repeticiones) y Ejercicios
+       es el catálogo. Hermana de recipes-view: vista de primer nivel,
        fuera de #app, sin botón de volver ni título (issue #206): la
        navegación vive en la cabecera global. Barra de pestañas propia
        tipo Ocio (issue #208), ocultables en Ajustes, con el selector
@@ -645,7 +647,17 @@
   <div id="gym-view" class="gym-view hidden" role="main" aria-label="Vista de gimnasio">
     <nav class="tabs--bar" aria-label="Secciones de gimnasio">
       <div class="tabs" role="tablist" aria-label="Secciones de gimnasio">
-        <button class="tab tab--gym-workouts is-active" role="tab" aria-selected="true"
+        <button class="tab tab--gym-summary is-active" role="tab" aria-selected="true"
+                aria-controls="panel-gym-summary-tab" data-gym-tab="resumen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="20" x2="12" y2="10" />
+            <line x1="18" y1="20" x2="18" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          <span>Resumen</span>
+        </button>
+        <button class="tab tab--gym-workouts" role="tab" aria-selected="false"
                 aria-controls="panel-gym-workouts-tab" data-gym-tab="entrenos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -678,9 +690,48 @@
     </div>
 
     <div class="gym-view__body">
+      <!-- Pestaña Resumen (issue #269): totales y desglose por
+           ejercicio de los entrenos de un periodo elegido (semana en
+           curso, mes en curso o rango libre desde/hasta). El
+           contenido lo renderiza js/gym.js. Iteración 3: el rango se
+           elige en un ÚNICO recuadro (#gym-summary-range) con un
+           calendario propio: primer click = desde, segundo click =
+           hasta (nada de dos inputs de fecha independientes). El
+           recuadro solo se muestra con la opción «Rango» activa. -->
+      <section id="panel-gym-summary-tab" role="tabpanel" aria-labelledby="panel-gym-summary-tab-heading">
+        <h2 id="panel-gym-summary-tab-heading" class="visually-hidden">Resumen</h2>
+        <div class="gym-summary-selector" role="group" aria-label="Periodo del resumen">
+          <button type="button" class="gym-summary-chip is-active" aria-pressed="true" data-summary-period="week">Semana en curso</button>
+          <button type="button" class="gym-summary-chip" aria-pressed="false" data-summary-period="month">Mes en curso</button>
+          <button type="button" class="gym-summary-chip" aria-pressed="false" data-summary-period="custom">Rango</button>
+          <div class="gym-summary-range" id="gym-summary-range" hidden>
+            <button type="button" class="gym-summary-range__trigger" id="gym-summary-range-trigger"
+                    aria-haspopup="dialog" aria-expanded="false" aria-controls="gym-summary-range-popover">
+              <span class="gym-summary-range__label">Rango</span>
+              <span class="gym-summary-range__value" id="gym-summary-range-summary">Desde – Hasta</span>
+            </button>
+            <div class="gym-summary-range__popover" id="gym-summary-range-popover"
+                 role="dialog" aria-label="Elegir las fechas del rango" hidden>
+              <div class="gym-summary-range__cal-head">
+                <button type="button" class="gym-summary-range__cal-nav" id="gym-summary-range-prev" aria-label="Mes anterior">‹</button>
+                <span class="gym-summary-range__cal-title" id="gym-summary-range-month"></span>
+                <button type="button" class="gym-summary-range__cal-nav" id="gym-summary-range-next" aria-label="Mes siguiente">›</button>
+              </div>
+              <div class="gym-summary-range__cal-weekdays" id="gym-summary-range-weekdays" aria-hidden="true"></div>
+              <div class="gym-summary-range__cal-days" id="gym-summary-range-days"></div>
+              <div class="gym-summary-range__footer">
+                <button type="button" class="btn btn--small" id="gym-summary-range-clear">Borrar</button>
+                <button type="button" class="btn btn--small btn--primary" id="gym-summary-range-done">Listo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="gym-summary-data" aria-live="polite"></div>
+      </section>
+
       <!-- Pestaña Entrenos: listado de entrenos ordenados por fecha
            (desc). El contenido lo renderiza js/gym.js. -->
-      <section id="panel-gym-workouts-tab" role="tabpanel" aria-labelledby="panel-gym-workouts-tab-heading">
+      <section id="panel-gym-workouts-tab" class="hidden" role="tabpanel" aria-labelledby="panel-gym-workouts-tab-heading">
         <h2 id="panel-gym-workouts-tab-heading" class="visually-hidden">Entrenos</h2>
         <div class="gym-toolbar">
           <button type="button" id="btn-new-workout" class="btn btn--primary btn--small">
