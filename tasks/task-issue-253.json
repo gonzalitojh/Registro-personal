@@ -1,0 +1,38 @@
+{
+  "title": "Cerrar barra de búsqueda con la X del botón hamburguesa",
+  "description": "Issue #253: Cuando se pulsa sobre la barra de búsqueda en toda la web, el botón de hamburguesa que despliega el menú lateral debe cambiar a una \"X\" (con una animación) que cierre la búsqueda al pulsarse.",
+  "status": "review",
+  "acceptance criteria": [
+    "Al abrir la búsqueda global (click/focus en la barra, Ctrl+K o \"/\"), el botón hamburguesa #btn-sidebar-toggle se transforma en una \"X\" con una animación.",
+    "Al pulsar la \"X\" (el botón hamburguesa transformado), la búsqueda global se cierra (dropdown oculto, botón ✕ interno oculto) y el icono vuelve a ser ☰ con animación.",
+    "El comportamiento del botón hamburguesa fuera de la búsqueda no cambia: abre/cierra la barra lateral.",
+    "Si la barra lateral está abierta al pulsar la barra de búsqueda, se sigue cerrando la barra lateral (comportamiento actual, sin regresión) y el icono queda como \"X\".",
+    "El atributo aria-label del botón cambia a un texto de cerrar búsqueda mientras está en modo \"X\" y se restaura al volver a ☰.",
+    "La animación respeta prefers-reduced-motion (transición anulada globalmente).",
+    "El cambio se ve correctamente en los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro): la \"X\" usa currentColor como el icono ☰.",
+    "El manual de usuario (docs/manual-de-usuario.md, sección 9.2) documenta la nueva forma de cerrar la búsqueda."
+  ],
+  "definition of done": [
+    "Planificación completada.",
+    "Implementación realizada (HTML/CSS/JS) con micro-commits.",
+    "Validación QA: criterios de aceptación y edge cases verificados.",
+    "Escaneo de seguridad PASS (sin hallazgos HIGH).",
+    "ADR documentando la decisión, con 'Related issue: #253'.",
+    "Manual de usuario actualizado.",
+    "PR contra dev SIN keyword de cierre.",
+    "Issue #253 label updated to its final state."
+  ],
+  "issue": {
+    "number": 253,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/253",
+    "title": "Cerrar barra de búsqueda"
+  },
+  "pr": {
+    "number": 255,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/255",
+    "title": "[feature] Cerrar barra de búsqueda con la X del botón hamburguesa",
+    "branch": "feat/issue-253-cierra-busqueda",
+    "commit": "963bb58",
+    "closes": "#253"
+  }
+}
