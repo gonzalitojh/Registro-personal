@@ -192,10 +192,10 @@ sobre el papel, que es el lenguaje visual del resto de la app):
 - `.recipe-pick__card` → `--paper-dim`/`--ink` con borde
   `--paper-line`; el nombre queda en tinta oscura legible (13.1:1).
 - `.recipe-pick__search` → `--paper-dim`/`--ink` (placeholder a la
-  tinta del contenido: `--ink-soft` daba ≈ 2.3:1, no AA).
+  tinta del contenido: `--ink-soft` daba ≈ 2.45:1, no AA).
 - `.recipe-pick .recipes-filter__btn` → píldora clara
   (`--paper-dim`/`--ink`/`--paper-line`).
-- `.recipe-pick__comensales` → `--ink` (la tinta suave daba ≈ 2.3:1).
+- `.recipe-pick__comensales` → `--ink` (la tinta suave daba ≈ 2.45:1).
 - Tinte del placeholder de foto `--ink-alpha-08`.
 
 Y en **Negro puro** (donde el modal es superficie oscura

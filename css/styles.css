@@ -3384,7 +3384,7 @@ body.is-back-to-top-visible .back-to-top {
 
 .recipe-pick__search::placeholder {
   /* Sobre el campo claro de la familia oscura, --ink-soft (#948a76)
-     solo da ≈ 2.3:1 (no AA): tinta del contenido, mismo patrón que
+     solo da ≈ 2.45:1 (no AA): tinta del contenido, mismo patrón que
      .recipe-pick__empty. En negro puro el campo es tinta y la base
      sería invisible: override abajo. */
   color: var(--ink);
@@ -3500,7 +3500,7 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Fila de comensales de la tarjeta (issue #242): número opcional
    (vacío = hereda los del menú) y botones Añadir / Cancelar. Sobre la
-   tarjeta clara de la familia oscura, --ink-soft solo daría ≈ 2.3:1:
+   tarjeta clara de la familia oscura, --ink-soft solo daría ≈ 2.45:1:
    tinta del contenido (mismo patrón que .recipe-pick__empty); en
    negro puro la tarjeta es oscura y vuelve a --ink-soft en los
    overrides de abajo. */
