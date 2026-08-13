@@ -1,0 +1,59 @@
+{
+  "title": "Icono sección",
+  "description": "El usuario no está contento con el icono de la sección de gimnasio (feat/issue-62-seccion-gimnasio). Hay que crear un nuevo icono para la sección. La base de trabajo es la rama feat/issue-62-seccion-gimnasio: crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).",
+  "status": "review",
+  "acceptance_criteria": [
+    "La sección de gimnasio muestra un icono nuevo, distinto del actual.",
+    "El icono es coherente con el estilo visual del resto de secciones (películas, series, libros, ocio).",
+    "El icono se ve correctamente en los cuatro modos de tema (oscuro, negro puro, claro, blanco puro).",
+    "El cambio no introduce scroll horizontal ni problemas de responsividad."
+  ],
+  "definition_of_done": [
+    "Planificación completada.",
+    "Implementación realizada.",
+    "Validación realizada (criterios de aceptación y edge cases).",
+    "Escaneo de seguridad realizado sin hallazgos de severidad alta.",
+    "ADR documentado (con 'Related issue: #263' si aplica).",
+    "PR creada contra la rama feat/issue-62-seccion-gimnasio (no dev), sin keyword de cierre.",
+    "Issue #263 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 263,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/263",
+    "title": "Icono sección"
+  },
+  "plan": {
+    "objetivo": "Sustituir el icono de la sección Gimnasio (mancuerna diagonal con trazos sueltos) por una mancuerna horizontal clásica (barra + 4 discos simétricos).",
+    "archivos": [
+      "js/sidebar.js (entrada Gimnasio)",
+      "index.html (pestaña Entrenos de gym-view)"
+    ],
+    "nuevo_svg": "viewBox 0 0 24 24, fill none, stroke currentColor, stroke-width 1.8, linecap/linejoin round, aria-hidden; barra line 8,12->16,12; discos rect (2.5,9,3,6,rx1), (6.5,7.5,2,9,rx0.7), (15.5,7.5,2,9,rx0.7), (18.5,9,3,6,rx1).",
+    "no_toca": [
+      "css (usa currentColor: herencia en los 4 temas)",
+      "manual-de-usuario (no describe el icono)",
+      "ADR-095 (sigue vigente)"
+    ],
+    "validacion": [
+      "sin restos del path antiguo M6.5 6.5 17.5 17.5",
+      "SVG simétrico y válido",
+      "4 temas de visualización",
+      "sin impacto de layout"
+    ]
+  },
+  "validation": {
+    "qa": "PASS — geometría simétrica verificada por rasterización (0.00% píxeles distintos), sin restos del path antiguo, currentColor para 4 temas, sin impacto de layout/responsividad.",
+    "security": "PASS — 0 hallazgos HIGH/MEDIUM/LOW; SVG estático sin interpolación ni handlers.",
+    "manual_usuario": "No requiere cambios (línea 129 no describe la forma del icono; cambio puramente cosmético)."
+  },
+  "adr": "docs/adr-096-icono-seccion-gimnasio.md (Related issue: #263)",
+  "pr": {
+    "number": 264,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/264",
+    "title": "style(gym): nuevo icono de la sección Gimnasio (#263)",
+    "branch": "style/issue-263-icono-seccion",
+    "base": "feat/issue-62-seccion-gimnasio",
+    "commit": "1476a9a",
+    "closes": "#263"
+  }
+}
