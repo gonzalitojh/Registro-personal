@@ -565,32 +565,27 @@ function renderWorkoutEditorHtml() {
   </form>`;
 }
 
-// Bloque de un ejercicio del constructor: select del catálogo (con la
-// opción «Otro…» para escribir un nombre libre, ejercicioId null),
+// Bloque de un ejercicio del constructor: select del catálogo (con
+// placeholder del nombre snapshot en los datos antiguos sin id),
 // filas de serie (peso en la unidad activa + reps) y botones de
 // quitar serie/ejercicio.
 function workoutExerciseBlockHtml(ex, i) {
   const options = exercises.map((e) =>
     `<option value="${escapeHtml(e.id)}"${e.id === ex.ejercicioId ? " selected" : ""}>${escapeHtml(e.nombre)}</option>`
   ).join("");
-  const customSelected = ex.ejercicioId === null;
-  const customNameInput = customSelected
-    ? `<input type="text" class="gym-custom-name" maxlength="200" autocomplete="off"
-         placeholder="Nombre del ejercicio" aria-label="Nombre del ejercicio"
-         value="${escapeHtml(ex.nombre)}" />`
-    : "";
+  // Datos antiguos (legacy «Otro…»): sin id y con nombre snapshot; se
+  // muestra el nombre como placeholder para no perder la referencia.
+  const placeholderLabel = ex.ejercicioId === null && ex.nombre ? ex.nombre : "Elige un ejercicio…";
   const seriesRows = ex.series.map((s, si) => workoutSeriesRowHtml(i, si, s)).join("");
 
   return `<div class="gym-exercise-block" data-gym-ex-idx="${i}">
     <div class="gym-exercise-block__header">
       <select data-gym-ex-select aria-label="Ejercicio ${i + 1}">
-        <option value="">Elige un ejercicio…</option>
+        <option value="">${escapeHtml(placeholderLabel)}</option>
         ${options}
-        <option value="__custom__"${customSelected ? " selected" : ""}>Otro (escribir nombre)…</option>
       </select>
       <button type="button" class="gym-remove-btn" data-gym-ex-remove="${i}" aria-label="Quitar ejercicio ${i + 1}">✕</button>
     </div>
-    ${customNameInput}
     <div class="gym-series-table">${seriesRows}</div>
     <button type="button" class="gym-add-series-btn" data-gym-add-series="${i}">+ Añadir serie</button>
   </div>`;
@@ -622,15 +617,12 @@ function syncWorkoutDraftFromDom() {
   workoutDraft.nota = form.querySelector("#gym-wk-nota").value;
   workoutDraft.ejercicios = Array.from(form.querySelectorAll(".gym-exercise-block")).map((block, idx) => {
     const select = block.querySelector("[data-gym-ex-select]");
-    const customName = block.querySelector(".gym-custom-name");
-    const ejercicioId = select.value === "__custom__" ? null : select.value || null;
+    const ejercicioId = select.value || null;
     // Si el ejercicio se borró del catálogo tras guardarse el entreno,
     // el select ya no tiene su opción: se conserva el nombre snapshot
     // del borrador (los entrenos guardados conservan su nombre).
     const found = exercises.find((e) => e.id === select.value);
-    const nombre = select.value === "__custom__"
-      ? customName.value.trim()
-      : (found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "");
+    const nombre = found?.nombre ?? workoutDraft.ejercicios[idx]?.nombre ?? "";
     const series = Array.from(block.querySelectorAll(".gym-series-row")).map((row) => ({
       pesoKg: displayToKg(parseFloat(row.querySelector("[data-gym-series-peso]").value) || 0),
       reps: parseInt(row.querySelector("[data-gym-series-reps]").value, 10) || 0,
@@ -640,29 +632,13 @@ function syncWorkoutDraftFromDom() {
 }
 
 function bindWorkoutEditorHandlers(content) {
-  // Selección de ejercicio del catálogo («Otro…» revela el input de
-  // nombre libre). Se sincroniza el borrador y se alterna el input en
-  // sitio (sin re-render, para no perder el foco del select).
+  // Selección de ejercicio del catálogo: se sincroniza el borrador (el
+  // nombre snapshot puede cambiar al pasar de un ejercicio a otro) y se
+  // pre-rellenan las series con las de la última vez (Fase 4).
   content.querySelectorAll("[data-gym-ex-select]").forEach((select) => {
     select.addEventListener("change", () => {
       syncWorkoutDraftFromDom();
-      const block = select.closest(".gym-exercise-block");
-      const customInput = block.querySelector(".gym-custom-name");
-      if (select.value === "__custom__") {
-        if (!customInput) {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.className = "gym-custom-name";
-          input.maxLength = 200;
-          input.autocomplete = "off";
-          input.placeholder = "Nombre del ejercicio";
-          input.setAttribute("aria-label", "Nombre del ejercicio");
-          select.closest(".gym-exercise-block__header").insertAdjacentElement("afterend", input);
-          input.focus();
-        }
-      } else if (customInput) {
-        customInput.remove();
-      }
+      maybePrefillSeriesFromLastWorkout(select);
     });
   });
 
