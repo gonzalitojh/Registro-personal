@@ -234,6 +234,13 @@ async function openMovieItem(item, ctx, isRerender = false) {
           }
         }
       : undefined,
+    // Vista previa de una película de la saga al pulsar su tarjeta
+    // (issue #280, iteración): abre la preview (patrón issue #22) y al
+    // cerrar o añadir restaura la ficha con reopen; el Set existingIds
+    // compartido hace que la tarjeta vuelva como «Añadida».
+    onOpenSagaMovie: item.collectionId
+      ? (movie) => openSagaMoviePreview(movie, ctx, reopen, existingIds)
+      : undefined,
   }, recommendations, existingIds, sagaParts);
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -266,6 +273,55 @@ async function addSagaMovie(movie, ctx) {
     draft.awaitingRelease = true;
   }
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
+}
+
+/**
+ * Vista previa de una película de la saga (issue #280, iteración):
+ * al pulsar una tarjeta de «Otras películas de la saga» se muestra su
+ * información antes de añadirla (mismo patrón que la vista previa de
+ * búsqueda, issue #22). Al cerrar la vista previa o tras añadirla, se
+ * restaura la ficha de la película que se estaba viendo.
+ * @param {Object}   movie        - Parte de la saga ({externalId, title, year, posterUrl, overview})
+ * @param {Object}   ctx          - Contexto de datos del usuario
+ * @param {Function} restoreModal - Reabre la ficha de la película original
+ * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
+ */
+async function openSagaMoviePreview(movie, ctx, restoreModal, existingIds) {
+  const previewItem = {
+    externalId: String(movie.externalId),
+    type: "movie",
+    title: movie.title,
+    year: movie.year || "",
+    coverUrl: movie.posterUrl || null,
+    posterUrl: movie.posterUrl || null, // addSagaMovie espera posterUrl
+    overview: movie.overview || "",
+  };
+  ui.closeModal(); // limpia trap/foco del modal de ficha antes de abrir la preview
+  ui.openSearchPreviewModal(previewItem, {
+    added: existingIds.has(String(movie.externalId)),
+    onClose: () => {
+      ui.closeModal(); // limpia trap/foco de la preview...
+      restoreModal();  // ...y restaura la ficha
+    },
+    onAdd: async (item, btn) => {
+      btn.disabled = true;
+      btn.textContent = "Añadiendo…";
+      try {
+        await addSagaMovie(item, ctx);
+        existingIds.add(String(item.externalId));
+        ui.showToast(`«${item.title}» añadida a tu registro.`);
+        ui.closeModal();
+        restoreModal(); // la ficha restaurada muestra la tarjeta como «Añadida»
+        return true;
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Añadir";
+        ui.showToast("No se pudo añadir: " + err.message);
+        return false;
+      }
+    },
+    onEnrich: (item) => getMovieDetails(item.externalId),
+  });
 }
 
 /**
