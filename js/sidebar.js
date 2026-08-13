@@ -73,13 +73,11 @@ export const SECTIONS = [
     label: "Gimnasio",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M6.5 6.5 17.5 17.5" />
-      <path d="M21 17 17 21" />
-      <path d="M3 7 7 3" />
-      <path d="m2.5 12.5 9-9" />
-      <path d="m12.5 2.5 9 9" />
-      <path d="M6 21h.01" />
-      <path d="M18 3h.01" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <rect x="2.5" y="9" width="3" height="6" rx="1" />
+      <rect x="6.5" y="7.5" width="2" height="9" rx="0.7" />
+      <rect x="15.5" y="7.5" width="2" height="9" rx="0.7" />
+      <rect x="18.5" y="9" width="3" height="6" rx="1" />
     </svg>`,
     onClick: () => {
       // Abrir la sección Gimnasio sincronizando la URL: vuelve a la
