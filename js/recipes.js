@@ -1205,6 +1205,8 @@ function optionsFor(scope, selectedId) {
 // para restaurar el buscador de recetas al cerrar la ventana de
 // lectura abierta desde el menú. Se invoca siempre al cerrar y se
 // limpia después, para que no se acumulen callbacks de una apertura.
+// La transición lectura → edición (openRecipeModal sin onClose)
+// NO lo pisa: el callback sigue vivo hasta que el modal se cierre.
 let recipeModalCloseCb = null;
 
 export function openRecipeModal(recipe = null, { readOnly = false, onClose = null } = {}) {
@@ -1213,7 +1215,7 @@ export function openRecipeModal(recipe = null, { readOnly = false, onClose = nul
   const wasHidden = modal.classList.contains("hidden");
   editingRecipeId = recipe?.id || null;
   modalReadOnly = readOnly;
-  recipeModalCloseCb = onClose || null;
+  if (onClose) recipeModalCloseCb = onClose;
 
   content.innerHTML = recipeModalHtml(recipe);
   bindRecipeModalHandlers(content);

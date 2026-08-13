@@ -394,7 +394,6 @@ function renderRecipePicker() {
 }
 
 function bindRecipePickerEvents(content) {
-  const modal = document.getElementById("recipe-picker-modal");
   document.getElementById("recipe-picker-close").addEventListener("click", closeRecipePicker);
   document.getElementById("recipe-picker-backdrop").addEventListener("click", closeRecipePicker);
   ensureRecipePickerDocEvents();
@@ -444,37 +443,44 @@ function bindRecipePickerEvents(content) {
   // Lista de tarjetas: delegación (ver receta en lectura / añadir).
   const list = content.querySelector("#recipe-pick-list");
   list.addEventListener("click", (e) => {
-    const viewBtn = e.target.closest("[data-pick-view]");
-    if (viewBtn) {
-      const recipe = getRecipes().find((r) => r.id === viewBtn.dataset.pickView);
-      if (!recipe) return;
-      closeRecipePicker();
-      openRecipeModal(recipe, { readOnly: true, onClose: restoreRecipePicker });
-      return;
-    }
     const addBtn = e.target.closest("[data-pick-add]");
     if (addBtn) {
-      expandComensalesRow(list, addBtn);
+      expandComensalesRow(addBtn);
       return;
     }
     const confirmBtn = e.target.closest("[data-pick-confirm]");
     if (confirmBtn) {
+      // Guard contra doble clic: el botón se desactiva y el alta
+      // re-renderiza/cierra el buscador.
+      confirmBtn.disabled = true;
       const card = confirmBtn.closest("[data-pick-card]");
       if (!card) return;
       const input = card.querySelector(".recipe-pick__comensales input");
       const raw = Number(input?.value);
       const comensales = input && input.value !== "" && Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : null;
       addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
+      return;
     }
     const cancelBtn = e.target.closest("[data-pick-cancel]");
     if (cancelBtn) {
       const card = cancelBtn.closest("[data-pick-card]");
       if (!card) return;
       collapseComensalesRow(card);
+      return;
+    }
+    // Click en la tarjeta (fuera de sus botones): abre la receta en
+    // modo lectura, la misma ventana de la pestaña Recetas.
+    const cardEl = e.target.closest("[data-pick-card]");
+    if (cardEl && !e.target.closest("button")) {
+      const recipe = getRecipes().find((r) => r.id === cardEl.dataset.pickCard);
+      if (!recipe) return;
+      closeRecipePicker();
+      openRecipeModal(recipe, { readOnly: true, onClose: restoreRecipePicker });
     }
   });
-  // Soporte de teclado: Enter en una tarjeta abre la lectura; Enter en
-  // el número de comensales confirma el alta de la receta.
+  // Soporte de teclado: Enter/Espacio en la tarjeta (fuera de botones
+  // e inputs) abre la lectura; Enter en el número de comensales
+  // confirma el alta de la receta.
   list.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     if (e.target.matches(".recipe-pick__comensales input")) {
@@ -488,6 +494,9 @@ function bindRecipePickerEvents(content) {
       addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
       return;
     }
+    // Los botones internos de la tarjeta gestionan su propio Enter
+    // (click nativo): no abrir la lectura.
+    if (e.target.closest("button")) return;
     const card = e.target.closest("[data-pick-card]");
     if (!card) return;
     e.preventDefault();
@@ -640,7 +649,7 @@ function tagLabelInMenu(scope, id) {
 // Fila de comensales de la tarjeta: un número opcional más los
 // botones «Añadir» (confirma el alta) y «Cancelar». Vacío (o 0) → la
 // receta hereda los comensales globales del menú.
-function expandComensalesRow(list, addBtn) {
+function expandComensalesRow(addBtn) {
   const card = addBtn.closest("[data-pick-card]");
   if (!card) return;
   const global = Number(activeMenu().comensales) || 1;
