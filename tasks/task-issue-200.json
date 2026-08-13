@@ -1,7 +1,7 @@
 {
   "title": "Rehacer el almacenamiento de datos (híbrido A2 + pasada mínima A5-a)",
   "description": "Issue #200: rehacer cómo se almacena la información en busca de la mayor optimización, según el estudio de la issue #183 (docs/estudio-almacenamiento-minimo.md). Implementar la propuesta elegida en la sección 10: híbrido A2 (persistir solo campos de tarjeta + avisos; detalles de ficha bajo demanda con caché) + pasada diaria mínima A5-a (solo ítems buscando estreno / series con episodio pendiente / libros sin sinopsis). Si es posible, actualizar la información ya almacenada en Firebase para no guardar información de más (limpieza migratoria de campos de ficha).\n\nAlcance (sección 10 del estudio):\n1. Alta sin enriquecimiento: handleAdd/handleAddSeen y alta por saga/recomendación guardan solo la tarjeta + campos de avisos (releaseDate/firstAirDate/nextEpisodeToAir/seasonAirDates/communityRating) y dejan de persistir el snapshot de ficha (overview, runtime, genres, cast, director, creators, trailerUrl, collection*, plataformas/desarrolladores/editores/esrbName/metacritic/playtime). Los libros conservan author/pages/description (excepción 8.1).\n2. Ficha bajo demanda: al abrir el modal, si al ítem le faltan detalles se cargan con caché en memoria 24 h + stale-while-revalidate de portada/communityRating; placeholder de carga y degradación elegante si falla la red.\n3. Ficha de amigo (openReadOnlyModal): fetch on-demand con degradación a «solo tarjeta».\n4. Throttle IGDB ≤ 4 req/s en js/api-games.js.\n5. Pasada mínima A5-a: reescribir checkForUpdates (~75 llamadas/día); auto-standby offline para series en curso con episodio ya emitido; juegos sin red (como hoy).\n6. Redefinir «Sincronizar ahora» → «Comprobar estrenos» (alcance revalidar pendientes de estreno, cooldown 30 min).\n7. Migración: coexistencia de campos + limpieza diferida de campos de ficha (una vez por usuario, best-effort).\n8. Manual de usuario actualizado (regla 3 de AGENTS.md) y nuevo ADR con 'Related issue: #200' (supersede en parte a ADR-021).\n9. Caché dinámica del SW: subir DYNAMIC_MAX_ENTRIES para las respuestas de ficha.\n\nNO cambia: lógica de avisos de notificaciones, feed de actividad, estadísticas (degradan a vacío los desgloses de géneros/plataformas cuando no hay detalle guardado), ordenación, backup/restore (exporta lo guardado), reglas de Firestore.",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "Al añadir una película/serie/videojuego se persiste solo la tarjeta (externalId, type, title, year, coverUrl) + estado del usuario + campos de avisos (releaseDate/firstAirDate/nextEpisodeToAir/seasonAirDates/nextEpisodeAirDate/awaitingRelease/releasedNoticedAt/lastNotifiedEpisode) + communityRating; los campos de ficha (overview, runtime, genres, cast, director, creators, trailerUrl, collection*, platforms, developers, publishers, esrbName, metacritic, playtime) NO se guardan al alta.",
     "Los libros conservan author, pages y description en el documento (excepción documentada del estudio 8.1).",
@@ -40,5 +40,23 @@
       "version": "bump-version.sh 20260926 + DYNAMIC_MAX_ENTRIES 100 (service-worker.js)",
       "documentacion": "manual-de-usuario.md §§16-17 reescrito; ADR-093 nuevo; ADR-021 anotado como parcialmente sustituido"
     }
+  },
+  "validation": {
+    "qa": {
+      "result": "VALIDADO",
+      "date": "2026-08-13",
+      "criterios": "9/9 PASS",
+      "notas": "3 hallazgos minor aceptados; aplicado fix de precache SW (commit cdfbb6f)"
+    },
+    "security": {
+      "result": "PASS",
+      "date": "2026-08-13",
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "info": 5
+    },
+    "syntax": "node --check OK en 15 archivos JS + service-worker.js",
+    "docs": "ADR-093 creado (Related issue: #200); manual-de-usuario.md §§16-17; ADR-021 anotado como parcialmente sustituido"
   }
 }
