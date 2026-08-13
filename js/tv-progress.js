@@ -36,7 +36,8 @@ export function computeEpisodeAverageRating(watched) {
     for (const raw of Object.values(seasonMap)) {
       const entry = normalizeEntry(raw);
       const r = Number(entry?.rating);
-      if (!Number.isFinite(r) || r < 1 || r > 5) continue;
+      // Las medias estrellas (0.5) son válidas desde la issue #276.
+      if (!Number.isFinite(r) || r < 0.5 || r > 5) continue;
       count++;
       total += r;
     }
