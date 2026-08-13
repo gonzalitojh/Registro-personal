@@ -1,7 +1,7 @@
 {
   "title": "Unidad de medida en recetas como desplegable (g, Kg, mL, L, Unidades)",
   "description": "La issue #251 pide que, al editar o crear una receta, la unidad de medida de los ingredientes sea un desplegable con las opciones g, Kg, mL, L y Unidades (en lugar del input de texto libre actual, .ing-unidad del formulario de receta). El patrón ya existe en la app: SHOPPING_UNITS en js/recipes-data.js (g, Kg, mL, L, Unidades), usado por el formulario de ítem extra y el modal de añadir a la compra (issue #249, ADR-091).\n\nNota del flujo (misma excepción que ADR-083/085/087/088/089/090/091): la base de trabajo es la rama `content/issue-64-seccion-recetas`; la rama de trabajo se crea desde ahí y la PR va TAMBIÉN a `content/issue-64-seccion-recetas`, no a dev (pedido explícitamente en la issue).",
-  "status": "validated",
+  "status": "documented",
   "acceptance criteria": [
     "Al crear o editar una receta, la unidad de medida de cada ingrediente es un desplegable (select) con las opciones g, Kg, mL, L y Unidades.",
     "Las unidades ya guardadas en recetas existentes se conservan: si la unidad guardada no está entre las cinco opciones estándar (dato legado de texto libre), se muestra como opción extra seleccionada para no perderla al editar.",
