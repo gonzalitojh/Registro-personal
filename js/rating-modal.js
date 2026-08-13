@@ -164,7 +164,7 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
     content.querySelector("#rm-save").addEventListener("click", async () => {
       const rating = getRating();
       if (!rating) {
-        showToast("Elige una valoración (de 1 a 5 estrellas).");
+        showToast("Elige una valoración (de 1 a 5 estrellas, con medias).");
         return;
       }
       const saveBtn = content.querySelector("#rm-save");
