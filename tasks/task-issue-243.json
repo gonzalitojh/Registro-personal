@@ -1,7 +1,7 @@
 {
   "title": "Problemas en pestaña ingredientes",
   "description": "En la pestaña ingredientes se han roto todos los botones. Al hacer click sobre 'Añadir ingrediente' o sobre cualquier ingrediente aparece un error en consola:\n\n- recipes.js:912 Uncaught ReferenceError: edit is not defined at openIngredientModal (recipes.js:912:3) at HTMLDivElement.<anonymous> (recipes.js:171:5)\n- recipes.js:912 Uncaught ReferenceError: edit is not defined at openIngredientModal (recipes.js:912:3) at HTMLButtonElement.<anonymous> (recipes.js:163:81)\n\nAdemás aparece este error en general:\n- app.js?v=20260920:191 No se pudo completar la comprobación diaria: ReferenceError: getItemsByGroup is not defined at checkForUpdates (daily-check.js:440:19)\n\nLa base de la que iniciar el trabajo es la rama content/issue-64-seccion-recetas. Se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "security-cleared",
   "acceptance_criteria": [
     "Al hacer click sobre 'Añadir ingrediente' o sobre cualquier ingrediente en la pestaña ingredientes no aparece ningún error en consola (ReferenceError: edit is not defined)",
     "El modal de ingrediente se abre correctamente con los datos del ingrediente existente en modo edición y vacío en modo creación",
