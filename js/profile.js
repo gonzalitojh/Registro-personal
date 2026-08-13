@@ -13,7 +13,7 @@ import { renderSettings, normalizeTabKey } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
 import { logout } from "./firebase.js";
 import { trapFocus } from "./focus-utils.js";
-import { navigate, parseHash, getLastOcioKey, getLastRecipesTab, getLastSection } from "./router.js";
+import { navigate, parseHash, getLastOcioKey, getLastRecipesTab, getLastGymTab, getLastSection } from "./router.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -561,10 +561,11 @@ export function setupProfile(ctx) {
   // pestañas en la misma fila; la cabecera global no aparece aquí.
   // Cierra la vista (toggle manual: cubre el caso de navegar sin
   // cambiar el hash) y vuelve a la última sección de primer nivel en
-  // la que estuviera el usuario (Ocio o Recetas, issue #213) con su
-  // última pestaña activa (normalizada a la primera visible si esa
-  // pestaña quedó oculta, issue #97). El onRoute del router se
-  // encarga de mostrar de nuevo la cabecera global y la vista.
+  // la que estuviera el usuario (Ocio, Recetas o Gimnasio, issues
+  // #213 y #268) con su última pestaña activa (normalizada a la
+  // primera visible si esa pestaña quedó oculta, issue #97). El
+  // onRoute del router se encarga de mostrar de nuevo la cabecera
+  // global y la vista.
   document.getElementById("btn-close-profile").addEventListener("click", () => {
     document.getElementById("profile-view").classList.add("hidden");
     if (getLastSection() === "recetas") {
@@ -572,6 +573,12 @@ export function setupProfile(ctx) {
       // dispara onRoute → openRecipes, que ya oculta #app y
       // #profile-view y destapa #recipes-view con su pestaña.
       navigate({ section: "recetas", tab: normalizeTabKey("recetas", getLastRecipesTab()) });
+    } else if (getLastSection() === "gimnasio") {
+      // Rama Gimnasio (issue #268): navegar cambia el hash
+      // (#/perfil → #/gimnasio) y dispara onRoute → openGym, que ya
+      // oculta #app y #profile-view y destapa #gym-view con su
+      // pestaña (mismo patrón que la rama Recetas, issue #213).
+      navigate({ section: "gimnasio", tab: normalizeTabKey("gimnasio", getLastGymTab()) });
     } else {
       // Rama Ocio: comportamiento actual (mostrar #app antes de
       // navegar; el onRoute de Ocio activa la pestaña y re-muestra la
