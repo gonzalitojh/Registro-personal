@@ -1,7 +1,7 @@
 {
   "title": "Ventana de ingrediente con versión solo lectura + edición (nombre y foto)",
   "description": "Issue #232: al pulsar un ingrediente en la pestaña «Ingredientes» se despliega una ventana con la categoría, supermercados y cantidad del paquete. Se pide:\n\n1. La ventana debe tener una versión «solo lectura» y un botón con un lápiz (✏️) para editarla.\n2. En la versión de edición también se debe poder editar el nombre del ingrediente y añadir una foto.\n3. Si no hay foto añadida, en la versión de lectura NO se debe mostrar ninguna imagen vacía ni «sin imagen» ni nada similar: simplemente se muestra como si no se pudiese añadir imagen.\n4. El botón «Cerrar» de abajo se puede eliminar (ya está la ✕ de arriba).\n5. La descripción final («Categoría actual: ... La lista de la compra se agrupa por esta categoría.») debe eliminarse.\n\nBase de trabajo: rama `content/issue-64-seccion-recetas` (la PR va también a esa rama, no a `dev`, igual que ADR-083/085 y las PRs #227/#228). La foto sigue el patrón de las recetas (URL, campo `fotoUrl`), no hay infraestructura de subida de archivos en la app.",
-  "status": "implemented",
+  "status": "security-cleared",
   "acceptance criteria": [
     "Al pulsar una tarjeta de ingrediente se abre la ventana en modo solo lectura: nombre como título, foto (solo si existe), categoría como texto, supermercados como etiquetas no interactivas y cantidad del paquete como texto.",
     "La vista de lectura tiene un botón con lápiz (✏️ Editar) que cambia a la vista de edición.",
