@@ -82,7 +82,10 @@ let editingExerciseId = null;
 // elegidas en el calendario del recuadro único; null = límite abierto.
 // Ya no hay dos inputs de fecha independientes: el primer click en el
 // calendario fija «desde» y el segundo «hasta» (intercambiando si el
-// segundo es anterior al primero).
+// segundo es anterior al primero). Iteración 4: el calendario NO se
+// cierra al fijar solo el primer extremo — permanece abierto hasta
+// que las dos fechas están elegidas (el cierre al completar el rango
+// y el de fuera/Esc/«Listo» se mantienen).
 let summaryRange = { from: null, to: null };
 // Mes visible en el calendario del rango ({year, month 0-11}).
 let summaryRangeMonth = null;
@@ -170,6 +173,21 @@ export function setupGym(opts) {
   // calendario; dentro se eligen «desde» (primer click) y «hasta»
   // (segundo click) en el mismo control. Cierra con «Listo», con
   // Escape o al hacer click fuera del recuadro.
+  //
+  // Iteración 4: el click fuera NO debe cerrar el calendario cuando
+  // se acaba de pulsar un día — el re-render de la rejilla que hace
+  // onSummaryRangeDayClick() detacha el botón pulsado antes de que el
+  // evento llegue a este handler (fase burbuja en document), y
+  // e.target.closest("#gym-summary-range") fallaría sobre un nodo
+  // descolgado, cerrando el calendario con solo «desde» elegido. La
+  // marca en fase de CAPTURA (que corre antes del re-render) recuerda
+  // que el click nació dentro del recuadro: el calendario permanece
+  // abierto hasta que las dos fechas están elegidas (el cierre al
+  // completar el rango lo hace onSummaryRangeDayClick(), y Esc /
+  // «Listo» / click fuera real siguen cerrando igual).
+  document.getElementById("gym-summary-range")?.addEventListener("click", (e) => {
+    e.__summaryRangeInside = true;
+  }, true);
   const rangeTrigger = document.getElementById("gym-summary-range-trigger");
   rangeTrigger?.addEventListener("click", () => {
     if (summaryRangePopoverOpen) {
@@ -199,7 +217,7 @@ export function setupGym(opts) {
   });
   document.getElementById("gym-summary-range-done")?.addEventListener("click", closeSummaryRangePopover);
   document.addEventListener("click", (e) => {
-    if (summaryRangePopoverOpen && !e.target.closest("#gym-summary-range, .gym-summary-chip")) {
+    if (summaryRangePopoverOpen && !e.__summaryRangeInside && !e.target.closest(".gym-summary-chip")) {
       closeSummaryRangePopover();
     }
   });
@@ -515,26 +533,32 @@ function summaryGroupFor(e) {
 //   - totals { entrenos, ejercicios } del periodo (nº de entrenos y
 //     nº de ejercicios distintos).
 //   - perExercise: Map clave → { nombre, grupoMuscular, veces,
-//     pesoMin, pesoMax } con veces = nº de entrenos distintos en que
-//     aparece y el peso menor/mayor registrado en el periodo (kg
-//     canónicos; las series sin peso —null o ≤ 0— no entran en los
-//     extremos).
+//     pesoAntiguo, pesoNuevo } con veces = nº de entrenos distintos
+//     en que aparece y el peso más ANTIGUO y el más NUEVO registrados
+//     en el periodo (kg canónicos; las series sin peso —null o ≤ 0—
+//     no cuentan).
 //   - perGroup: Map grupo → { label, ejercicios, entrenos } con el nº
 //     de ejercicios distintos y de entrenos de cada grupo muscular.
 // Iteraciones de los comentarios del usuario en la issue: los
 // sumatorios de series, repeticiones y volumen se eliminan — el
 // resumen se centra en lo que pide: nº de entrenos, ejercicios
-// totales, desglose por grupos musculares y, desde la iteración 3, el
-// aumento de peso por ejercicio (mínimo y máximo del periodo). Una
-// entrada sin id ni nombre no agrupa ni cuenta (no hay ejercicio al
-// que atribuirla); sin grupo muscular solo cuenta en los totales, no
-// en el desglose por grupos.
+// totales, desglose por grupos musculares y, desde la iteración 4, la
+// DIFERENCIA de peso por ejercicio (el peso más antiguo del periodo
+// frente al más nuevo, con signo: positivo si aumentó, negativo si
+// bajó). Una entrada sin id ni nombre no agrupa ni cuenta (no hay
+// ejercicio al que atribuirla); sin grupo muscular solo cuenta en los
+// totales, no en el desglose por grupos.
 function summarizeWorkouts(workoutsList, from, to) {
   const totals = { entrenos: 0, ejercicios: 0 };
   const perExercise = new Map();
   const perGroup = new Map();
   const seenWorkouts = new Map(); // clave de ejercicio → Set de ids de entreno
 
+  // workoutsList llega ordenado desc por fechaISO (suscripción de
+  // db.js, ADR-095): el PRIMER entreno procesado es el más NUEVO y el
+  // ÚLTIMO el más ANTIGUO. Ese orden define los extremos cronológicos
+  // de la iteración 4 (el peso más antiguo y el más nuevo), no los
+  // mínimos/máximos de la iteración 3.
   for (const w of workoutsList) {
     if (from && w.fechaISO < from) continue;
     if (to && w.fechaISO > to) continue;
@@ -551,21 +575,33 @@ function summarizeWorkouts(workoutsList, from, to) {
           nombre: catalogEx?.nombre || e.nombre || "",
           grupoMuscular: summaryGroupFor(e),
           veces: 0,
-          pesoMin: null,
-          pesoMax: null,
+          pesoAntiguo: null,
+          pesoNuevo: null,
         };
         perExercise.set(key, agg);
       }
       if (!seenWorkouts.has(key)) seenWorkouts.set(key, new Set());
       seenWorkouts.get(key).add(w.id);
-      // Extremos de peso del periodo (kg canónicos): una serie sin
-      // peso registrado (null o ≤ 0, p. ej. peso corporal) no puede
-      // ser ni el mínimo ni el máximo.
+      // Extremos cronológicos de peso del periodo (kg canónicos,
+      // iteración 4): una serie sin peso registrado (null o ≤ 0,
+      // p. ej. peso corporal) no puede ser extremo. Dentro de un
+      // entreno, el peso más antiguo es la primera serie con peso y
+      // el más nuevo la última. Entre entrenos (lista desc), la
+      // primera vez que se ve el ejercicio fija su peso más NUEVO (el
+      // entreno más reciente del periodo) y cada entreno posterior
+      // sobrescribe el peso más ANTIGUO hasta quedarse con el del
+      // entreno más remoto del periodo.
+      let serieAntigua = null;
+      let serieNueva = null;
       for (const s of e.series || []) {
         const kg = s?.pesoKg;
         if (kg == null || kg <= 0) continue;
-        if (agg.pesoMin == null || kg < agg.pesoMin) agg.pesoMin = kg;
-        if (agg.pesoMax == null || kg > agg.pesoMax) agg.pesoMax = kg;
+        if (serieAntigua == null) serieAntigua = kg;
+        serieNueva = kg;
+      }
+      if (serieNueva != null) {
+        if (agg.pesoNuevo == null) agg.pesoNuevo = serieNueva;
+        agg.pesoAntiguo = serieAntigua;
       }
       const group = agg.grupoMuscular;
       if (!group) continue;
@@ -653,18 +689,28 @@ function renderSummary() {
         </div>`
     : "";
 
-  // Iteración 3: cada ejercicio muestra además el aumento de peso del
-  // periodo — el menor y el mayor registrado (y su diferencia) en la
-  // unidad de presentación activa; «—» si no hay ninguna serie con
-  // peso en el periodo (todo sin peso registrado).
-  const fmtPeso = (kg) => (kg == null ? "—" : escapeHtml(String(kgToDisplay(kg))));
+  // Iteración 4: cada ejercicio muestra SOLO la diferencia de peso del
+  // periodo — el peso más nuevo frente al más antiguo, con signo
+  // (positivo si aumentó, negativo si bajó) — en la unidad de
+  // presentación activa; «—» si no hay ninguna serie con peso en el
+  // periodo (todo sin peso registrado). Los extremos mín/máx de la
+  // iteración 3 se eliminan: el usuario quiere ver únicamente el
+  // cambio entre el peso más antiguo y el más nuevo.
   const unitHeader = escapeHtml(unitLabel());
+  // Formatea la diferencia con signo explícito (+ para aumento, −
+  // para disminución; 0 sin signo). Se calcula en kg canónicos y se
+  // convierte una sola vez al pintar (mismo patrón de la iteración 3).
+  const fmtDiff = (kg) => {
+    if (kg == null) return "—";
+    const d = kgToDisplay(kg);
+    return escapeHtml(d > 0 ? `+${d}` : String(d));
+  };
   const rows = [...perExercise.values()]
     .sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, "es"))
     .map((agg) => {
-      // El aumento se calcula en kg (canónicos) y se convierte una
-      // sola vez al pintar, como el mínimo y el máximo.
-      const aumentoKg = agg.pesoMin != null && agg.pesoMax != null ? agg.pesoMax - agg.pesoMin : null;
+      // Diferencia = peso más nuevo − peso más antiguo del periodo
+      // (kg canónicos); null si falta alguno de los dos extremos.
+      const diffKg = agg.pesoAntiguo != null && agg.pesoNuevo != null ? agg.pesoNuevo - agg.pesoAntiguo : null;
       return `
       <tr>
         <td class="gym-summary-table__name">
@@ -672,9 +718,7 @@ function renderSummary() {
           ${agg.grupoMuscular ? `<span class="gym-muscle-chip">${escapeHtml(groupLabel(agg.grupoMuscular))}</span>` : ""}
         </td>
         <td>${agg.veces}</td>
-        <td>${fmtPeso(agg.pesoMin)}</td>
-        <td>${fmtPeso(agg.pesoMax)}</td>
-        <td>${aumentoKg == null ? "—" : fmtPeso(aumentoKg)}</td>
+        <td>${fmtDiff(diffKg)}</td>
       </tr>`;
     })
     .join("");
@@ -687,9 +731,7 @@ function renderSummary() {
               <tr>
                 <th>Ejercicio</th>
                 <th>Veces</th>
-                <th>Peso mín (${unitHeader})</th>
-                <th>Peso máx (${unitHeader})</th>
-                <th>Aumento (${unitHeader})</th>
+                <th>Diferencia (${unitHeader})</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>

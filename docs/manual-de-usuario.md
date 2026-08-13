@@ -739,26 +739,29 @@ con el selector que hay bajo las pestañas, con tres opciones:
   quieras. Solo con esta opción se muestra el **recuadro del rango**,
   un único recuadro con un **calendario**: al pulsar «Rango» se abre
   y eliges las dos fechas allí mismo. El **primer día que pulsas** es
-  el **desde** y el **segundo** el **hasta**; si pulsas el hasta antes
-  que el desde, la web **los da la vuelta** por ti. Puedes **cambiar
-  de mes** con las flechas ‹ › de la parte de arriba, **borrar** el
-  rango elegido con el botón «Borrar» para empezar de nuevo, y
-  cerrarlo con «Listo», con la tecla **Esc** o pulsando fuera. Si
-  dejas un extremo sin elegir, queda **sin límite** (p. ej. sin
-  desde, el periodo empieza en el primer entreno). El recuadro ya
-  muestra arriba el rango que llevas elegido.
+  el **desde** y el **segundo** el **hasta**; el calendario **se
+  mantiene abierto** hasta que eliges las dos fechas (si pulsas el
+  hasta antes que el desde, la web **los da la vuelta** por ti).
+  Puedes **cambiar de mes** con las flechas ‹ › de la parte de
+  arriba, **borrar** el rango elegido con el botón «Borrar» para
+  empezar de nuevo, y cerrarlo con «Listo», con la tecla **Esc** o
+  pulsando fuera. Si dejas un extremo sin elegir, queda **sin
+  límite** (p. ej. sin desde, el periodo empieza en el primer
+  entreno). El recuadro ya muestra arriba el rango que llevas
+  elegido.
 
 El resumen muestra **dos tarjetas con los totales del periodo** — el
 **número de entrenos** y el **número de ejercicios distintos** que
 trabajaste — y, debajo, el desglose **por grupos musculares**: para
 cada grupo, cuántos ejercicios distintos y en cuántos entrenos
 apareció. Por último, una lista **por ejercicio** con las veces que lo
-hiciste (en cuántos entrenos aparece) y su **progreso de peso** en el
-periodo: el **peso menor** con el que lo hiciste, el **mayor** y el
-**aumento** entre los dos (en la unidad de peso que tengas elegida;
-si un ejercicio lo hiciste sin registrar peso, verás «—»). Si un
-ejercicio **ya no está en tu catálogo**, el resumen **conserva su
-nombre** igualmente.
+hiciste (en cuántos entrenos aparece) y su **diferencia de peso** en
+el periodo: cuánto ha cambiado entre el **peso más antiguo** y el
+**más nuevo** que registraste, con **signo** — **+** si aumentó y
+**−** si bajó (en la unidad de peso que tengas elegida; si un
+ejercicio lo hiciste sin registrar peso, verás «—»). Si un ejercicio
+**ya no está en tu catálogo**, el resumen **conserva su nombre**
+igualmente.
 
 El resumen se actualiza solo al añadir, editar o borrar entrenos. Si
 no hay entrenos en el periodo, la web te lo indica con un aviso.

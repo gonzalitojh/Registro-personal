@@ -124,6 +124,55 @@ fixes encontró y corrigió: weekday y bordes bajo AA en Oscuro, hover
 del día seleccionado que tapaba el extremo, y el desborde del popover
 citado arriba); escaneo de seguridad sin hallazgos HIGH.
 
+### Iteración 4 (cuarto comentario de 2026-08-13)
+
+El usuario dejó un cuarto comentario con dos peticiones, incorporadas
+en la misma PR (que se actualiza, no se crea otra):
+
+1. **El calendario del rango no debe cerrarse al elegir la primera
+   fecha**: "cuando seleccionas un rango de fechas, el calendario se
+   cierra solo al elegir la primera fecha y no te deja elegir la
+   segunda". Causa raíz encontrada con Chromium headless: el primer
+   click en un día **cerraba** el popover porque
+   `onSummaryRangeDayClick()` re-renderiza la rejilla y **detacha el
+   botón pulsado** antes de que el handler de click-outside de
+   `document` (fase burbuja) corriera; `e.target.closest("#gym-summary-range")`
+   fallaba sobre el nodo descolgado y cerraba el calendario con solo
+   «desde» elegido. Fix: un listener en **fase de captura** sobre
+   `#gym-summary-range` marca `e.__summaryRangeInside = true`, y el
+   handler de click-outside exige `!e.__summaryRangeInside` (además de
+   no nacer en `.gym-summary-chip`) para cerrar. El calendario
+   permanece abierto **hasta que las dos fechas están elegidas**; el
+   cierre al completar el rango lo sigue haciendo
+   `onSummaryRangeDayClick()`, y **Esc / «Listo» / click fuera real**
+   siguen cerrando igual (revalidado en el sandbox).
+2. **La tabla por ejercicio solo con la diferencia de peso**: "no
+   muestres el peso mínimo ni el máximo, sino la diferencia: el peso
+   más antiguo y el más nuevo. Es decir, aparezca en negativo o en
+   positivo según haya habido aumento o disminución". Las columnas
+   **Peso mín** y **Peso máx** de la iteración 3 se **eliminan**; la
+   columna pasa a llamarse **«Diferencia»** y muestra
+   `pesoNuevo − pesoAntiguo` con **signo explícito** (`+` si subió,
+   `−` si bajó, `0` sin signo, «—» sin ningún peso en el periodo).
+   `summarizeWorkouts()` agrega ahora **extremos cronológicos**, no
+   extremos de valor: como la lista llega **desc por `fechaISO`**
+   (suscripción de `db.js`, ADR-095), la **primera vez** que se ve un
+   ejercicio fija su **peso más nuevo** (última serie con peso del
+   entreno más reciente del periodo) y cada entreno posterior
+   sobrescribe el **peso más antiguo** hasta quedarse con la primera
+   serie con peso del entreno más remoto; dentro de un entreno, la
+   **primera serie con peso** es la antigua y la **última** la nueva.
+   Se mantienen los kg canónicos con conversión única al pintar y la
+   exclusión de series sin peso (null o ≤ 0).
+
+Revalidado en esta iteración: **QA PASS** con el sandbox de
+Chromium headless actualizado (el calendario sigue abierto tras el
+primer día, se cierra al completar el rango, y Esc/«Listo»/click
+fuera siguen cerrando; la tabla por ejercicio muestra solo
+«Diferencia» con signo — `+5`, `−2.5`, `0` y «—» — sobre datos con
+aumento, disminución, dato único y sin pesos); escaneo de seguridad
+sin hallazgos HIGH.
+
 Related issue: #269 — https://github.com/gonzalitojh/Registro-personal/issues/269
 
 ## Decisión
@@ -184,25 +233,27 @@ latencia):
   catálogo conservan así su nombre en el resumen.
 - **Pesos SIEMPRE en kg canónicos** (`pesoKg`), convertidos con
   `kgToDisplay` **solo al pintar** (1 decimal, mismo helper del resto
-  de la sección): los extremos por ejercicio (mín/máx y su aumento)
-  se agregan en kg y se convierten **una sola vez** al pintar, así
-  que alternar kg/lbs no introduce deriva de redondeo ni cambia lo
-  agregado.
+  de la sección): la diferencia por ejercicio (peso más nuevo − peso
+  más antiguo) se calcula en kg y se convierte **una sola vez** al
+  pintar, así que alternar kg/lbs no introduce deriva de redondeo ni
+  cambia lo agregado.
 - **Las series sin peso registrado (null o ≤ 0) no participan en los
-  extremos** (no pueden ser ni el mínimo ni el máximo); una entrada
-  sin id ni nombre no agrupa ni cuenta (guard del fix de QA).
+  extremos cronológicos** (no pueden ser ni el más antiguo ni el más
+  nuevo); una entrada sin id ni nombre no agrupa ni cuenta (guard del
+  fix de QA).
 - **Salida**: ya no hay sumatorios de series, repeticiones ni
   volumen. Las tarjetas son **nº de entrenos** y **nº de ejercicios
   distintos** del periodo; el desglose **«Por grupos musculares»** da
   ejercicios distintos y entrenos por grupo; la tabla **«Por
   ejercicio»** muestra **veces** (entrenos distintos en que aparece),
   ordenada por frecuencia desc (tie-break alfabético) y, desde la
-  **iteración 3**, los **extremos de peso** del periodo por ejercicio
-  — **Peso mín**, **Peso máx** y **Aumento** (máx − mín) — en la
-  unidad de presentación activa («—» si no hay ningún peso en el
-  periodo). Los grupos se resuelven del mismo modo que antes (entrada
-  → catálogo por id → por nombre normalizado); sin grupo muscular, la
-  entrada solo cuenta en los totales.
+  **iteración 4**, la **diferencia de peso** del periodo por ejercicio
+  — **peso más nuevo − peso más antiguo**, con signo (`+` aumento,
+  `−` disminución) — en la unidad de presentación activa («—» si no
+  hay ningún peso en el periodo). Los grupos se resuelven del mismo
+  modo que antes (entrada → catálogo por id → por nombre
+  normalizado); sin grupo muscular, la entrada solo cuenta en los
+  totales.
 
 ### 5. Selector de periodo: chips en el DOM y rango con calendario único
 
@@ -238,9 +289,9 @@ latencia):
   `resumen`.
 - **`renderAllWithUnit` repinta el resumen al cambiar kg/lbs**: tras
   la iteración del segundo comentario el resumen dejó de mostrar
-  volúmenes, pero desde la **iteración 3** vuelve a mostrar pesos
-  (mín/máx/aumento por ejercicio); el repintado refresca las columnas
-  a la unidad nueva (los extremos se agregaron en kg, la conversión
+  volúmenes, pero desde la **iteración 4** vuelve a mostrar pesos
+  (diferencia por ejercicio); el repintado refresca las columnas
+  a la unidad nueva (la diferencia se calcula en kg, la conversión
   ocurre al pintar).
 - **Todos los valores pintados pasan por `escapeHtml`** (nombres,
   fechas, unidades y cifras), patrón del resto de la sección; el
@@ -308,9 +359,12 @@ latencia):
 - **El rango se elige en un único recuadro** (iteración 3): el
   calendario propio elimina la fricción de dos pickers nativos
   separados y muestra el rango de un vistazo (extremos e intermedios
-  marcados), y el **progreso de peso por ejercicio** (mín/máx y
-  aumento en la unidad activa) responde «¿cuánto he subido de peso en
-  el periodo?» directamente desde el resumen.
+  marcados); desde la **iteración 4** además no se cierra al elegir
+  solo la primera fecha (se mantiene abierto hasta completar el rango,
+  con Esc/«Listo»/click fuera real para cerrar), y la **diferencia de
+  peso por ejercicio** (peso más nuevo − más antiguo, con signo `+`/
+  `−` en la unidad activa) responde «¿cuánto he subido o bajado de
+  peso en el periodo?» directamente desde el resumen.
 
 ### Neutras
 
@@ -338,13 +392,22 @@ latencia):
   weekday y bordes de `--today`/trigger abierto pasan a `--games` o
   `--ink`; hover del día seleccionado conserva el extremo); escaneo
   de seguridad sin hallazgos.
+- **Revalidado en iteración** (cuarto comentario de 2026-08-13): QA
+  PASS — sandbox de Chromium headless (el calendario permanece abierto
+  tras el primer día y se cierra al completar el rango; Esc/«Listo»/
+  click fuera real siguen cerrando; tabla por ejercicio solo con
+  Diferencia con signo — `+5`/`−2.5`/`0`/«—» —, calculada desde pesos
+  cronológicos desc), scroll sin desbordes en los anchos de la
+  iteración previa y contraste de los elementos nuevos en los cuatro
+  modos; escaneo de seguridad sin hallazgos.
 - **Manual de usuario actualizado** (§9.1 «Tu resumen», regla 3 de
   AGENTS.md): selector de periodo con el recuadro del rango oculto
   salvo en «Rango» (calendario único: primer click = desde, segundo =
-  hasta, navegación de mes, Borrar/Listo, Esc/click fuera), tarjetas
-  de entrenos/ejercicios, desgloses por grupos musculares y por
-  ejercicio con Peso mín/máx/Aumento, y aviso de periodo vacío
-  documentados en lenguaje no técnico.
+  hasta, permanece abierto hasta elegir las dos fechas, navegación de
+  mes, Borrar/Listo, Esc/click fuera), tarjetas de entrenos/
+  ejercicios, desgloses por grupos musculares y por ejercicio con la
+  diferencia de peso con signo, y aviso de periodo vacío documentados
+  en lenguaje no técnico.
 
 ### Negativas / Riesgos
 
@@ -359,8 +422,10 @@ latencia):
   español, formato DD/MM/YYYY), igual que el resto del resumen; un
   cambio de idioma futuro tendría que tocar `summaryWeekdayLabelsFn`
   y `summaryRangeMonthLabel`.
-- **Ninguna otra conocida.** Validado en la iteración del tercer
-  comentario: QA PASS (sandbox 46/46; medición real de scroll en
+- **Ninguna otra conocida.** Validado en las iteraciones del tercer y
+  cuarto comentario: QA PASS (sandbox 46/46 de lógica; sandbox de
+  Chromium headless del calendario abierto hasta las dos fechas y de
+  la tabla con diferencia con signo; medición real de scroll en
   Chromium headless y contraste de los cuatro modos) y escaneo de
   seguridad sin hallazgos HIGH; todos los valores pintados pasan por
   `escapeHtml`, continuando el patrón de validación y seguridad del
@@ -371,12 +436,12 @@ latencia):
 | Archivo | Cambio |
 |---------|--------|
 | `index.html` | **Modificado**: panel `#panel-gym-summary-tab` como primer panel de `#gym-view` (pestaña `tab--gym-summary` como primera, selector de periodo con chips y recuadro del rango, tarjetas de totales y desgloses); **iteración 2**: las dos fechas dentro del `<details id="gym-summary-range">` (única caja, `hidden` salvo con «Rango»); **iteración 3**: el `<details>` se sustituye por el recuadro único con calendario (`#gym-summary-range-trigger` con `aria-expanded`/`aria-controls` + popover `role="dialog"` con navegación de mes, rejilla `#gym-summary-range-days` y footer Borrar/Listo) |
-| `js/gym.js` | **Modificado**: `renderSummary()` / `summarizeWorkouts()` / `summaryPeriodRange()` / `summaryExerciseKey()` / `summaryGroupFor()` (agregación en cliente, filtro lexicográfico por `fechaISO`, clave por `ejercicioId` o nombre snapshot, tabla ordenada por frecuencia desc), selector de periodo con el chip en el DOM, dispatch de renders por pestaña con `resumen`, re-render desde `subscribeGymData` y `renderAllWithUnit`, `escapeHtml` en todos los valores pintados; **iteración 1**: guard de series sin ejercicio (entrada sin id ni nombre excluida); **iteración 2**: `summarizeWorkouts()` sin sumatorios (totales entrenos/ejercicios distintos + `perGroup` por grupos musculares), tarjetas y desgloses nuevos, `syncSummaryPeriodUI()` oculta/muestra el recuadro del rango; **iteración 3**: estado `summaryRange`/`summaryRangeMonth` en el módulo, calendario propio (`summaryRangeDayGrid` 42 celdas lunes primero, `summaryWeekdayLabelsFn`, `summaryRangeMonthLabel`, `shiftSummaryRangeMonth`, `onSummaryRangeDayClick`, `renderSummaryRangeCalendar`, `open/closeSummaryRangePopover` con retorno de foco), `summarizeWorkouts()` agrega `pesoMin`/`pesoMax` (kg canónicos, excluye series null/≤0), tabla con columnas Peso mín/Peso máx/Aumento (conversión única al pintar), `resetGymData()` limpia el estado del rango |
+| `js/gym.js` | **Modificado**: `renderSummary()` / `summarizeWorkouts()` / `summaryPeriodRange()` / `summaryExerciseKey()` / `summaryGroupFor()` (agregación en cliente, filtro lexicográfico por `fechaISO`, clave por `ejercicioId` o nombre snapshot, tabla ordenada por frecuencia desc), selector de periodo con el chip en el DOM, dispatch de renders por pestaña con `resumen`, re-render desde `subscribeGymData` y `renderAllWithUnit`, `escapeHtml` en todos los valores pintados; **iteración 1**: guard de series sin ejercicio (entrada sin id ni nombre excluida); **iteración 2**: `summarizeWorkouts()` sin sumatorios (totales entrenos/ejercicios distintos + `perGroup` por grupos musculares), tarjetas y desgloses nuevos, `syncSummaryPeriodUI()` oculta/muestra el recuadro del rango; **iteración 3**: estado `summaryRange`/`summaryRangeMonth` en el módulo, calendario propio (`summaryRangeDayGrid` 42 celdas lunes primero, `summaryWeekdayLabelsFn`, `summaryRangeMonthLabel`, `shiftSummaryRangeMonth`, `onSummaryRangeDayClick`, `renderSummaryRangeCalendar`, `open/closeSummaryRangePopover` con retorno de foco), `summarizeWorkouts()` agrega `pesoMin`/`pesoMax` (kg canónicos, excluye series null/≤0), tabla con columnas Peso mín/Peso máx/Aumento (conversión única al pintar), `resetGymData()` limpia el estado del rango; **iteración 4**: listener en captura que marca `__summaryRangeInside` (el click fuera no cierra el calendario tras el primer día — el re-render detachaba el botón pulsado y `closest()` fallaba —, solo Esc/«Listo»/click fuera real o las dos fechas), `summarizeWorkouts()` agrega `pesoAntiguo`/`pesoNuevo` cronológicos (lista desc: primer entreno fija el nuevo, los posteriores el antiguo; dentro del entreno primera/última serie con peso), tabla solo con columna «Diferencia» con signo (`+`/`−`) y conversión única al pintar |
 | `js/router.js` | **Modificado**: `GYM_TAB_TO_PANEL` con `resumen` como primera clave, `GYM_DEFAULT_TAB = "resumen"`, canonización de `#/gimnasio` (normaliza `#/gimnasio/resumen` con `invalid: true`), `lastGymTab` arranca en `"resumen"` |
 | `js/settings.js` | **Modificado**: `visibleTabs.resumen: true` en `DEFAULT_SETTINGS` y `resumen` como primera clave de `SECTION_REGISTRY.gimnasio.tabs` (ocultable desde Ajustes; `sanitizeVisibility` cubre a usuarios con ajustes antiguos) |
 | `css/styles.css` | **Modificado**: estilos del resumen (`.gym-summary-selector`, chips `.gym-summary-chip`, `.gym-summary-grid`/`.gym-summary-card`, `.gym-summary-table` con `overflow-x: auto`, `.gym-summary-section-title`), `.tab--gym-summary` con acento `--games` y overrides agrupados de las cuatro familias; **iteración 1**: override de los inputs de fecha en Negro puro; **iteración 2**: estilos del recuadro único `.gym-summary-range` (summary sin marcador, campos en fila) y overrides de Negro puro del recuadro y sus textos; **iteración 3**: estilos del trigger y el calendario (`.gym-summary-range__trigger/__popover/__cal-*/__day` con estados `--today`/`--selected`/`--in-range`), flujo estático del popover en ≤767 px, overrides de Negro puro agrupados (superficies invertidas, selección con `--games-dark`, hover que conserva el extremo) y fixes de contraste AA en Oscuro (weekday con `--ink`, bordes con `--games`) |
 | `tasks/task-issue-269.json` | **Nuevo**: task file de la issue #269 |
-| `docs/manual-de-usuario.md` | **Modificado**: §3 y §9 con la tercera pestaña de Gimnasio; nueva subsección **§9.1 «Tu resumen»** (renumeradas 9.2, 9.3 y 9.4); §17 Ajustes con las tres pestañas; **iteración 2**: §9.1 con el recuadro del rango (oculto salvo «Rango»), tarjetas de entrenos/ejercicios y desgloses por grupos musculares y por ejercicio; **iteración 3**: §9.1 con el calendario único (primer click = desde, segundo = hasta, flechas de mes, Borrar/Listo, Esc/click fuera) y las columnas Peso mín/Peso máx/Aumento con «—» sin peso |
-| `docs/adr-098-pestana-resumen-gimnasio.md` | **Nuevo**: este documento (iteraciones 2 y 3 documentadas) |
+| `docs/manual-de-usuario.md` | **Modificado**: §3 y §9 con la tercera pestaña de Gimnasio; nueva subsección **§9.1 «Tu resumen»** (renumeradas 9.2, 9.3 y 9.4); §17 Ajustes con las tres pestañas; **iteración 2**: §9.1 con el recuadro del rango (oculto salvo «Rango»), tarjetas de entrenos/ejercicios y desgloses por grupos musculares y por ejercicio; **iteración 3**: §9.1 con el calendario único (primer click = desde, segundo = hasta, flechas de mes, Borrar/Listo, Esc/click fuera) y las columnas Peso mín/Peso máx/Aumento con «—» sin peso; **iteración 4**: §9.1 con el calendario que permanece abierto hasta elegir las dos fechas, y la tabla por ejercicio solo con la diferencia de peso con signo (+/−) entre el más antiguo y el más nuevo |
+| `docs/adr-098-pestana-resumen-gimnasio.md` | **Nuevo**: este documento (iteraciones 2, 3 y 4 documentadas) |
 
 Related issue: #269 — https://github.com/gonzalitojh/Registro-personal/issues/269
