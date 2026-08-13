@@ -1622,7 +1622,7 @@ export function renderIngredienteComboList(combo, emptyText = "Sin coincidencias
 // catálogo escriben el valor oculto de la fila. Exportado (issue #249)
 // para que la lista de la compra reutilice el mismo desplegable en el
 // formulario de ítem extra.
-export function bindIngredienteCombo(combo, { emptyText = null } = {}) {
+export function bindIngredienteCombo(combo, { emptyText } = {}) {
   const input = combo.querySelector(".ing-nombre");
   const toggle = combo.querySelector(".ing-combo__toggle");
   const list = combo.querySelector(".ing-combo__list");
