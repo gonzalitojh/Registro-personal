@@ -38,7 +38,12 @@
       "js/recipes.js: recipeModalHtml bifurca por modalReadOnly hacia la vista de lectura; se conservan Editar/Eliminar y los cierres (✕/backdrop/Escape)",
       "css/styles.css: estilos .recipe-view__* con acentos diferenciados para tags alérgenos (teal) y tipo (ocre), overrides familia clara y negro puro, responsividad",
       "docs/manual-de-usuario.md: sección 8.1 actualizada (cómo se ve el modo lectura)",
-      "docs/adr-088-ventana-recetas-modo-lectura.md"
+      "docs/adr-088-ventana-recetas-modo-lectura.md",
+      "js/recipes.js: etiquetas de tarjeta con modificadores --alergeno/--tipo (mismos colores que la vista de lectura) y lápiz ✎ en los botones de editar",
+      "css/styles.css: selectores agrupados .recipe-view__tag--* / .recipe-card__tag--* (una sola fuente de verdad por regla, AGENTS.md §4.3), incluidos overrides de negro puro; la píldora base conserva solo la forma",
+      "docs/manual-de-usuario.md: §8.1 — píldoras de colores en las tarjetas y botón «✎ Editar»",
+      "docs/adr-088-ventana-recetas-modo-lectura.md: sección de iteración 2026-08-13",
+      "js/config.js, index.html, service-worker.js: bump PWA 20260918 → 20260919"
     ]
   },
   "pr": {
@@ -46,7 +51,8 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/239",
     "title": "Ventana recetas modo lectura (issue #236)",
     "branch": "style/issue-236-ventana-recetas-lectura",
-    "commit": "229d222",
+    "commit": "cfb368b",
     "closes": "#236"
-  }
+  },
+  "iteration": "2026-08-13 — etiquetas de tarjeta con colores por tipo (teal/ocre) + lápiz ✎ en botón editar; QA PASS + seguridad PASS."
 }
