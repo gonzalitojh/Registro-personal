@@ -739,13 +739,21 @@ Con **«+ Nuevo entreno»** creas uno con:
 - **Ejercicios**: uno o más, cada uno con sus series. Para cada
   ejercicio eliges uno de tu **catálogo** (pestaña Ejercicios) en su
   desplegable; con **«+ Añadir ejercicio»** añades otro al entreno.
-  Si todavía no tienes ejercicios, el botón **«Ver catálogo de
-  ejercicios»** te lleva a crearlos. Si no quieres usar el catálogo,
-  la opción **«Otro (escribir nombre)…»** te deja escribir un nombre
-  libre. A cada ejercicio le añades **series** con **«+ Añadir
-  serie»**: en cada serie escribes el **peso** (en la unidad que
-  tengas elegida, ver 9.3) y las **repeticiones**. Puedes quitar una
+  Si el ejercicio que quieres aún no está en el catálogo, pulsa
+  **«Nuevo ejercicio»** y se abre la misma ventana de creación que
+  en la pestaña Ejercicios, sin cerrar el entreno. Si todavía no
+  tienes ejercicios, el botón **«Ver catálogo de ejercicios»** te
+  lleva a crearlos. A cada ejercicio le añades **series** con
+  **«+ Añadir serie»**: en cada serie escribes el **peso** (en la
+  unidad que tengas elegida, ver 9.3) y las **repeticiones**. Con
+  **«Duplicar serie»** copias la última serie del ejercicio (peso y
+  repeticiones) para no volver a escribirlos. Puedes quitar una
   serie o un ejercicio con su ✕.
+- Cuando eliges un ejercicio que **ya habías trabajado antes**, el
+  entreno se prepara con las **series de la última vez** (pesos y
+  repeticiones del entreno más reciente donde lo registraste): solo
+  tienes que ajustarlas si cambió algo. Si ya habías empezado a
+  escribir series, no se te sobrescriben.
 
 Pulsa **«Guardar»** para guardarlo. Los entrenos se guardan en tu
 cuenta y se sincronizan en tiempo real entre tus dispositivos.
