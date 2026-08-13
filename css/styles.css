@@ -3375,6 +3375,13 @@ body.is-back-to-top-visible .back-to-top {
   margin-left: 0.2rem;
 }
 
+/* ✕ de quitar receta (celdas y «recetas a la semana», issue #242,
+   iteración): botón circular con hover y animación de pulsación. El
+   tinte del círculo usa --paper-alpha-14 (papel translúcido en la
+   familia oscura, tinta translúcida en la clara: visible sobre el
+   chip en ambas) y al pulsar el botón se encoge ligeramente (patrón
+   de .btn:active / .trailer-btn:active). Área táctil de 1.5rem
+   (24 px, WCAG 2.2 AA 2.5.8). */
 .menu-meal__remove {
   background: none;
   border: none;
@@ -3382,6 +3389,25 @@ body.is-back-to-top-visible .back-to-top {
   cursor: pointer;
   font-size: 0.8rem;
   flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.menu-meal__remove:hover,
+.menu-meal__remove:focus-visible {
+  background: var(--paper-alpha-14);
+  outline: none;
+}
+
+.menu-meal__remove:active {
+  transform: scale(0.8);
 }
 
 /* Buscador de recetas del menú (issue #242): ventana modal que
@@ -3649,15 +3675,17 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--ink-soft);
 }
 
-.menu-weekly__item {
+/* Lista de «recetas a la semana» (issue #242, iteración): las mismas
+   tarjetas .menu-meal__card que las celdas de la rejilla, apiladas
+   con el mismo hueco. El fondo del bloque (.menu-weekly, --ink-raised)
+   coincide con el de las celdas, así que las tarjetas se ven igual
+   que las del menú por días (los overrides de tema de .menu-meal__card
+   ya cubren la familia clara y el negro puro). */
+#menu-weekly-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid var(--paper-alpha-14);
-  font-size: 0.85rem;
-  overflow-wrap: break-word;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
 .menu-weekly__empty {
