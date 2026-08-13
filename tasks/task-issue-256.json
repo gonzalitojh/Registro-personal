@@ -1,7 +1,7 @@
 {
   "title": "Ocultación barra superior y pestañas",
   "description": "Issue #256: En la sección de recetas, al desplazarse hacia abajo, las pestañas y barra superior deben ocultarse y aparecer un botón de volver arriba. Al desplazarse hacia arriba, reaparecen. Este comportamiento ya está en la sección de ocio y debe estar en todas las secciones de la web, por ahora solo ocio y recetas.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "AC1: En la sección de recetas, al desplazarse hacia abajo, la barra superior y las pestañas se ocultan.",
     "AC2: Al desplazarse hacia abajo aparece un botón de volver arriba en la sección de recetas.",
@@ -22,5 +22,13 @@
     "number": 256,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/256",
     "title": "Ocultación barra superior y pestañas"
+  },
+  "pr": {
+    "number": 258,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/258",
+    "title": "style: auto-ocultado de cabecera y pestañas en la sección de Recetas (issue #256)",
+    "branch": "style/issue-256-ocultacion-barracion-recetas",
+    "commit": "6cc57fd",
+    "closes": "#256"
   }
 }
