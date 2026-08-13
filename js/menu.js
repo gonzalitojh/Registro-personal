@@ -3,7 +3,10 @@
 // Menú semanal: rejilla día × comida con varias opciones por
 // comida (cada comensal puede comer distinto), número de
 // comensales y «recetas a la semana» (que NO escalan por
-// comensales, p. ej. pan para los desayunos).
+// comensales). Desde la issue #242 el menú cubre almuerzo y cena
+// (el desayuno se eliminó) y cada receta añadida a una comida
+// puede llevar SUS propios comensales (comensales propios o null
+// para heredar el global de la semana).
 //
 // Un documento por semana en users/{uid}/menus (semanaInicio =
 // lunes ISO). La lista de la compra (shopping-list.js) consume
@@ -11,12 +14,17 @@
 // =============================================================
 
 import { showToast } from "./ui.js";
-import { registerTabRenderer, notifyRecipesChanged, getRecipes } from "./recipes.js";
+import { trapFocus } from "./focus-utils.js";
+import { registerTabRenderer, notifyRecipesChanged, getRecipes, getCustomTags, openRecipeModal } from "./recipes.js";
 import {
+  ALERGEN_TAGS,
+  MEAL_TYPES,
   DAY_KEYS,
   DAY_LABELS,
   MEAL_KEYS,
   MEAL_LABELS,
+  mergeTags,
+  normalizeIngredientName,
   escapeHtml,
   mondayISO,
   addDaysISO,
@@ -207,19 +215,19 @@ function renderMenuGrid(menu) {
     ${DAY_KEYS.map((day) => {
       const dateLabel = formatDateEs(addDaysISO(menu.semanaInicio, DAY_KEYS.indexOf(day)));
       const cells = MEAL_KEYS.map((meal) => {
-        const recipeIds = menu.dias[day][meal] || [];
-        const items = recipeIds
-          .map((id) => ({ id, recipe: byId.get(id) }))
-          .filter((x) => x.recipe);
+        const entries = (menu.dias[day][meal] || []).map(mealEntryOf).filter((e) => e.recipe && byId.has(e.recipe));
         const excluded = new Set(menu.recetasExcluidasCompra || []);
         return `<div class="menu-grid__cell menu-grid__cell--meal" data-day="${day}" data-meal="${meal}">
           <div class="menu-meal__items">
-            ${items.map(({ id, recipe }) => `<span class="menu-meal__item${excluded.has(id) ? " is-excluded" : ""}"
-                title="${excluded.has(id) ? "Excluida de la lista de la compra" : escapeHtml(recipe.nombre)}">
-                ${escapeHtml(recipe.nombre)}
-                <button type="button" class="menu-meal__remove" data-day="${day}" data-meal="${meal}" data-remove-recipe="${id}"
-                  aria-label="Quitar ${escapeHtml(recipe.nombre)}">✕</button>
-              </span>`).join("")}
+            ${entries.map(({ recipe, comensales }) => {
+              const comHint = comensales ? ` · ${comensales} comensale${comensales === 1 ? "" : "s"}` : "";
+              return `<span class="menu-meal__item${excluded.has(recipe) ? " is-excluded" : ""}"
+                  title="${excluded.has(recipe) ? "Excluida de la lista de la compra" : escapeHtml(recipe.nombre + comHint)}">
+                  ${escapeHtml(recipe.nombre)}${comensales ? `<small class="menu-meal__comensales">· ${comensales}</small>` : ""}
+                  <button type="button" class="menu-meal__remove" data-day="${day}" data-meal="${meal}" data-remove-recipe="${recipe}"
+                    aria-label="Quitar ${escapeHtml(recipe.nombre)}">✕</button>
+                </span>`;
+            }).join("")}
           </div>
           <button type="button" class="btn btn--small menu-meal__add" data-day="${day}" data-meal="${meal}">+ Receta</button>
         </div>`;
@@ -230,9 +238,9 @@ function renderMenuGrid(menu) {
       </div>`;
     }).join("")}`;
 
-  // Botones «+ Receta»: picker inline con las recetas disponibles.
+  // Botones «+ Receta»: abren el buscador de recetas (issue #242).
   grid.querySelectorAll(".menu-meal__add").forEach((btn) => {
-    btn.addEventListener("click", () => addRecipeToMeal(btn.dataset.day, btn.dataset.meal, btn));
+    btn.addEventListener("click", () => openRecipePicker({ mode: "meal", day: btn.dataset.day, meal: btn.dataset.meal }));
   });
 
   // Quitar receta de una comida (y de la exclusión si estaba).
@@ -241,43 +249,415 @@ function renderMenuGrid(menu) {
   });
 }
 
-// Picker de recetas para una comida: dropdown sencillo con todas las
-// recetas (las ya añadidas se muestran pero no se duplican).
-function addRecipeToMeal(day, meal, btn) {
+// Normaliza una entrada de comida del menú: las entradas nuevas
+// (issue #242) son objetos { recipeId, comensales } con el número de
+// comensales propios de esa receta (null = heredar el global de la
+// semana); las antiguas guardadas en Firestore son strings con solo el
+// id. Devuelve { recipe, comensales } con la receta resuelta o null.
+function mealEntryOf(entry) {
+  if (typeof entry === "string") return { recipe: entry, comensales: null };
+  return { recipe: entry?.recipeId || null, comensales: entry?.comensales ?? null };
+}
+
+// ---------- Buscador de recetas (issue #242) ----------
+//
+// Ventana modal que sustituye al desplegable de añadir receta: lista
+// de tarjetas (foto a la izquierda, nombre arriba, etiquetas abajo),
+// con buscador de texto y filtros por alérgenos y tipo de plato. Al
+// pulsar una tarjeta se abre la receta en modo lectura (la misma
+// ventana de la pestaña Recetas); «Añadir» permite elegir los
+// comensales de esa receta (vacío = heredar el global del menú).
+
+let pickerMode = null; // "meal" | "week"
+let pickerDay = null;
+let pickerMeal = null;
+let pickerQuery = "";
+// Filtros del buscador (issue #242): multiselección con «todas»
+// marcadas por defecto (patrón de la pestaña Recetas, issue #234).
+let pickerAlergenoFilter = new Set();
+let pickerTipoFilter = new Set();
+let pickerFilterTouched = false;
+
+// Ids de todas las etiquetas visibles en el panel del buscador
+// (predefinidas + propias del usuario).
+function pickerTagIds(scope) {
+  const preset = scope === "alergeno" ? ALERGEN_TAGS : MEAL_TYPES;
+  return mergeTags(preset, getCustomTags().filter((t) => t.tipo === scope)).map((t) => t.id);
+}
+
+// «Todas» está marcado si y solo si TODAS las etiquetas del panel
+// están en el filtro (patrón de recipeFilterAllChecked).
+function pickerFilterAllChecked(scope) {
+  const ids = pickerTagIds(scope);
+  return ids.length > 0 && ids.every((id) =>
+    scope === "alergeno" ? pickerAlergenoFilter.has(id) : pickerTipoFilter.has(id)
+  );
+}
+
+function pickerFilterLabel(scope) {
+  if (pickerFilterAllChecked(scope)) return scope === "alergeno" ? "Todos los alérgenos" : "Todos los tipos";
+  const n = scope === "alergeno" ? pickerAlergenoFilter.size : pickerTipoFilter.size;
+  const word = scope === "alergeno" ? "alérgeno" : "tipo";
+  return `${n} ${n === 1 ? word : word + "s"}`;
+}
+
+// Apertura del buscador. `target`: { mode: "meal", day, meal } para
+// una comida de la rejilla o { mode: "week" } para «recetas a la
+// semana» (sin selección de comensales: no escalan).
+function openRecipePicker({ mode, day = null, meal = null }) {
+  pickerMode = mode;
+  pickerDay = day;
+  pickerMeal = meal;
+  pickerQuery = "";
+  pickerAlergenoFilter = new Set(pickerTagIds("alergeno"));
+  pickerTipoFilter = new Set(pickerTagIds("tipo"));
+  pickerFilterTouched = false;
+
+  const modal = document.getElementById("recipe-picker-modal");
+  if (!modal) return;
+  modal._previousActiveElement = document.activeElement;
+  renderRecipePicker();
+  modal.classList.remove("hidden");
+  if (pickerCleanup) pickerCleanup();
+  pickerCleanup = trapFocus(modal.querySelector(".modal__card"));
+  // Foco al buscador (tras el rAF de trapFocus, que enfoca la ✕).
+  requestAnimationFrame(() => {
+    document.getElementById("recipe-pick-search")?.focus({ preventScroll: false });
+  });
+}
+
+function closeRecipePicker() {
+  const modal = document.getElementById("recipe-picker-modal");
+  if (!modal || modal.classList.contains("hidden")) return;
+  modal.classList.add("hidden");
+  if (pickerCleanup) {
+    pickerCleanup();
+    pickerCleanup = null;
+  }
+  if (modal._previousActiveElement) modal._previousActiveElement.focus();
+}
+
+// Restaura el buscador tras cerrar la ventana de lectura de una
+// receta (callback onClose de openRecipeModal). El estado (búsqueda,
+// filtros, scroll) se conserva porque no se re-renderiza.
+function restoreRecipePicker() {
+  const modal = document.getElementById("recipe-picker-modal");
+  if (!modal || modal.classList.contains("hidden")) return;
+  if (pickerCleanup) pickerCleanup();
+  pickerCleanup = trapFocus(modal.querySelector(".modal__card"));
+  document.getElementById("recipe-pick-search")?.focus({ preventScroll: false });
+}
+
+function renderRecipePicker() {
+  const content = document.getElementById("recipe-picker-content");
+  const targetLabel = pickerMode === "meal"
+    ? `${DAY_LABELS[pickerDay]} · ${MEAL_LABELS[pickerMeal]}`
+    : "la semana";
+  content.innerHTML = `
+    <div class="recipe-pick">
+      <h3 class="recipe-pick__title">Añadir receta a ${escapeHtml(targetLabel)}</h3>
+      <div class="recipe-pick__toolbar">
+        <input type="search" id="recipe-pick-search" class="recipe-pick__search"
+          placeholder="Buscar receta…" aria-label="Buscar receta" autocomplete="off" />
+        <div class="recipes-filter" id="recipe-pick-alergeno-filter">
+          <button type="button" id="btn-recipe-pick-alergeno" class="recipes-filter__btn"
+            aria-haspopup="true" aria-expanded="false" aria-controls="recipe-pick-alergeno-panel">
+            <span id="recipe-pick-alergeno-label">${pickerFilterLabel("alergeno")}</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <div id="recipe-pick-alergeno-panel" class="recipes-filter__panel recipe-pick__panel hidden"></div>
+        </div>
+        <div class="recipes-filter" id="recipe-pick-tipo-filter">
+          <button type="button" id="btn-recipe-pick-tipo" class="recipes-filter__btn"
+            aria-haspopup="true" aria-expanded="false" aria-controls="recipe-pick-tipo-panel">
+            <span id="recipe-pick-tipo-label">${pickerFilterLabel("tipo")}</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <div id="recipe-pick-tipo-panel" class="recipes-filter__panel recipe-pick__panel hidden"></div>
+        </div>
+      </div>
+      <div id="recipe-pick-list" class="recipe-pick__list"></div>
+    </div>`;
+
+  bindRecipePickerEvents(content);
+  renderRecipePickerList();
+}
+
+function bindRecipePickerEvents(content) {
+  const modal = document.getElementById("recipe-picker-modal");
+  document.getElementById("recipe-picker-close").addEventListener("click", closeRecipePicker);
+  document.getElementById("recipe-picker-backdrop").addEventListener("click", closeRecipePicker);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      e.preventDefault();
+      closeRecipePicker();
+    }
+  });
+
+  // Búsqueda en vivo.
+  content.querySelector("#recipe-pick-search").addEventListener("input", (e) => {
+    pickerQuery = e.target.value.trim().toLowerCase();
+    renderRecipePickerList();
+  });
+
+  // Filtros por etiquetas (patrón de los paneles de la pestaña
+  // Recetas): se pintan al abrir y se alterna solo la marca.
+  ["alergeno", "tipo"].forEach((scope) => {
+    const btn = content.querySelector(`#btn-recipe-pick-${scope}`);
+    const panel = content.querySelector(`#recipe-pick-${scope}-panel`);
+    btn.addEventListener("click", () => {
+      if (panel.classList.contains("hidden")) {
+        renderRecipePickerFilterPanel(scope, panel);
+        panel.classList.remove("hidden");
+        btn.setAttribute("aria-expanded", "true");
+      } else {
+        panel.classList.add("hidden");
+        btn.setAttribute("aria-expanded", "false");
+      }
+    });
+    panel.addEventListener("change", (e) => {
+      const input = e.target.closest("input[type='checkbox']");
+      if (!input) return;
+      pickerFilterTouched = true;
+      const active = scope === "alergeno" ? pickerAlergenoFilter : pickerTipoFilter;
+      if (input.value === "__all__") {
+        if (input.checked) {
+          pickerTagIds(scope).forEach((id) => active.add(id));
+        } else {
+          active.clear();
+        }
+      } else if (input.checked) {
+        active.add(input.value);
+      } else {
+        active.delete(input.value);
+      }
+      syncPickerFilterPanel(scope, panel);
+      content.querySelector(`#recipe-pick-${scope}-label`).textContent = pickerFilterLabel(scope);
+      renderRecipePickerList();
+    });
+  });
+
+  // Click fuera del panel: cerrar.
+  document.addEventListener("click", (e) => {
+    ["alergeno", "tipo"].forEach((scope) => {
+      const wrap = content.querySelector(`#recipe-pick-${scope}-filter`);
+      const panel = content.querySelector(`#recipe-pick-${scope}-panel`);
+      if (wrap && panel && !wrap.contains(e.target) && !panel.classList.contains("hidden")) {
+        panel.classList.add("hidden");
+        content.querySelector(`#btn-recipe-pick-${scope}`).setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+
+  // Lista de tarjetas: delegación (ver receta en lectura / añadir).
+  const list = content.querySelector("#recipe-pick-list");
+  list.addEventListener("click", (e) => {
+    const viewBtn = e.target.closest("[data-pick-view]");
+    if (viewBtn) {
+      const recipe = getRecipes().find((r) => r.id === viewBtn.dataset.pickView);
+      if (!recipe) return;
+      closeRecipePicker();
+      openRecipeModal(recipe, { readOnly: true, onClose: restoreRecipePicker });
+      return;
+    }
+    const addBtn = e.target.closest("[data-pick-add]");
+    if (addBtn) {
+      if (pickerMode === "week") {
+        addWeeklyRecipeById(addBtn.dataset.pickAdd);
+        return;
+      }
+      expandComensalesRow(list, addBtn);
+    }
+    const confirmBtn = e.target.closest("[data-pick-confirm]");
+    if (confirmBtn) {
+      const card = confirmBtn.closest("[data-pick-card]");
+      if (!card) return;
+      const input = card.querySelector(".recipe-pick__comensales input");
+      const raw = Number(input?.value);
+      const comensales = input && input.value !== "" && Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : null;
+      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
+    }
+    const cancelBtn = e.target.closest("[data-pick-cancel]");
+    if (cancelBtn) {
+      const card = cancelBtn.closest("[data-pick-card]");
+      if (!card) return;
+      collapseComensalesRow(card);
+    }
+  });
+  // Soporte de teclado: Enter en una tarjeta abre la lectura.
+  list.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest("[data-pick-card]");
+    if (!card) return;
+    e.preventDefault();
+    const recipe = getRecipes().find((r) => r.id === card.dataset.pickCard);
+    if (!recipe) return;
+    closeRecipePicker();
+    openRecipeModal(recipe, { readOnly: true, onClose: restoreRecipePicker });
+  });
+}
+
+// Panel de filtro del buscador: «Todas» + etiquetas (predefinidas y
+// propias). Se pinta solo al abrir.
+function renderRecipePickerFilterPanel(scope, panel) {
+  const preset = scope === "alergeno" ? ALERGEN_TAGS : MEAL_TYPES;
+  const tags = mergeTags(preset, getCustomTags().filter((t) => t.tipo === scope));
+  const active = scope === "alergeno" ? pickerAlergenoFilter : pickerTipoFilter;
+  const allChecked = pickerFilterAllChecked(scope);
+  panel.innerHTML = `<label class="recipes-filter__all${allChecked ? " is-checked" : ""}">
+      <input type="checkbox" value="__all__"${allChecked ? " checked" : ""} />
+      <span>Todas</span>
+    </label>
+    <div class="recipes-filter__separator" role="presentation"></div>
+    ${tags.map((t) => {
+      const checked = active.has(t.id);
+      return `<label class="recipes-filter__item${checked ? " is-checked" : ""}">
+        <input type="checkbox" value="${escapeHtml(t.id)}"${checked ? " checked" : ""} />
+        <span>${escapeHtml(t.label)}${t.custom ? " (propia)" : ""}</span>
+      </label>`;
+    }).join("")}`;
+}
+
+// Marca visual de las casillas del panel (la fuente de verdad es el
+// Set activo, no input.checked; patrón del filtro de Recetas).
+function syncPickerFilterPanel(scope, panel) {
+  const active = scope === "alergeno" ? pickerAlergenoFilter : pickerTipoFilter;
+  const allChecked = pickerFilterAllChecked(scope);
+  const all = panel.querySelector(".recipes-filter__all");
+  if (all) {
+    all.classList.toggle("is-checked", allChecked);
+    all.querySelector("input").checked = allChecked;
+  }
+  panel.querySelectorAll(".recipes-filter__item").forEach((item) => {
+    const input = item.querySelector("input");
+    const checked = active.has(input.value);
+    item.classList.toggle("is-checked", checked);
+    input.checked = checked;
+  });
+}
+
+// Lista de tarjetas del buscador: foto a la izquierda (si la tiene),
+// nombre como título arriba a la derecha y etiquetas de alérgenos y
+// tipo de plato abajo. La tarjeta entera abre la lectura; el botón
+// «Añadir» despliega la selección de comensales.
+function renderRecipePickerList() {
+  const list = document.getElementById("recipe-pick-list");
+  if (!list) return;
   const menu = activeMenu();
-  const recipes = getRecipes();
-  const existing = new Set(menu.dias[day][meal] || []);
-  const candidates = recipes.filter((r) => !existing.has(r.id));
+  const existing = new Set(
+    pickerMode === "meal"
+      ? (menu.dias?.[pickerDay]?.[pickerMeal] || []).map((e) => (typeof e === "string" ? e : e.recipeId))
+      : (menu.recetasPorSemana || []).map((e) => e.recipeId)
+  );
+  const candidates = getRecipes().filter((r) => {
+    if (existing.has(r.id)) return false;
+    if (!pickerFilterAllChecked("alergeno") && !(r.alergenos || []).some((id) => pickerAlergenoFilter.has(id))) return false;
+    if (!pickerFilterAllChecked("tipo") && !(r.tipos || []).some((id) => pickerTipoFilter.has(id))) return false;
+    if (pickerQuery && !recipeMatchesQuery(r, pickerQuery)) return false;
+    return true;
+  });
 
   if (!candidates.length) {
-    showToast("No hay más recetas para añadir (o ninguna receta creada).");
+    list.innerHTML = `<p class="recipe-pick__empty">${existing.size && !getRecipes().length
+      ? "Aún no hay recetas. Crea la primera en la pestaña Recetas."
+      : "Ninguna receta coincide con la búsqueda o los filtros."}</p>`;
     return;
   }
 
-  const picker = document.createElement("div");
-  picker.className = "menu-meal__picker";
-  picker.innerHTML = `<select aria-label="Elegir receta">
-      ${candidates.map((r) => `<option value="${r.id}">${escapeHtml(r.nombre)}</option>`).join("")}
-    </select>
-    <button type="button" class="btn btn--small btn--primary">Añadir</button>`;
-  btn.replaceWith(picker);
+  list.innerHTML = candidates.map((r) => {
+    const alergenos = mergeTags(ALERGEN_TAGS, getCustomTags().filter((t) => t.tipo === "alergeno"))
+      .filter((t) => (r.alergenos || []).includes(t.id));
+    const tipos = mergeTags(MEAL_TYPES, getCustomTags().filter((t) => t.tipo === "tipo"))
+      .filter((t) => (r.tipos || []).includes(t.id));
+    const tagHtml = [...alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`),
+      ...tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`)].join("");
+    return `<article class="recipe-pick__card" role="button" tabindex="0" data-pick-card="${r.id}"
+        aria-label="Ver receta ${escapeHtml(r.nombre)}">
+      <div class="recipe-pick__card-main">
+        ${r.fotoUrl ? `<img class="recipe-pick__photo" src="${escapeHtml(r.fotoUrl)}" alt="" loading="lazy" />` : ""}
+        <span class="recipe-pick__copy">
+          <span class="recipe-pick__name">${escapeHtml(r.nombre)}</span>
+          ${tagHtml ? `<span class="recipe-pick__tags">${tagHtml}</span>` : ""}
+        </span>
+      </div>
+      <button type="button" class="btn btn--small btn--primary recipe-pick__add" data-pick-add="${r.id}">+ Añadir</button>
+    </article>`;
+  }).join("");
+}
 
-  picker.querySelector("button").addEventListener("click", async () => {
-    const recipeId = picker.querySelector("select").value;
-    const current = activeMenu();
-    const ids = current.dias[day][meal] || [];
-    if (!ids.includes(recipeId)) {
-      const dias = { ...current.dias, [day]: { ...current.dias[day], [meal]: [...ids, recipeId] } };
-      await updateActiveMenu({ dias });
-    }
+// Coincidencia con el texto del buscador: por nombre, ingrediente y
+// etiquetas (mismo criterio que la búsqueda de la pestaña Recetas).
+function recipeMatchesQuery(r, q) {
+  if ((r.nombre || "").toLowerCase().includes(q)) return true;
+  if ((r.ingredientes || []).some((i) => normalizeIngredientName(i.nombre).toLowerCase().includes(q))) return true;
+  const labels = [
+    ...(r.alergenos || []).map((id) => tagLabelInMenu("alergeno", id)),
+    ...(r.tipos || []).map((id) => tagLabelInMenu("tipo", id)),
+    ...(r.ingredientes || []).map((i) => tagLabelInMenu("ingrediente", i.categoriaId)),
+  ];
+  return labels.some((t) => t && t.toLowerCase().includes(q));
+}
+
+function tagLabelInMenu(scope, id) {
+  if (!id) return "";
+  const preset = scope === "alergeno" ? ALERGEN_TAGS : scope === "tipo" ? MEAL_TYPES : [];
+  const found = preset.find((t) => t.id === id);
+  if (found) return found.label;
+  const custom = getCustomTags().find((t) => t.id === id);
+  return custom ? custom.nombre || custom.id : id;
+}
+
+// Fila de comensales de la tarjeta: un número opcional. Vacío (o 0)
+// → la receta hereda los comensales globales del menú.
+function expandComensalesRow(list, addBtn) {
+  const card = addBtn.closest("[data-pick-card]");
+  if (!card) return;
+  const global = Number(activeMenu().comensales) || 1;
+  addBtn.insertAdjacentHTML("beforebegin", `<span class="recipe-pick__comensales">
+      <label for="pick-com-${card.dataset.pickCard}">Comensales</label>
+      <input type="number" id="pick-com-${card.dataset.pickCard}" min="1" max="99" inputmode="numeric"
+        placeholder="Menú (${global})" aria-label="Comensales de esta receta (vacío = los del menú)" />
+    </span>`);
+  addBtn.hidden = true;
+  card.querySelector(".recipe-pick__comensales input").focus();
+}
+
+function collapseComensalesRow(card) {
+  card.querySelector(".recipe-pick__comensales")?.remove();
+  const addBtn = card.querySelector("[data-pick-add]");
+  if (addBtn) addBtn.hidden = false;
+}
+
+// Añade la receta a la comida con sus comensales propios (o null si
+// no se indicó → hereda el global del menú).
+async function addRecipeToMeal(day, meal, recipeId, comensales = null) {
+  const current = activeMenu();
+  const entries = (current.dias[day][meal] || []).map(mealEntryOf).map((e) => e.recipe);
+  if (entries.includes(recipeId)) {
+    showToast("Esa receta ya está en esa comida.");
     renderMenu();
-  });
+    return;
+  }
+  const dias = {
+    ...current.dias,
+    [day]: { ...current.dias[day], [meal]: [...(current.dias[day][meal] || []), { recipeId, comensales }] },
+  };
+  await updateActiveMenu({ dias });
+  closeRecipePicker();
+  renderMenu();
+  showToast("Receta añadida al menú.");
 }
 
 async function removeRecipeFromMeal(day, meal, recipeId) {
   const menu = activeMenu();
-  const ids = (menu.dias[day][meal] || []).filter((id) => id !== recipeId);
-  const dias = { ...menu.dias, [day]: { ...menu.dias[day], [meal]: ids } };
+  const entries = (menu.dias[day][meal] || []).filter((e) => mealEntryOf(e).recipe !== recipeId);
+  const dias = { ...menu.dias, [day]: { ...menu.dias[day], [meal]: entries } };
   await updateActiveMenu({ dias });
   renderMenu();
 }

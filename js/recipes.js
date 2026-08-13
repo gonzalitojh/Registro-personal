@@ -83,6 +83,12 @@ export function getRecipes() {
   return recipes;
 }
 
+// Etiquetas personalizadas del usuario (users/{uid}/tags). La pestaña
+// Menú (menu.js) las necesita para el buscador de recetas (issue #242).
+export function getCustomTags() {
+  return customTags;
+}
+
 // Catálogo de ingredientes (users/{uid}/ingredients). La lista de la
 // compra (shopping-list.js) lo consulta para la cantidad por paquete
 // (issue #225): paqueteCantidad + paqueteUnidad (issue #224).
@@ -1195,12 +1201,19 @@ function optionsFor(scope, selectedId) {
 
 // ---------- Modal de receta ----------
 
-export function openRecipeModal(recipe = null, { readOnly = false } = {}) {
+// Callback opcional de cierre del modal (issue #242): lo usa menu.js
+// para restaurar el buscador de recetas al cerrar la ventana de
+// lectura abierta desde el menú. Se invoca siempre al cerrar y se
+// limpia después, para que no se acumulen callbacks de una apertura.
+let recipeModalCloseCb = null;
+
+export function openRecipeModal(recipe = null, { readOnly = false, onClose = null } = {}) {
   const modal = document.getElementById("recipe-modal");
   const content = document.getElementById("recipe-modal-content");
   const wasHidden = modal.classList.contains("hidden");
   editingRecipeId = recipe?.id || null;
   modalReadOnly = readOnly;
+  recipeModalCloseCb = onClose || null;
 
   content.innerHTML = recipeModalHtml(recipe);
   bindRecipeModalHandlers(content);
@@ -1229,6 +1242,12 @@ function closeRecipeModal() {
     modalCleanup();
     modalCleanup = null;
   }
+  if (modal._previousActiveElement) modal._previousActiveElement.focus();
+  // Callback de cierre (issue #242): restaurar el buscador del menú.
+  const cb = recipeModalCloseCb;
+  recipeModalCloseCb = null;
+  if (cb) cb();
+}
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
   editingRecipeId = null;
   modalReadOnly = false;
