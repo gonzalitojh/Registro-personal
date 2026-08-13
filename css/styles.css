@@ -2664,17 +2664,14 @@ body.is-back-to-top-visible .back-to-top {
   margin: 0;
 }
 
+/* Píldora base de las etiquetas de la tarjeta (issue #234). Los
+   colores por tipo vienen de los modificadores --alergeno (teal) y
+   --tipo (ocre), agrupados con los de la vista de lectura más abajo
+   (una sola fuente de verdad por regla, AGENTS.md §4.3). */
 .recipe-card__tag {
-  background: var(--teal-alpha-18);
-  color: var(--teal-reel);
   font-size: 0.72rem;
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
-}
-
-[data-theme="black"] .recipe-card__tag {
-  background: var(--paper-alpha-14);
-  color: var(--paper);
 }
 
 /* --- Filtros de la pestaña Recetas (issue #234) --- */
@@ -4097,10 +4094,13 @@ body.is-back-to-top-visible .back-to-top {
 /* Etiquetas de alérgenos y de tipo de plato con colores propios para
    que no se confundan (issue #236). Píldoras rellenas con pares de
    contraste AA: teal + texto blanco ≈ 6.7:1 y ocre oscuro + texto
-   blanco ≈ 5.2:1 (≥ 4.5:1). El estilo translúcido de .recipe-card__tag
-   no vale aquí: el ocre sobre papel (≈ 4.32:1) no alcanzaría el umbral
+   blanco ≈ 5.2:1 (≥ 4.5:1). El estilo translúcido (teal-alpha-18) no
+   vale aquí: el ocre sobre papel (≈ 4.32:1) no alcanzaría el umbral
    de texto. En negro puro se usan las variantes claras con texto tinta
-   (bloque más abajo). */
+   (bloque más abajo). Las tarjetas de recetas comparten estos mismos
+   colores por tipo (issue #236, iteración): los modificadores de
+   .recipe-card__tag se agrupan con los de la vista para tener una
+   sola fuente de verdad por regla. */
 .recipe-view__tag {
   font-size: 0.78rem;
   border-radius: 999px;
@@ -4108,12 +4108,14 @@ body.is-back-to-top-visible .back-to-top {
   overflow-wrap: break-word;
 }
 
-.recipe-view__tag--alergeno {
+.recipe-view__tag--alergeno,
+.recipe-card__tag--alergeno {
   background: var(--teal-reel);
   color: var(--white);
 }
 
-.recipe-view__tag--tipo {
+.recipe-view__tag--tipo,
+.recipe-card__tag--tipo {
   background: var(--ochre-spine-dark);
   color: var(--white);
 }
@@ -4450,13 +4452,16 @@ body.is-back-to-top-visible .back-to-top {
    píldoras de etiquetas usan las variantes claras (teal #4f9c8e ≈
    6.6:1 y ocre #c99a4e ≈ 7.4:1 sobre tinta) con texto casi negro
    (--ink), patrón de .recipe-form__chip.is-checked; los enlaces la
-   variante clara del teal como .ingredient-modal__link. */
-[data-theme="black"] .recipe-view__tag--alergeno {
+   variante clara del teal como .ingredient-modal__link. Las tarjetas
+   de recetas comparten los mismos pares (selectores agrupados). */
+[data-theme="black"] .recipe-view__tag--alergeno,
+[data-theme="black"] .recipe-card__tag--alergeno {
   background: var(--teal-reel-dark);
   color: var(--ink);
 }
 
-[data-theme="black"] .recipe-view__tag--tipo {
+[data-theme="black"] .recipe-view__tag--tipo,
+[data-theme="black"] .recipe-card__tag--tipo {
   background: var(--ochre-spine-dark);
   color: var(--ink);
 }

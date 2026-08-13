@@ -132,4 +132,49 @@ de trabajo se crea desde ahí y la PR va **también a esa rama, no a
   dato de usuario pasa por `escapeHtml`; los enlaces no-http no generan
   anclas).
 
+## Iteración (2026-08-13, comentario de la issue)
+
+Nuevo comentario del usuario en la issue #236:
+
+> Las etiquetas de alérgenos y tipo de plato, deben tener también los
+> colores diferentes en la tarjeta, no solo dentro de la ventana de
+> información. Añade un lápiz al botón de editar.
+
+### Cambios
+
+1. **Colores por tipo también en la tarjeta**: `recipeCardHtml`
+   (js/recipes.js) renderiza las etiquetas con los mismos modificadores
+   que la vista de lectura (`recipe-card__tag--alergeno` teal /
+   `recipe-card__tag--tipo` ocre). En CSS los selectores de color se
+   **agrupan** con los de la vista de lectura
+   (`.recipe-view__tag--alergeno, .recipe-card__tag--alergeno { ... }`),
+   una sola fuente de verdad por regla (AGENTS.md §4.3), incluidos los
+   overrides de negro puro. El antiguo estilo translúcido único de
+   `.recipe-card__tag` (teal-alpha-18 + texto teal, ≈ 4.4:1, por debajo
+   de AA) desaparece: la píldora base conserva solo la forma (radio,
+   padding, tamaño) y el color lo aporta el modificador, con pares AA
+   (teal 6.7:1 y ocre 5.2:1; en negro puro variantes claras 6.6:1 y
+   7.4:1 con texto tinta).
+2. **Lápiz en el botón de editar**: los dos botones «Editar» del flujo
+   de recetas (vista de lectura y rama de solo lectura de
+   `recipeModalHtml`) pasan de «Editar» a «✎ Editar», el mismo glifo
+   ✎ (U+270E) que ya usan otros botones de edición de la app
+   (p. ej. `editButtonHtml` en ui.js).
+3. **Manual de usuario**: §8.1 describe ahora que las tarjetas también
+   muestran las etiquetas en píldoras de colores (alérgenos verde, tipo
+   ocre) y que el botón de editar lleva un lápiz ✎.
+4. **PWA**: bump `20260918 → 20260919` (js/config.js, index.html y
+   service-worker.js) porque cambian CSS y JS de la pestaña Recetas.
+
+### Validación
+
+- Criterios de aceptación: sin regresión (los 10 se re-verifican); los
+  nuevos puntos de la iteración se validan contra el render real de la
+  tarjeta y de la vista (modificadores presentes en el DOM, colores
+  AA en los cuatro temas).
+- Responsividad: 360 / 768 / 1280 px sin scroll horizontal en la
+  tarjeta con etiquetas largas («Plato de cuchara», «Sin frutos secos»).
+- Seguridad: escaneo sin hallazgos (el cambio no añade datos de
+  usuario nuevos; `escapeHtml` sigue cubriendo las etiquetas).
+
 Related issue: #236

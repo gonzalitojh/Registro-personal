@@ -354,9 +354,12 @@ function recipeCardHtml(r) {
   const badge = r.needsReview
     ? `<span class="recipe-card__badge" title="Importada desde una URL, pendiente de revisar">Revisar</span>`
     : "";
-  const tags = [...alergenos, ...tipos];
   // La tarjeta entera es el botón (issue #234): al pulsarla se abre el
   // detalle en modo lectura. role="button" + tabindex para teclado.
+  // Las etiquetas llevan el mismo color por tipo que en la vista de
+  // lectura (issue #236, iteración): alérgenos en teal y tipo en ocre.
+  const alergenoTags = alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`).join("");
+  const tipoTags = tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`).join("");
   return `<article class="recipe-card${r.needsReview ? " recipe-card--review" : ""}"
     role="button" tabindex="0" data-recipe-id="${r.id}"
     aria-label="Ver receta ${escapeHtml(r.nombre)}">
@@ -369,9 +372,7 @@ function recipeCardHtml(r) {
       ${Number(r.porciones) ? `${formatCantidad(r.porciones)} porciones` : ""}
       ${r.ingredientes?.length ? ` · ${r.ingredientes.length} ingredientes` : ""}
     </p>
-    ${tags.length ? `<p class="recipe-card__tags">
-      ${tags.map((t) => `<span class="recipe-card__tag">${escapeHtml(t.label)}</span>`).join("")}
-    </p>` : ""}
+    ${(alergenoTags || tipoTags) ? `<p class="recipe-card__tags">${alergenoTags}${tipoTags}</p>` : ""}
   </article>`;
 }
 
@@ -1250,7 +1251,7 @@ function recipeModalHtml(recipe) {
     <div class="recipe-form__actions">
       ${modalReadOnly
         ? `<button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
-           <button type="button" class="btn btn--small" data-recipe-edit>Editar</button>`
+           <button type="button" class="btn btn--small" data-recipe-edit>✎ Editar</button>`
         : `<button type="button" id="btn-recipe-cancel" class="btn btn--outline">Cancelar</button>
            <button type="submit" class="btn btn--primary">Guardar</button>`}
     </div>
@@ -1325,7 +1326,7 @@ function recipeReadOnlyHtml(recipe) {
     ${enlacesHtml}
     <div class="recipe-view__actions">
       <button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
-      <button type="button" class="btn btn--small" data-recipe-edit>Editar</button>
+      <button type="button" class="btn btn--small" data-recipe-edit>✎ Editar</button>
     </div>
   </div>`;
 }
