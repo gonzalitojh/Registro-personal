@@ -64,10 +64,32 @@ export function setupMenu(opts) {
   // Único botón de añadir receta (issue #242, iteración): el destino
   // (día o toda la semana + comida) se elige dentro del buscador.
   document.getElementById("btn-add-menu-recipe").addEventListener("click", () => openRecipePicker());
+  // Lista de «recetas a la semana» (issue #242, iteración): las
+  // mismas tarjetas .menu-meal__card que las celdas — la ✕ quita la
+  // receta y la tarjeta (fuera de la ✕) abre la receta en lectura.
   document.getElementById("menu-weekly-list").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-weekly-remove]");
-    if (!btn) return;
-    removeWeeklyRecipe(btn.dataset.weeklyRemove);
+    if (btn) {
+      removeWeeklyRecipe(btn.dataset.weeklyRemove);
+      return;
+    }
+    const card = e.target.closest("[data-menu-card]");
+    if (!card) return;
+    const recipe = getRecipes().find((r) => r.id === card.dataset.menuCard);
+    if (!recipe) return;
+    openRecipeModal(recipe, { readOnly: true });
+  });
+  // Teclado de las tarjetas de la semana: Enter/Espacio abren la
+  // lectura (los botones internos gestionan su propio Enter).
+  document.getElementById("menu-weekly-list").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    if (e.target.closest("button")) return;
+    const card = e.target.closest("[data-menu-card]");
+    if (!card) return;
+    e.preventDefault();
+    const recipe = getRecipes().find((r) => r.id === card.dataset.menuCard);
+    if (!recipe) return;
+    openRecipeModal(recipe, { readOnly: true });
   });
 
   registerTabRenderer("menu", renderMenu);
@@ -833,6 +855,12 @@ async function removeRecipeFromMeal(day, meal, recipeId) {
 
 // ---------- Recetas a la semana (no escalan) ----------
 
+// «Recetas a la semana» (issue #242, iteración): las mismas tarjetas
+// .menu-meal__card que las celdas de la rejilla (foto, nombre y
+// etiquetas; la ✕ quita y la tarjeta abre la receta en lectura), en
+// lugar del simple nombre con botón «Quitar» de antes. Reutilizan las
+// mismas clases y el mismo recipeTagsHtml, así que su aspecto y su
+// comportamiento coinciden con el menú por días.
 function renderWeeklyRecipes(menu) {
   const list = document.getElementById("menu-weekly-list");
   const recipes = getRecipes();
@@ -845,10 +873,18 @@ function renderWeeklyRecipes(menu) {
   list.innerHTML = menu.recetasPorSemana.map((entry) => {
     const recipe = byId.get(entry.recipeId);
     if (!recipe) return "";
-    return `<div class="menu-weekly__item">
-      <span>${escapeHtml(recipe.nombre)}</span>
-      <button type="button" class="btn btn--small btn--danger" data-weekly-remove="${escapeHtml(entry.recipeId)}">Quitar</button>
-    </div>`;
+    const tagHtml = recipeTagsHtml(recipe);
+    return `<article class="menu-meal__card" role="button" tabindex="0"
+        data-menu-card="${escapeHtml(entry.recipeId)}"
+        aria-label="Ver receta ${escapeHtml(recipe.nombre)}">
+        ${recipe.fotoUrl ? `<img class="menu-meal__card-photo" src="${escapeHtml(recipe.fotoUrl)}" alt="" loading="lazy" />` : ""}
+        <span class="menu-meal__card-copy">
+          <span class="menu-meal__card-name">${escapeHtml(recipe.nombre)}</span>
+          ${tagHtml ? `<span class="menu-meal__card-tags">${tagHtml}</span>` : ""}
+        </span>
+        <button type="button" class="menu-meal__remove" data-weekly-remove="${escapeHtml(entry.recipeId)}"
+          aria-label="Quitar ${escapeHtml(recipe.nombre)} de la semana">✕</button>
+      </article>`;
   }).join("");
 }
 
