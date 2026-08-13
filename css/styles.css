@@ -3223,10 +3223,12 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* Rejilla día × comida: en móvil se permite scroll horizontal
-   DENTRO del contenedor (patrón permitido por AGENTS.md). */
+   DENTRO del contenedor (patrón permitido por AGENTS.md). Desde la
+   issue #242 el menú cubre dos comidas (almuerzo y cena), así que la
+   rejilla tiene 3 columnas: día + 2 comidas. */
 .menu-grid {
   display: grid;
-  grid-template-columns: 7.5rem repeat(3, minmax(170px, 1fr));
+  grid-template-columns: 7.5rem repeat(2, minmax(170px, 1fr));
   gap: 0.4rem;
   overflow-x: auto;
   padding-bottom: 0.4rem;
@@ -3235,7 +3237,7 @@ body.is-back-to-top-visible .back-to-top {
 
 /* js/menu.js envuelve cabecera y filas en .menu-grid__head y
    .menu-grid__row (grupos de celdas). Sin caja propia, sus celdas
-   participan directamente en el grid de 4 columnas: cabecera en la
+   participan directamente en el grid de 3 columnas: cabecera en la
    fila 1 y cada día en su fila. Sin esto, cada wrapper se auto-coloca
    en UNA celda estrecha y todo se aplasta y se superpone (issue #215). */
 .menu-grid__head,
@@ -3360,7 +3362,8 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* El campo de búsqueda crece y los filtros se mantienen a la
-   derecha; en móvil todo pasa a columna (sin desbordar). */
+   derecha; en móvil todo pasa a columna (sin desbordar). 1rem por
+   ADR-042 (nada de < 16px en inputs). */
 .recipe-pick__search {
   flex: 1 1 200px;
   min-width: 0;
@@ -3370,7 +3373,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-alpha-30);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .recipe-pick__search::placeholder {
@@ -3476,7 +3479,7 @@ body.is-back-to-top-visible .back-to-top {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.28rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 1rem; /* ADR-042: nunca < 16px en inputs */
 }
 
 .recipe-pick__empty {
@@ -4536,8 +4539,8 @@ body.is-back-to-top-visible .back-to-top {
 
 [data-theme="light"] .menu-comensales input,
 [data-theme="white"] .menu-comensales input,
-[data-theme="light"] .menu-meal__picker select,
-[data-theme="white"] .menu-meal__picker select,
+[data-theme="light"] .recipe-pick__search,
+[data-theme="white"] .recipe-pick__search,
 [data-theme="light"] .menu-weekly__addrow select,
 [data-theme="white"] .menu-weekly__addrow select,
 [data-theme="light"] .ingredient-modal__field input,
@@ -4664,6 +4667,16 @@ body.is-back-to-top-visible .back-to-top {
 
 [data-theme="black"] .ingredient-modal__field input,
 [data-theme="black"] .ingredient-modal__field select {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+/* Número de comensales del buscador en negro puro: la base usa
+   --paper-dim/--ink, que en este tema son casi negros (texto
+   invisible ≈ 1.07:1); se invierte como los demás campos de
+   formulario (patrón de ingredient-modal__field). */
+[data-theme="black"] .recipe-pick__comensales input {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--paper-alpha-20);

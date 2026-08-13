@@ -450,15 +450,17 @@ function bindRecipePickerEvents(content) {
     }
     const confirmBtn = e.target.closest("[data-pick-confirm]");
     if (confirmBtn) {
-      // Guard contra doble clic: el botón se desactiva y el alta
-      // re-renderiza/cierra el buscador.
+      // Guard contra doble clic: el botón se desactiva y, si el alta
+      // no se produjo (receta ya añadida), se rehabilita.
       confirmBtn.disabled = true;
       const card = confirmBtn.closest("[data-pick-card]");
       if (!card) return;
       const input = card.querySelector(".recipe-pick__comensales input");
       const raw = Number(input?.value);
       const comensales = input && input.value !== "" && Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : null;
-      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
+      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales).then((added) => {
+        if (!added) confirmBtn.disabled = false;
+      });
       return;
     }
     const cancelBtn = e.target.closest("[data-pick-cancel]");
@@ -671,15 +673,15 @@ function collapseComensalesRow(card) {
 }
 
 // Añade la receta a la comida con sus comensales propios (o null si
-// no se indicó → hereda el global del menú). Utilizada también como
-// confirmación de la fila de comensales del buscador.
+// no se indicó → hereda el global del menú). Devuelve true si se
+// añadió y false si ya estaba (el buscador sigue abierto).
 async function addRecipeToMeal(day, meal, recipeId, comensales = null) {
   const current = activeMenu();
   const entries = (current.dias[day][meal] || []).map(mealEntryOf).map((e) => e.recipe);
   if (entries.includes(recipeId)) {
     showToast("Esa receta ya está en esa comida.");
     renderMenu();
-    return;
+    return false;
   }
   const dias = {
     ...current.dias,
@@ -689,6 +691,7 @@ async function addRecipeToMeal(day, meal, recipeId, comensales = null) {
   closeRecipePicker();
   renderMenu();
   showToast("Receta añadida al menú.");
+  return true;
 }
 
 async function removeRecipeFromMeal(day, meal, recipeId) {
