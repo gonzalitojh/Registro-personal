@@ -21,6 +21,21 @@ import {
   addNotification,
   deleteNotification,
   markNotificationRead,
+  subscribeToRecipes,
+  addRecipe,
+  updateRecipe,
+  deleteRecipe,
+  subscribeToIngredients,
+  addIngredient,
+  updateIngredient,
+  deleteIngredient,
+  subscribeToTags,
+  addTag,
+  deleteTag,
+  subscribeToMenus,
+  addMenu,
+  updateMenu,
+  deleteMenu,
 } from "./db.js";
 import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails } from "./api-movies.js";
 import { getOpenLibraryDescription } from "./api-books.js";
@@ -38,16 +53,21 @@ import { setupNotifications } from "./notifications-setup.js";
 import { setupProfile } from "./profile.js";
 import { setupSettings, syncThemeToSettings, cleanupSettings, SECTION_REGISTRY, isSectionVisible, isTabVisible, getFirstVisibleTabKey, getFirstVisibleTabPanel, normalizeTabKey } from "./settings.js";
 import { setupGlobalSearch, refreshExternalResults } from "./global-search.js";
-import { setupSidebar, renderSidebar } from "./sidebar.js";
+import { setupSidebar, renderSidebar, setActiveSection } from "./sidebar.js";
 import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
+import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.js";
+import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
+import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
 
 // ---------- Estado ----------
 
 let currentUser = null;
 let unsubscribeItems = { movies: null, tv: null, books: null, games: null };
 let unsubscribeNotifications = null;
+let unsubscribeRecipes = null; // recetas (recipes.js)
+let unsubscribeMenuData = null; // menús (menu.js)
 const allItems = { movies: [], tv: [], books: [], games: [] };
 let notifications = [];
 
@@ -101,6 +121,21 @@ function createCtx() {
     getTvSeasonsMeta,
     getSeasonEpisodes,
     getOpenLibraryDescription,
+    subscribeToRecipes,
+    addRecipe,
+    updateRecipe,
+    deleteRecipe,
+    subscribeToIngredients,
+    addIngredient,
+    updateIngredient,
+    deleteIngredient,
+    subscribeToTags,
+    addTag,
+    deleteTag,
+    subscribeToMenus,
+    addMenu,
+    updateMenu,
+    deleteMenu,
     todayISO,
     formatDateEs,
     setTheme,
@@ -162,6 +197,10 @@ function stopAllSubscriptions() {
   unsubscribeItems = { movies: null, tv: null, books: null, games: null };
   if (unsubscribeNotifications) unsubscribeNotifications();
   unsubscribeNotifications = null;
+  if (unsubscribeRecipes) unsubscribeRecipes();
+  unsubscribeRecipes = null;
+  if (unsubscribeMenuData) unsubscribeMenuData();
+  unsubscribeMenuData = null;
 }
 
 // ---------- Suscripciones a Firestore (lazy, issue #178) ----------
@@ -420,6 +459,18 @@ async function init() {
       const panelEl = panels[tab.panelId];
       if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Pestañas de Recetas (issue #208): la barra de pestañas de
+    // Recetas es ya del mismo componente que la de Ocio, así que las
+    // pestañas ocultas en Ajustes también salen de su barra. Los
+    // paneles de Recetas los re-togglea openRecipes al abrir la
+    // sección (con normalizeTabKey, que ya cae a la primera visible
+    // si la pedida está oculta), así que aquí solo se añade hidden.
+    Object.entries(SECTION_REGISTRY.recetas.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-recipes-tab="${tabKey}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = document.getElementById(tab.panelId);
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
+    });
     // Si la pestaña activa quedó oculta, caer a la primera visible
     // (el mismo guard de activatePanel, issue #97): sin esto el área
     // de contenido quedaría en blanco al ocultar la pestaña activa.
@@ -444,25 +495,73 @@ async function init() {
   // no existe (la sesión tampoco). El guard permite ignorarla: tras el
   // login, watchAuthState llama a router.applyRoute() para retomarla.
   let profileApi = null;
+  let recipesApi = null;
   const router = initRouter({
     onRoute: (route) => {
+      // Búsqueda superior acotada a la sección (issue #206): el
+      // placeholder de la barra refleja dónde busca el usuario.
+      ui.setSearchSection(route.section);
+
+      // Cabecera global (issue #206, iteración 2026-08-11): en el
+      // perfil NO se muestra (el usuario prefiere la flecha de volver
+      // y las pestañas en la misma fila); en Ocio y Recetas sí. Con
+      // sesión iniciada solo (la pantalla de acceso la oculta siempre).
+      const appHeader = document.getElementById("app-header");
+      if (route.section === "perfil") {
+        appHeader?.classList.add("hidden");
+      } else if (currentUser) {
+        appHeader?.classList.remove("hidden");
+      }
+
+      // Marcado de la sección activa en la barra lateral (issue #206,
+      // iteración 2026-08-11): el marcado sigue a la ruta. En el
+      // perfil solo se marca «Ajustes» (entrada pinned) cuando se
+      // está en esa subsección; el resto del perfil no tiene entrada.
+      setActiveSection(
+        route.section === "perfil"
+          ? route.profileSection === "settings"
+            ? "settings"
+            : null
+          : route.section
+      );
+
       if (route.section === "perfil") {
         // Ruta de perfil: abre la sección pedida (profile.js decide
         // el render y, si viene con uid, el detalle del amigo).
+        document.getElementById("recipes-view")?.classList.add("hidden");
         if (profileApi) {
           profileApi.openProfileSection(route.profileSection, ctx, {
             fromRouter: true,
             friendUid: route.uid || null,
           });
         }
+      } else if (route.section === "recetas") {
+        // Ruta de Recetas (issue #64): abre la sección con la pestaña
+        // pedida (#/recetas, #/recetas/menu, #/recetas/compra). Si la
+        // pestaña está oculta en Ajustes, se normaliza a la primera
+        // visible y se reescribe la URL (mismo guard que Ocio, #97).
+        if (recipesApi) {
+          const tab = normalizeTabKey("recetas", route.tab);
+          if (tab !== route.tab) {
+            router.navigate({ section: "recetas", tab }, { replace: true });
+          }
+          recipesApi.openRecipes({ tab, fromRouter: true });
+        }
       } else if (route.section === "ocio") {
         // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
+        document.getElementById("recipes-view")?.classList.add("hidden");
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
-        // la muestra (issue #178).
+        // la muestra (issue #178). REGRESIÓN (issue #208): la fusión de
+        // content/issue-64-seccion-recetas re-introdujo un
+        // classList.remove("hidden") incondicional sobre #app que
+        // destapaba la barra de pestañas sobre la pantalla de acceso
+        // (y el resto de la interfaz) hasta que Firebase resolvía la
+        // sesión. La única vía de destapar #app es ui.showApp tras el
+        // login: este remove condicional es el único permitido.
         if (currentUser) document.getElementById("app").classList.remove("hidden");
       }
     },
@@ -494,6 +593,14 @@ async function init() {
   setupModalCloseListeners();
   setupNotifications(ctx);
   profileApi = setupProfile(ctx);
+  // Sección de Recetas (issue #64): API de apertura para el router y
+  // limpieza de menús al borrar una receta.
+  recipesApi = setupRecipes({
+    ctx,
+    onRecipeDeleted: (recipeId) => cleanupDeletedRecipe(recipeId),
+  });
+  setupMenu({ ctx });
+  setupShoppingList({ ctx });
   // Los cambios de visibilidad de Ajustes refrescan pestañas y
   // barra lateral al momento (issue #97).
   setupSettings(ctx, { onVisibilityChange: refreshNavigation });
@@ -534,6 +641,11 @@ async function init() {
       allItems.books = [];
       allItems.games = [];
       notifications = [];
+      // Recetas (issue #64): los datos del usuario anterior no deben
+      // mostrarse al siguiente si entra otra cuenta.
+      resetRecipesData();
+      resetMenuData();
+      resetShoppingListState();
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya
@@ -576,6 +688,11 @@ async function init() {
     // sesión, el onRoute la ignoró (profileApi no existía aún). Al
     // entrar, la retomamos para abrir la sección que se solicitó.
     if (router.getCurrentSection() === "perfil") {
+      router.applyRoute();
+    }
+    // Igual con la sección de Recetas (issue #64): si la recarga pedía
+    // #/recetas/... y no había sesión, la retomamos al entrar.
+    if (router.getCurrentSection() === "recetas") {
       router.applyRoute();
     }
 
@@ -627,6 +744,26 @@ async function init() {
         handleNotificationsSnapshot(notifications);
       },
       onError: () => {},
+    });
+
+    // Recetas (issue #64): suscripciones en tiempo real de recetas,
+    // catálogo de ingredientes, etiquetas propias y menús semanales,
+    // con el mismo reintento con backoff que el resto (issue #147).
+    unsubscribeRecipes = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) => subscribeRecipesData(user.uid, onChange, onError),
+      // El render ya lo gestiona recipes.js con cada snapshot; el
+      // onChange aquí solo sirve para que subscribeWithRetry reinicie
+      // su contador de reintentos (no-op).
+      onChange: () => {},
+      onError: () => ui.showToast("No se pudieron cargar tus recetas."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
+    unsubscribeMenuData = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) => subscribeMenuData(user.uid, onChange, onError),
+      // Igual que recetas: el render lo hace menu.js; no-op.
+      onChange: () => {},
+      onError: () => ui.showToast("No se pudo cargar tu menú semanal."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
     });
   });
 }

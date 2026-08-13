@@ -1,0 +1,66 @@
+{
+  "title": "Estética de la pestaña de lista de la compra (issue #221)",
+  "description": "Igual que en la issue #220, adecuar la estética de la pestaña «Lista de la compra» de la sección de Recetas, y especialmente de los botones, al resto de la web (lenguaje visual tipo Ocio: píldoras, btn--primary para acción principal, controles de formulario uniformados, focus visible, cuatro temas). Base de trabajo: rama content/issue-64-seccion-recetas. La rama de trabajo se crea desde ahí y la PR va TAMBIÉN a esa rama, no a dev (excepción explícita de la issue, patrón de las PR #222/#219/#214).\n\nIteración 2 (comentario workflow_dispatch 2026-08-11): el usuario añade dos peticiones — (1) las checkboxes también deben tener colores y estilos como la web; (2) renombrar la pestaña «Lista de la compra» a algo más simple que ocupe una sola fila (elegido: «Compra»). Se aplican en la misma rama/PR #223 (sin PR duplicada).",
+  "status": "review",
+  "acceptance_criteria": [
+    "Los botones de la pestaña Lista de la compra siguen el lenguaje visual del resto de la web: acción principal «+ Ítem extra» como btn--primary, botones secundarios y de borrado con estética píldora coherente.",
+    "Los controles del formulario de ítem extra (inputs nombre/cantidad/unidad y select de categoría) usan el patrón píldora (radio 999px, borde paper-alpha-30, fondo ink-raised) con :focus-visible destacado.",
+    "El botón ✕ de quitar ítem extra tiene presencia de píldora con hover legible.",
+    "Los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro) se ven correctamente: overrides agrupados light+white y ajustes de negro puro si proceden, contraste WCAG AA.",
+    "Responsividad: sin scroll horizontal en 360 / 768 / 1280 px; textos ajustados (overflow-wrap, min-width: 0).",
+    "Sin cambios de comportamiento funcional: cálculo, marcar comprado, añadir/quitar ítem extra y excluir recetas se mantienen.",
+    "Bump de versión PWA (scripts/bump-version.sh) a un valor distinto de 20260912 (usado por la PR #222 de la issue #220, aún abierta contra la misma rama base).",
+    "Iteración 2: los checkboxes (marcar comprado y «No es comestible» del form) usan accent-color con el acento de la pestaña (--stamp, rojo; --stamp-dark en negro puro) y tamaño 18px, patrón saga-row de Ocio.",
+    "Iteración 2: la pestaña se llama «Compra» (una sola fila en móvil) en index.html, Ajustes (settings.js) y manual; el token data-recipes-tab=\"compra\" no cambia.",
+    "Iteración 2: versión PWA 20260914 (distinta de 20260913 anterior y 20260912 de la PR #222)."
+  ],
+  "definition_of_done": [
+    "Planificación completada (task-architect).",
+    "Implementación realizada con micro-commits.",
+    "Validación QA PASS (criterios de aceptación + responsividad 360/768/1280 px + cuatro temas).",
+    "Escaneo de seguridad PASS sin hallazgos HIGH.",
+    "ADR escrito (docs/adr-084-*.md) con 'Related issue: #221'.",
+    "PR creada contra content/issue-64-seccion-recetas (sin keyword de cierre) y task file subido con status 'review' + bloque pr; issue con status: needs-review.",
+    "Issue #221 label actualizada a su estado final."
+  ],
+  "issue": {
+    "number": 221,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/221",
+    "title": "Estética de la pestaña de lista de la compra"
+  },
+  "implementation": {
+    "commits": [
+      "767b21f style(recipes): estética píldora de la lista de la compra — botones y controles coherentes (issue #221)",
+      "95ce128 chore(version): bump PWA 20260911 → 20260913 (issue #221)",
+      "b6d8333 style(recipes): checkboxes de la compra con acento rojo y tamaño fijo (issue #221)",
+      "8e29a68 style(recipes): renombra la pestaña «Lista de la compra» a «Compra» (una fila en móvil) (issue #221)",
+      "120cb31 docs(manual): pestaña «Compra» en lugar de «Lista de la compra» (issue #221)",
+      "432c8cd chore(version): bump PWA 20260913 → 20260914 (issue #221)",
+      "8153578 style(recipes): ajusta redondeo del contraste citado en el comentario de los checkboxes (issue #221)",
+      "8ceffa2 docs: ADR-084 iteración — checkboxes con acento rojo y pestaña renombrada a «Compra» (issue #221)"
+    ]
+  },
+  "qa": {
+    "result": "PASS",
+    "summary": "AC1-AC8 PASS; contraste AA en texto nuevo en 4 temas; bordes 1px <3:1 (mejora vs base, observación LOW); ✕ --stamp preexistente; merge-test con PR #222 sin conflictos en CSS; sin correcciones requeridas.",
+    "iteration_2": "PASS: 7 criterios verificados — checkboxes accent-color --stamp/--stamp-dark 18px (patrón saga-row; check blanco 6.39:1, 3.69:1 negro puro); «Compra» en una sola fila en 360px; 0 referencias visibles al nombre viejo (grep index.html/settings.js/manual); sin cambios funcionales (js/shopping-list.js intacto); responsividad sin desbordamiento; manual coherente; bump 20260914. Hallazgos solo informativos: redondeo de contraste en comentario CSS (corregido en 8153578), CRLF preexistente."
+  },
+  "security": {
+    "result": "PASS",
+    "summary": "0 HIGH; 1 MEDIUM preexistente (API keys client-side documentadas como públicas, fuera del diff); cambios 100% presentacionales, escapeHtml intacto, service worker solo bump de versión.",
+    "iteration_2": "PASS: 0 HIGH, 1 MEDIUM preexistente (API keys client-side, sin cambios); 1 LOW informativo nuevo (colores hardcodeados en comentarios CSS con justificación documentada, patrón AGENTS.md §4.4). Iteración 100% presentacional/textual."
+  },
+  "docs": {
+    "adr": "docs/adr-084-lista-compra-estetica-ocio.md",
+    "commit": "445339b",
+    "iteration_2_commit": "8ceffa2"
+  },
+  "pr": {
+    "number": 223,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/223",
+    "title": "style: estética píldora de la lista de la compra (issue #221)",
+    "branch": "style/issue-221-pestana-lista-compra",
+    "commit": "767b21f",
+    "closes": "#221"
+  }
+}

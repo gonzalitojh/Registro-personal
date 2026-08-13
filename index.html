@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mi Registro — pelis, series, libros y videojuegos</title>
-  <meta name="description" content="Registro personal de películas, series, libros y videojuegos." />
+  <title>Mi Registro — pelis, series, libros, videojuegos y recetas</title>
+  <meta name="description" content="Registro personal de películas, series, libros, videojuegos y recetas." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="resources/icon.png">
   <link rel="apple-touch-icon" href="resources/icon.png">
@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260905" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260905" />
+  <link rel="stylesheet" href="css/styles.css?v=20260925" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260925" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -59,102 +59,107 @@
   </aside>
   <div id="app-sidebar-backdrop" class="app-sidebar-backdrop hidden"></div>
 
-  <!-- Aplicación -->
-  <div id="app" class="app hidden">
+  <!-- Cabecera global (issue #206): barra lateral, búsqueda y botón de
+       perfil disponibles en TODAS las secciones (Ocio, Recetas y Perfil).
+       Vive fuera de #app, que se oculta en las vistas de primer nivel;
+       sale oculta en la pantalla de acceso y la muestra ui.showApp(). -->
+  <header id="app-header" class="app-header hidden">
+    <div class="app-header__top">
+      <button type="button" class="icon-btn" id="btn-sidebar-toggle"
+              aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="app-sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
 
-    <header class="app-header">
-      <div class="app-header__top">
-        <button type="button" class="icon-btn" id="btn-sidebar-toggle"
-                aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="app-sidebar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" aria-hidden="true">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+      <!-- Botón engranaje (issue #97): sustituye a la barra lateral
+           ☰ cuando solo hay una sección visible (decide sidebar.js).
+           Abre Ajustes directamente, como la entrada pinned de la
+           barra lateral. Sale oculto por defecto. -->
+      <button type="button" class="icon-btn hidden" id="btn-header-settings"
+              aria-label="Abrir ajustes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.2" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
 
-        <!-- Botón engranaje (issue #97): sustituye a la barra lateral
-             ☰ cuando solo hay una sección visible (decide sidebar.js).
-             Abre Ajustes directamente, como la entrada pinned de la
-             barra lateral. Sale oculto por defecto. -->
-        <button type="button" class="icon-btn hidden" id="btn-header-settings"
-                aria-label="Abrir ajustes">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        </button>
+      <!-- Búsqueda global: input en la cabecera + dropdown de resultados
+           anclado bajo la barra (js/global-search.js). Busca SOLO dentro
+           de la sección activa (issue #206): Ocio (colecciones y
+           catálogo), Perfil (amigos) o Recetas (recetas). -->
+      <div class="search-bar-wrap">
+        <input
+          id="global-search-input"
+          type="search"
+          class="global-search__input"
+          placeholder="Buscar películas, series, libros, videojuegos o amigos..."
+          autocomplete="off"
+          aria-label="Buscar en tu registro de ocio"
+        />
+        <button type="button" class="global-search__clear" id="global-search-clear"
+                aria-label="Limpiar y cerrar la búsqueda" hidden>✕</button>
+        <div id="global-search-results" class="global-search__results hidden"></div>
+      </div>
 
-        <!-- Búsqueda global: input en la cabecera + dropdown de resultados
-             anclado bajo la barra (js/global-search.js) -->
-        <div class="search-bar-wrap">
-          <input
-            id="global-search-input"
-            type="search"
-            class="global-search__input"
-            placeholder="Buscar películas, series, libros, videojuegos o amigos..."
-            autocomplete="off"
-            aria-label="Buscar en todo tu registro"
-          />
-          <button type="button" class="global-search__clear" id="global-search-clear"
-                  aria-label="Limpiar y cerrar la búsqueda" hidden>✕</button>
-          <div id="global-search-results" class="global-search__results hidden"></div>
-        </div>
-
-        <div class="user-badge">
-          <div class="notif-wrap">
-            <button type="button" class="icon-btn" id="btn-notifications" aria-label="Notificaciones">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <span class="notif-badge hidden" id="notif-badge"></span>
-            </button>
-            <div class="notif-dropdown hidden" id="notif-dropdown" role="dialog" aria-label="Notificaciones">
-              <div class="notif-dropdown__header">
-                <span>Notificaciones</span>
-                <button type="button" class="btn-link" id="btn-clear-notifs">Borrar todas</button>
-              </div>
-              <div class="notif-list" id="notif-list"></div>
-              <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
+      <div class="user-badge">
+        <div class="notif-wrap">
+          <button type="button" class="icon-btn" id="btn-notifications" aria-label="Notificaciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span class="notif-badge hidden" id="notif-badge"></span>
+          </button>
+          <div class="notif-dropdown hidden" id="notif-dropdown" role="dialog" aria-label="Notificaciones">
+            <div class="notif-dropdown__header">
+              <span>Notificaciones</span>
+              <button type="button" class="btn-link" id="btn-clear-notifs">Borrar todas</button>
             </div>
+            <div class="notif-list" id="notif-list"></div>
+            <p class="notif-empty" id="notif-empty">No tienes notificaciones.</p>
           </div>
-          <div class="profile-menu-wrap">
-            <button type="button" class="user-badge__avatar-btn" id="btn-open-profile"
-                    aria-label="Abrir menú de perfil" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-dropdown">
-              <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
+        </div>
+        <div class="profile-menu-wrap">
+          <button type="button" class="user-badge__avatar-btn" id="btn-open-profile"
+                  aria-label="Abrir menú de perfil" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-dropdown">
+            <img id="user-avatar" class="user-badge__avatar" src="" alt="" />
+          </button>
+          <div class="profile-dropdown hidden" id="profile-dropdown" role="menu" aria-label="Menú de perfil">
+            <button type="button" class="profile-dropdown__item" role="menuitem" data-section="stats">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg></span>
+              <span>Estadísticas</span>
             </button>
-            <div class="profile-dropdown hidden" id="profile-dropdown" role="menu" aria-label="Menú de perfil">
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="stats">
-                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg></span>
-                <span>Estadísticas</span>
-              </button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="friends">
-                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></span>
-                <span>Amigos</span>
-              </button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="activity">
-                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg></span>
-                <span>Actividad</span>
-              </button>
-              <button type="button" class="profile-dropdown__item" role="menuitem" data-section="settings">
-                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></span>
-                <span>Ajustes</span>
-              </button>
-              <div class="profile-dropdown__separator" role="separator"></div>
-              <button type="button" class="profile-dropdown__item profile-dropdown__item--logout" id="btn-profile-logout" role="menuitem">
-                <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg></span>
-                <span>Cerrar sesión</span>
-              </button>
-            </div>
+            <button type="button" class="profile-dropdown__item" role="menuitem" data-section="friends">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></span>
+              <span>Amigos</span>
+            </button>
+            <button type="button" class="profile-dropdown__item" role="menuitem" data-section="activity">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg></span>
+              <span>Actividad</span>
+            </button>
+            <button type="button" class="profile-dropdown__item" role="menuitem" data-section="settings">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></span>
+              <span>Ajustes</span>
+            </button>
+            <div class="profile-dropdown__separator" role="separator"></div>
+            <button type="button" class="profile-dropdown__item profile-dropdown__item--logout" id="btn-profile-logout" role="menuitem">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg></span>
+              <span>Cerrar sesión</span>
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  </header>
 
-    </header>
+  <!-- Aplicación -->
+  <div id="app" class="app hidden">
 
     <main id="main-content" tabindex="-1">
       <!-- El contenido de cada pestaña vive en ocio/*.html y lo
@@ -237,13 +242,17 @@
     </footer>
   </div>
 
-  <!-- Vista de perfil / estadísticas / amigos -->
+  <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
+       2026-08-11: en el perfil NO se muestra la cabecera global —el
+       usuario prefiere la flecha de volver y las pestañas en la misma
+       fila, como antes—; la cabecera global solo aparece en Ocio y
+       Recetas) -->
   <div id="profile-view" class="profile-view hidden" role="main" aria-label="Vista de perfil">
     <div class="profile-view__header">
       <button type="button" class="icon-btn" id="btn-close-profile" aria-label="Volver">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
       </button>
-      <h1 class="app-title">Tu perfil</h1>
       <div class="profile-subtabs" role="tablist" aria-label="Secciones del perfil">
         <button type="button" class="profile-subtab is-active" role="tab" aria-selected="true" aria-controls="profile-section-stats" data-section="stats">Estadísticas</button>
         <button type="button" class="profile-subtab" role="tab" aria-selected="false" aria-controls="profile-section-friends" data-section="friends">Amigos</button>
@@ -459,6 +468,207 @@
     </div>
   </div>
 
+  <!-- Vista de recetas (issue #64): registra recetas, planifica el
+       menú semanal y genera la lista de la compra. Hermana de
+       profile-view: vista de primer nivel, fuera de #app. Sin botón de
+       volver ni título (issue #206): la navegación vive en la cabecera
+       global. Barra de pestañas propia tipo Ocio (issue #208): fija
+       abajo en móvil y bajo la cabecera global en ≥768px, con la misma
+       estructura que las pestañas de Ocio (ocultables en Ajustes). -->
+  <div id="recipes-view" class="recipes-view hidden" role="main" aria-label="Vista de recetas">
+    <nav class="tabs--bar" aria-label="Secciones de recetas">
+      <div class="tabs" role="tablist" aria-label="Secciones de recetas">
+        <button class="tab tab--recipes is-active" role="tab" aria-selected="true"
+                aria-controls="panel-recipes-tab" data-recipes-tab="recetas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+            <line x1="6" x2="18" y1="17" y2="17" />
+          </svg>
+          <span>Recetas</span>
+        </button>
+        <button class="tab tab--ingredients" role="tab" aria-selected="false"
+                aria-controls="panel-ingredients-tab" data-recipes-tab="ingredientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+          <span>Ingredientes</span>
+        </button>
+        <button class="tab tab--menu" role="tab" aria-selected="false"
+                aria-controls="panel-menu-tab" data-recipes-tab="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path d="M8 14h.01" />
+            <path d="M12 14h.01" />
+            <path d="M16 14h.01" />
+            <path d="M8 18h.01" />
+            <path d="M12 18h.01" />
+          </svg>
+          <span>Menú</span>
+        </button>
+        <button class="tab tab--shopping" role="tab" aria-selected="false"
+                aria-controls="panel-shopping-tab" data-recipes-tab="compra">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8" cy="21" r="1" />
+            <circle cx="19" cy="21" r="1" />
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+          </svg>
+          <span>Compra</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="recipes-view__body">
+      <!-- Pestaña Recetas (issue #209): únicamente el botón de nueva
+           receta. La búsqueda de recetas vive solo en la cabecera
+           global y el catálogo de ingredientes en su propia pestaña.
+           El contenido lo renderiza js/recipes.js. -->
+      <section id="panel-recipes-tab" role="tabpanel" aria-labelledby="panel-recipes-tab-heading">
+        <h2 id="panel-recipes-tab-heading" class="visually-hidden">Recetas</h2>
+        <div class="recipes-toolbar">
+          <button type="button" id="btn-new-recipe" class="btn btn--primary btn--small">
+            + Nueva receta
+          </button>
+          <div class="recipes-filter" id="recipes-alergeno-filter">
+            <button type="button" id="btn-recipe-alergeno-filter" class="recipes-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="recipe-alergeno-filter-panel">
+              <span id="recipe-alergeno-filter-label">Todos los alérgenos</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="recipe-alergeno-filter-panel" class="recipes-filter__panel hidden"></div>
+          </div>
+          <div class="recipes-filter" id="recipes-tipo-filter">
+            <button type="button" id="btn-recipe-tipo-filter" class="recipes-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="recipe-tipo-filter-panel">
+              <span id="recipe-tipo-filter-label">Todos los tipos</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="recipe-tipo-filter-panel" class="recipes-filter__panel hidden"></div>
+          </div>
+        </div>
+        <div id="recipes-list" aria-live="polite"></div>
+      </section>
+
+      <!-- Pestaña Ingredientes (issue #209): catálogo de ingredientes,
+           extraído de la pestaña Recetas. Estética tipo Ocio (issue
+           #218): barra de herramientas con alta manual y filtro por
+           categorías (multiselección, todas por defecto); el contenido
+           lo renderiza js/recipes.js (renderIngredientsCatalog). -->
+      <section id="panel-ingredients-tab" class="hidden" role="tabpanel" aria-labelledby="panel-ingredients-tab-heading">
+        <h2 id="panel-ingredients-tab-heading" class="visually-hidden">Ingredientes</h2>
+        <div class="ingredients-toolbar">
+          <button type="button" id="btn-new-ingredient" class="btn btn--primary btn--small">
+            + Nuevo ingrediente
+          </button>
+          <div class="ingredients-filter" id="ingredients-filter">
+            <button type="button" id="btn-ingredient-filter" class="ingredients-filter__btn"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="ingredient-filter-panel">
+              <span id="ingredient-filter-label">Todas las categorías</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div id="ingredient-filter-panel" class="ingredients-filter__panel hidden"></div>
+          </div>
+        </div>
+        <div id="ingredients-catalog" class="ingredients-catalog"></div>
+      </section>
+
+      <!-- Pestaña Menú semanal: rejilla día × comida, comensales y
+           recetas a la semana. El contenido lo renderiza js/menu.js. -->
+      <section id="panel-menu-tab" class="hidden" role="tabpanel" aria-labelledby="panel-menu-tab-heading">
+        <h2 id="panel-menu-tab-heading" class="visually-hidden">Menú semanal</h2>
+        <div class="menu-toolbar">
+          <button type="button" id="menu-prev-week" class="btn btn--pill" aria-label="Semana anterior">←</button>
+          <span id="menu-week-label" class="menu-week-label"></span>
+          <button type="button" id="menu-next-week" class="btn btn--pill" aria-label="Semana siguiente">→</button>
+          <label class="menu-comensales" for="menu-comensales">
+            Comensales
+            <input type="number" id="menu-comensales" min="1" max="99" inputmode="numeric" />
+          </label>
+          <button type="button" id="menu-delete-week" class="btn btn--pill btn--danger"
+                  aria-label="Borrar el menú de esta semana">Borrar semana</button>
+          <button type="button" id="btn-add-menu-recipe" class="btn btn--primary btn--small">
+            + Añadir receta
+          </button>
+        </div>
+        <div id="menu-grid" class="menu-grid"></div>
+        <div class="menu-weekly">
+          <h3>Recetas a la semana</h3>
+          <p class="menu-weekly__hint">Se añaden una vez y NO se multiplican por los comensales
+            (p. ej. una masa de pizza para toda la semana). Añádelas con
+            «+ Añadir receta» eligiendo «Toda la semana».</p>
+          <div id="menu-weekly-list"></div>
+        </div>
+      </section>
+
+      <!-- Pestaña Compra (lista de la compra): cálculo automático desde el
+           menú (varias semanas seleccionables, issue #225) + ítems
+           extra manuales. js/shopping-list.js. -->
+      <section id="panel-shopping-tab" class="hidden" role="tabpanel" aria-labelledby="panel-shopping-tab-heading">
+        <h2 id="panel-shopping-tab-heading" class="visually-hidden">Compra</h2>
+        <div class="shopping-toolbar">
+          <button type="button" id="shopping-prev-week" class="btn btn--pill" aria-label="Semanas anteriores">←</button>
+          <span id="shopping-week-label" class="menu-week-label"></span>
+          <button type="button" id="shopping-next-week" class="btn btn--pill" aria-label="Semanas siguientes">→</button>
+          <button type="button" id="btn-add-extra-item" class="btn btn--primary btn--small">+ Ítem extra</button>
+        </div>
+        <div id="shopping-week-chips" class="shopping-week-chips"
+             role="group" aria-label="Semanas incluidas en la lista"></div>
+        <div id="shopping-extra-form" class="shopping-extra-form hidden"></div>
+        <div id="shopping-list" class="shopping-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal de receta (issue #64): alta / edición / importación
+       desde URL. El contenido lo renderiza js/recipes.js. -->
+  <div id="recipe-modal" class="modal hidden">
+    <div class="modal__backdrop" id="recipe-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Receta">
+      <button id="recipe-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="recipe-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal del buscador de recetas del menú (issue #242): sustituye
+       al desplegable de «+ Receta»; lista de tarjetas con foto,
+       nombre y etiquetas, con buscador y filtros por alérgenos y tipo
+       de plato. El contenido lo renderiza js/menu.js. -->
+  <div id="recipe-picker-modal" class="modal hidden">
+    <div class="modal__backdrop" id="recipe-picker-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Añadir receta al menú">
+      <button id="recipe-picker-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="recipe-picker-content"></div>
+    </div>
+  </div>
+
+  <!-- Modal de detalle / alta manual de ingrediente (issue #218):
+       ventana con la información ampliada al pulsar una tarjeta del
+       catálogo y alta manual con «+ Nuevo ingrediente». El contenido
+       lo renderiza js/recipes.js. -->
+  <div id="ingredient-modal" class="modal hidden">
+    <div class="modal__backdrop" id="ingredient-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Ingrediente">
+      <button id="ingredient-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="ingredient-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Modal de detalle / edición / alta manual -->
   <div id="item-modal" class="modal hidden">
     <div class="modal__backdrop" id="modal-backdrop"></div>
@@ -498,7 +708,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260905"></script>
+  <script type="module" src="js/app.js?v=20260925"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

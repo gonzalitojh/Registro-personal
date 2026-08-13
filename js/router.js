@@ -12,6 +12,14 @@
 //   - Perfil: Estadísticas, Amigos (con id por amigo), Actividad y
 //     Ajustes (#/perfil/...). El antiguo token «datos» sobrevive
 //     como alias de Ajustes (issue #135).
+//   - Recetas (issue #64): Recetas, Menú y Lista de la compra
+//     (#/recetas, #/recetas/menu, #/recetas/compra).
+//
+// Además de las memorias por sección (lastOcioKey, lastRecipesTab),
+// el router guarda la última sección de primer nivel visitada
+// (lastSection, issue #213): es la que usa la flecha de volver del
+// perfil para regresar a Ocio o Recetas según de dónde viniera el
+// usuario, no siempre a Ocio.
 //
 // El resto de hashes (p. ej. #main-content del skip-link) se
 // considera ajeno al router y se ignora sin tocar el estado.
@@ -30,10 +38,22 @@ export const KEY_TO_PANEL = {
 // Ruta por defecto de Ocio: la primera pestaña (Series).
 export const DEFAULT_KEY = "series";
 
-// Prefijos de las dos secciones de primer nivel. Todo lo que no
+// Mapa token de ruta de Recetas → id del panel en index.html.
+export const RECIPES_TAB_TO_PANEL = {
+  recetas: "panel-recipes-tab",
+  ingredientes: "panel-ingredients-tab",
+  menu: "panel-menu-tab",
+  compra: "panel-shopping-tab",
+};
+
+// Pestaña por defecto de Recetas (#/recetas).
+export const RECIPES_DEFAULT_TAB = "recetas";
+
+// Prefijos de las secciones de primer nivel. Todo lo que no
 // empiece por uno de ellos se considera ajeno al router.
 const ROUTE_PREFIX = "/ocio";
 const PROFILE_PREFIX = "/perfil";
+const RECIPES_PREFIX = "/recetas";
 
 // Mapa token de URL (castellano) → id interno de la sección del
 // perfil. El token público es humano y consistente con las claves
@@ -81,6 +101,14 @@ export function hashForPanel(panelId) {
   return hashForKey(keyForPanel(panelId) || DEFAULT_KEY);
 }
 
+// Hash canónico de Recetas para una pestaña: #/recetas/<tab>. Si la
+// pestaña no es válida, saneamos a la pestaña por defecto.
+export function recipesHashFor(tab = RECIPES_DEFAULT_TAB) {
+  const safe = RECIPES_TAB_TO_PANEL[tab] ? tab : RECIPES_DEFAULT_TAB;
+  // La pestaña por defecto se canoniza como #/recetas (sin segmento).
+  return safe === RECIPES_DEFAULT_TAB ? `#${RECIPES_PREFIX}` : `#${RECIPES_PREFIX}/${safe}`;
+}
+
 // Hash canónico de Perfil para una sección (id interno) y, si es la
 // sección de amigos, opcionalmente el uid. Un id desconocido cae a
 // la sección por defecto (Estadísticas).
@@ -93,10 +121,11 @@ export function profileHashKey(profileSection, uid) {
 }
 
 // Interpreta un fragmento (location.hash por defecto). Contrato:
-// - Ocio  → { section:"ocio", key, panelId } (+ default/invalid).
-// - Perfil→ { section:"perfil", profileSection, uid? } (+default/invalid).
-// - Vacío → ruta por defecto global (Ocio Series).
-// - Ajeno → { section:null } (se ignora en runtime).
+// - Ocio    → { section:"ocio", key, panelId } (+ default/invalid).
+// - Perfil  → { section:"perfil", profileSection, uid? } (+default/invalid).
+// - Recetas → { section:"recetas", tab, panelId } (+ default/invalid).
+// - Vacío   → ruta por defecto global (Ocio Series).
+// - Ajeno   → { section:null } (se ignora en runtime).
 export function parseHash(hash = location.hash) {
   const fragment = (hash || "").replace(/^#/, "");
 
@@ -108,9 +137,27 @@ export function parseHash(hash = location.hash) {
   const segments = fragment.split("/").filter(Boolean);
   const first = segments[0];
 
-  // Hashes ajenos a las dos secciones: no son rutas de la web.
-  if (first !== "ocio" && first !== "perfil") {
+  // Hashes ajenos a las secciones: no son rutas de la web.
+  if (first !== "ocio" && first !== "perfil" && first !== "recetas") {
     return { section: null };
+  }
+
+  // ---------- RECETAS ----------
+  // #/recetas y #/recetas/ son alias de la primera pestaña.
+  if (first === "recetas") {
+    if (segments.length === 1) {
+      return { section: "recetas", tab: RECIPES_DEFAULT_TAB, panelId: RECIPES_TAB_TO_PANEL[RECIPES_DEFAULT_TAB], default: true };
+    }
+    // #/recetas/<tab>: solo valen las pestañas conocidas.
+    if (segments.length === 2 && RECIPES_TAB_TO_PANEL[segments[1]]) {
+      if (segments[1] === RECIPES_DEFAULT_TAB) {
+        // #/recetas/recetas no es canónico: se normaliza a #/recetas.
+        return { section: "recetas", tab: RECIPES_DEFAULT_TAB, panelId: RECIPES_TAB_TO_PANEL[RECIPES_DEFAULT_TAB], default: true, invalid: true };
+      }
+      return { section: "recetas", tab: segments[1], panelId: RECIPES_TAB_TO_PANEL[segments[1]] };
+    }
+    // Dentro del prefijo pero con segmento desconocido (o de más).
+    return { section: "recetas", tab: RECIPES_DEFAULT_TAB, panelId: RECIPES_TAB_TO_PANEL[RECIPES_DEFAULT_TAB], default: true, invalid: true };
   }
 
   // ---------- PERFIL ----------
@@ -157,11 +204,14 @@ export function parseHash(hash = location.hash) {
   return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
 }
 
-// Hash canónico para una ruta (ocio o perfil) según su forma.
-// Usada por navigate() para normalizar.
+// Hash canónico para una ruta (ocio, perfil o recetas) según su
+// forma. Usada por navigate() para normalizar.
 function canonicalHashFor(route) {
   if (route?.section === "perfil") {
     return profileHashKey(route.profileSection, route.uid);
+  }
+  if (route?.section === "recetas") {
+    return recipesHashFor(route.tab);
   }
   return hashForKey(route?.key || DEFAULT_KEY);
 }
@@ -172,6 +222,24 @@ let lastOcioKey = DEFAULT_KEY;
 
 export function getLastOcioKey() {
   return lastOcioKey || DEFAULT_KEY;
+}
+
+// Memoria de la última pestaña de Recetas de la sesión: la entrada
+// «Recetas» de la sidebar vuelve a esa pestaña (issue #64).
+let lastRecipesTab = RECIPES_DEFAULT_TAB;
+
+export function getLastRecipesTab() {
+  return RECIPES_TAB_TO_PANEL[lastRecipesTab] ? lastRecipesTab : RECIPES_DEFAULT_TAB;
+}
+
+// Memoria de la última sección de primer nivel (ocio | recetas) de la
+// sesión: la flecha de volver del perfil regresa a esa sección (issue
+// #213). Las rutas de perfil NO la actualizan a propósito: solo las
+// secciones de contenido dejan rastro al entrar en el perfil.
+let lastSection = "ocio";
+
+export function getLastSection() {
+  return lastSection || "ocio";
 }
 
 // Cambia al hash de un objetivo. target puede ser:
@@ -202,7 +270,13 @@ export function initRouter({ onRoute }) {
   // de perfil que pedía la recarga).
   function applyRoute(route = parseHash()) {
     if (!route?.section) return; // ajenos: no tocar el estado
-    if (route.section === "ocio") lastOcioKey = route.key || DEFAULT_KEY;
+    if (route.section === "ocio") {
+      lastSection = "ocio";
+      lastOcioKey = route.key || DEFAULT_KEY;
+    } else if (route.section === "recetas") {
+      lastSection = "recetas";
+      lastRecipesTab = route.tab || RECIPES_DEFAULT_TAB;
+    }
     if (route.default || route.invalid) {
       history.replaceState(null, "", canonicalHashFor(route));
     }
@@ -224,7 +298,8 @@ export function initRouter({ onRoute }) {
       return s.section === "ocio" || !s.section ? (s.key || lastOcioKey || DEFAULT_KEY) : lastOcioKey;
     },
     // Sección de primer nivel de la ruta actual: "ocio" | "perfil" |
-    // null (ajena / no aplicable). Los hashes ajenos devuelven null.
+    // "recetas" | null (ajena / no aplicable). Los hashes ajenos
+    // devuelven null.
     getCurrentSection: () => {
       const s = parseHash();
       return s.section === null ? null : s.section;
@@ -237,7 +312,10 @@ export function initRouter({ onRoute }) {
     hashForPanel,
     keyForPanel,
     profileHashKey,
+    recipesHashFor,
     getLastOcioKey,
+    getLastRecipesTab,
+    getLastSection,
     navigate,
     destroy: () => window.removeEventListener("hashchange", handleHashChange),
   };

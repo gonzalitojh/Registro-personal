@@ -1,0 +1,38 @@
+{
+  "title": "Mejoras pestaña ingredientes",
+  "description": "Mejoras en la pestaña de ingredientes de la sección de recetas. La base de trabajo es la rama content/issue-64-seccion-recetas (la PR debe hacerse a esa rama, no a dev):\n\n1. Se deben almacenar y luego mostrar los ingredientes como se han escrito en un principio (respetando las tildes y mayúsculas).\n2. Al ampliar la información de un ingrediente, debe mostrar más información que se puede rellenar, de manera opcional, al añadirlo:\n  - Supermercado: a modo de etiquetas y con colores coherentes con el supermercado en cuestión, se deben mostrar aquellos donde se puede comprar ese ingrediente. Los supermercados a mostrar: Lidl, Aldi, Mercadona, Día, Carrefour y El Corte Inglés.\n  - Cantidad del paquete: un campo para el número y un selector con las unidades de medida: g, Kg, mL, L, unidades.\n3. Añadir un icono junto al título de cada categoría.\n4. Eliminar el selector para ordenar los ingredientes.\n\nNota: PR contra la rama content/issue-64-seccion-recetas (no dev) según instrucción de la issue.",
+  "status": "review",
+  "plan": "Plan del task-architect (sesión SDD AUTO issue #224): (1) conservar grafía original (tildes/mayúsculas) en alta manual y syncIngredientsCatalog manteniendo dedup por nombre normalizado; (2) campos nuevos supermercados (6, etiquetas con color de marca + contraste AA) y paqueteCantidad/paqueteUnidad (g, Kg, mL, L, unidades) en alta y detalle (editable en detalle con guardado inmediato); (3) icono (emoji) en títulos de grupo (predefinidas + personalizadas + Sin categoría); (4) eliminar selector de ordenación (HTML, estado, listener, ramas comparador) dejando orden A-Z. Tocar: recipes-data.js (SUPERMARKETS + iconos), recipes.js, db.js (updateIngredient genérico, eliminar updateIngredientCategory), index.html, css/styles.css (chips/tags con colores de marca, fila cantidad+unidad, iconos, overrides 4 temas), manual §8.5, ADR-084, bump PWA 20260914. PR contra content/issue-64-seccion-recetas.",
+  "acceptance criteria": [
+    "Los ingredientes se almacenan y muestran tal y como los escribió el usuario (tildes y mayúsculas respetadas), tanto al añadirlos como al editarlos/verlos.",
+    "Al añadir un ingrediente se pueden rellenar de forma opcional: supermercados (etiquetas con color coherente por supermercado: Lidl, Aldi, Mercadona, Día, Carrefour, El Corte Inglés) y cantidad del paquete (número + unidad: g, Kg, mL, L, unidades).",
+    "Al ampliar la información de un ingrediente se muestran los supermercados (como etiquetas de colores) y la cantidad de paquete con su unidad.",
+    "Cada categoría de ingredientes tiene un icono junto a su título.",
+    "El selector para ordenar los ingredientes ha sido eliminado.",
+    "Responsividad: sin scroll horizontal en 360/768/1280 px (AGENTS.md regla 2).",
+    "Visualización correcta en los 4 modos de tema (Oscuro, Negro puro, Claro, Blanco puro) (AGENTS.md regla 4).",
+    "El manual de usuario (docs/manual-de-usuario.md) refleja los cambios visibles para el usuario."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect) con arquitectura de datos, UI y módulos.",
+    "Implementación completa (HTML, CSS, JS, Firestore si aplica).",
+    "Validado por QA contra los criterios de aceptación y la definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (secrets, credenciales, PII).",
+    "ADR documentando la decisión de arquitectura (con 'Related issue: #224').",
+    "PR contra la rama content/issue-64-seccion-recetas SIN keyword de cierre (la issue la cierra issues-done-on-dev.yml al fusionar).",
+    "Issue #224 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 224,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/224",
+    "title": "Mejoras pestaña ingredientes"
+  },
+  "pr": {
+    "number": 227,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/227",
+    "title": "[content] Mejoras pestaña ingredientes",
+    "branch": "content/issue-224-mejoras-pestana-ingredientes",
+    "commit": "4c029fa",
+    "closes": "#224"
+  }
+}

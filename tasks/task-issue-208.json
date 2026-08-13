@@ -1,0 +1,34 @@
+{
+  "title": "Estructura de pestañas (issue #208)",
+  "description": "Las pestañas de la sección de Recetas (Recetas, Menú y Lista de la compra) se deben ver igual que las pestañas de la sección de Ocio: misma barra fija (.tabs--bar con .tab de icono + texto y color de acento), con las mismas características (fijas: abajo en móvil, bajo la cabecera global en ≥768px; ocultables en Ajustes como las de Ocio). La estructura de navegación (barra lateral, barra de búsqueda y perfil), arreglada en la issue #206, y las pestañas deben ser iguales en todas las secciones, actuales y futuras. Además, se ha detectado que otra vez se muestran las pestañas en la pantalla de inicio de sesión (regresión: la rama content/issue-64-seccion-recetas re-introdujo en js/app.js la línea incondicional classList.remove('hidden') sobre #app que la issue #178 había hecho condicional a currentUser; al cargar sin sesión con ruta #/ocio/... se destapa #app y la barra de pestañas aparece sobre la pantalla de acceso).\n\nBase del trabajo: rama content/issue-64-seccion-recetas. Crear nueva rama a partir de ahí y PR también a esa rama (no a dev), según instrucción explícita de la issue (patrón ya seguido por la PR #210 de la issue #206).\n\nEstado de la sesión: arranque limpio (sin task file, rama ni PR previos; el comentario de reanudación vía workflow_dispatch no encontró progreso previo).",
+  "status": "review",
+  "acceptance criteria": [
+    "Las pestañas de Recetas (Recetas, Menú y Lista de la compra) usan el mismo componente que las de Ocio: barra fija .tabs--bar con botones .tab (icono + texto), aria-controls/data-recipes-tab intactos y color de acento por pestaña.",
+    "La barra de pestañas de Recetas es fija como la de Ocio: en móvil (≤768px) anclada abajo con margen seguro; en PC/tablet (≥768px) bajo la cabecera global (top: var(--header-h)); el contenido de #recipes-view reserva el hueco (padding como .app) y no queda tapado.",
+    "La cabecera global (hamburguesa, búsqueda por sección y botón de perfil, issue #206) sigue visible y funcionando en Recetas.",
+    "Las pestañas ocultas en Ajustes → Secciones y pestañas se ocultan también en la barra de Recetas (mismo comportamiento que Ocio) y la pestaña activa oculta cae a la primera visible.",
+    "Fix del bug de login: la pantalla de inicio de sesión NO muestra las pestañas (ni la barra de pestañas de Ocio) al cargar/recargar sin sesión.",
+    "Responsividad (AGENTS.md): sin scroll horizontal a 360/768/1280 px y sin texto desbordado en la barra de pestañas de Recetas.",
+    "Los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro) muestran la barra de pestañas de Recetas con contraste correcto (mínimo WCAG AA).",
+    "El manual de usuario refleja la nueva estructura de pestañas de Recetas (regla 3 AGENTS.md)."
+  ],
+  "definition of done": [
+    "Planificación completada y aprobada (task-architect).",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación QA: criterios de aceptación verificados (incluye responsividad y 4 modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR actualizado/creado con 'Related issue: #208'.",
+    "PR creada contra content/issue-64-seccion-recetas (NO dev, instrucción explícita de la issue) SIN keyword de cierre; task file subido con status 'review' + bloque pr.",
+    "Issue #208 label actualizada a su estado final (status: needs-review al crear la PR)."
+  ],
+  "issue": {
+    "number": 208,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/208",
+    "title": "Estructura de pestañas"
+  },
+  "pr": {
+    "number": 212,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/212",
+    "title": "Estructura de pestañas: barra de Recetas tipo Ocio y fix de la pantalla de acceso (issue #208)"
+  }
+}

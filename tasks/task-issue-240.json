@@ -1,0 +1,43 @@
+{
+  "title": "Edición de ingredientes en receta",
+  "description": "En la vista de edición de una receta, los ingredientes no se deben poder escribir libremente ni seleccionar su categoría. Al añadir un ingrediente debe haber un desplegable (en el que se pueda buscar) para añadir algún ingrediente de la lista de ingredientes. También debe haber un botón para crear uno nuevo, que despliegue una ventana como la de creación de ingrediente en dicha pestaña.\n\nLa base de la que iniciar el trabajo es la rama `style/issue-236-ventana-recetas-lectura`. Se debe crear una nueva rama a partir de ahí y luego hacer la PR también a esa `content/issue-64-seccion-recetas` (no a `dev` ni a la rama de partida).",
+  "status": "review",
+  "acceptance criteria": [
+    "En la vista de edición de una receta, los ingredientes no se pueden escribir libremente (se elimina la entrada libre de texto).",
+    "Al añadir un ingrediente hay un desplegable con buscador para elegir entre los ingredientes existentes de la lista de ingredientes.",
+    "Existe un botón para crear un ingrediente nuevo que abre una ventana como la de creación de ingrediente de la pestaña de ingredientes.",
+    "Al crear el ingrediente desde la receta, queda disponible/seleccionable en el desplegable de ingredientes.",
+    "Responsividad: sin scroll horizontal en móvil (~360px), tablet (~768px) y escritorio (~1280px).",
+    "Visualización correcta en los cuatro modos de tema (Oscuro, Negro puro, Claro, Blanco puro).",
+    "El manual de usuario se actualiza si el cambio afecta a lo que el usuario ve u hace.",
+    "Issue #240 label actualizada a su estado final."
+  ],
+  "definition of done": "Planificación, implementación, validación, seguridad, ADR (con 'Related issue: #240') y PR sin keyword de cierre contra la rama `content/issue-64-seccion-recetas` (no contra dev).",
+  "issue": {
+    "number": 240,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/240",
+    "title": "Edición de ingredientes en receta"
+  },
+  "plan": {
+    "base": "content/issue-64-seccion-recetas",
+    "branch": "content/issue-240-edicion-ingredientes-receta",
+    "steps": [
+      "js/recipes.js: fila de ingrediente con combobox (input + desplegable con buscador sobre el catálogo), sin texto libre ni selector de categoría; hidden ing-nombre-valor/ing-categoria-valor; helpers ingredientCategoriaDe/renderIngredienteComboList/bindIngredienteCombo",
+      "js/recipes.js: botón «Nuevo ingrediente» en el fieldset → openIngredientModal(null, { onCreated }) que añade fila con el ingrediente ya elegido",
+      "js/recipes.js: readRecipeFromForm lee solo la selección del combobox (coherencia texto visible/selección) y resuelve categoría desde el catálogo; toast si se descarta texto libre",
+      "css/styles.css: grid de fila sin columna categoría (1.4fr 0.7fr 0.9fr auto), estilos .ing-combo/__toggle/__list, media query móvil (combo a fila entera), overrides negro puro; contraste AA del toggle y mensaje vacío en modo oscuro",
+      "index.html: eliminado el datalist de ingredientes (ya no se usa)",
+      "docs/manual-de-usuario.md: §8.1 — ingredientes elegidos del catálogo con buscador, botón «Nuevo ingrediente», categoría desde el catálogo",
+      "docs/adr-089-ingredientes-receta-catalogo.md (con iteración de QA)",
+      "js/config.js, index.html, service-worker.js: bump PWA 20260919 → 20260920"
+    ]
+  },
+  "pr": {
+    "number": 241,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/241",
+    "title": "[content] Ingredientes de receta elegidos del catálogo con buscador (issue #240)",
+    "branch": "content/issue-240-edicion-ingredientes-receta",
+    "commit": "c6dfeef",
+    "closes": "#240"
+  }
+}

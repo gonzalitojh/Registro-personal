@@ -1,0 +1,48 @@
+{
+  "title": "Mejoras en lista de la compra",
+  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLa pestaña de lista de la compra, debe permitir la selección de varias semanas y que se sumen los ingredientes totales.\n\nAdemás, para aquellos ingredientes que tengan almacenada unidad de medida y cantidad (implementado en la issue #224), se deben comparar para dar la cantidad en paquetes. Es decir, si necesito 550 gramos de harina y la harina está marcada en 1 Kg, en la lista debería aparecer 1 paquete o si necesito 2,5 Kg, en la lista debería aparecer 3 paquetes. Además, debería permitir al usuario modificar esa cantidad, por ejemplo si tengo un poco de sobra y me puedo ahorrar un paquete o si quiero comprar de más para tener de sobra. Si el producto no tiene cantidad marcada, se mostrará lo que se necesite.\n\nAdemás, también se debe poder eliminar un ítem de la lista de la compra, desplazándolo hacia la izquierda.\n\nITERACIÓN 2026-08-12 (comentario de gonzalitojh): 1) si aparece el número de paquetes no debe aparecer el peso ni la palabra «paquetes», solo el número; 2) añadir una X roja a la derecha de cada ítem para eliminarlo (sobre todo desde PC); 3) al pulsar un ítem NO debe marcarse en rojo ni aparecer «Eliminar» sobre el peso — solo al deslizar (al pulsar se marca el ítem); 4) al deslizar para eliminar, un pequeño desplazamiento extra elimina sin pulsar el botón «Eliminar».\n\nITERACIÓN 2 2026-08-12 (comentario de gonzalitojh): 1) al desplazarse en vertical (móvil) el ítem bajo el dedo se marca en rojo sin seleccionarse — corregir; 2) la ✕ del fondo rojo se ve superpuesta a la ✕ roja de eliminar al quedar revelada la línea — debe verse solo durante el desplazamiento (arrastre).\n\nITERACIÓN 3 2026-08-13 (comentario de gonzalitojh): «Los items de la lista, se ve ligeramente en rojo las esquinas redondeadas de cada ítem» — halo rojo subpixel en las esquinas de cada ítem por tener el mismo border-radius en .shopping-line-wrap (fondo rojo del swipe) y .shopping-line__content; además el marcado hover translúcido dejaba ver el rojo de detrás. Fix: quitar el border-radius del contenido (lo recorta el wrap con overflow:hidden) y pintar el marcado hover con box-shadow inset sobre el fondo base.",
+  "status": "review",
+  "acceptance criteria": [
+    "La lista de la compra permite seleccionar varias semanas a la vez y suma los ingredientes totales de las semanas seleccionadas.",
+    "Los ingredientes con cantidad y unidad de paquete almacenadas (issue #224: paqueteCantidad/paqueteUnidad del catálogo) muestran la cantidad en paquetes redondeada al alza (550 g con paquete de 1 Kg → 1 paquete; 2,5 Kg → 3 paquetes), comparando unidades compatibles (g/Kg, mL/L, unidades).",
+    "El usuario puede modificar al alza o a la baja esa cantidad de paquetes (p. ej. ahorrarse un paquete o comprar de más), y el ajuste persiste.",
+    "Si el producto no tiene cantidad de paquete marcada (o las unidades no son comparables), se muestra lo que se necesite (comportamiento actual).",
+    "Un ítem de la lista de la compra puede eliminarse desplazándolo hacia la izquierda (con deshacer).",
+    "La funcionalidad se mantiene en los cuatro modos de tema y sin scroll horizontal (móvil/tablet/escritorio).",
+    "Manual de usuario actualizado (sección 8.4) y ADR nuevo."
+  ],
+  "definition of done": [
+    "Planificación (task-architect) realizada.",
+    "Implementación completa en rama derivada de content/issue-64-seccion-recetas.",
+    "Validación QA (qa-reviewer) en verde.",
+    "Escaneo de seguridad (security-champion) sin hallazgos HIGH.",
+    "Manual de usuario y ADR actualizados.",
+    "PR contra la rama content/issue-64-seccion-recetas SIN keyword de cierre.",
+    "Issue #225 label actualizada a su estado final (needs-review)."
+  ],
+  "issue": {
+    "number": 225,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/225",
+    "title": "Mejoras en lista de la compra"
+  },
+  "pr": {
+    "number": 233,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/233",
+    "title": "[content] Refinamientos de paquetes y eliminación en la lista de la compra (issue #225)",
+    "branch": "content/issue-225-iteracion-refinamientos",
+    "commit": "ddb93b3",
+    "closes": "#225",
+    "base": "content/issue-64-seccion-recetas",
+    "iteration2": "2026-08-12: scroll vertical no marca en rojo (axis lock estricto) y ✕ blanca solo visible durante el arrastre (commits 009ccee, da18db8)",
+    "iteration3": "2026-08-13: sin halo rojo en las esquinas de los ítems en reposo (doble border-radius contenido/wrap) y marcado hover con box-shadow inset sin velo rojo (commits 4886c89, 201c6d9); base sincronizada tras PR #234/#235"
+  },
+  "iterations": [
+    {
+      "iteration": 3,
+      "date": "2026-08-13",
+      "feedback": "«Los items de la lista, se ve ligeramente en rojo las esquinas redondeadas de cada ítem».",
+      "changes": "css/styles.css: sin border-radius en .shopping-line__content (el wrap recorta con overflow:hidden) y marcado hover con box-shadow inset (sin velo rojo). PWA 20260916 → 20260917.",
+      "status": "implemented"
+    }
+  ]
+}
