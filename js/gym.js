@@ -905,9 +905,25 @@ function closeExerciseModal() {
   if (modal._previousActiveElement) modal._previousActiveElement.focus();
 }
 
-// Vista de solo lectura del ejercicio: nombre, grupo muscular y
-// notas; acciones Editar/Eliminar.
+// Vista de solo lectura del ejercicio: nombre, grupo muscular, notas
+// y sección «Última vez» (#270) con la fecha y las series del entreno
+// más reciente donde se trabajó; acciones Editar/Eliminar.
 function exerciseDetailHtml(ex) {
+  const last = lastWorkoutForExercise(ex.id, ex.nombre);
+  const lastSection = last
+    ? `<div class="gym-form__field">
+        <span class="gym-modal__label">Última vez</span>
+        <p class="gym-modal__text">${escapeHtml(ctx.formatDateEs(last.fechaISO) || last.fechaISO || "")}</p>
+        <div class="gym-series-table">
+          ${last.series.map((s) => `
+            <div class="gym-series-row">
+              <span>${s.pesoKg != null ? escapeHtml(String(kgToDisplay(s.pesoKg))) : ""} ${escapeHtml(unitLabel())}</span>
+              <span>${s.reps != null ? escapeHtml(String(s.reps)) : ""} reps</span>
+              <span></span>
+            </div>`).join("")}
+        </div>
+      </div>`
+    : "";
   return `<div class="gym-modal__view">
     <h3 class="gym-modal__title">${escapeHtml(ex.nombre)}</h3>
     <div class="gym-form__field">
@@ -920,6 +936,7 @@ function exerciseDetailHtml(ex) {
       <span class="gym-modal__label">Notas</span>
       <p class="gym-modal__text">${ex.notas ? escapeHtml(ex.notas) : "Sin notas."}</p>
     </div>
+    ${lastSection}
     <div class="gym-modal__actions">
       <button type="button" class="btn btn--small btn--danger" data-gym-ex-delete>Eliminar</button>
       <button type="button" class="btn btn--small" data-gym-ex-edit>✏️ Editar</button>
