@@ -1,7 +1,7 @@
 {
   "title": "Definir ejercicios de entrenos",
   "description": "En los entrenos, al añadir o editar un entreno, junto al botón \"Añadir ejercicio\", añadir un botón \"Nuevo ejercicio\" para crear un ejercicio nuevo. Se despliega la misma ventana de creación de ejercicio que la pestaña de _Ejercicios_. Además, eliminar del desplegable de ejercicios la opción \"Otro\".\n\nEn los ejercicios, junto al botón \"Añadir serie\", crear un botón \"Duplicar serie\", que duplique la serie inmediatamente superior.\n\nAdemás, siempre que se añada un ejercicio que ya se ha trabajado previamente, se debe establecer por defecto los pesos, repeticiones y series que se hicieron la última vez.\n\nBASE: la rama `feat/issue-62-seccion-gimnasio`. Crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a `dev`).",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "En añadir/editar entreno: botón \"Nuevo ejercicio\" junto a \"Añadir ejercicio\" que abre la misma ventana de creación de ejercicio que la pestaña Ejercicios",
     "El desplegable de ejercicios ya no muestra la opción \"Otro\"",
