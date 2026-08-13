@@ -98,10 +98,9 @@ Nada más entrar verás:
       opción **«Cerrar sesión»**. Desde aquí entras y sales del perfil:
       en la sección de Recetas no hay botón de «volver» — la navegación
       siempre está en la cabecera.
-  - La cabecera **se oculta al bajar por las listas de Ocio y vuelve al
-    subir**: siempre está ahí cuando la necesitas
-    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)). En
-    Recetas se queda fija.
+  - La cabecera **se oculta al bajar por las listas de Ocio o de
+    Recetas y vuelve al subir**: siempre está ahí cuando la necesitas
+    ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **Las pestañas** (en la barra fija bajo la cabecera en el ordenador
   y la tablet, o anclada abajo en el móvil): **Series**, **Películas**,
   **Libros** y **Videojuegos**. Cada pestaña lleva un icono y tiene su
@@ -109,14 +108,15 @@ Nada más entrar verás:
   ocre** y **Videojuegos en violeta**. La pestaña activa se marca con
   una franja de su color y un fondo claro. Pulsa una pestaña para ver
   tu lista de ese tipo, con sus filtros y su orden. Como la cabecera,
-  la barra de pestañas de Ocio se oculta al bajar por la lista y
+  la barra de pestañas se oculta al bajar por la lista y
   reaparece al subir
   ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **La sección de Recetas tiene su propia barra de pestañas, igual que
   Ocio**: **Recetas en ocre**, **Ingredientes en violeta**, **Menú en
   verde** y **Compra en rojo**, cada una con su icono. Es
   fija de la misma manera (abajo en el móvil, bajo la barra de búsqueda
-  en ordenador y tableta) y sus pestañas se pueden ocultar desde
+  en ordenador y tableta), se oculta al bajar por la lista como la de
+  Ocio y sus pestañas se pueden ocultar desde
   [Ajustes → Secciones y pestañas](#16-ajustes) igual que las de Ocio
   (más en [sección 8](#8-recetas)).
 
