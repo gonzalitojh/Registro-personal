@@ -252,11 +252,14 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     // Lectura puntual de cada grupo (issue #178): las pestañas ya no
     // se suscriben todas al entrar (lazy loading), así que el estado
     // en memoria puede no estar completo. Se lee de Firestore bajo
-    // demanda. Los videojuegos no participan en la pasada diaria.
-    const [allMovies, allTv, allBooks] = await Promise.all([
+    // demanda. Los videojuegos no refrescan metadatos en la pasada
+    // (IGDB no se consulta), pero participan en el aviso de lanzamiento
+    // (issue #175), así que también se leen de Firestore.
+    const [allMovies, allTv, allBooks, allGames] = await Promise.all([
       getItemsOnce(user.uid, "movie"),
       getItemsOnce(user.uid, "tv"),
       getItemsOnce(user.uid, "book"),
+      getItemsOnce(user.uid, "game"),
     ]);
     const prefs = getNotificationPrefs();
 
@@ -437,7 +440,7 @@ export async function checkForUpdates(ctx, { force = false } = {}) {
     // manuales. Fail-open: un error de escritura no aborta la pasada ni
     // cuenta como fallo de API (mismo patrón que el bloque de series
     // manuales).
-    const games = getItemsByGroup("games").filter((g) => !g.manual);
+    const games = allGames.filter((g) => !g.manual);
     for (const g of games) {
       if (aborted) break;
       try {

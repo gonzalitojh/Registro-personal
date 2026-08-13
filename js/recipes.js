@@ -900,11 +900,13 @@ function packageQtyRowHtml(ing = {}) {
 }
 
 // Abre el modal de ingrediente: con id = detalle ampliado (categoría,
-// recetas que lo usan, eliminar); sin id = alta manual. `onCreated`
-// (issue #240) se llama al guardar un alta manual con el ingrediente
-// recién creado ({ nombre, categoriaId }), para que el formulario de
-// receta pueda usarlo al momento.
-function openIngredientModal(id, { onCreated = null } = {}) {
+// recetas que lo usan, eliminar); sin id = alta manual. Por defecto
+// (issue #232) el detalle se muestra en modo lectura; con `edit: true`
+// se abre directamente la vista de edición. `onCreated` (issue #240)
+// se llama al guardar un alta manual con el ingrediente recién creado
+// ({ nombre, categoriaId }), para que el formulario de receta pueda
+// usarlo al momento.
+function openIngredientModal(id, { edit = false, onCreated = null } = {}) {
   const modal = document.getElementById("ingredient-modal");
   const content = document.getElementById("ingredient-modal-content");
   const ingredient = id ? ingredients.find((i) => i.id === id) : null;
@@ -915,7 +917,9 @@ function openIngredientModal(id, { onCreated = null } = {}) {
     "aria-label",
     ingredient ? `Ingrediente: ${ingredient.nombre}` : "Nuevo ingrediente"
   );
-  content.innerHTML = ingredient ? ingredientDetailHtml(ingredient) : ingredientNewHtml();
+  content.innerHTML = ingredient
+    ? (edit ? ingredientEditHtml(ingredient) : ingredientDetailHtml(ingredient))
+    : ingredientNewHtml();
   bindIngredientModalHandlers(content, ingredient, onCreated);
 
   if (wasHidden) {
