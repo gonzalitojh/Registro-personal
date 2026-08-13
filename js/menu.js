@@ -470,10 +470,11 @@ function bindRecipePickerEvents(content) {
       collapseComensalesRow(card);
       return;
     }
-    // Click en la tarjeta (fuera de sus botones): abre la receta en
-    // modo lectura, la misma ventana de la pestaña Recetas.
+    // Click en la tarjeta (fuera de sus botones y de la fila de
+    // comensales): abre la receta en modo lectura, la misma ventana
+    // de la pestaña Recetas.
     const cardEl = e.target.closest("[data-pick-card]");
-    if (cardEl && !e.target.closest("button")) {
+    if (cardEl && !e.target.closest("button, input, label")) {
       const recipe = getRecipes().find((r) => r.id === cardEl.dataset.pickCard);
       if (!recipe) return;
       closeRecipePicker();
@@ -488,12 +489,17 @@ function bindRecipePickerEvents(content) {
     if (e.target.matches(".recipe-pick__comensales input")) {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      const card = e.target.closest("[data-pick-card]");
+      const inputEl = e.target;
+      if (inputEl.disabled) return; // guard de doble Enter
+      inputEl.disabled = true;
+      const card = inputEl.closest("[data-pick-card]");
       if (!card) return;
       const input = card.querySelector(".recipe-pick__comensales input");
       const raw = Number(input?.value);
       const comensales = input && input.value !== "" && Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : null;
-      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales);
+      addRecipeToMeal(pickerDay, pickerMeal, card.dataset.pickCard, comensales).then((added) => {
+        if (!added) inputEl.disabled = false;
+      });
       return;
     }
     // Los botones internos de la tarjeta gestionan su propio Enter
