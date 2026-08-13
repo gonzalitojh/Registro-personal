@@ -544,13 +544,17 @@ la semana; con **«Comensales»** indicas cuántas personas comen. Con
 tengas a la vista (se te pedirá confirmación).
 
 En cada día (Lunes a Domingo) y comida (**Almuerzo** y **Cena**)
-pulsas **«+ Receta»** y se abre una ventana con **todas tus recetas**
-en forma de tarjetas: la **foto** (si la tiene) a la izquierda, el
-**nombre** como título y las **etiquetas de alérgenos y tipos de
-plato** debajo. Puedes **buscar** por texto y **filtrar** por las dos
-etiquetas con los botones del buscador. Pulsa una tarjeta para **ver
-la receta** con la misma ventana de la pestaña Recetas (ciérrala y
-volverás al buscador).
+puedes añadir recetas con el botón **«+ Añadir receta»** de la barra
+superior. Se abre una ventana en la que primero eliges el **destino**:
+el **día** de la semana o **«Toda la semana»**, y la **comida**
+(**Almuerzo** o **Cena**; la comida solo aplica cuando eliges un día
+concreto).
+Después verás **todas tus recetas** en forma de tarjetas: la **foto**
+(si la tiene) a la izquierda, el **nombre** como título y las
+**etiquetas de alérgenos y tipos de plato** debajo. Puedes **buscar**
+por texto y **filtrar** por las dos etiquetas con los botones del
+buscador. Pulsa una tarjeta para **ver la receta** con la misma
+ventana de la pestaña Recetas (ciérrala y volverás al buscador).
 
 Para **añadirla**, pulsa **«+ Añadir»** y, si quieres, indica los
 **comensales de esa receta** (por si no todos comen de todo): si lo
@@ -558,13 +562,15 @@ dejas vacío, la receta usa los **comensales globales del menú**. El
 número elegido aparece junto al nombre de la receta en la comida.
 
 Puedes añadir **varias recetas en la misma comida**: cada persona
-puede comer una opción distinta. Quita una receta con la ✕ de su
-etiqueta.
+puede comer una opción distinta. Cada receta aparece en su día como
+una **tarjeta en miniatura** (foto, nombre y etiquetas); púlsala para
+**verla** o quítala con la **✕**. Ya no hace falta un botón por celda:
+todo se añade con el mismo «+ Añadir receta».
 
-En **«Recetas a la semana»** añades recetas que se preparan una vez
-para toda la semana (por ejemplo, una **masa de pizza** para toda la
-semana): se añaden una vez y **no se multiplican por los comensales**.
-Quita una con «Quitar».
+En **«Recetas a la semana»** se guardan las recetas que eliges con
+**«Toda la semana»**: se preparan una vez para toda la semana (por
+ejemplo, una **masa de pizza**) y **no se multiplican por los
+comensales**. Quita una con «Quitar».
 
 Para marcar una receta como «ya hecha» (para que **no** entre en la
 lista de la compra), exclúyela desde la lista de la compra (ver 8.4).

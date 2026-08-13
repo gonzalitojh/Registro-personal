@@ -1,4 +1,4 @@
-# ADR-090: Pestaña Menú — eliminación del desayuno y buscador de recetas con comensales por receta (issue #242)
+# ADR-090: Pestaña Menú — eliminación del desayuno, buscador de recetas con comensales por receta y botón único de añadir (issue #242)
 
 ## Estado
 Aceptado
@@ -221,6 +221,57 @@ puro); nombre de receta siempre legible; placeholder 6.16:1 (Negro
 puro). Sin cambios de comportamiento, HTML ni JS: solo CSS de tema,
 por lo que el manual de usuario no requiere actualización.
 
+## Iteración 4 (2026-08-13): botón único de añadir receta con selector de destino y tarjetas en las celdas
+
+Comentario del usuario (2026-08-13T09:06:39Z): sustituir **todos** los
+botones de añadir receta por **un único botón en la parte superior**
+que permita elegir el **día de la semana o la semana completa** y la
+**comida o cena**; eliminar el botón separado de «añadir receta a la
+semana» (se añade con el mismo botón); y que lo que se añade a cada
+celda sean **tarjetas como las de la búsqueda**, no ítems vacíos no
+clicables.
+
+Cambios aplicados (js/menu.js, css/styles.css, index.html y manual
+§8.3):
+
+1. **Botón único**: `#btn-add-menu-recipe` en la barra del menú
+   (`.menu-toolbar`) sustituye a los botones `+ Receta` de cada celda
+   (`menu-meal__add`) y al botón/desplegable de «Recetas a la semana»
+   (`btn-add-weekly-recipe` y `addWeeklyRecipe`, eliminados junto con
+   el CSS `.menu-weekly__addrow`). Al pulsarlo se abre el buscador con
+   un **selector de destino** `.recipe-pick__target`: día (Lunes…
+   Domingo) o «Toda la semana» + comida (Almuerzo/Cena). Con «Toda la
+   semana» la comida se desactiva y aparece el aviso
+   `.recipe-pick__week-hint` (se añade una vez y no se multiplica por
+   los comensales). El destino vive en `pickerDay` (`"*"` = semana
+   completa, `pickerMeal` = null) y el estado se conserva al abrir la
+   lectura de una receta (mismo `restoreRecipePicker`).
+2. **Alta semanal por el mismo flujo**: `addRecipeToMeal` acepta
+   `day "*"` y escribe en `recetasPorSemana` con el mismo shape
+   `{ recipeId, cantidad: 1 }`; la lista de candidatos del buscador
+   excluye las ya añadidas al destino elegido (comida del día o
+   semana completa) y adapta el mensaje vacío.
+3. **Tarjetas en las celdas**: cada receta de una comida se renderiza
+   como `.menu-meal__card` (foto en miniatura, nombre, etiquetas —
+   misma fuente de verdad `recipeTagsHtml` y píldoras
+   `.recipe-card__tag` —, distintivo de comensales y botón ✕). La
+   tarjeta es clicable (click, Enter o Espacio) y abre la receta en
+   modo lectura (`openRecipeModal`), como las del buscador. La
+   exclusión de la lista de la compra (issue #225) tacha solo el
+   nombre en lugar de toda la fila.
+4. **Cuatro modos de tema**: la tarjeta de celda usa el tinte
+   `--paper-alpha-10` heredando el texto de la celda; en la familia
+   clara el override agrupado pasa a `--ink-alpha-10` (el de papel es
+   blanco translúcido e invisible sobre la celda blanca) y en negro
+   puro se reafirma el tinte con hover/foco en `--teal-reel-dark`.
+   El selector de destino sigue el patrón de campo del buscador
+   (`--paper-dim`/`--ink` sobre el modal papel) con inversión en
+   negro puro (`--ink`/`--paper`) y etiquetas de campo y aviso con la
+   tinta del contenido (`--ink`, `--paper` en negro puro), mismos
+   contrastes AA que los de las iteraciones anteriores.
+5. **Manual de usuario §8.3**: describe el botón único, el selector
+   de destino y las tarjetas clicables de las celdas.
+
 ## Consecuencias
 
 - **Positivas**: añadir recetas a una comida deja de ser un
@@ -231,8 +282,9 @@ por lo que el manual de usuario no requiere actualización.
   cocina; el menú queda ajustado a almuerzo y cena.
 - **Neutras**: las entradas antiguas (strings) siguen siendo válidas;
   el desayuno guardado en documentos existentes queda sin uso visible;
-  «recetas a la semana» conserva su desplegable (fuera del alcance de
-  la issue); bump PWA `20260920 → 20260921`.
+  «recetas a la semana» se añade con el mismo botón único eligiendo
+  «Toda la semana» (iteración 4; ya no tiene desplegable propio);
+  bump PWA `20260920 → 20260921`.
 - **Negativas**: ninguna conocida. Se prevé validar los criterios de
   aceptación (sin desayuno, ventana con tarjetas con foto/nombre/
   etiquetas, búsqueda y filtros por las dos etiquetas, lectura de
