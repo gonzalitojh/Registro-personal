@@ -319,7 +319,8 @@ export function subscribeGymData(uid, onChange, onError) {
 }
 
 // Vacía el estado local (lo llama app.js al cerrar sesión, para que
-// los datos del usuario anterior no se muestren al siguiente).
+// los datos del usuario anterior no se muestren al siguiente),
+// incluido el rango libre del resumen y el calendario (iteración 3).
 export function resetGymData() {
   workouts = [];
   exercises = [];
@@ -327,6 +328,15 @@ export function resetGymData() {
   editingWorkoutId = null;
   workoutDraft = null;
   editingExerciseId = null;
+  summaryRange = { from: null, to: null };
+  summaryRangeMonth = null;
+  summaryWeekdayLabels = null;
+  const rangeBox = document.getElementById("gym-summary-range");
+  if (rangeBox) rangeBox.hidden = true;
+  summaryRangePopoverOpen = false;
+  const popover = document.getElementById("gym-summary-range-popover");
+  if (popover) popover.hidden = true;
+  document.getElementById("gym-summary-range-trigger")?.setAttribute("aria-expanded", "false");
   closeWorkoutModal();
   closeExerciseModal();
 }
@@ -708,9 +718,12 @@ function syncSummaryPeriodUI(period) {
   });
   const rangeBox = document.getElementById("gym-summary-range");
   if (rangeBox) {
-    if (period !== "custom") closeSummaryRangePopover();
     rangeBox.hidden = period !== "custom";
-    if (period === "custom") openSummaryRangePopover();
+    if (period === "custom") {
+      openSummaryRangePopover();
+    } else {
+      closeSummaryRangePopover();
+    }
   }
 }
 
@@ -867,6 +880,13 @@ function closeSummaryRangePopover() {
   popover.hidden = true;
   trigger?.setAttribute("aria-expanded", "false");
   summaryRangePopoverOpen = false;
+  // Retorno de foco al trigger (a11y): salvo cuando el recuadro queda
+  // oculto justo después (cambio de chip a semana/mes en curso), caso
+  // en el que enfocar un elemento oculto perdería el foco a body.
+  const rangeBox = document.getElementById("gym-summary-range");
+  if (trigger && rangeBox && !rangeBox.hidden) {
+    trigger.focus({ preventScroll: false });
+  }
 }
 
 // Navega el calendario un mes (delta ±1); el mes visible se

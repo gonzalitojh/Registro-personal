@@ -4877,7 +4877,10 @@ body.is-back-to-top-visible .back-to-top {
   cursor: pointer;
 }
 .gym-summary-range__trigger[aria-expanded="true"] {
-  border-color: var(--ink-soft);
+  /* --games (no --ink-soft): el suave da ~2.45:1 sobre --paper-dim en
+     la familia oscura y el borde es un componente gráfico (3:1); el
+     override de Negro puro lo cubre el selector agrupado de abajo. */
+  border-color: var(--games);
 }
 
 .gym-summary-range__label {
@@ -4955,7 +4958,10 @@ body.is-back-to-top-visible .back-to-top {
 .gym-summary-range__cal-weekday {
   text-align: center;
   font-size: 0.7rem;
-  color: var(--ink-soft);
+  /* --ink (no --ink-soft): sobre la superficie --paper del popover el
+     suave daría ~2.84:1 en la familia oscura (regla 4 de AGENTS.md);
+     el override de Negro puro la cubre el selector agrupado de abajo. */
+  color: var(--ink);
   padding: 0.2rem 0;
   min-width: 0;
 }
@@ -4984,8 +4990,17 @@ body.is-back-to-top-visible .back-to-top {
 .gym-summary-range__day:hover {
   background: var(--paper-dim);
 }
+/* El hover no puede tapar el estado de extremo del rango: el día
+   seleccionado conserva su fondo en las cuatro familias (especificidad
+   superior a .gym-summary-range__day:hover; el hover de Negro puro lo
+   cubre el selector agrupado de abajo). */
+.gym-summary-range__day--selected:hover {
+  background: var(--games);
+}
 .gym-summary-range__day--today {
-  border-color: var(--ink-soft);
+  /* --games (no --ink-soft): el borde es un componente gráfico (3:1)
+     y el suave da ~2.84:1 sobre --paper en la familia oscura. */
+  border-color: var(--games);
 }
 .gym-summary-range__day--selected {
   background: var(--games);
@@ -5007,10 +5022,11 @@ body.is-back-to-top-visible .back-to-top {
   margin-top: 0.6rem;
 }
 
-/* En pantallas estrechas el popover pasa a flujo normal (nada de
-   posicionamiento absoluto: no puede desbordar) y el recuadro ocupa
-   toda la fila del selector. */
-@media (max-width: 480px) {
+/* En pantallas estrechas y tablets (≤767 px; la banda 540–680 px con
+   el popover absoluto desbordaba el borde derecho de la página) el
+   popover pasa a flujo normal — nada de posicionamiento absoluto, no
+   puede desbordar — y el recuadro ocupa toda la fila del selector. */
+@media (max-width: 767px) {
   .gym-summary-range {
     flex: 1 1 100%;
   }
@@ -5833,8 +5849,13 @@ body.is-back-to-top-visible .back-to-top {
 /* Extremos del rango en negro puro: acento en su variante clara y
    texto tinta (la variante base #7a5a9e con texto papel daría
    ~2:1); los días intermedios usan un tinte claro neutro porque el
-   violeta al 22 % sobre negro casi no se ve. */
+   violeta al 22 % sobre negro casi no se ve. El hover conserva el
+   estado de extremo (regla posterior a la del hover genérico). */
 [data-theme="black"] .gym-summary-range__day--selected {
+  background: var(--games-dark);
+  color: var(--ink);
+}
+[data-theme="black"] .gym-summary-range__day--selected:hover {
   background: var(--games-dark);
   color: var(--ink);
 }
