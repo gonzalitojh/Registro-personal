@@ -526,20 +526,26 @@ function renderWorkoutEditor() {
 // Series de la última vez que se trabajó un ejercicio (#265): recorre
 // workouts (ya ordenados por fechaISO desc desde db.js) y devuelve
 // una copia {pesoKg, reps} de la ocurrencia más reciente con series,
-// o null. Match por ejercicioId (canónico); para datos antiguos sin
-// id (legacy «Otro…») hace match por nombre snapshot normalizado.
+// o null. Prioridad estricta del match por ejercicioId (canónico):
+// solo si no hay ningún entreno con una entrada canónica de ese
+// ejercicio se usa el fallback por nombre snapshot normalizado para
+// datos antiguos sin id (legacy «Otro…»).
 function lastWorkoutSeriesForExercise(exerciseId, nombre) {
   const norm = (s) => String(s || "").trim().toLowerCase();
   const nameNorm = norm(nombre);
+  let legacy = null;
   for (const w of workouts) {
-    const hit = (w.ejercicios || []).find((ex) => {
-      if (!(ex.series || []).length) return false;
-      if (exerciseId && ex.ejercicioId) return ex.ejercicioId === exerciseId;
-      return !ex.ejercicioId && nameNorm && norm(ex.nombre) === nameNorm;
-    });
-    if (hit) return hit.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 }));
+    for (const ex of w.ejercicios || []) {
+      if (!(ex.series || []).length) continue;
+      if (exerciseId && ex.ejercicioId === exerciseId) {
+        return ex.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 }));
+      }
+      if (legacy === null && !ex.ejercicioId && nameNorm && norm(ex.nombre) === nameNorm) {
+        legacy = ex;
+      }
+    }
   }
-  return null;
+  return legacy ? legacy.series.map((s) => ({ pesoKg: s.pesoKg || 0, reps: s.reps || 0 })) : null;
 }
 
 // Pre-relleno (#265): solo si el bloque aún no tiene series (no pisa

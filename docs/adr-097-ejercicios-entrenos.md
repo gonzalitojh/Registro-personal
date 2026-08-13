@@ -95,9 +95,12 @@ ajustarlas. Reglas de la implementación:
   de `db.js` (ADR-095); `lastWorkoutSeriesForExercise()` recorre el
   array en memoria y devuelve una copia `{pesoKg, reps}` de la primera
   ocurrencia con series.
-- **Match canónico por `ejercicioId`**; para datos legacy sin id
-  (entrenos pre-eliminación de «Otro…») hay **fallback por nombre
-  snapshot normalizado** (trim + minúsculas).
+- **Match canónico por `ejercicioId` con prioridad estricta**; para
+  datos legacy sin id (entrenos pre-eliminación de «Otro…») hay
+  **fallback por nombre snapshot normalizado** (trim + minúsculas),
+  usado solo si ningún entreno tiene una entrada canónica de ese
+  ejercicio (así una entrada legacy del mismo nombre en el entreno
+  más reciente nunca gana al canónico).
 - **Solo si el bloque aún no tiene series** (`entry.series.length === 0`):
   no pisa nada ya escrito ni las series de un entreno en edición; si
   no hay series previas o no hay match, no hace nada.
@@ -158,6 +161,13 @@ ajustarlas. Reglas de la implementación:
 - **El match legacy por nombre normalizado puede no acertar** si el
   ejercicio se renombró tras guardarse el entreno: en ese caso
   simplemente no pre-rellena (comportamiento degradado, no erróneo).
+- **Revalidado en iteración** (reanudación de la sesión): QA PASS y
+  escaneo de seguridad sin hallazgos. Se aplicó una mejora sobre el
+  match del pre-relleno — prioridad estricta del `ejercicioId`
+  canónico frente al fallback por nombre — y se actualizó este ADR en
+  consecuencia (antes el fallback podía ganar dentro de un mismo
+  entreno si la entrada legacy aparecía antes en el array; impacto
+  mínimo, corregido en la revisión).
 - **Manual de usuario actualizado** (§9.1): botones «Nuevo ejercicio»
   y «Duplicar serie» y comportamiento del pre-relleno documentados
   (regla 3 de AGENTS.md).
