@@ -3366,26 +3366,46 @@ body.is-back-to-top-visible .back-to-top {
 
 /* El campo de búsqueda crece y los filtros se mantienen a la
    derecha; en móvil todo pasa a columna (sin desbordar). 1rem por
-   ADR-042 (nada de < 16px en inputs). */
+   ADR-042 (nada de < 16px en inputs).
+   El modal del buscador es papel en la familia oscura, así que el
+   campo va en la familia clara (--paper-dim/--ink), patrón de
+   .ingredient-modal__field input / .recipe-form__field input. */
 .recipe-pick__search {
   flex: 1 1 200px;
   min-width: 0;
   max-width: 100%;
-  background: var(--ink-raised);
-  color: var(--paper);
-  border: 1px solid var(--paper-alpha-30);
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
   font-size: 1rem;
 }
 
 .recipe-pick__search::placeholder {
-  color: var(--ink-soft);
+  /* Sobre el campo claro de la familia oscura, --ink-soft (#948a76)
+     solo da ≈ 2.3:1 (no AA): tinta del contenido, mismo patrón que
+     .recipe-pick__empty. En negro puro el campo es tinta y la base
+     sería invisible: override abajo. */
+  color: var(--ink);
 }
 
 .recipe-pick__search:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
+}
+
+/* Botones de filtro dentro del buscador: la píldora base de la
+   pestaña Recetas es un chip oscuro (--ink-raised/--paper) pensado
+   para la página oscura; dentro del modal papel invertiría el
+   contraste, así que pasan a la familia clara como el resto de
+   controles del buscador (issue #242, iteración). En negro puro el
+   modal es superficie oscura y vuelven al chip oscuro en los
+   overrides de abajo. */
+.recipe-pick .recipes-filter__btn {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border-color: var(--paper-line);
 }
 
 /* Paneles de filtro a la derecha del campo: anclados debajo del
@@ -3411,14 +3431,16 @@ body.is-back-to-top-visible .back-to-top {
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
-  /* Chip de la familia oscura (patrón de .recipes-filter__btn): el
-     modal es papel, así que la tarjeta va en --ink-raised con texto
-     --paper EXPLÍCITO — sin el color, el texto heredaría --ink del
-     modal y quedaría invisible (1.1:1) en el tema Oscuro. La familia
-     clara lo invierte en los overrides de abajo. */
-  background: var(--ink-raised);
-  color: var(--paper);
-  border: 1px solid var(--paper-alpha-20);
+  /* Tarjeta de la familia clara (patrón de .recipe-card y de los
+     inputs de los modales): el modal del buscador es papel en la
+     familia oscura, así que la tarjeta va en --paper-dim con tinta
+     --ink — el nombre queda oscuro y legible y no se invierte el
+     contraste dentro de la ventana (issue #242, iteración). En negro
+     puro el modal es superficie oscura y la tarjeta vuelve al chip
+     oscuro en los overrides de abajo. */
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
   cursor: pointer;
@@ -3445,7 +3467,10 @@ body.is-back-to-top-visible .back-to-top {
   object-fit: cover;
   border-radius: var(--radius);
   flex-shrink: 0;
-  background: var(--paper-alpha-10);
+  /* Tinte sutil que funciona sobre la tarjeta clara en la familia
+     oscura y sobre la oscura en negro puro (--ink-alpha-* es un
+     tinte de tinta en la familia clara y de papel en la oscura). */
+  background: var(--ink-alpha-08);
 }
 
 .recipe-pick__copy {
@@ -3474,14 +3499,18 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 /* Fila de comensales de la tarjeta (issue #242): número opcional
-   (vacío = hereda los del menú) y botones Añadir / Cancelar. */
+   (vacío = hereda los del menú) y botones Añadir / Cancelar. Sobre la
+   tarjeta clara de la familia oscura, --ink-soft solo daría ≈ 2.3:1:
+   tinta del contenido (mismo patrón que .recipe-pick__empty); en
+   negro puro la tarjeta es oscura y vuelve a --ink-soft en los
+   overrides de abajo. */
 .recipe-pick__comensales {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   flex-wrap: wrap;
   font-size: 0.8rem;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 
 .recipe-pick__comensales input {
@@ -4562,15 +4591,10 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--ink-soft);
 }
 
-/* Tarjeta del buscador de recetas (issue #242, iteración): chip de
-   la familia oscura con texto papel explícito; en la familia clara
-   --ink-raised es blanco y el texto pasa a --ink (mismo patrón que
-   .recipes-filter__btn). */
-[data-theme="light"] .recipe-pick__card,
-[data-theme="white"] .recipe-pick__card {
-  color: var(--ink);
-}
-
+/* Campo de búsqueda del buscador en la familia clara: la base ya es
+   --paper-dim/--ink (misma fuente de verdad que el resto de inputs
+   del modal); el override solo refuerza el borde como los demás
+   campos agrupados. */
 [data-theme="light"] .menu-comensales input,
 [data-theme="white"] .menu-comensales input,
 [data-theme="light"] .recipe-pick__search,
