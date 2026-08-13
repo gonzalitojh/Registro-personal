@@ -1,0 +1,58 @@
+{
+  "title": "Ventana recetas modo lectura",
+  "description": "La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nLa ventana en modo lectura de las recetas debe verse diferente de la ventana de edición, en lugar de simplemente no permitir editar. En primer lugar la foto y justo debajo el nombre con las etiquetas de alérgenos y tipo de plato, la descripción y las porciones. Bajo ello los ingredientes en forma de lista, sin opción de eliminar ni la categoría, solo nombre y cantidad. Debajo las instrucciones, también en forma de lista y sin opción de eliminar. Al final, los enlaces de referencia, si los hay.\n\nLas etiquetas de alérgenos y tipo de plato, cambiar el color para que no se confundan entre ellas.\n\nEn esta vista de modo lectura, no se debe ver como recuadros sin opción a editar, sino como texto. De esta forma, los nombres de los campos (Nombre, Descripción, Porciones...) no deben mostrarse. El nombre de la receta aparecería como un título y luego los ingredientes y las instrucciones si tendrían un encabezado de título.",
+  "status": "review",
+  "acceptance criteria": [
+    "La ventana en modo lectura de una receta se ve distinta de la ventana de edición (no es el formulario con los campos deshabilitados).",
+    "En modo lectura se muestra primero la foto y justo debajo el nombre, con las etiquetas de alérgenos y tipo de plato.",
+    "Las etiquetas de alérgenos y las de tipo de plato se distinguen por color (no se confunden entre ellas).",
+    "Bajo el nombre se muestra la descripción y las porciones.",
+    "Los ingredientes se muestran en forma de lista con solo nombre y cantidad, sin opción de eliminar ni la categoría.",
+    "Las instrucciones se muestran en forma de lista (numerada) y sin opción de eliminar.",
+    "Al final se muestran los enlaces de referencia, si los hay.",
+    "La vista de modo lectura se muestra como texto, sin recuadros de formulario ni nombres de campo (Nombre, Descripción, Porciones...).",
+    "El nombre de la receta aparece como un título; los ingredientes y las instrucciones tienen su propio encabezado de título.",
+    "Los botones Editar/Eliminar y el cierre por ✕/backdrop/Escape siguen funcionando en modo lectura (issue #234 no se rompe)."
+  ],
+  "definition of done": [
+    "Planificación realizada.",
+    "Implementación completada (rama creada desde content/issue-64-seccion-recetas).",
+    "Validación QA superada contra los criterios de aceptación.",
+    "Escaneo de seguridad superado.",
+    "Manual de usuario actualizado si el cambio afecta a lo visible para el usuario.",
+    "ADR documentado con 'Related issue: #236'.",
+    "PR creada contra content/issue-64-seccion-recetas SIN keyword de cierre.",
+    "Task file subido con status 'review' + bloque pr.",
+    "Issue #236 label updated to its final state (status: needs-review)."
+  ],
+  "issue": {
+    "number": 236,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/236",
+    "title": "Ventana recetas modo lectura"
+  },
+  "plan": {
+    "base": "content/issue-64-seccion-recetas",
+    "branch": "style/issue-236-ventana-recetas-lectura",
+    "steps": [
+      "js/recipes.js: render dedicado de modo lectura (recipeReadOnlyHtml) — foto, nombre como título, tags alérgenos/tipo con colores diferenciados, descripción, porciones, ingredientes (solo nombre+cantidad), instrucciones numeradas, enlaces; sin nombres de campo",
+      "js/recipes.js: recipeModalHtml bifurca por modalReadOnly hacia la vista de lectura; se conservan Editar/Eliminar y los cierres (✕/backdrop/Escape)",
+      "css/styles.css: estilos .recipe-view__* con acentos diferenciados para tags alérgenos (teal) y tipo (ocre), overrides familia clara y negro puro, responsividad",
+      "docs/manual-de-usuario.md: sección 8.1 actualizada (cómo se ve el modo lectura)",
+      "docs/adr-088-ventana-recetas-modo-lectura.md",
+      "js/recipes.js: etiquetas de tarjeta con modificadores --alergeno/--tipo (mismos colores que la vista de lectura) y lápiz ✎ en los botones de editar",
+      "css/styles.css: selectores agrupados .recipe-view__tag--* / .recipe-card__tag--* (una sola fuente de verdad por regla, AGENTS.md §4.3), incluidos overrides de negro puro; la píldora base conserva solo la forma",
+      "docs/manual-de-usuario.md: §8.1 — píldoras de colores en las tarjetas y botón «✎ Editar»",
+      "docs/adr-088-ventana-recetas-modo-lectura.md: sección de iteración 2026-08-13",
+      "js/config.js, index.html, service-worker.js: bump PWA 20260918 → 20260919"
+    ]
+  },
+  "pr": {
+    "number": 239,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/239",
+    "title": "Ventana recetas modo lectura (issue #236)",
+    "branch": "style/issue-236-ventana-recetas-lectura",
+    "commit": "cfb368b",
+    "closes": "#236"
+  },
+  "iteration": "2026-08-13 — etiquetas de tarjeta con colores por tipo (teal/ocre) + lápiz ✎ en botón editar; QA PASS + seguridad PASS."
+}

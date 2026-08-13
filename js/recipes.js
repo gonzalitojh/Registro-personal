@@ -364,9 +364,12 @@ function recipeCardHtml(r) {
   const badge = r.needsReview
     ? `<span class="recipe-card__badge" title="Importada desde una URL, pendiente de revisar">Revisar</span>`
     : "";
-  const tags = [...alergenos, ...tipos];
   // La tarjeta entera es el botón (issue #234): al pulsarla se abre el
   // detalle en modo lectura. role="button" + tabindex para teclado.
+  // Las etiquetas llevan el mismo color por tipo que en la vista de
+  // lectura (issue #236, iteración): alérgenos en teal y tipo en ocre.
+  const alergenoTags = alergenos.map((t) => `<span class="recipe-card__tag recipe-card__tag--alergeno">${escapeHtml(t.label)}</span>`).join("");
+  const tipoTags = tipos.map((t) => `<span class="recipe-card__tag recipe-card__tag--tipo">${escapeHtml(t.label)}</span>`).join("");
   return `<article class="recipe-card${r.needsReview ? " recipe-card--review" : ""}"
     role="button" tabindex="0" data-recipe-id="${r.id}"
     aria-label="Ver receta ${escapeHtml(r.nombre)}">
@@ -379,9 +382,7 @@ function recipeCardHtml(r) {
       ${Number(r.porciones) ? `${formatCantidad(r.porciones)} porciones` : ""}
       ${r.ingredientes?.length ? ` · ${r.ingredientes.length} ingredientes` : ""}
     </p>
-    ${tags.length ? `<p class="recipe-card__tags">
-      ${tags.map((t) => `<span class="recipe-card__tag">${escapeHtml(t.label)}</span>`).join("")}
-    </p>` : ""}
+    ${(alergenoTags || tipoTags) ? `<p class="recipe-card__tags">${alergenoTags}${tipoTags}</p>` : ""}
   </article>`;
 }
 
@@ -1237,6 +1238,10 @@ function closeRecipeModal() {
 }
 
 function recipeModalHtml(recipe) {
+  // Modo lectura (issue #236): no es el formulario con campos
+  // deshabilitados, sino una vista de texto propia (foto, nombre como
+  // título, etiquetas, descripción, porciones, listas y enlaces).
+  if (modalReadOnly && recipe) return recipeReadOnlyHtml(recipe);
   const r = recipe || {};
   const alergenos = r.alergenos || [];
   const tipos = r.tipos || [];
@@ -1318,11 +1323,105 @@ function recipeModalHtml(recipe) {
     <div class="recipe-form__actions">
       ${modalReadOnly
         ? `<button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
-           <button type="button" class="btn btn--small" data-recipe-edit>Editar</button>`
+           <button type="button" class="btn btn--small" data-recipe-edit>✎ Editar</button>`
         : `<button type="button" id="btn-recipe-cancel" class="btn btn--outline">Cancelar</button>
            <button type="submit" class="btn btn--primary">Guardar</button>`}
     </div>
   </form>`;
+}
+
+// Vista de receta en modo lectura (issue #236): un render propio,
+// como texto legible (no como el formulario con campos deshabilitados).
+// Orden: foto, nombre como título con las etiquetas (alérgenos y tipo
+// diferenciados por color), descripción, porciones, ingredientes en
+// lista (solo nombre y cantidad), instrucciones numeradas y enlaces de
+// referencia al final si los hay. No se muestran nombres de campo.
+function recipeReadOnlyHtml(recipe) {
+  const r = recipe || {};
+  const alergenos = tagsByIds(ALERGEN_TAGS, customTags, r.alergenos || []);
+  const tipos = tagsByIds(MEAL_TYPES, customTags, r.tipos || []);
+  const ingredientes = r.ingredientes || [];
+  const instrucciones = r.instrucciones || [];
+  const enlaces = r.enlaces || [];
+
+  const foto = r.fotoUrl
+    ? `<img class="recipe-view__photo" src="${escapeHtml(r.fotoUrl)}" alt="" loading="lazy" />`
+    : "";
+  const tags = alergenos.length || tipos.length
+    ? `<div class="recipe-view__tags">
+        ${alergenos.map((t) => `<span class="recipe-view__tag recipe-view__tag--alergeno">${escapeHtml(t.label)}</span>`).join("")}
+        ${tipos.map((t) => `<span class="recipe-view__tag recipe-view__tag--tipo">${escapeHtml(t.label)}</span>`).join("")}
+      </div>`
+    : "";
+  const descripcion = r.descripcion
+    ? `<p class="recipe-view__descripcion">${escapeHtml(r.descripcion)}</p>`
+    : "";
+  const porciones = Number(r.porciones)
+    ? `<p class="recipe-view__meta">${formatCantidad(r.porciones)} porciones</p>`
+    : "";
+  const ingredientesHtml = ingredientes.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Ingredientes</h4>
+        <ul class="recipe-view__list">
+          ${ingredientes.map((i) => `<li class="recipe-view__ingrediente">
+            <span class="recipe-view__ing-nombre">${escapeHtml(i.nombre)}</span>
+            ${cantidadRecetaHtml(i)}
+          </li>`).join("")}
+        </ul>
+      </section>`
+    : "";
+  const instruccionesHtml = instrucciones.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Instrucciones</h4>
+        <ol class="recipe-view__list recipe-view__pasos">
+          ${instrucciones.map((p) => `<li class="recipe-view__paso">${escapeHtml(p)}</li>`).join("")}
+        </ol>
+      </section>`
+    : "";
+  const enlacesHtml = enlaces.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Enlaces</h4>
+        <ul class="recipe-view__list recipe-view__links">
+          ${enlaces.map((url) => `<li>${enlaceRecetaHtml(url)}</li>`).join("")}
+        </ul>
+      </section>`
+    : "";
+
+  return `<div class="recipe-view">
+    ${foto}
+    <h3 class="recipe-view__title">${escapeHtml(r.nombre)}</h3>
+    ${tags}
+    ${descripcion}
+    ${porciones}
+    ${ingredientesHtml}
+    ${instruccionesHtml}
+    ${enlacesHtml}
+    <div class="recipe-view__actions">
+      <button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
+      <button type="button" class="btn btn--small" data-recipe-edit>✎ Editar</button>
+    </div>
+  </div>`;
+}
+
+// Cantidad de un ingrediente en la vista de lectura: "200 g" o vacío.
+// Se muestra junto al nombre (la categoría no se muestra, issue #236).
+function cantidadRecetaHtml(ing) {
+  const cantidad = ing.cantidad ?? "";
+  const unidad = (ing.unidad || "").trim();
+  const partes = [cantidad !== "" && cantidad !== null ? formatCantidad(cantidad) : "", unidad].filter(Boolean);
+  if (!partes.length) return "";
+  return `<span class="recipe-view__ing-cantidad">${partes.map(escapeHtml).join(" ")}</span>`;
+}
+
+// Enlace de referencia en la vista de lectura. Higiene defensiva: solo
+// los esquemas http/https son clickeables (un `javascript:` pegado a
+// mano en el formulario no debe ejecutarse al pulsar); el resto se
+// muestra como texto plano.
+function enlaceRecetaHtml(url) {
+  const texto = escapeHtml(url);
+  return /^https?:\/\//i.test(url)
+    ? `<a class="recipe-view__link" href="${texto}" target="_blank" rel="noopener noreferrer">${texto}</a>`
+    : texto;
 }
 
 function chipHtml(tag, checked) {

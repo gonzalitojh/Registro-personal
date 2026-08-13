@@ -484,12 +484,32 @@ las tarjetas se filtran al momento. Una receta se muestra si lleva
 **al menos una** de las etiquetas marcadas en cada filtro, y las
 recetas sin etiquetas de ese tipo se ven siempre.
 
+Las tarjetas de las recetas muestran sus **etiquetas en píldoras de
+colores**: las de **alérgenos en verde** y las de **tipo de comida en
+ocre**, igual que dentro de la ventana de información, para
+distinguirlas de un vistazo.
+
 Para abrir una receta **pulsa sobre su tarjeta, en cualquier sitio de
 ella**: se abre su ventana de información en **modo lectura** (no se
-puede modificar nada). Dentro de la ventana hay dos botones:
-**«Editar»** y **«Eliminar»**. Con **«Eliminar»** la borras (se quita
-del menú y de la lista de la compra); con **«Editar»** pasas al modo
-de edición con el mismo formulario de alta.
+puede modificar nada). Esta ventana es una **vista de texto**: no ves
+un formulario con casillas, sino **la foto de la receta** (si tiene) y,
+justo debajo, **el nombre como título** con las **etiquetas** de
+alérgenos y tipo de comida en **píldoras de colores** (las de
+**alérgenos en verde** y las de **tipo de comida en ocre**, para
+distinguirlas de un vistazo). Después se muestra la **descripción** y
+las **porciones**.
+
+Bajo eso aparecen los **ingredientes en forma de lista** (cada uno con
+su nombre y cantidad, por ejemplo «Harina — 200 g») y las
+**instrucciones numeradas paso a paso**. Al final, si la receta tiene,
+se muestran los **enlaces de referencia** (la web de donde la sacaste),
+que se abren en otra pestaña al pulsarlos (si un enlace no empieza por
+`http://` o `https://` se muestra como texto, sin pulsar).
+
+Dentro de la ventana hay dos botones: **«✎ Editar»** y **«Eliminar»**.
+Con **«Eliminar»** la borras (se quita del menú y de la lista de la
+compra); con **«Editar»** (el botón con el lápiz ✎) pasas al modo de
+edición con el mismo formulario de alta.
 
 La ventana se cierra con la **✕** de arriba. En modo lectura también
 se cierra al **pulsar fuera** de ella; en modo **edición** no, para
