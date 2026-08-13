@@ -62,6 +62,15 @@ let modalReadOnly = false;
 // (patrón de la ventana de receta, issue #234); en edición las vías de
 // salida son la ✕, «Cancelar» y «Guardar».
 let ingredientEditMode = false;
+// Modo «añadir a la lista de la compra» (issue #249): como la edición,
+// el cierre por backdrop/Escape queda bloqueado mientras el formulario
+// de cantidad y unidad está abierto.
+let ingredientShoppingMode = false;
+// Adder de la lista de la compra (issue #249): lo registra
+// shopping-list.js con registerShoppingListAdder; el modal de
+// ingrediente lo usa para persistir el ítem (evita que recipes.js
+// importe shopping-list.js, que a su vez importa recipes.js).
+let shoppingListAdder = null;
 let onRecipeDeleted = null;
 // Filtros de la pestaña Recetas (issue #234): alérgenos y tipo de
 // comida, multiselección con «todas» marcadas por defecto. El flag de
@@ -94,6 +103,16 @@ export function getCustomTags() {
 // (issue #225): paqueteCantidad + paqueteUnidad (issue #224).
 export function getIngredients() {
   return ingredients;
+}
+
+// Registra el «adder» de la lista de la compra (issue #249): la
+// función que persiste un ítem añadido desde el modal del ingrediente.
+// shopping-list.js la registra en setupShoppingList; recipes.js la
+// invoca al confirmar la ventana de cantidad y unidad. Así no se crea
+// una dependencia circular (shopping-list.js ya importa recipes.js) y
+// el modal de ingrediente no conoce la implementación.
+export function registerShoppingListAdder(fn) {
+  shoppingListAdder = fn;
 }
 
 // Vacía el estado local (lo llama app.js al cerrar sesión, para que
@@ -156,10 +175,10 @@ export function setupRecipes(opts) {
   // ✕, «Cancelar» y «Guardar» son las vías explícitas).
   document.getElementById("ingredient-modal-close").addEventListener("click", closeIngredientModal);
   document.getElementById("ingredient-modal-backdrop").addEventListener("click", () => {
-    if (!ingredientEditMode) closeIngredientModal();
+    if (!ingredientEditMode && !ingredientShoppingMode) closeIngredientModal();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !document.getElementById("ingredient-modal").classList.contains("hidden") && !ingredientEditMode) {
+    if (e.key === "Escape" && !document.getElementById("ingredient-modal").classList.contains("hidden") && !ingredientEditMode && !ingredientShoppingMode) {
       e.preventDefault();
       closeIngredientModal();
     }
@@ -911,20 +930,29 @@ function packageQtyRowHtml(ing = {}) {
 // se abre directamente la vista de edición. `onCreated` (issue #240)
 // se llama al guardar un alta manual con el ingrediente recién creado
 // ({ nombre, categoriaId }), para que el formulario de receta pueda
-// usarlo al momento.
-function openIngredientModal(id, { edit = false, onCreated = null } = {}) {
+// usarlo al momento. Con `shopping: true` (issue #249) se abre la
+// ventana de cantidad y unidad para añadir el ingrediente a la lista
+// de la compra.
+function openIngredientModal(id, { edit = false, onCreated = null, shopping = false } = {}) {
   const modal = document.getElementById("ingredient-modal");
   const content = document.getElementById("ingredient-modal-content");
   const ingredient = id ? ingredients.find((i) => i.id === id) : null;
   const wasHidden = modal.classList.contains("hidden");
   ingredientEditMode = edit;
+  ingredientShoppingMode = shopping;
 
   modal.querySelector(".modal__card").setAttribute(
     "aria-label",
-    ingredient ? `Ingrediente: ${ingredient.nombre}` : "Nuevo ingrediente"
+    ingredient
+      ? (shopping
+          ? `Añadir ${ingredient.nombre} a la lista de la compra`
+          : `Ingrediente: ${ingredient.nombre}`)
+      : "Nuevo ingrediente"
   );
   content.innerHTML = ingredient
-    ? (edit ? ingredientEditHtml(ingredient) : ingredientDetailHtml(ingredient))
+    ? (shopping
+        ? ingredientShoppingHtml(ingredient)
+        : (edit ? ingredientEditHtml(ingredient) : ingredientDetailHtml(ingredient)))
     : ingredientNewHtml();
   bindIngredientModalHandlers(content, ingredient, onCreated);
 
@@ -936,14 +964,15 @@ function openIngredientModal(id, { edit = false, onCreated = null } = {}) {
   // trap de foco anterior antes de crear el nuevo.
   if (ingredientModalCleanup) ingredientModalCleanup();
   ingredientModalCleanup = trapFocus(modal.querySelector(".modal__card"));
-  // En el alta manual y al entrar en edición, foco directo al nombre
-  // para escribir ya. Se hace en un segundo rAF tras el de trapFocus
-  // (que enfoca la ✕, el primer enfocable): los callbacks del mismo
-  // frame corren en orden, así el foco final queda en el input y el
-  // trap no se rompe.
-  if (!ingredient || edit) {
+  // En el alta manual, al entrar en edición y en la ventana de añadir
+  // a la compra, foco directo al primer campo: se hace en un segundo
+  // rAF tras el de trapFocus (que enfoca la ✕, el primer enfocable):
+  // los callbacks del mismo frame corren en orden, así el foco final
+  // queda en el input y el trap no se rompe.
+  if (!ingredient || edit || shopping) {
     requestAnimationFrame(() => {
       content.querySelector("#ing-modal-nombre")?.focus({ preventScroll: false });
+      content.querySelector("#ing-shopping-cantidad")?.focus({ preventScroll: false });
     });
   }
 }
@@ -953,6 +982,7 @@ function closeIngredientModal() {
   if (!modal || modal.classList.contains("hidden")) return;
   modal.classList.add("hidden");
   ingredientEditMode = false;
+  ingredientShoppingMode = false;
   if (ingredientModalCleanup) {
     ingredientModalCleanup();
     ingredientModalCleanup = null;
@@ -1000,6 +1030,7 @@ function ingredientDetailHtml(ing) {
         `<button type="button" class="ingredient-modal__link" data-recipe-id="${r.id}">${escapeHtml(r.nombre)}</button>`).join(", ")}</p>`
       : `<p class="ingredient-modal__used">No se usa en ninguna receta aún.</p>`}
     <div class="ingredient-modal__actions">
+      <button type="button" class="btn btn--small btn--primary" data-ing-shopping>🛒 Añadir a la lista de la compra</button>
       <button type="button" class="btn btn--small btn--danger" data-ing-delete>Eliminar</button>
       <button type="button" class="btn btn--small" data-ing-edit>✏️ Editar</button>
     </div>
@@ -1078,6 +1109,33 @@ function ingredientNewHtml() {
   </form>`;
 }
 
+// Vista de «añadir a la lista de la compra» (issue #249): solo pide
+// cantidad y unidad de medida. El nombre, la categoría y si es
+// comestible o no se toman del ingrediente del catálogo (que es quien
+// los conoce); la persistencia la hace el adder registrado por
+// shopping-list.js (registerShoppingListAdder).
+function ingredientShoppingHtml(ing) {
+  return `<form id="ingredient-shopping-form" class="ingredient-modal__form">
+    <h3 class="ingredient-modal__title">Añadir a la lista de la compra</h3>
+    <div class="ingredient-modal__field">
+      <span class="ingredient-modal__label">Ingrediente</span>
+      <p class="ingredient-modal__text">${escapeHtml(ing.nombre)}</p>
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-shopping-cantidad">Cantidad</label>
+      <input type="number" id="ing-shopping-cantidad" min="0" step="any" placeholder="P. ej. 250" />
+    </div>
+    <div class="ingredient-modal__field">
+      <label for="ing-shopping-unidad">Unidad de medida</label>
+      <input type="text" id="ing-shopping-unidad" placeholder="P. ej. g" maxlength="30" />
+    </div>
+    <div class="ingredient-modal__actions">
+      <button type="button" class="btn btn--small btn--outline" data-ing-shopping-cancel>Cancelar</button>
+      <button type="submit" class="btn btn--small btn--primary">Añadir a la lista</button>
+    </div>
+  </form>`;
+}
+
 function bindIngredientModalHandlers(content, ingredient, onCreated = null) {
   content.querySelector("[data-ing-close]")?.addEventListener("click", closeIngredientModal);
 
@@ -1102,6 +1160,42 @@ function bindIngredientModalHandlers(content, ingredient, onCreated = null) {
   // botón «Cerrar» inferior desapareció (queda la ✕ superior).
   content.querySelector("[data-ing-edit]")?.addEventListener("click", () => {
     openIngredientModal(ingredient.id, { edit: true });
+  });
+
+  // Añadir a la lista de la compra (issue #249): el botón del detalle
+  // abre la ventana de cantidad y unidad; «Cancelar» vuelve al detalle.
+  content.querySelector("[data-ing-shopping]")?.addEventListener("click", () => {
+    openIngredientModal(ingredient.id, { shopping: true });
+  });
+  content.querySelector("[data-ing-shopping-cancel]")?.addEventListener("click", () => {
+    openIngredientModal(ingredient.id);
+  });
+  // Confirmar: el nombre, la categoría y el comestible se toman del
+  // ingrediente del catálogo; solo se eligen cantidad y unidad. La
+  // cantidad vacía se guarda como null (línea sin cantidad calculada).
+  content.querySelector("#ingredient-shopping-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cantidadRaw = content.querySelector("#ing-shopping-cantidad").value;
+    const cantidad = cantidadRaw === "" ? null : Number(cantidadRaw);
+    const unidad = normalizeUnit(content.querySelector("#ing-shopping-unidad").value);
+    if (!shoppingListAdder) {
+      showToast("No se pudo añadir a la lista de la compra.");
+      return;
+    }
+    try {
+      await shoppingListAdder({
+        nombre: ingredient.nombre,
+        cantidad,
+        unidad,
+        categoriaId: ingredient.categoriaId || "",
+        comestible: (ingredient.categoriaId || "") !== "hogar",
+      });
+      closeIngredientModal();
+      showToast("Añadido a la lista de la compra.");
+    } catch (err) {
+      console.error("No se pudo añadir a la lista de la compra:", err);
+      showToast("No se pudo añadir a la lista de la compra.");
+    }
   });
   content.querySelector("[data-ing-delete]")?.addEventListener("click", async () => {
     if (!confirm(`¿Eliminar el ingrediente «${ingredient.nombre}» del catálogo? No afecta a las recetas que lo usan.`)) return;
@@ -1501,8 +1595,10 @@ function ingredienteRowHtml(ing, i) {
 // Pinta las opciones del desplegable de un combobox de ingrediente:
 // las del catálogo que coinciden con el texto tecleado (orden
 // alfabético), más el valor ya seleccionado de la fila si no está en el
-// catálogo (dato legado que se conserva visible y elegible).
-function renderIngredienteComboList(combo) {
+// catálogo (dato legado que se conserva visible y elegible). `emptyText`
+// personaliza el mensaje de «sin coincidencias» (la lista de la compra
+// usa uno que remite a la pestaña Ingredientes, issue #249).
+export function renderIngredienteComboList(combo, emptyText = "Sin coincidencias. Crea el ingrediente con «Nuevo ingrediente».") {
   const list = combo.querySelector(".ing-combo__list");
   const texto = combo.querySelector(".ing-nombre").value.trim();
   const norm = normalizeIngredientName(texto);
@@ -1516,15 +1612,17 @@ function renderIngredienteComboList(combo) {
   }
   list.innerHTML = matches.length
     ? matches.map((i) => `<li role="option" data-nombre="${escapeHtml(i.nombre)}" data-categoria="${escapeHtml(i.categoriaId || "")}">${escapeHtml(i.nombre)}</li>`).join("")
-    : `<li role="option" class="ing-combo__empty" aria-disabled="true">Sin coincidencias. Crea el ingrediente con «Nuevo ingrediente».</li>`;
+    : `<li role="option" class="ing-combo__empty" aria-disabled="true">${escapeHtml(emptyText)}</li>`;
 }
 
 // Comportamiento del combobox de ingrediente (issue #240): abrir al
 // enfocar o al escribir, filtrado en vivo, selección con click / Enter
 // (y flechas arriba/abajo), cierre con Escape o al salir del campo. El
 // texto libre por sí solo NO selecciona nada: solo las opciones del
-// catálogo escriben el valor oculto de la fila.
-function bindIngredienteCombo(combo) {
+// catálogo escriben el valor oculto de la fila. Exportado (issue #249)
+// para que la lista de la compra reutilice el mismo desplegable en el
+// formulario de ítem extra.
+export function bindIngredienteCombo(combo, { emptyText = null } = {}) {
   const input = combo.querySelector(".ing-nombre");
   const toggle = combo.querySelector(".ing-combo__toggle");
   const list = combo.querySelector(".ing-combo__list");
@@ -1546,7 +1644,7 @@ function bindIngredienteCombo(combo) {
       clearTimeout(closeTimer);
       closeTimer = null;
     }
-    renderIngredienteComboList(combo);
+    renderIngredienteComboList(combo, emptyText);
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
   };
