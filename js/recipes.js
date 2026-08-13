@@ -1165,6 +1165,10 @@ function closeRecipeModal() {
 }
 
 function recipeModalHtml(recipe) {
+  // Modo lectura (issue #236): no es el formulario con campos
+  // deshabilitados, sino una vista de texto propia (foto, nombre como
+  // título, etiquetas, descripción, porciones, listas y enlaces).
+  if (modalReadOnly && recipe) return recipeReadOnlyHtml(recipe);
   const r = recipe || {};
   const alergenos = r.alergenos || [];
   const tipos = r.tipos || [];
@@ -1251,6 +1255,89 @@ function recipeModalHtml(recipe) {
            <button type="submit" class="btn btn--primary">Guardar</button>`}
     </div>
   </form>`;
+}
+
+// Vista de receta en modo lectura (issue #236): un render propio,
+// como texto legible (no como el formulario con campos deshabilitados).
+// Orden: foto, nombre como título con las etiquetas (alérgenos y tipo
+// diferenciados por color), descripción, porciones, ingredientes en
+// lista (solo nombre y cantidad), instrucciones numeradas y enlaces de
+// referencia al final si los hay. No se muestran nombres de campo.
+function recipeReadOnlyHtml(recipe) {
+  const r = recipe || {};
+  const alergenos = tagsByIds(ALERGEN_TAGS, customTags, r.alergenos || []);
+  const tipos = tagsByIds(MEAL_TYPES, customTags, r.tipos || []);
+  const ingredientes = r.ingredientes || [];
+  const instrucciones = r.instrucciones || [];
+  const enlaces = r.enlaces || [];
+
+  const foto = r.fotoUrl
+    ? `<img class="recipe-view__photo" src="${escapeHtml(r.fotoUrl)}" alt="" loading="lazy" />`
+    : "";
+  const tags = alergenos.length || tipos.length
+    ? `<div class="recipe-view__tags">
+        ${alergenos.map((t) => `<span class="recipe-view__tag recipe-view__tag--alergeno">${escapeHtml(t.label)}</span>`).join("")}
+        ${tipos.map((t) => `<span class="recipe-view__tag recipe-view__tag--tipo">${escapeHtml(t.label)}</span>`).join("")}
+      </div>`
+    : "";
+  const descripcion = r.descripcion
+    ? `<p class="recipe-view__descripcion">${escapeHtml(r.descripcion)}</p>`
+    : "";
+  const porciones = Number(r.porciones)
+    ? `<p class="recipe-view__meta">${formatCantidad(r.porciones)} porciones</p>`
+    : "";
+  const ingredientesHtml = ingredientes.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Ingredientes</h4>
+        <ul class="recipe-view__list">
+          ${ingredientes.map((i) => `<li class="recipe-view__ingrediente">
+            <span class="recipe-view__ing-nombre">${escapeHtml(i.nombre)}</span>
+            ${cantidadRecetaHtml(i)}
+          </li>`).join("")}
+        </ul>
+      </section>`
+    : "";
+  const instruccionesHtml = instrucciones.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Instrucciones</h4>
+        <ol class="recipe-view__list recipe-view__pasos">
+          ${instrucciones.map((p) => `<li class="recipe-view__paso">${escapeHtml(p)}</li>`).join("")}
+        </ol>
+      </section>`
+    : "";
+  const enlacesHtml = enlaces.length
+    ? `<section class="recipe-view__section">
+        <h4 class="recipe-view__heading">Enlaces</h4>
+        <ul class="recipe-view__list recipe-view__links">
+          ${enlaces.map((url) => `<li><a class="recipe-view__link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></li>`).join("")}
+        </ul>
+      </section>`
+    : "";
+
+  return `<div class="recipe-view">
+    ${foto}
+    <h3 class="recipe-view__title">${escapeHtml(r.nombre)}</h3>
+    ${tags}
+    ${descripcion}
+    ${porciones}
+    ${ingredientesHtml}
+    ${instruccionesHtml}
+    ${enlacesHtml}
+    <div class="recipe-view__actions">
+      <button type="button" class="btn btn--small btn--danger" data-recipe-delete>Eliminar</button>
+      <button type="button" class="btn btn--small" data-recipe-edit>Editar</button>
+    </div>
+  </div>`;
+}
+
+// Cantidad de un ingrediente en la vista de lectura: "200 g" o vacío.
+// Se muestra junto al nombre (la categoría no se muestra, issue #236).
+function cantidadRecetaHtml(ing) {
+  const cantidad = ing.cantidad ?? "";
+  const unidad = (ing.unidad || "").trim();
+  const partes = [cantidad !== "" && cantidad !== null ? formatCantidad(cantidad) : "", unidad].filter(Boolean);
+  if (!partes.length) return "";
+  return `<span class="recipe-view__ing-cantidad">${partes.map(escapeHtml).join(" ")}</span>`;
 }
 
 function chipHtml(tag, checked) {
