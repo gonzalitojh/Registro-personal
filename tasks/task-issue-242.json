@@ -1,6 +1,6 @@
 {
   "title": "Pestaña menú",
-  "description": "Issue #242 — Pestaña menú. La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\n- Elimina el desayuno del menú.\n- Al añadir una nueva receta a un espacio, en lugar de un desplegable, muestra una ventana, con una lista de tarjetas de las recetas en las que aparezca:\n  - La foto (si la tiene) en pequeño a la izquierda.\n  - El nombre de la receta como título a la derecha arriba.\n  - Las etiquetas de alérgenos y tipos de plato a la derecha abajo (bajo el nombre).\n- Ese nuevo buscador de recetas debe poderse filtrar por las dos etiquetas y buscar.\n- Al pulsar sobre una receta, se debe desplegar una ventana igual que la de la pestaña recetas en modo lectura.\n- Permite elegir los comensales de cada receta al añadirla, ya que igual no todos pueden comer de todo. La selección de comensales para todo el menú solo afectaría si no se selecciona nada en la receta.",
+  "description": "Issue #242 — Pestaña menú. La base de la que iniciar el trabajo es la rama `content/issue-64-seccion-recetas`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\n- Elimina el desayuno del menú.\n- Al añadir una nueva receta a un espacio, en lugar de un desplegable, muestra una ventana, con una lista de tarjetas de las recetas en las que aparezca:\n  - La foto (si la tiene) en pequeño a la izquierda.\n  - El nombre de la receta como título a la derecha arriba.\n  - Las etiquetas de alérgenos y tipos de plato a la derecha abajo (bajo el nombre).\n- Ese nuevo buscador de recetas debe poderse filtrar por las dos etiquetas y buscar.\n- Al pulsar sobre una receta, se debe desplegar una ventana igual que la de la pestaña recetas en modo lectura.\n- Permite elegir los comensales de cada receta al añadirla, ya que igual no todos pueden comer de todo. La selección de comensales para todo el menú solo afectaría si no se selecciona nada en la receta.\n\nComentario del usuario (2026-08-13T09:06:39Z) — iteración 4: sustituir todos los botones de añadir receta por un único botón en la parte superior que permita elegir el día de la semana o la semana completa y la comida o cena; eliminar el botón de añadir receta a la semana (se añadiría desde el mismo botón); lo que se añade a cada celda de la tabla debe ser tarjetas como las de la búsqueda (no ítems vacíos no clicables).",
   "status": "review",
   "acceptance_criteria": [
     "El desayuno no aparece en el menú.",
@@ -29,10 +29,10 @@
   "pr": {
     "number": 246,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/246",
-    "title": "[content] Pestaña menú: buscador de recetas con tarjetas, comensales por receta y sin desayuno",
+    "title": "[content] Pestaña menú: buscador de recetas con tarjetas, comensales por receta, sin desayuno y botón único de añadir",
     "branch": "content/issue-242-pestana-menu",
     "base": "content/issue-64-seccion-recetas",
-    "commit": "fd4685f",
+    "commit": "c96ef3e",
     "closes": "#242"
   }
 }
