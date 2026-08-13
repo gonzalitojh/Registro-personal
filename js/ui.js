@@ -190,9 +190,10 @@ export function setAuthError(message) {
 // para que el llamador cierre el modal). Si se pasa onEnrich, se
 // cargan los detalles ampliados (duración, reparto, sinopsis, rating,
 // tráiler) sin re-renderizar la estructura del modal. Si se pasa
-// onClose, el botón "Cerrar" lo invoca en lugar de cerrar el modal
-// (lo usa la vista previa de películas de la saga, issue #280, para
-// restaurar la ficha que se estaba viendo).
+// onClose, se invoca en lugar de cerrar el modal desde el botón
+// "Cerrar", la ✕, el backdrop y la tecla Escape (lo usa la vista
+// previa de películas de la saga, issue #280, para restaurar la ficha
+// que se estaba viendo).
 export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null, onClose = null } = {}) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
@@ -242,7 +243,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
     addBtn.addEventListener("click", () => onAdd(item, addBtn));
   }
 
-  // Patrón estándar de apertura del proyecto
+  // Patrón estándar de apertura del proyecto. El cierre personalizado
+  // (onClose) se guarda en el modal para que backdrop, ✕ y Escape lo
+  // respeten igual que el botón "Cerrar" (issue #280, QA D3).
+  modal._onClose = onClose || null;
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
   modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
@@ -2350,6 +2354,11 @@ export function openBookConfirmModal(item, { onConfirm, onCancel }) {
 
 export function closeModal() {
   const modal = document.getElementById("item-modal");
+
+  // Consume el cierre personalizado registrado (_onClose): evita que
+  // una preview cerrada re-dispare su onClose tras restaurar la ficha
+  // (issue #280, QA D3).
+  modal._onClose = null;
 
   // Restaurar foco al elemento que lo tenía antes de abrir
   if (modal._previousActiveElement && typeof modal._previousActiveElement.focus === 'function') {

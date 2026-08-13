@@ -759,11 +759,26 @@ export function openItem(item, ctx) {
 }
 
 export function setupModalCloseListeners() {
+  // Cierra el modal activo respetando un cierre personalizado registrado
+  // (modal._onClose, lo usa la vista previa de saga —issue #280— para
+  // restaurar la ficha; se consume antes de invocarlo). Si no hay
+  // personalizado, cierre normal.
+  const closeActiveModal = () => {
+    const modal = document.getElementById("item-modal");
+    if (modal._onClose) {
+      const onClose = modal._onClose;
+      modal._onClose = null;
+      onClose();
+    } else {
+      ui.closeModal();
+    }
+  };
+
   document.getElementById("modal-close").addEventListener("click", () => {
-    ui.closeModal();
+    closeActiveModal();
   });
   document.getElementById("modal-backdrop").addEventListener("click", () => {
-    ui.closeModal();
+    closeActiveModal();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -788,7 +803,7 @@ export function setupModalCloseListeners() {
       }
       if (!modal.classList.contains("hidden")) {
         e.preventDefault();
-        ui.closeModal();
+        closeActiveModal();
       } else if (notifDropdown && !notifDropdown.classList.contains("hidden")) {
         e.preventDefault();
         notifDropdown.classList.add("hidden");
