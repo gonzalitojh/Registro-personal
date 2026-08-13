@@ -1,7 +1,7 @@
 {
   "title": "Medias estrellas de valoración",
   "description": "El usuario quiere poder dar medias estrellas en las valoraciones. Propuesta: al pulsar una vez sobre el 3 (por ejemplo), se marcarían 3 estrellas; si se vuelve a pulsar sobre el 3, se marcaría la mitad y por tanto sería 2.5.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Al pulsar una vez sobre un valor N del picker de valoración se seleccionan N estrellas.",
     "Al pulsar de nuevo sobre el mismo valor N se selecciona media estrella (N - 0.5).",
@@ -24,5 +24,13 @@
     "number": 276,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/276",
     "title": "Medias estrellas de valoración"
+  },
+  "pr": {
+    "number": 278,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/278",
+    "title": "Medias estrellas de valoración (issue #276)",
+    "branch": "feature/issue-276-medias-estrellas",
+    "commit": "6e00853",
+    "closes": "#276"
   }
 }
