@@ -238,9 +238,10 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
     free), el progreso se guarda automáticamente en una rama
     `wip/issue-N`, se restaura en el siguiente intento y el workflow se
     **relanza automáticamente sobre la misma issue** (hasta 2 reintentos,
-    comentando cada fallo en la issue — los comentarios de fallo los
-    publica `github-actions[bot]`, de modo que no vuelven a disparar el
-    workflow—; agotados los reintentos, la issue
+    comentando cada fallo en la issue — todos los comentarios, PRs y
+    cambios de labels de la sesión y de los pasos de fallo los publica
+    `github-actions[bot]` (nunca tu usuario), de modo que no vuelven a
+    disparar el workflow—; agotados los reintentos, la issue
     vuelve a la cola con un comentario). Se pueden **encolar varias
     ejecuciones** del workflow (p. ej. N issues abiertas seguidas): las
     runs esperan en cola y se procesan en orden, una sesión a la vez, sin
