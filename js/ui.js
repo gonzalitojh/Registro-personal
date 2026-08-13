@@ -379,7 +379,7 @@ function renderGrid(gridEl, items, onOpen) {
   gridEl.className = "library-grid";
   gridEl.innerHTML = items
     .map((item, index) => {
-const stars = ratingStarsHtml(item.rating);
+      const stars = ratingStarsHtml(item.rating);
       const communityBadge = communityRatingHtml(item);
       const hasRatings = stars || communityBadge;
       const progress = progressLine(item);
