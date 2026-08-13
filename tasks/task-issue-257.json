@@ -1,7 +1,7 @@
 {
   "title": "Comentarios workflows publicados por github-actions[bot] (extensión de la issue #245)",
   "description": "Todos los comentarios que hagan los workflows sobre las issues o PR, así como cualquier issue o PR que creen, deben hacerlo desde el usuario de GitHub Actions (github-actions[bot]) en lugar del usuario propietario. En la issue #245 (PR #247) se corrigió SOLO para los comentarios de fallo del paso de relanzamiento/cola de auto-resolve-issues; esto debe aplicar a todo, mensajes de explicación incluidos. Root cause: el job `resolve` de .github/workflows/auto-resolve-issues.yml define GH_TOKEN=${{ secrets.WORKFLOW_GIT_TOKEN }} (PAT del propietario) a nivel de job, así que TODAS las operaciones gh de la sesión SDD (creación de la PR por el publisher, gh pr edit/comment en iteraciones, comentarios en issues, sync de labels) aparecen firmadas por el propietario. Además, los comentarios de issues publicados con el PAT del propietario NO son excluidos por el filtro github.actor != 'github-actions[bot]' del trigger issue_comment, con lo que pueden re-disparar el workflow (sesiones duplicadas).",
-  "status": "implemented",
+  "status": "security-cleared",
   "acceptance criteria": [
     "AC1: Las PRs creadas por el publisher (gh pr create) se publican con el token automático del runner → autor github-actions[bot].",
     "AC2: Los comentarios de la sesión sobre issues/PRs (gh pr comment, gh pr edit, gh issue comment) se publican con autor github-actions[bot].",
