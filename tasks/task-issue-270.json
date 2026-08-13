@@ -1,0 +1,29 @@
+{
+  "title": "Últimas series del ejercicio",
+  "description": "Issue #270: en la pestaña «Ejercicios», añadir las series que se hicieron la última vez que se hizo el ejercicio que se esté visualizando. La base de trabajo es la rama feat/issue-62-seccion-gimnasio; la PR debe ir también a esa rama (no a dev). Cuando el usuario abre el detalle (modo lectura) de un ejercicio del catálogo, debe verse una sección con las series (peso × repeticiones) del entreno más reciente donde se registró ese ejercicio, con su fecha.",
+  "status": "planned",
+  "acceptance criteria": [
+    "Al abrir el detalle de un ejercicio de la pestaña «Ejercicios» que ya se ha trabajado antes, se muestran las series (peso × repeticiones) del entreno más reciente donde se registró.",
+    "La sección indica la fecha del entreno del que proceden las series.",
+    "Si el ejercicio nunca se ha trabajado, no se muestra la sección (o se indica que no hay registros previos).",
+    "El peso se muestra en la unidad de presentación activa (kg/lbs), como en el resto de la sección.",
+    "El cambio queda documentado en el manual de usuario (sección 9.2) y en un ADR.",
+    "La visualización es correcta en los cuatro modos de tema y en móvil/tablet/ordenador (sin scroll horizontal)."
+  ],
+  "definition of done": [
+    "Planning realizado (task file con plan).",
+    "Implementación completada en la rama derivada de feat/issue-62-seccion-gimnasio.",
+    "Validación QA superada contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #270'.",
+    "Manual de usuario actualizado (sección 9.2).",
+    "PR creada contra la rama feat/issue-62-seccion-gimnasio SIN keyword de cierre",
+    "Task file actualizado (status review + bloque pr) y subido al repositorio.",
+    "Issue #270 con label actualizada (status: needs-review)."
+  ],
+  "issue": {
+    "number": 270,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/270",
+    "title": "Últimas series del ejercicio"
+  }
+}
