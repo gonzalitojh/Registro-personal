@@ -1,7 +1,7 @@
 {
   "title": "Otras películas de la saga",
   "description": "En la sección de la saga dentro de la información de una película, te permite añadir el resto de películas de la saga. Quiero que, además, se muestren el resto de películas de la saga de forma similar a como se ven en las recomendaciones justo debajo.",
-  "status": "implemented",
+  "status": "security-cleared",
   "acceptance criteria": [
     "En la ficha de una película con saga (collectionId), bajo el aviso de saga se muestran las películas de la saga en tarjetas similares a las recomendaciones (portada, título, año).",
     "Cada tarjeta muestra el botón «Añadir»; las películas ya en el registro se muestran como «Añadida» con el botón deshabilitado.",
