@@ -191,8 +191,12 @@ export function setAuthError(message) {
 // "Añadir" delega en onAdd (que devuelve true si el alta fue exitosa,
 // para que el llamador cierre el modal). Si se pasa onEnrich, se
 // cargan los detalles ampliados (duración, reparto, sinopsis, rating,
-// tráiler) sin re-renderizar la estructura del modal.
-export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null } = {}) {
+// tráiler) sin re-renderizar la estructura del modal. Si se pasa
+// onClose, se invoca en lugar de cerrar el modal desde el botón
+// "Cerrar", la ✕, el backdrop y la tecla Escape (lo usa la vista
+// previa de películas de la saga, issue #280, para restaurar la ficha
+// que se estaba viendo).
+export function openSearchPreviewModal(item, { added = false, onAdd = null, onEnrich = null, onClose = null } = {}) {
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine =
@@ -231,14 +235,20 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
     </div>
   `;
 
-  content.querySelector("#btn-preview-close").addEventListener("click", closeModal);
+  content.querySelector("#btn-preview-close").addEventListener("click", () => {
+    if (onClose) onClose();
+    else closeModal();
+  });
 
   const addBtn = content.querySelector("#btn-preview-add");
   if (onAdd && !added) {
     addBtn.addEventListener("click", () => onAdd(item, addBtn));
   }
 
-  // Patrón estándar de apertura del proyecto
+  // Patrón estándar de apertura del proyecto. El cierre personalizado
+  // (onClose) se guarda en el modal para que backdrop, ✕ y Escape lo
+  // respeten igual que el botón "Cerrar" (issue #280, QA D3).
+  modal._onClose = onClose || null;
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
   modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
@@ -1020,9 +1030,14 @@ function gamePlatformsHtml(item) {
  * @param {Set}    existingIds - Set de externalId ya añadidos para deshabilitar botones
  * @param {string} group       - "movie" o "tv" (para clases de botón)
  * @param {boolean} interactive - true si se deben mostrar botones "Añadir"
+ * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
+ *                               un botón pulsable que llama onOpen(rec)
+ *                               para abrir la vista previa ampliada de
+ *                               esa recomendación antes de añadirla
+ *                               (issue #280, iteración)
  * @returns {string} HTML del bloque de recomendaciones, o cadena vacía
  */
-function renderRecommendations(items, existingIds, group, interactive) {
+function renderRecommendations(items, existingIds, group, interactive, onOpen) {
   if (!items || !items.length) return "";
   const accentClass = "btn--accent-media";
   const cardsHtml = items
@@ -1033,6 +1048,26 @@ function renderRecommendations(items, existingIds, group, interactive) {
              ${added ? "Añadido" : "Añadir"}
            </button>`
         : "";
+      if (typeof onOpen === "function") {
+        // Tarjeta pulsable (issue #280, iteración): misma mecánica que
+        // las tarjetas de saga — el botón .rec-card__open envuelve
+        // portada y texto (phrasing content, por eso .rec-card__body es
+        // span), y el botón "Añadir" queda como hermano, anclado abajo
+        // por el flex: 1 del botón open.
+        return `
+        <div class="rec-card rec-card--openable" data-rec-index="${index}">
+          <button type="button" class="rec-card__open" data-rec-index="${index}"
+                  aria-label="Ver información de ${escapeHtml(rec.title)}">
+            <img class="rec-card__cover" src="${rec.coverUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+            <span class="rec-card__body">
+              <span class="rec-card__title">${escapeHtml(rec.title)}</span>
+              <span class="rec-card__year">${escapeHtml(rec.year || "")}</span>
+              <span class="rec-card__hint">Ver información</span>
+            </span>
+          </button>
+          ${btnHtml}
+        </div>`;
+      }
       return `
         <div class="rec-card" data-rec-index="${index}">
           <img class="rec-card__cover" src="${rec.coverUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
@@ -1048,6 +1083,74 @@ function renderRecommendations(items, existingIds, group, interactive) {
   return `
     <div class="recommendations">
       <h4 class="recommendations__title">Si te gustó esto, quizá te guste...</h4>
+      <div class="recommendations__scroll">
+        ${cardsHtml}
+      </div>
+    </div>`;
+}
+
+/**
+ * Genera el HTML de la sección «Otras películas de la saga» (issue
+ * #280): las películas de la colección/saga a la que pertenece el
+ * ítem abierto, en tarjetas con el mismo aspecto que las
+ * recomendaciones. Reutiliza las clases de tarjeta de
+ * renderRecommendations (.rec-card, .recommendations__scroll); el
+ * botón usa .saga-card__add (clase propia, distinta de
+ * .rec-card__add, para no interferir con el wiring de
+ * recomendaciones).
+ * @param {Array}  sagaParts   - [{externalId, title, year, posterUrl}]
+ * @param {Set}    existingIds - Set de externalId ya añadidos
+ * @param {boolean} interactive - true si se muestran botones "Añadir"
+ * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
+ *                               un botón pulsable que llama onOpen(movie)
+ *                               para abrir la vista previa de esa
+ *                               película antes de añadirla (issue #280)
+ * @returns {string} HTML de la sección, o cadena vacía
+ */
+function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
+  if (!sagaParts || !sagaParts.length) return "";
+  const cardsHtml = sagaParts
+    .map((m, index) => {
+      const added = existingIds.has(String(m.externalId));
+      const btnHtml = interactive
+        ? `<button class="btn btn--small btn--accent-media saga-card__add" data-saga-index="${index}" ${added ? "disabled" : ""}>
+             ${added ? "Añadida" : "Añadir"}
+           </button>`
+        : "";
+      if (typeof onOpen === "function") {
+        // Tarjeta pulsable: el botón .saga-card__open envuelve portada
+        // y texto (phrasing content, por eso .rec-card__body es span),
+        // y el botón "Añadir" queda como hermano, anclado abajo por
+        // el flex: 1 del botón open (issue #280, iteración).
+        return `
+        <div class="rec-card saga-card" data-saga-index="${index}">
+          <button type="button" class="saga-card__open" data-saga-index="${index}"
+                  aria-label="Ver información de ${escapeHtml(m.title)}">
+            <img class="rec-card__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+            <span class="rec-card__body">
+              <span class="rec-card__title">${escapeHtml(m.title)}</span>
+              <span class="rec-card__year">${escapeHtml(m.year || "")}</span>
+              <span class="saga-card__hint">Ver información</span>
+            </span>
+          </button>
+          ${btnHtml}
+        </div>`;
+      }
+      return `
+        <div class="rec-card saga-card" data-saga-index="${index}">
+          <img class="rec-card__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
+          <div class="rec-card__body">
+            <div class="rec-card__title">${escapeHtml(m.title)}</div>
+            <div class="rec-card__year">${escapeHtml(m.year || "")}</div>
+            ${btnHtml}
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  return `
+    <div class="saga-movies">
+      <h4 class="saga-movies__title">Otras películas de la saga</h4>
       <div class="recommendations__scroll">
         ${cardsHtml}
       </div>
@@ -1073,8 +1176,8 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set()) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation } = callbacks;
+export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null) {
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   const content = document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
@@ -1099,9 +1202,10 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     <div class="saga-banner">
       <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
       <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
-    </div>` : ""}
+    </div>
+    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie)}` : ""}
 
-    ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation)}
+    ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation, onOpenRecommendation)}
 
     <div class="field-group">
       <label>Visionados</label>
@@ -1124,7 +1228,11 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   `;
 
   const getRating = wireRatingAndGetValue(content, item.rating);
-  const rerender = () => openMovieModal(item, callbacks);
+  // Propaga todos los argumentos en el re-render (issue #280): tras
+  // marcar como vista, la sección de saga (y las recomendaciones)
+  // permanece, y el botón "Añadida" se mantiene gracias al Set
+  // existingIds compartido.
+  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts);
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
@@ -1142,6 +1250,43 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
         const index = Number(btn.dataset.recIndex);
         const recItem = recommendations[index];
         if (recItem) onAddRecommendation(recItem, btn);
+      });
+    });
+  }
+
+  // Wire saga "Añadir" buttons (issue #280). Clase propia
+  // .saga-card__add para no interferir con las recomendaciones.
+  if (onAddSagaMovie) {
+    content.querySelectorAll(".saga-card__add").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.sagaIndex);
+        const movie = sagaParts[index];
+        if (movie) onAddSagaMovie(movie, btn);
+      });
+    });
+  }
+
+  // Wire saga card open preview (issue #280, iteración): pulsar la
+  // tarjeta muestra la información de la película antes de añadirla.
+  if (onOpenSagaMovie) {
+    content.querySelectorAll(".saga-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.sagaIndex);
+        const movie = sagaParts[index];
+        if (movie) onOpenSagaMovie(movie);
+      });
+    });
+  }
+
+  // Wire recommendation card open preview (issue #280, iteración):
+  // pulsar la tarjeta de recomendación también muestra la información
+  // ampliada antes de añadirla, igual que las tarjetas de saga.
+  if (onOpenRecommendation) {
+    content.querySelectorAll(".rec-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.recIndex);
+        const recItem = recommendations[index];
+        if (recItem) onOpenRecommendation(recItem);
       });
     });
   }
@@ -1690,6 +1835,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onEdit,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
+    onOpenRecommendation,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
@@ -1719,7 +1865,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
 
-    ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation)}
+    ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation, onOpenRecommendation)}
 
     <div class="progress-banner">
       <span class="next-line">${nextLine}</span>
@@ -2115,6 +2261,19 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     });
   }
 
+  // Wire recommendation card open preview (issue #280, iteración):
+  // pulsar la tarjeta de recomendación muestra la información ampliada
+  // antes de añadirla, igual que en la ficha de película.
+  if (onOpenRecommendation) {
+    content.querySelectorAll(".rec-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.recIndex);
+        const recItem = recommendations[index];
+        if (recItem) onOpenRecommendation(recItem);
+      });
+    });
+  }
+
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
   modal.classList.remove("hidden");
@@ -2249,6 +2408,11 @@ export function openBookConfirmModal(item, { onConfirm, onCancel }) {
 
 export function closeModal() {
   const modal = document.getElementById("item-modal");
+
+  // Consume el cierre personalizado registrado (_onClose): evita que
+  // una preview cerrada re-dispare su onClose tras restaurar la ficha
+  // (issue #280, QA D3).
+  modal._onClose = null;
 
   // Restaurar foco al elemento que lo tenía antes de abrir
   if (modal._previousActiveElement && typeof modal._previousActiveElement.focus === 'function') {

@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getTvSeasonsMeta, getWatchProviders } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
@@ -164,6 +164,19 @@ async function openMovieItem(item, ctx, isRerender = false) {
     existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
+  // --- Cargar películas de la saga (issue #280) ---
+  // Si falla la consulta no bloqueamos la ficha: la sección se oculta
+  // (degradación elegante) y el banner de saga sigue visible.
+  let sagaParts = null;
+  if (item.collectionId) {
+    try {
+      const collection = await getCollectionDetails(item.collectionId);
+      sagaParts = (collection && collection.parts.length) ? collection.parts : null;
+    } catch {
+      sagaParts = null;
+    }
+  }
+
   ui.openMovieModal(item, {
     onAddWatch: async (date) => {
       const prevLog = item.watchLog;
@@ -193,8 +206,49 @@ async function openMovieItem(item, ctx, isRerender = false) {
     onDelete: confirmDelete(item, "movie", ctx),
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
-    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
-  }, recommendations, existingIds);
+    // Al añadir una recomendación se actualiza existingIds (Set
+    // compartido con el render): tras un re-render la tarjeta sigue
+    // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
+    onAddRecommendation: async (recItem, btn) => {
+      if (await addFromRecommendation(recItem, btn, ctx)) {
+        existingIds.add(String(recItem.externalId));
+      }
+    },
+    // Alta directa de una película de la saga desde su tarjeta
+    // (issue #280). existingIds es un Set compartido con el render,
+    // así los rerenders posteriores del modal la muestran como
+    // "Añadida".
+    onAddSagaMovie: item.collectionId
+      ? async (movie, btn) => {
+          btn.disabled = true;
+          btn.textContent = "Añadiendo…";
+          try {
+            await addSagaMovie(movie, ctx);
+            existingIds.add(String(movie.externalId));
+            btn.textContent = "Añadida";
+            ui.showToast(`«${movie.title}» añadida a tu registro.`);
+          } catch (err) {
+            btn.disabled = false;
+            btn.textContent = "Añadir";
+            ui.showToast("No se pudo añadir: " + err.message);
+          }
+        }
+      : undefined,
+    // Vista previa de una película de la saga al pulsar su tarjeta
+    // (issue #280, iteración): abre la preview (patrón issue #22) y al
+    // cerrar o añadir restaura la ficha con reopen; el Set existingIds
+    // compartido hace que la tarjeta vuelva como «Añadida».
+    onOpenSagaMovie: item.collectionId
+      ? (movie) => openSagaMoviePreview(movie, ctx, reopen, existingIds)
+      : undefined,
+    // Vista previa de una recomendación al pulsar su tarjeta (issue
+    // #280, iteración): mismo patrón que las tarjetas de saga — abre
+    // la preview (issue #22) y al cerrar o añadir restaura la ficha
+    // con reopen; el Set existingIds compartido hace que la tarjeta
+    // vuelva como «Añadida».
+    onOpenRecommendation: (recItem) =>
+      openRecommendationPreview(recItem, ctx, reopen, existingIds),
+  }, recommendations, existingIds, sagaParts);
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -229,63 +283,198 @@ async function addSagaMovie(movie, ctx) {
 }
 
 /**
+ * Vista previa compartida de un ítem externo desde la ficha (issue
+ * #280): lo usan las tarjetas de «Otras películas de la saga» y las de
+ * recomendaciones (películas y series), con el mismo patrón que la
+ * vista previa de búsqueda (issue #22). Al cerrar la vista previa o
+ * tras añadir el ítem, se restaura la ficha que se estaba viendo
+ * (restoreModal). El Set existingIds compartido con el render hace
+ * que, al restaurar la ficha, la tarjeta vuelva como «Añadida».
+ * @param {Object}   previewItem  - {externalId, type, title, year, coverUrl, overview}
+ * @param {Object}   ctx          - Contexto de datos del usuario
+ * @param {Function} restoreModal - Reabre la ficha del ítem original
+ * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
+ * @param {Function} performAdd   - async (item) => alta del ítem (lanza si falla)
+ */
+async function openExternalPreview(previewItem, ctx, restoreModal, existingIds, performAdd) {
+  ui.closeModal(); // limpia trap/foco del modal de ficha antes de abrir la preview
+  ui.openSearchPreviewModal(previewItem, {
+    added: existingIds.has(String(previewItem.externalId)),
+    onClose: () => {
+      ui.closeModal(); // limpia trap/foco de la preview...
+      restoreModal();  // ...y restaura la ficha
+    },
+    onAdd: async (item, btn) => {
+      btn.disabled = true;
+      btn.textContent = "Añadiendo…";
+      try {
+        await performAdd(item);
+        existingIds.add(String(item.externalId));
+        ui.showToast(`«${item.title}» añadida a tu registro.`);
+        ui.closeModal();
+        restoreModal(); // la ficha restaurada muestra la tarjeta como «Añadida»
+        return true;
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Añadir";
+        ui.showToast("No se pudo añadir: " + err.message);
+        return false;
+      }
+    },
+    onEnrich: (item) => enrichExternalPreview(item),
+  });
+}
+
+/**
+ * Enriquecimiento de la vista previa externa (issue #280): películas
+ * con getMovieDetails; series con getTvExtraDetails + temporadas
+ * (getTvSeasonsMeta, no bloqueante). Nunca lanza: devuelve {} si falla.
+ */
+async function enrichExternalPreview(item) {
+  if (item.type === "tv") {
+    try {
+      const details = await getTvExtraDetails(item.externalId);
+      try {
+        details.seasonsMeta = await getTvSeasonsMeta(item.externalId);
+      } catch (err) {
+        // no bloqueamos la preview si fallan las temporadas
+      }
+      return details;
+    } catch (err) {
+      return {};
+    }
+  }
+  try {
+    return await getMovieDetails(item.externalId);
+  } catch (err) {
+    return {};
+  }
+}
+
+/**
+ * Vista previa de una película de la saga (issue #280, iteración):
+ * al pulsar una tarjeta de «Otras películas de la saga» se muestra su
+ * información antes de añadirla.
+ * @param {Object}   movie        - Parte de la saga ({externalId, title, year, posterUrl, overview})
+ * @param {Object}   ctx          - Contexto de datos del usuario
+ * @param {Function} restoreModal - Reabre la ficha de la película original
+ * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
+ */
+function openSagaMoviePreview(movie, ctx, restoreModal, existingIds) {
+  const previewItem = {
+    externalId: String(movie.externalId),
+    type: "movie",
+    title: movie.title,
+    year: movie.year || "",
+    coverUrl: movie.posterUrl || null,
+    posterUrl: movie.posterUrl || null, // addSagaMovie espera posterUrl
+    overview: movie.overview || "",
+  };
+  // addSagaMovie lanza si la alta falla; openExternalPreview lo
+  // captura y restaura el botón sin cerrar la preview (issue #280).
+  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
+    addSagaMovie(item, ctx)
+  );
+}
+
+/**
+ * Vista previa de una recomendación (issue #280, iteración): al pulsar
+ * una tarjeta de «Si te gustó esto…» (película o serie) se muestra su
+ * información ampliada antes de añadirla, igual que en las tarjetas de
+ * saga y en la vista previa de búsqueda (issue #22).
+ * @param {Object}   recItem      - Recomendación ({externalId, type, title, year, coverUrl, overview})
+ * @param {Object}   ctx          - Contexto de datos del usuario
+ * @param {Function} restoreModal - Reabre la ficha del ítem original
+ * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
+ */
+function openRecommendationPreview(recItem, ctx, restoreModal, existingIds) {
+  const previewItem = {
+    externalId: String(recItem.externalId),
+    type: recItem.type === "tv" ? "tv" : "movie",
+    title: recItem.title,
+    year: recItem.year || "",
+    coverUrl: recItem.coverUrl || null,
+    overview: recItem.overview || "",
+  };
+  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
+    addRecommendationItem(item, ctx)
+  );
+}
+
+/**
  * Añade un ítem recomendado (película o serie) al registro del usuario.
- * Reutiliza el mismo flujo que handleAdd en search.js para movies/TV.
+ * Núcleo sin estado de botón: reutiliza el mismo flujo que handleAdd en
+ * search.js para movies/TV. No lanza: devuelve true/false.
+ * @returns {Promise<boolean>} true si se añadió correctamente.
+ */
+async function addRecommendationItem(item, ctx) {
+  const draft = {
+    externalId: item.externalId,
+    type: item.type,
+    title: item.title,
+    year: item.year || "",
+    coverUrl: item.coverUrl || null,
+    status: "pendiente",
+    rating: null,
+    notes: "",
+  };
+
+  if (item.type === "movie") {
+    draft.watchLog = [];
+    try {
+      const details = await getMovieDetails(item.externalId);
+      // Almacenamiento mínimo: solo tarjeta + avisos + rating comunitario.
+      Object.assign(draft, minimalStoredFields(details, "movie"));
+      if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
+        draft.awaitingRelease = true;
+      }
+    } catch (err) {
+      // no bloqueamos el alta si falla la obtención de detalles extra
+    }
+  } else {
+    // TV
+    draft.watched = {};
+    draft.nextEpisode = { season: 1, episode: 1 };
+    draft.firstWatchedAt = null;
+    draft.lastWatchedAt = null;
+    draft.timesCompleted = 0;
+    draft.history = [];
+    try {
+      const details = await getTvExtraDetails(item.externalId);
+      // Almacenamiento mínimo: los campos de avisos sí se persisten.
+      Object.assign(draft, minimalStoredFields(details, "tv"));
+      if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) {
+        draft.awaitingRelease = true;
+      }
+    } catch (err) {
+      // ídem
+    }
+  }
+
+  await addItem(ctx.getCurrentUser().uid, item.type, draft);
+  return true;
+}
+
+/**
+ * Añade un ítem recomendado (película o serie) al registro del usuario,
+ * gestionando el estado del botón de la tarjeta. Envuelve
+ * addRecommendationItem.
+ * @returns {Promise<boolean>} true si se añadió correctamente.
  */
 async function addFromRecommendation(item, btn, ctx) {
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
   try {
-    const draft = {
-      externalId: item.externalId,
-      type: item.type,
-      title: item.title,
-      year: item.year || "",
-      coverUrl: item.coverUrl || null,
-      status: "pendiente",
-      rating: null,
-      notes: "",
-    };
-
-    if (item.type === "movie") {
-      draft.watchLog = [];
-      try {
-        const details = await getMovieDetails(item.externalId);
-        // Almacenamiento mínimo: solo tarjeta + avisos + rating comunitario.
-        Object.assign(draft, minimalStoredFields(details, "movie"));
-        if (details.releaseDate !== undefined && isUnreleasedDate(details.releaseDate)) {
-          draft.awaitingRelease = true;
-        }
-      } catch (err) {
-        // no bloqueamos el alta si falla la obtención de detalles extra
-      }
-    } else {
-      // TV
-      draft.watched = {};
-      draft.nextEpisode = { season: 1, episode: 1 };
-      draft.firstWatchedAt = null;
-      draft.lastWatchedAt = null;
-      draft.timesCompleted = 0;
-      draft.history = [];
-      try {
-        const details = await getTvExtraDetails(item.externalId);
-        // Almacenamiento mínimo: los campos de avisos sí se persisten.
-        Object.assign(draft, minimalStoredFields(details, "tv"));
-        if (details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate)) {
-          draft.awaitingRelease = true;
-        }
-      } catch (err) {
-        // ídem
-      }
-    }
-
-    await addItem(ctx.getCurrentUser().uid, item.type, draft);
+    const ok = await addRecommendationItem(item, ctx);
+    if (!ok) throw new Error("No se pudo añadir el ítem");
     btn.textContent = "Añadido";
     ui.showToast(`«${item.title}» añadido a tu registro.`);
+    return true;
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
+    return false;
   }
 }
 
@@ -637,7 +826,18 @@ async function openTvItem(item, ctx, isRerender = false) {
     onSaveMeta: saveMeta(item, "tv", ctx),
     onDelete: confirmDelete(item, "tv", ctx),
     onEdit: editHandlerFor(item, "tv", reopen, ctx),
-    onAddRecommendation: (recItem, btn) => addFromRecommendation(recItem, btn, ctx),
+    onAddRecommendation: async (recItem, btn) => {
+      if (await addFromRecommendation(recItem, btn, ctx)) {
+        existingIds.add(String(recItem.externalId));
+      }
+    },
+    // Vista previa de una recomendación al pulsar su tarjeta (issue
+    // #280, iteración): mismo patrón que en la ficha de película —
+    // abre la preview (issue #22) y al cerrar o añadir restaura la
+    // ficha con reopen; el Set existingIds compartido hace que la
+    // tarjeta vuelva como «Añadida».
+    onOpenRecommendation: (recItem) =>
+      openRecommendationPreview(recItem, ctx, reopen, existingIds),
   }, recommendations, existingIds);
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -656,11 +856,26 @@ export function openItem(item, ctx) {
 }
 
 export function setupModalCloseListeners() {
+  // Cierra el modal activo respetando un cierre personalizado registrado
+  // (modal._onClose, lo usa la vista previa de saga —issue #280— para
+  // restaurar la ficha; se consume antes de invocarlo). Si no hay
+  // personalizado, cierre normal.
+  const closeActiveModal = () => {
+    const modal = document.getElementById("item-modal");
+    if (modal._onClose) {
+      const onClose = modal._onClose;
+      modal._onClose = null;
+      onClose();
+    } else {
+      ui.closeModal();
+    }
+  };
+
   document.getElementById("modal-close").addEventListener("click", () => {
-    ui.closeModal();
+    closeActiveModal();
   });
   document.getElementById("modal-backdrop").addEventListener("click", () => {
-    ui.closeModal();
+    closeActiveModal();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -685,7 +900,7 @@ export function setupModalCloseListeners() {
       }
       if (!modal.classList.contains("hidden")) {
         e.preventDefault();
-        ui.closeModal();
+        closeActiveModal();
       } else if (notifDropdown && !notifDropdown.classList.contains("hidden")) {
         e.preventDefault();
         notifDropdown.classList.add("hidden");

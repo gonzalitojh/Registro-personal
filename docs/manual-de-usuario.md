@@ -1027,10 +1027,33 @@ verás:
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
-  un aviso y el botón **«Añadir resto de la saga»**. Pulsa el botón, marca
-  las películas que quieras en la lista y pulsa **«Añadir seleccionadas»**.
+  el aviso **«Saga: ...»** con el botón **«Añadir resto de la saga»**. Pulsa
+  el botón, marca las películas que quieras en la lista y pulsa
+  **«Añadir seleccionadas»**. Justo debajo del aviso se muestran también
+  **«Otras películas de la saga»** como tarjetas deslizables (portada,
+  título y año), igual que las recomendaciones: cada película que aún no
+  tengas en tu registro tiene un botón **«Añadir»** para añadirla
+  directamente; las que ya están en tu registro aparecen como
+  **«Añadida»** (botón deshabilitado).
+
+  También puedes **pulsar sobre la tarjeta** de cualquiera de esas
+  películas para ver su información (portada, duración, género, director,
+  reparto, sinopsis, puntuación de la comunidad y tráiler si lo tiene)
+  antes de añadirla: se abre una ventana con los botones **«Añadir»** y
+  **«Cerrar»**, y al añadirla o cerrarla (con «Cerrar», la ✕, pulsando
+  fuera de la ventana o la tecla **Esc**) vuelves a la ficha de la
+  película que estabas viendo. Las películas que ya tienes en tu registro
+  se muestran con **«Ya añadido»** (botón deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
-  con títulos similares que puedes añadir directamente.
+  con títulos similares que puedes añadir directamente. También puedes
+  **pulsar sobre la tarjeta** de una recomendación para ver su
+  información ampliada (igual que las tarjetas de saga: portada,
+  duración, género, reparto, sinopsis, puntuación de la comunidad y
+  tráiler si lo tiene; en las series, además, sus temporadas) antes de
+  añadirla: se abre una ventana con los botones **«Añadir»** y
+  **«Cerrar»**, y al añadirla o cerrarla vuelves a la ficha que estabas
+  viendo. Los títulos que ya tienes en tu registro se muestran con
+  **«Ya añadido»** (botón deshabilitado).
 - **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
   «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
   **«Eliminar»** para borrar el título.
