@@ -872,7 +872,15 @@ verás:
   película que estabas viendo. Las películas que ya tienes en tu registro
   se muestran con **«Ya añadido»** (botón deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
-  con títulos similares que puedes añadir directamente.
+  con títulos similares que puedes añadir directamente. También puedes
+  **pulsar sobre la tarjeta** de una recomendación para ver su
+  información ampliada (igual que las tarjetas de saga: portada,
+  duración, género, reparto, sinopsis, puntuación de la comunidad y
+  tráiler si lo tiene; en las series, además, sus temporadas) antes de
+  añadirla: se abre una ventana con los botones **«Añadir»** y
+  **«Cerrar»**, y al añadirla o cerrarla vuelves a la ficha que estabas
+  viendo. Los títulos que ya tienes en tu registro se muestran con
+  **«Ya añadido»** (botón deshabilitado).
 - **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
   «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
   **«Eliminar»** para borrar el título.
