@@ -187,13 +187,15 @@ export function parseHash(hash = location.hash) {
   const first = segments[0];
 
   // Hashes ajenos a las secciones: no son rutas de la web.
-  if (first !== "ocio" && first !== "perfil" && first !== "recetas" && first !== "gimnasio" && first !== "todos") {
+  if (first !== "ocio" && first !== "perfil" && first !== "recetas" && first !== "gimnasio" && first !== "tareas") {
     return { section: null };
   }
 
   // ---------- COSAS QUE HACER ----------
-  // #/tareas y #/tareas/ son alias de la primera pestaña.
-  if (first === "todos") {
+  // #/tareas y #/tareas/ son alias de la primera pestaña. El token
+  // de URL es «tareas» (humano); la sección interna es «todos»
+  // (issue #283).
+  if (first === "tareas") {
     if (segments.length === 1) {
       return { section: "todos", tab: TODOS_DEFAULT_TAB, panelId: TODOS_TAB_TO_PANEL[TODOS_DEFAULT_TAB], default: true };
     }
