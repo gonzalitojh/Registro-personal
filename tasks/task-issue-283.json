@@ -1,7 +1,7 @@
 {
   "title": "Nueva sección de cosas que hacer",
   "description": "Implementar una nueva sección de cosas que hacer con su propio endpoint (colección propia en Firestore, users/{uid}/todos/{id}). Debe incluirse en la barra lateral de navegación (igual que el resto de secciones: Ocio, Recetas, Gimnasio). Primera versión para marcar cosas que hacer a corto plazo, largo plazo, diario de la casa, etc. Al igual que el resto de secciones, debe respetar las características de la barra superior (cabecera global, búsqueda acotada a la sección) y las pestañas (barra de pestañas propia ocultable en Ajustes, como Recetas/Gimnasio). Documentar con detalle cualquier idea adicional útil.",
-  "status": "created",
+  "status": "review",
   "acceptance criteria": [
     "Nueva sección «Cosas que hacer» accesible desde la barra lateral de navegación, en el mismo estilo que Ocio/Recetas/Gimnasio.",
     "Endpoint propio: colección Firestore users/{uid}/todos/{id} (alta, edición, borrado, toggle de hecho y suscripción en tiempo real).",
@@ -28,5 +28,13 @@
     "number": 283,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/283",
     "title": "Nueva sección de cosas que hacer"
+  },
+  "pr": {
+    "number": 284,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/284",
+    "title": "[feature] Nueva sección de cosas que hacer",
+    "branch": "feature/issue-283-seccion-cosas-que-hacer",
+    "commit": "79c3d38",
+    "closes": "#283"
   }
 }
