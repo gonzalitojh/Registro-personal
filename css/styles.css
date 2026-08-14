@@ -5918,3 +5918,256 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="black"] .gym-muscle-chip {
   color: var(--paper);
 }
+
+/* =========================================================
+   Sección de Cosas que hacer (issue #283): Tareas y Hechas.
+   Vista de primer nivel hermana de gym-view.
+   ========================================================= */
+
+/* --- Vista (patrón .gym-view) --- */
+
+.todos-view {
+  /* Padding superior: hueco para la cabecera global fija (--header-h)
+     + 1rem de aire (issue #206). Padding inferior: hueco para la
+     barra de pestañas fija + margen seguro, mismo patrón que
+     .gym-view (issue #208). */
+  padding: calc(var(--header-h) + 1rem) 1.25rem
+           calc(var(--tabs-bar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  /* Ancho alineado con #app y el resto de vistas (max-width 980px). */
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .todos-view {
+    padding: calc(var(--header-h) + var(--tabs-bar-h) + 1rem) 1.25rem 4rem;
+  }
+}
+
+/* --- Barra de herramientas (patrón .gym-toolbar) --- */
+
+.todos-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Lista de tareas: filas apiladas (checklist) --- */
+
+/* Lista en columna: cada tarea es una fila con checkbox, texto/chips
+   y acciones. Decisión de diseño (ADR-100): filas, no rejilla de
+   tarjetas, porque es una checklist con acciones por fila. */
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 0.8rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* Tarea hecha: el texto pierde fuerza visual (tinta suave) sin
+   truncarse ni desaparecer: se sigue editando y desmarcando. */
+.todo-item--done .todo-item__text {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+/* --- Checkbox de marcar/desmarcar --- */
+
+/* Checkbox nativo con accent-color (patrón de los checkboxes de la
+   app): el acento teal de marca es el de la cabecera/borradores
+   (--teal-reel, check blanco ≈6:1 sobre el relleno en Oscuro y en la
+   familia clara). En negro puro pasa a --teal-reel-dark (#4f9c8e,
+   umbral gráfico ≈3:1 sobre negro, patrón episode-checkbox). */
+.todo-item__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.todo-item__check input[type="checkbox"] {
+  accent-color: var(--teal-reel);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+[data-theme="black"] .todo-item__check input[type="checkbox"] {
+  accent-color: var(--teal-reel-dark);
+}
+
+/* --- Cuerpo de la fila --- */
+
+.todo-item__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Texto de la tarea: se ajusta a su contenedor (palabras sin
+   espacios incluidas, AGENTS.md §2): sin ellipsis en móvil. */
+.todo-item__text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.todo-item__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.todo-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  min-width: 0;
+}
+
+/* Chip de categoría (patrón .gym-muscle-chip): un único tono para
+   todas las categorías (decisión ADR-100: sin 6 colores × 4 temas). */
+.todo-category-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  align-self: flex-start;
+}
+
+[data-theme="light"] .todo-category-chip,
+[data-theme="white"] .todo-category-chip {
+  color: var(--ink);
+}
+
+[data-theme="black"] .todo-category-chip {
+  color: var(--paper);
+}
+
+/* Fecha límite: texto suave por defecto. Si la tarea está vencida y
+   sin completar, pasa al rojo claro #d16a59 (≈4.7:1 AA sobre --ink y
+   ~4.9:1 sobre negro, patrón de .shopping-deleted__btn: rojo claro
+   pensado para fondos oscuros; por eso va hardcodeado con comentario,
+   AGENTS.md §4); en la familia clara vuelve al --stamp (≈5.3:1 AA),
+   patrón de .shopping-deleted__btn en claro. */
+.todo-item__deadline {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.todo-item__deadline--overdue {
+  color: #d16a59;
+  font-weight: 600;
+}
+
+[data-theme="light"] .todo-item__deadline--overdue,
+[data-theme="white"] .todo-item__deadline--overdue {
+  color: var(--stamp);
+}
+
+/* --- Acciones de fila --- */
+
+/* Botones Editar/Eliminar compactos, alineados arriba a la derecha;
+   el eliminar usa .btn--danger (rojo del tema con su override ya
+   agrupado en la familia clara y negro puro). */
+.todo-item__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.todo-item__actions .btn {
+  white-space: nowrap;
+}
+
+/* --- Formulario / modal de tarea --- */
+
+.todo-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.todo-modal__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.todo-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.todo-form__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Inputs del modal: mismo armazón que .gym-form__field (superficie
+   --paper-dim, borde de línea; el texto nunca < 16px, ADR-042). */
+.todo-form__field input,
+.todo-form__field select,
+.todo-form__field textarea {
+  background: var(--paper-dim);
+  color: var(--ink);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  min-width: 0;
+}
+
+/* En negro puro los inputs vuelven a --ink con texto papel (el
+   --paper-dim base sería gris casi igual a la superficie del modal;
+   patrón de .gym-form__field en negro puro). */
+[data-theme="black"] .todo-form__field input,
+[data-theme="black"] .todo-form__field select,
+[data-theme="black"] .todo-form__field textarea {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper-alpha-20);
+}
+
+.todo-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
