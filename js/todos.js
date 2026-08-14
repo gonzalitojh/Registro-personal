@@ -324,19 +324,28 @@ function renderDone() {
 // ---------- Acciones de fila ----------
 
 // Marca/desmarca la tarea. El estado siguiente se calcula del
-// documento en memoria (no del DOM): así el doble click o un snapshot
-// en vuelo no corrompen el toggle. Al marcar se guarda
-// fechaCompletadaISO (hoy, patrón UTC); al desmarcar, null.
+// documento en memoria (no del DOM). Se aplica optimista: el espejo
+// local se invierte antes del round-trip a Firestore, así un doble
+// clic rápido lee el estado nuevo y envía el toggle de vuelta (sin
+// esto, el segundo clic reenviaría el mismo valor y el desmarcado se
+// perdería; el DOM se actualiza al llegar el snapshot). En error se
+// revierten ambos campos a sus valores previos.
 async function toggleTodo(id) {
   const todo = todos.find((t) => t.id === id);
   if (!todo || !currentUser) return;
   const next = !todo.hecha;
+  const prevHecha = todo.hecha;
+  const prevFecha = todo.fechaCompletadaISO;
+  todo.hecha = next;
+  todo.fechaCompletadaISO = next ? ctx.todayISO() : null;
   try {
     await ctx.updateTodo(currentUser, id, {
       hecha: next,
-      fechaCompletadaISO: next ? ctx.todayISO() : null,
+      fechaCompletadaISO: todo.fechaCompletadaISO,
     });
   } catch (err) {
+    todo.hecha = prevHecha;
+    todo.fechaCompletadaISO = prevFecha;
     console.error("No se pudo actualizar la tarea:", err);
     showToast(next ? "No se pudo marcar la tarea como hecha." : "No se pudo desmarcar la tarea.");
   }
