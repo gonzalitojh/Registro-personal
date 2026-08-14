@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260929" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260929" />
+  <link rel="stylesheet" href="css/styles.css?v=20260930" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20260930" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -755,6 +755,61 @@
     </div>
   </div>
 
+  <!-- Vista de cosas que hacer (issue #283): pestañas «Tareas» y
+       «Hechas». Tareas lista las pendientes (por fecha límite, las
+       vencidas destacadas) con alta manual, marcado de hecho y
+       edición/borrado; Hechas lista las completadas (recientes
+       primero) para desmarcarlas o borrarlas. Hermana de gym-view:
+       vista de primer nivel, fuera de #app, sin botón de volver ni
+       título (issue #206): la navegación vive en la cabecera global.
+       Barra de pestañas propia tipo Ocio (issue #208), ocultables en
+       Ajustes. El contenido lo renderiza js/todos.js. -->
+  <div id="todos-view" class="todos-view hidden" role="main" aria-label="Vista de cosas que hacer">
+    <nav class="tabs--bar" aria-label="Secciones de cosas que hacer">
+      <div class="tabs" role="tablist" aria-label="Secciones de cosas que hacer">
+        <button class="tab tab--todos-current is-active" role="tab" aria-selected="true"
+                aria-controls="panel-todos-tab" data-todos-tab="tareas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 11 12 14 22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <span>Tareas</span>
+        </button>
+        <button class="tab tab--todos-done" role="tab" aria-selected="false"
+                aria-controls="panel-todos-done-tab" data-todos-tab="hechas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>Hechas</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="todos-view__body">
+      <!-- Pestaña Tareas: las pendientes primero, ordenadas por fecha
+           límite (sin fecha al final) y luego por fecha de alta. El
+           contenido lo renderiza js/todos.js. -->
+      <section id="panel-todos-tab" role="tabpanel" aria-labelledby="panel-todos-tab-heading">
+        <h2 id="panel-todos-tab-heading" class="visually-hidden">Tareas</h2>
+        <div class="todos-toolbar">
+          <button type="button" id="btn-new-todo" class="btn btn--primary btn--small">
+            + Nueva tarea
+          </button>
+        </div>
+        <div id="todos-list" aria-live="polite"></div>
+      </section>
+
+      <!-- Pestaña Hechas: las completadas, recientes primero. El
+           contenido lo renderiza js/todos.js. -->
+      <section id="panel-todos-done-tab" class="hidden" role="tabpanel" aria-labelledby="panel-todos-done-tab-heading">
+        <h2 id="panel-todos-done-tab-heading" class="visually-hidden">Hechas</h2>
+        <div id="todos-done-list" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+
   <!-- Modal de receta (issue #64): alta / edición / importación
        desde URL. El contenido lo renderiza js/recipes.js. -->
   <div id="recipe-modal" class="modal hidden">
@@ -813,6 +868,18 @@
     </div>
   </div>
 
+  <!-- Modal de tarea (issue #283): alta y edición con texto obligatorio,
+       categoría (presets), fecha límite opcional y nota. El contenido
+       lo renderiza js/todos.js. Sin modo lectura: la fila ya muestra
+       todo el contenido. -->
+  <div id="todo-modal" class="modal hidden">
+    <div class="modal__backdrop" id="todo-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Tarea">
+      <button id="todo-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="todo-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Modal de detalle / edición / alta manual -->
   <div id="item-modal" class="modal hidden">
     <div class="modal__backdrop" id="modal-backdrop"></div>
@@ -852,7 +919,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260929"></script>
+  <script type="module" src="js/app.js?v=20260930"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
