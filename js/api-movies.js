@@ -172,12 +172,21 @@ export async function getMovieDetails(id) {
 
 // Datos de una colección/saga de TMDB: nombre, póster y lista de
 // películas que la componen. Se usa al pulsar "Añadir resto de la
-// saga" desde la ficha de una película.
+// saga" desde la ficha de una película, y también para mostrar
+// "Otras películas de la saga" en el modal (issue #280). Con caché
+// en memoria de 24 h (la compartida con getMovieDetails y watch
+// providers): una colección ya consultada no repite llamada. Solo
+// se cachean las respuestas correctas; un fallo transitorio de red
+// no oculta la sección durante 24 h.
 export async function getCollectionDetails(collectionId) {
+  const cacheKey = `collection_${collectionId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const url = `${BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}&language=es-ES`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return null;
-  return {
+  const result = {
     id: data.id,
     name: data.name,
     posterPath: data.poster_path || null,
@@ -192,6 +201,8 @@ export async function getCollectionDetails(collectionId) {
       releaseDate: p.release_date || null,
     })),
   };
+  setCache(cacheKey, result);
+  return result;
 }
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,

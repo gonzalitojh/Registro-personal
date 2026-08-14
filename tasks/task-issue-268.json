@@ -1,0 +1,62 @@
+{
+  "title": "Salir del perfil",
+  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-62-seccion-gimnasio`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nCuando se accede a cualquiera de las pestañas del perfil, al dar al botón de atrás, se debe volver a la página en la que se estaba previamente. En ocio y recetas si está bien, pero si accedo desde el gimnasio vuelve a ocio.",
+  "status": "review",
+  "acceptance_criteria": [
+    "Al entrar en cualquiera de las pestañas del perfil (incluida la de gimnasio) desde una página previa, el botón de atrás del navegador (o el mecanismo de navegación equivalente de la app) vuelve a la página en la que se estaba previamente.",
+    "Desde gimnasio, el botón atrás NO vuelve a ocio: vuelve a la página previa real (ej. inicio, o la página desde la que se accedió).",
+    "El comportamiento de ocio y recetas sigue funcionando correctamente (no se rompe con el cambio).",
+    "No se introduce scroll horizontal ni problemas de responsividad; el cambio es coherente con los cuatro modos de tema."
+  ],
+  "definition_of_done": [
+    "Planificación completada.",
+    "Implementación realizada.",
+    "Validación realizada (criterios de aceptación y edge cases).",
+    "Escaneo de seguridad realizado sin hallazgos de severidad alta.",
+    "ADR documentado (con 'Related issue: #268' si aplica).",
+    "PR creada contra la rama feat/issue-62-seccion-gimnasio (no dev), sin keyword de cierre.",
+    "Issue #268 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 268,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/268",
+    "title": "Salir del perfil"
+  },
+  "plan": {
+    "objetivo": "Corregir la flecha de volver del perfil para que regrese a Gimnasio (y no a Ocio) cuando el usuario entró desde esa sección.",
+    "causa_raiz": "El handler de #btn-close-profile en js/profile.js solo contemplaba recetas y el else→ocio (issue #213); la sección Gimnasio (#62) se integró después sin añadir su rama.",
+    "archivos": [
+      "js/profile.js (import getLastGymTab + rama gimnasio)",
+      "index.html / js/config.js / service-worker.js (bump 20260928)"
+    ],
+    "no_toca": [
+      "router.js (ya guarda lastSection y lastGymTab)",
+      "gym.js (openGym ya existe)",
+      "sidebar.js",
+      "HTML/CSS",
+      "manual-de-usuario.md (ya documentaba lo correcto)"
+    ],
+    "validacion": [
+      "node --check",
+      "30 checks E2E en navegador real (chromium headless)",
+      "regresiones recetas/ocio",
+      "pestaña oculta (#97)",
+      "deep-link a #/perfil",
+      "responsividad 360/768/1280"
+    ]
+  },
+  "validation": {
+    "qa": "PASS — 30/30 checks E2E en navegador real: gimnasio/entrenos, gimnasio/ejercicios, regresiones ocio y recetas, pestaña oculta, deep-link, back del navegador, sin scroll horizontal.",
+    "security": "PASS — 0 HIGH, 1 MEDIUM preexistente informativo (claves Firebase públicas en js/config.js, no tocadas por la rama), 0 LOW."
+  },
+  "adr": "docs/adr-097-salir-perfil-gimnasio.md (Related issue: #268)",
+  "pr": {
+    "number": 272,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/272",
+    "title": "fix(profile): la flecha de volver del perfil regresa a Gimnasio (#268)",
+    "branch": "fix/issue-268-salir-perfil",
+    "base": "feat/issue-62-seccion-gimnasio",
+    "commit": "3d842a8",
+    "closes": "#268"
+  }
+}

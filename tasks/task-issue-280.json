@@ -1,0 +1,39 @@
+{
+  "title": "Otras películas de la saga",
+  "description": "En la sección de la saga dentro de la información de una película, te permite añadir el resto de películas de la saga. Quiero que, además, se muestren el resto de películas de la saga de forma similar a como se ven en las recomendaciones justo debajo.",
+  "status": "review",
+  "acceptance criteria": [
+    "En la ficha de una película con saga (collectionId), bajo el aviso de saga se muestran las películas de la saga en tarjetas similares a las recomendaciones (portada, título, año).",
+    "Cada tarjeta muestra el botón «Añadir»; las películas ya en el registro se muestran como «Añadida» con el botón deshabilitado.",
+    "Pulsar «Añadir» en una tarjeta añade esa película al registro (mismo flujo que el selector de saga) y el botón pasa a «Añadida».",
+    "El botón existente «Añadir resto de la saga» (selector con checklist) sigue funcionando igual.",
+    "Si la consulta de la colección falla o no hay películas, la sección no se muestra (degradación elegante) y el aviso de saga sigue visible.",
+    "La sección se ve correctamente en móvil, tablet y escritorio (sin scroll horizontal a nivel de página) y en los cuatro modos de tema.",
+    "El manual de usuario refleja la nueva sección.",
+    "Se documenta en un ADR con la referencia a la issue #280.",
+    "En la ficha de película y de serie, las tarjetas de recomendaciones también se pueden pulsar para ampliar la información (vista previa con «Añadir»/«Cerrar», mismo patrón que las tarjetas de saga; iteración comentario 2026-08-14)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect) y reflejada en la implementación.",
+    "Implementación con micro-commits incrementales en rama de trabajo.",
+    "Validación QA contra los criterios de aceptación (incluidos 3 anchos y 4 temas).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #280'.",
+    "Manual de usuario actualizado.",
+    "PR contra dev SIN keyword de cierre; issue #280 con label 'status: needs-review' tras crear la PR.",
+    "Task file actualizado en cada transición (status: planned/implemented/validated/security-cleared/documented/review)."
+  ],
+  "issue": {
+    "number": 280,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/280",
+    "title": "Otras películas de la saga"
+  },
+  "pr": {
+    "number": 281,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/281",
+    "title": "Otras películas de la saga (issue #280)",
+    "branch": "feature/issue-280-otras-peliculas-saga",
+    "commit": "556eb1a",
+    "closes": "#280"
+  }
+}

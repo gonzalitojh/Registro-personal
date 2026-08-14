@@ -14,12 +14,14 @@
 //     como alias de Ajustes (issue #135).
 //   - Recetas (issue #64): Recetas, Menú y Lista de la compra
 //     (#/recetas, #/recetas/menu, #/recetas/compra).
+//   - Gimnasio (issue #62): Resumen, Entrenos y Ejercicios
+//     (#/gimnasio, #/gimnasio/resumen).
 //
-// Además de las memorias por sección (lastOcioKey, lastRecipesTab),
-// el router guarda la última sección de primer nivel visitada
-// (lastSection, issue #213): es la que usa la flecha de volver del
-// perfil para regresar a Ocio o Recetas según de dónde viniera el
-// usuario, no siempre a Ocio.
+// Además de las memorias por sección (lastOcioKey, lastRecipesTab,
+// lastGymTab), el router guarda la última sección de primer nivel
+// visitada (lastSection, issue #213): es la que usa la flecha de
+// volver del perfil para regresar a Ocio, Recetas o Gimnasio según
+// de dónde viniera el usuario, no siempre a Ocio.
 //
 // El resto de hashes (p. ej. #main-content del skip-link) se
 // considera ajeno al router y se ignora sin tocar el estado.
@@ -49,11 +51,25 @@ export const RECIPES_TAB_TO_PANEL = {
 // Pestaña por defecto de Recetas (#/recetas).
 export const RECIPES_DEFAULT_TAB = "recetas";
 
+// Mapa token de ruta de Gimnasio → id del panel en index.html
+// (issue #62; #/gimnasio/resumen añadido en #269). Solo la primera
+// pestaña «Resumen» (por defecto) se canoniza sin segmento:
+// #/gimnasio.
+export const GYM_TAB_TO_PANEL = {
+  resumen: "panel-gym-summary-tab",
+  entrenos: "panel-gym-workouts-tab",
+  ejercicios: "panel-gym-exercises-tab",
+};
+
+// Pestaña por defecto de Gimnasio (#/gimnasio): la primera (Resumen).
+export const GYM_DEFAULT_TAB = "resumen";
+
 // Prefijos de las secciones de primer nivel. Todo lo que no
 // empiece por uno de ellos se considera ajeno al router.
 const ROUTE_PREFIX = "/ocio";
 const PROFILE_PREFIX = "/perfil";
 const RECIPES_PREFIX = "/recetas";
+const GYM_PREFIX = "/gimnasio";
 
 // Mapa token de URL (castellano) → id interno de la sección del
 // perfil. El token público es humano y consistente con las claves
@@ -109,6 +125,14 @@ export function recipesHashFor(tab = RECIPES_DEFAULT_TAB) {
   return safe === RECIPES_DEFAULT_TAB ? `#${RECIPES_PREFIX}` : `#${RECIPES_PREFIX}/${safe}`;
 }
 
+// Hash canónico de Gimnasio para una pestaña: #/gimnasio/<tab>. Si la
+// pestaña no es válida, saneamos a la pestaña por defecto.
+export function gymHashFor(tab = GYM_DEFAULT_TAB) {
+  const safe = GYM_TAB_TO_PANEL[tab] ? tab : GYM_DEFAULT_TAB;
+  // La pestaña por defecto se canoniza como #/gimnasio (sin segmento).
+  return safe === GYM_DEFAULT_TAB ? `#${GYM_PREFIX}` : `#${GYM_PREFIX}/${safe}`;
+}
+
 // Hash canónico de Perfil para una sección (id interno) y, si es la
 // sección de amigos, opcionalmente el uid. Un id desconocido cae a
 // la sección por defecto (Estadísticas).
@@ -124,6 +148,7 @@ export function profileHashKey(profileSection, uid) {
 // - Ocio    → { section:"ocio", key, panelId } (+ default/invalid).
 // - Perfil  → { section:"perfil", profileSection, uid? } (+default/invalid).
 // - Recetas → { section:"recetas", tab, panelId } (+ default/invalid).
+// - Gimnasio→ { section:"gimnasio", tab, panelId } (+ default/invalid).
 // - Vacío   → ruta por defecto global (Ocio Series).
 // - Ajeno   → { section:null } (se ignora en runtime).
 export function parseHash(hash = location.hash) {
@@ -138,7 +163,7 @@ export function parseHash(hash = location.hash) {
   const first = segments[0];
 
   // Hashes ajenos a las secciones: no son rutas de la web.
-  if (first !== "ocio" && first !== "perfil" && first !== "recetas") {
+  if (first !== "ocio" && first !== "perfil" && first !== "recetas" && first !== "gimnasio") {
     return { section: null };
   }
 
@@ -158,6 +183,24 @@ export function parseHash(hash = location.hash) {
     }
     // Dentro del prefijo pero con segmento desconocido (o de más).
     return { section: "recetas", tab: RECIPES_DEFAULT_TAB, panelId: RECIPES_TAB_TO_PANEL[RECIPES_DEFAULT_TAB], default: true, invalid: true };
+  }
+
+  // ---------- GIMNASIO ----------
+  // #/gimnasio y #/gimnasio/ son alias de la primera pestaña.
+  if (first === "gimnasio") {
+    if (segments.length === 1) {
+      return { section: "gimnasio", tab: GYM_DEFAULT_TAB, panelId: GYM_TAB_TO_PANEL[GYM_DEFAULT_TAB], default: true };
+    }
+    // #/gimnasio/<tab>: solo valen las pestañas conocidas.
+    if (segments.length === 2 && GYM_TAB_TO_PANEL[segments[1]]) {
+      if (segments[1] === GYM_DEFAULT_TAB) {
+        // #/gimnasio/resumen no es canónico: se normaliza a #/gimnasio.
+        return { section: "gimnasio", tab: GYM_DEFAULT_TAB, panelId: GYM_TAB_TO_PANEL[GYM_DEFAULT_TAB], default: true, invalid: true };
+      }
+      return { section: "gimnasio", tab: segments[1], panelId: GYM_TAB_TO_PANEL[segments[1]] };
+    }
+    // Dentro del prefijo pero con segmento desconocido (o de más).
+    return { section: "gimnasio", tab: GYM_DEFAULT_TAB, panelId: GYM_TAB_TO_PANEL[GYM_DEFAULT_TAB], default: true, invalid: true };
   }
 
   // ---------- PERFIL ----------
@@ -204,14 +247,17 @@ export function parseHash(hash = location.hash) {
   return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
 }
 
-// Hash canónico para una ruta (ocio, perfil o recetas) según su
-// forma. Usada por navigate() para normalizar.
+// Hash canónico para una ruta (ocio, perfil, recetas o gimnasio)
+// según su forma. Usada por navigate() para normalizar.
 function canonicalHashFor(route) {
   if (route?.section === "perfil") {
     return profileHashKey(route.profileSection, route.uid);
   }
   if (route?.section === "recetas") {
     return recipesHashFor(route.tab);
+  }
+  if (route?.section === "gimnasio") {
+    return gymHashFor(route.tab);
   }
   return hashForKey(route?.key || DEFAULT_KEY);
 }
@@ -232,10 +278,19 @@ export function getLastRecipesTab() {
   return RECIPES_TAB_TO_PANEL[lastRecipesTab] ? lastRecipesTab : RECIPES_DEFAULT_TAB;
 }
 
-// Memoria de la última sección de primer nivel (ocio | recetas) de la
-// sesión: la flecha de volver del perfil regresa a esa sección (issue
-// #213). Las rutas de perfil NO la actualizan a propósito: solo las
-// secciones de contenido dejan rastro al entrar en el perfil.
+// Memoria de la última pestaña de Gimnasio de la sesión: la entrada
+// «Gimnasio» de la sidebar vuelve a esa pestaña (issue #62).
+let lastGymTab = GYM_DEFAULT_TAB;
+
+export function getLastGymTab() {
+  return GYM_TAB_TO_PANEL[lastGymTab] ? lastGymTab : GYM_DEFAULT_TAB;
+}
+
+// Memoria de la última sección de primer nivel (ocio | recetas |
+// gimnasio) de la sesión: la flecha de volver del perfil regresa a
+// esa sección (issue #213). Las rutas de perfil NO la actualizan a
+// propósito: solo las secciones de contenido dejan rastro al entrar
+// en el perfil.
 let lastSection = "ocio";
 
 export function getLastSection() {
@@ -276,6 +331,9 @@ export function initRouter({ onRoute }) {
     } else if (route.section === "recetas") {
       lastSection = "recetas";
       lastRecipesTab = route.tab || RECIPES_DEFAULT_TAB;
+    } else if (route.section === "gimnasio") {
+      lastSection = "gimnasio";
+      lastGymTab = route.tab || GYM_DEFAULT_TAB;
     }
     if (route.default || route.invalid) {
       history.replaceState(null, "", canonicalHashFor(route));
@@ -298,8 +356,8 @@ export function initRouter({ onRoute }) {
       return s.section === "ocio" || !s.section ? (s.key || lastOcioKey || DEFAULT_KEY) : lastOcioKey;
     },
     // Sección de primer nivel de la ruta actual: "ocio" | "perfil" |
-    // "recetas" | null (ajena / no aplicable). Los hashes ajenos
-    // devuelven null.
+    // "recetas" | "gimnasio" | null (ajena / no aplicable). Los
+    // hashes ajenos devuelven null.
     getCurrentSection: () => {
       const s = parseHash();
       return s.section === null ? null : s.section;
@@ -313,8 +371,10 @@ export function initRouter({ onRoute }) {
     keyForPanel,
     profileHashKey,
     recipesHashFor,
+    gymHashFor,
     getLastOcioKey,
     getLastRecipesTab,
+    getLastGymTab,
     getLastSection,
     navigate,
     destroy: () => window.removeEventListener("hashchange", handleHashChange),

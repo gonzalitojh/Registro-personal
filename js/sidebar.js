@@ -13,7 +13,7 @@
 
 import { trapFocus } from "./focus-utils.js";
 import { closeGlobalSearch, isGlobalSearchOpen } from "./global-search.js";
-import { navigate, getLastRecipesTab } from "./router.js";
+import { navigate, getLastRecipesTab, getLastGymTab } from "./router.js";
 
 // Entradas de la barra lateral: { id, label, icon, onClick, pinned }.
 // "Ocio" es la web actual (pestañas Series / Películas / Libros);
@@ -66,6 +66,23 @@ export const SECTIONS = [
       // Abrir la sección Recetas sincronizando la URL: vuelve a la
       // pestaña que quedó activa la última vez (issue #64).
       navigate({ section: "recetas", tab: getLastRecipesTab() });
+    },
+  },
+  {
+    id: "gimnasio",
+    label: "Gimnasio",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <rect x="2.5" y="9" width="3" height="6" rx="1" />
+      <rect x="6.5" y="7.5" width="2" height="9" rx="0.7" />
+      <rect x="15.5" y="7.5" width="2" height="9" rx="0.7" />
+      <rect x="18.5" y="9" width="3" height="6" rx="1" />
+    </svg>`,
+    onClick: () => {
+      // Abrir la sección Gimnasio sincronizando la URL: vuelve a la
+      // pestaña que quedó activa la última vez (issue #62).
+      navigate({ section: "gimnasio", tab: getLastGymTab() });
     },
   },
   {

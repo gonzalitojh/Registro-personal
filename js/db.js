@@ -10,6 +10,8 @@
 //   users/{uid}/ingredients/{id}     (catálogo de ingredientes, #64)
 //   users/{uid}/menus/{id}           (menús semanales, #64)
 //   users/{uid}/tags/{id}            (etiquetas personalizadas, #64)
+//   users/{uid}/gym-workouts/{id}    (entrenos de gimnasio, #62)
+//   users/{uid}/gym-exercises/{id}   (catálogo de ejercicios, #62)
 // Además, users/{uid} (el propio documento, no una subcolección)
 // guarda un pequeño perfil con el email y la fecha del último aviso
 // de estrenos comprobado.
@@ -317,4 +319,95 @@ export async function updateMenu(uid, menuId, menu) {
 
 export async function deleteMenu(uid, menuId) {
   return deleteDoc(doc(db, "users", uid, "menus", menuId));
+}
+
+/* ---------- Entrenos de gimnasio (issue #62) ---------- */
+
+function gymWorkoutsRef(uid) {
+  return collection(db, "users", uid, "gym-workouts");
+}
+
+// Se suscribe en tiempo real a los entrenos del usuario. Se ordenan por
+// fechaISO (la fecha del entreno, "YYYY-MM-DD") descendente.
+export function subscribeToGymWorkouts(uid, onChange, onError) {
+  const q = query(gymWorkoutsRef(uid), orderBy("fechaISO", "desc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+// Alta de un entreno. El peso canónico SIEMPRE es kg (la conversión a
+// lbs es solo de presentación, issue #62).
+export async function addGymWorkout(uid, workout) {
+  return addDoc(gymWorkoutsRef(uid), {
+    fechaISO: workout.fechaISO,
+    ...(workout.nombre !== undefined && { nombre: workout.nombre }),
+    ...(workout.nota !== undefined && { nota: workout.nota }),
+    ejercicios: workout.ejercicios || [],
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateGymWorkout(uid, workoutId, changes) {
+  return updateDoc(doc(db, "users", uid, "gym-workouts", workoutId), {
+    ...changes,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteGymWorkout(uid, workoutId) {
+  return deleteDoc(doc(db, "users", uid, "gym-workouts", workoutId));
+}
+
+/* ---------- Catálogo de ejercicios (issue #62) ---------- */
+
+function gymExercisesRef(uid) {
+  return collection(db, "users", uid, "gym-exercises");
+}
+
+// Se suscribe en tiempo real al catálogo de ejercicios, ordenado por
+// nombre alfabético (mismo patrón que el catálogo de ingredientes).
+export function subscribeToGymExercises(uid, onChange, onError) {
+  const q = query(gymExercisesRef(uid), orderBy("nombre", "asc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function addGymExercise(uid, exercise) {
+  return addDoc(gymExercisesRef(uid), {
+    nombre: exercise.nombre,
+    ...(exercise.grupoMuscular !== undefined && { grupoMuscular: exercise.grupoMuscular }),
+    ...(exercise.notas !== undefined && { notas: exercise.notas }),
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateGymExercise(uid, exerciseId, changes) {
+  return updateDoc(doc(db, "users", uid, "gym-exercises", exerciseId), {
+    ...changes,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteGymExercise(uid, exerciseId) {
+  return deleteDoc(doc(db, "users", uid, "gym-exercises", exerciseId));
 }

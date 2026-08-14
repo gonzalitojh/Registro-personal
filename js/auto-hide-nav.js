@@ -56,6 +56,12 @@ function activePanel() {
     // .recipes-view__body; la activa es la única sin .hidden.
     return recipesView.querySelector(".recipes-view__body section:not(.hidden)");
   }
+  // Vista de Gimnasio (issue #62): mismo patrón de primer nivel que
+  // Recetas; la sección activa es la única de su lista sin .hidden.
+  const gymView = document.getElementById("gym-view");
+  if (gymView && !gymView.classList.contains("hidden")) {
+    return gymView.querySelector(".gym-view__body section:not(.hidden)");
+  }
   return null;
 }
 
@@ -126,7 +132,7 @@ function setNavHidden(hidden) {
 // .shopping-toolbar); si el panel no tiene controles, el botón no
 // aparece.
 const CONTROLS_SELECTOR =
-  ".library-controls, .recipes-toolbar, .ingredients-toolbar, .menu-toolbar, .shopping-toolbar";
+  ".library-controls, .recipes-toolbar, .ingredients-toolbar, .menu-toolbar, .shopping-toolbar, .gym-toolbar";
 
 function updateBackToTop() {
   const panel = activePanel();
@@ -201,19 +207,18 @@ export function initAutoHideNav() {
 
   // Observar cambios de clase en los elementos que condicionan el
   // estado (cambio de pestaña/panel, apertura de modales y
-  // dropdowns, visibilidad de la app, drawer...). Incluye la vista
-  // de Recetas (issue #256): #recipes-view se oculta/muestra al
-  // entrar/salir de la sección y sus secciones (paneles) alternan
-  // .hidden al cambiar de pestaña; sus paneles de filtros
-  // (.recipes-filter__panel, .ingredients-filter__panel) se abren
-  // desde la barra de herramientas de cada pestaña. Si el propio
-  // <body> cambia (nuestras clases) la reevaluación es inofensiva:
-  // setNavHidden no hace nada si el estado no cambia.
+  // dropdowns, visibilidad de la app, drawer...). Incluye las
+  // vistas de primer nivel hermanas de #app (issue #256 recetas,
+  // issue #62 gimnasio): se ocultan/muestran al entrar/salir de la
+  // sección y sus secciones (paneles) alternan .hidden al cambiar
+  // de pestaña. Si el propio <body> cambia (nuestras clases) la
+  // reevaluación es inofensiva: setNavHidden no hace nada si el
+  // estado no cambia.
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (
         mutation.target.matches?.(
-          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, #recipes-view, .recipes-view__body section, .recipes-filter__panel, .ingredients-filter__panel, body"
+          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, #recipes-view, .recipes-view__body section, #gym-view, .gym-view__body section, .recipes-filter__panel, .ingredients-filter__panel, body"
         )
       ) {
         evaluate();

@@ -88,6 +88,19 @@ service cloud.firestore {
         allow write: if isAllowedUser() && isOwner(userId);
       }
 
+      // Sección de gimnasio (issue #62): entrenos y catálogo de
+      // ejercicios. Mismo patrón que el resto: lectura entre amigos
+      // autorizados, escritura solo del dueño.
+      match /gym-workouts/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
+      match /gym-exercises/{itemId} {
+        allow read: if isAllowedUser();
+        allow write: if isAllowedUser() && isOwner(userId);
+      }
+
       // Las notificaciones son privadas: nadie más puede leerlas.
       match /notifications/{notifId} {
         allow read, write: if isAllowedUser() && isOwner(userId);

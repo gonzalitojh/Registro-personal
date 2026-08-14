@@ -11,6 +11,11 @@
    hacen zoom si el font-size del campo es < 16px. Todos los campos >= 16px. */
 input, textarea, select { font-size: 16px; }
 
+/* Issue #275: nunca zoom por doble toque en interacciones.
+   touch-action: manipulation mantiene el panning y el pinch zoom
+   (accesibilidad: no deshabilita el zoom manual, ADR-042/ADR-016). */
+button, a, input, select, textarea { touch-action: manipulation; }
+
 /* =========================================================
    Botones con los colores de acento de ocio (pelis/series vs libros)
    ========================================================= */
@@ -1802,7 +1807,8 @@ input, textarea, select { font-size: 16px; }
   color: var(--ink-soft);
 }
 
-.rec-card .rec-card__add {
+.rec-card .rec-card__add,
+.saga-card .saga-card__add {
   margin-top: auto;
   width: 100%;
   font-size: 0.7rem;
@@ -1815,6 +1821,83 @@ input, textarea, select { font-size: 16px; }
   .rec-card:hover {
     box-shadow: var(--shadow-card);
   }
+}
+
+/* =========================================================
+   Otras películas de la saga (modal de película, issue #280)
+   Mismo aspecto que las recomendaciones: tarjetas deslizables
+   en horizontal usando .recommendations__scroll y .rec-card.
+   ========================================================= */
+
+.saga-movies {
+  margin: 0.4rem 0 1.2rem;
+}
+
+.saga-movies__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0 0 0.6rem;
+}
+
+/* Tarjeta de saga como botón de vista previa (issue #280, iteración):
+   al pulsarla se abre la información de la película antes de
+   añadirla. El botón .saga-card__open ocupa todo el cuerpo de la
+   tarjeta (flex: 1) y el botón "Añadir" (.saga-card__add) queda como
+   hermano, anclado abajo con margin-top: auto. Los estilos del cuerpo
+   (.rec-card__body) se heredan por clase, ahora sobre span (phrasing
+   content dentro del button). Las tarjetas de recomendación pulsables
+   (.rec-card--openable/.rec-card__open/.rec-card__hint) comparten
+   exactamente estos estilos (issue #280, segunda iteración): una sola
+   fuente de verdad por regla, selectores agrupados. */
+.saga-card__open,
+.rec-card__open {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.saga-card .rec-card__cover,
+.rec-card--openable .rec-card__cover {
+  display: block; /* evita el gap de baseline de la img inline dentro del button */
+}
+
+.saga-card__hint,
+.rec-card__hint {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  /* Contraste AA en la familia oscura por defecto (regla 4 AGENTS.md):
+     --ink-soft (#948a76) sobre --paper-dim (#e3dac4) = 2.45:1, insuficiente;
+     #5f5849 ≈ 5.1:1. Negro puro y familia clara sí cumplen con
+     --ink-soft (6.2 / 5.2 / 5.9:1), por eso se restaura ahí. */
+  color: #5f5849;
+  text-decoration: underline;
+}
+
+[data-theme="black"] .saga-card__hint,
+[data-theme="light"] .saga-card__hint,
+[data-theme="white"] .saga-card__hint,
+[data-theme="black"] .rec-card__hint,
+[data-theme="light"] .rec-card__hint,
+[data-theme="white"] .rec-card__hint {
+  color: var(--ink-soft);
+}
+
+.saga-card__open:focus-visible,
+.rec-card__open:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
 }
 
 /* =========================================================

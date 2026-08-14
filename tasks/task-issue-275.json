@@ -1,0 +1,36 @@
+{
+  "title": "Evitar zoom en toda la web (issue #275)",
+  "description": "La base de trabajo es la rama `feat/issue-62-seccion-gimnasio`. Se debe crear una nueva rama a partir de ahí y hacer la PR también a esa rama (no a `dev`).\n\nRevisar que en ningún espacio en texto se haga zoom al pulsar sobre él. Detectado en la edición de ejercicios, al introducir el nombre. Debe ser una regla para toda la web: nunca se debe hacer zoom en ninguna interacción.\n\nCAUSA RAÍZ detectada (auditoría previa): iOS Safari/Android Chrome hacen zoom automático al enfocar un input/textarea/select con font-size calculado < 16px (ADR-042, issue #92). La regla global `input, textarea, select { font-size: 16px; }` es red de seguridad, pero 7 grupos de selectores específicos con mayor especificidad la sobreescriben con tamaños < 1rem:\n1. .ingredient-modal__field input, select — 0.9rem (14.4px)\n2. .shopping-extra-form__row input, select, .ing-combo .ing-nombre — 0.85rem (13.6px)\n3. .recipe-form__import-row input — 0.85rem (13.6px)\n4. .recipe-form__field input/textarea, .recipe-form__newtag input, .recipe-form__paso input, .recipe-form__ingrediente input/select — 0.88rem (14.08px)\n5. .gym-form__field input, select, textarea — 0.9rem (14.4px)\n6. .gym-exercise-block select, input[type=\"text\"] — 0.9rem (14.4px)\n7. .gym-series-row input — 0.9rem (14.4px)\n\nEl caso detectado por el usuario (edición de ejercicios, introducir el nombre) es el grupo 5/6 del gimnasio (rama issue-62), pero la regla es para toda la web: subir los 7 grupos a 1rem (16px), siguiendo el precedente ADR-042 (`font-size: 1rem; /* ADR-042: nunca < 16px en inputs */`).\n\nAdemás, para garantizar 'nunca se debe hacer zoom en ninguna interacción': añadir `touch-action: manipulation` global a los elementos interactivos (button, a, input, select, textarea) en css/styles.css y ocio/ocio.css — elimina el zoom por doble toque en interacciones sin deshabilitar el zoom manual/pinch (no tocar el meta viewport; ADR-042/ADR-016 prohiben user-scalable=no).\n\nComprobaciones: no hay contenteditable en el sitio; ocio/ocio.css no tiene violaciones < 16px (solo la regla global). Restricción: no usar user-scalable=no ni maximum-scale=1 (accesibilidad).",
+  "status": "review",
+  "acceptance_criteria": [
+    "AC1: Ningún input/textarea/select de la web tiene font-size calculado < 16px (1rem): los 7 grupos de selectores específicos de css/styles.css suben a 1rem con comentario ADR-042.",
+    "AC2: Regla global `button, a, input, select, textarea { touch-action: manipulation; }` añadida en css/styles.css y ocio/ocio.css (comentario issue #275): sin zoom por doble toque en ninguna interacción.",
+    "AC3: No se toca el meta viewport (sin user-scalable=no / maximum-scale=1): el zoom manual/pinch y la accesibilidad se conservan.",
+    "AC4: La auditoría CSS (script de verificación: font-size < 16px en selectores con input/select/textarea) devuelve cero violaciones en ambas hojas (css/styles.css y ocio/ocio.css).",
+    "AC5: Bump de versión PWA con scripts/bump-version.sh (20260928 → 20260929): index.html ?v=, js/config.js APP_VERSION, service-worker.js STATIC_ASSETS coherentes.",
+    "AC6: La PR se crea contra `feat/issue-62-seccion-gimnasio` (NO contra dev), desde rama creada a partir de esa base, SIN keyword de cierre en el body.",
+    "AC7: Sin regresiones de responsividad: los campos con fuente mayor no desbordan en móvil (360px), no hay scroll horizontal."
+  ],
+  "definition_of_done": [
+    "Planificación realizada (agente de planificación).",
+    "Implementación completa: css/styles.css (7 grupos a 1rem + touch-action global), ocio/ocio.css (touch-action global), bump de versión con scripts/bump-version.sh.",
+    "Validación con qa-reviewer superada (AC + DoD + auditoría CSS + casos borde: campos gym/recetas/compra/ingredientes, cuatro modos de tema, anchos 360/768/1280).",
+    "Escaneo de seguridad superado (sin HIGH; MEDIUM/LOW informativos).",
+    "ADR en docs/ con 'Related issue: #275' (número siguiente libre: adr-099).",
+    "PR creada contra `feat/issue-62-seccion-gimnasio` SIN keyword de cierre en el body (la issue se cierra al fusionar vía issues-done-on-dev.yml o manualmente al fusionar en la rama base).",
+    "Task file actualizado a status 'review' con bloque 'pr' y subido al repo.",
+    "Labels de la issue sincronizadas (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 275,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/275",
+    "title": "Evitar zoom"
+  },
+  "pr": {
+    "number": 277,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/277",
+    "title": "fix: nunca zoom en ninguna interacción — font-size 16px y touch-action (issue #275)",
+    "branch": "fix/issue-275-evitar-zoom",
+    "commit": "3271182"
+  }
+}

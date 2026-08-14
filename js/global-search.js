@@ -183,6 +183,9 @@ function filterFriends(profiles, query) {
 //             usuario), sin amigos: el buscador ya no es global.
 // - perfil  → solo amigos.
 // - recetas → solo recetas (filtro local, searchRecipes de recipes.js).
+// - gimnasio → sin resultados aún (issue #62, v1: sin scope de
+//             búsqueda propia; devolver vacío evita caer a la rama
+//             de Ocio y mezclar colecciones ajenas).
 // Síncrono: lo usan performSearch, runExternalSearch y
 // refreshExternalResults.
 function collectionResults(trimmed) {
@@ -195,6 +198,9 @@ function collectionResults(trimmed) {
   }
   if (section === "recetas") {
     return { recipes: searchRecipes(trimmed).slice(0, 6) };
+  }
+  if (section === "gimnasio") {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
   }
   const allItems = searchCtx.getAllItems();
   return {
@@ -240,6 +246,9 @@ function sectionHintText() {
   }
   if (currentSection() === "recetas") {
     return "Escribe al menos 2 caracteres para buscar en tus recetas.";
+  }
+  if (currentSection() === "gimnasio") {
+    return "Escribe al menos 2 caracteres para buscar en tu gimnasio.";
   }
   return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros y videojuegos.";
 }
