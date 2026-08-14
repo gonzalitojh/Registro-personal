@@ -12,6 +12,7 @@
 //   users/{uid}/tags/{id}            (etiquetas personalizadas, #64)
 //   users/{uid}/gym-workouts/{id}    (entrenos de gimnasio, #62)
 //   users/{uid}/gym-exercises/{id}   (catálogo de ejercicios, #62)
+//   users/{uid}/todos/{id}           (cosas que hacer, #283)
 // Además, users/{uid} (el propio documento, no una subcolección)
 // guarda un pequeño perfil con el email y la fecha del último aviso
 // de estrenos comprobado.
@@ -410,4 +411,57 @@ export async function updateGymExercise(uid, exerciseId, changes) {
 
 export async function deleteGymExercise(uid, exerciseId) {
   return deleteDoc(doc(db, "users", uid, "gym-exercises", exerciseId));
+}
+
+/* ---------- Cosas que hacer (issue #283) ---------- */
+
+function todosRef(uid) {
+  return collection(db, "users", uid, "todos");
+}
+
+// Se suscribe en tiempo real a las tareas del usuario. La query ordena
+// SOLO por addedAt desc (un solo campo: evita índices compuestos en
+// Firestore); el orden de dominio (pendientes por fecha límite, etc.)
+// lo aplica js/todos.js con un comparador determinista sobre copia.
+export function subscribeToTodos(uid, onChange, onError) {
+  const q = query(todosRef(uid), orderBy("addedAt", "desc"));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = [];
+      snapshot.forEach((docSnap) => items.push({ id: docSnap.id, ...docSnap.data() }));
+      onChange(items);
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
+}
+
+// Alta de una tarea: texto obligatorio, categoría (preset), nota y
+// fecha límite opcionales. `hecha` nace en false y fechaCompletadaISO
+// en null (nunca se borra el campo: null es suficiente para «no
+// completada», evita deleteField en firebase.js).
+export async function addTodo(uid, todo) {
+  return addDoc(todosRef(uid), {
+    texto: todo.texto,
+    categoria: todo.categoria,
+    ...(todo.nota !== undefined && { nota: todo.nota }),
+    ...(todo.fechaLimiteISO !== undefined && { fechaLimiteISO: todo.fechaLimiteISO }),
+    hecha: false,
+    fechaCompletadaISO: null,
+    addedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateTodo(uid, todoId, changes) {
+  return updateDoc(doc(db, "users", uid, "todos", todoId), {
+    ...changes,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteTodo(uid, todoId) {
+  return deleteDoc(doc(db, "users", uid, "todos", todoId));
 }
