@@ -242,15 +242,115 @@ construir un modal nuevo:
 - En la ficha de solo lectura (read-only) las tarjetas no son pulsables
   (`onOpen` solo se pasa cuando procede la interacción).
 
+## Iteración 2026-08-14: vista previa ampliada al pulsar una tarjeta de recomendación
+
+### Contexto
+
+El usuario amplió de nuevo el alcance de la issue #280 con un comentario
+del 2026-08-14: «En las películas de las recomendaciones también se debe
+poder pulsar para ampliar la información». Tras la iteración anterior
+(tarjetas de saga pulsables), las tarjetas de «Si te gustó esto, quizá
+te guste...» de la ficha de película **y** de la ficha de serie debían
+comportarse igual: al pulsarlas, abrir la vista previa ampliada con la
+información antes de añadir la recomendación.
+
+### Decisión
+
+Hacer **pulsables** las tarjetas de recomendaciones con el **mismo
+patrón que las de saga** (y que la vista previa de búsqueda de la issue
+#22), factorizando en un helper compartido la mecánica de preview:
+
+1. **Tarjeta pulsable** (`renderRecommendations` en `js/ui.js`): nuevo
+   parámetro opcional `onOpen`; cuando es función, cada tarjeta se
+   renderiza como `.rec-card.rec-card--openable` con un botón
+   `.rec-card__open` (con `aria-label` «Ver información de …») que
+   envuelve `img.rec-card__cover` + `span.rec-card__body` (título, año y
+   hint `.rec-card__hint` «Ver información»), y el botón `.rec-card__add`
+   queda como hermano, anclado abajo por el `flex: 1` del botón open
+   (misma mecánica que `.saga-card__open`).
+2. **Helper compartido `openExternalPreview`** (`js/modal-handlers.js`):
+   centraliza la mecánica común de la preview (cerrar la ficha antes de
+   abrir, `openSearchPreviewModal` con `added` según el Set `existingIds`,
+   `onClose` → `closeModal` + restaurar la ficha, `onAdd` → alta +
+   `existingIds.add` + toast + cierre + restauración) y la comparten
+   `openSagaMoviePreview` (saga, refactorizada) y la nueva
+   `openRecommendationPreview` (recomendaciones, tipo `movie`/`tv`).
+3. **Enriquecimiento por tipo** (`enrichExternalPreview`): las películas
+   se enriquecen con `getMovieDetails`; las series con `getTvExtraDetails`
+   + `getTvSeasonsMeta` (no bloqueante). Nunca lanza: si falla devuelve
+   `{}` y la preview mantiene los datos de la tarjeta.
+4. **Refactor `addFromRecommendation` → `addRecommendationItem`**: el
+   núcleo de alta (sin estado de botón) se extrae para reutilizarlo como
+   `performAdd` desde `openExternalPreview`; el wrapper conserva el
+   estado «Añadiendo…»/«Añadido» del botón de la tarjeta.
+5. **Wiring**: `onOpenRecommendation` se añade a los callbacks de
+   `openMovieItem` y `openTvItem` (usa `reopen` + el Set `existingIds`
+   compartido → la tarjeta vuelve «Añadida» al restaurar la ficha, y la
+   preview abre «Ya añadido» deshabilitado si ya está en el registro).
+6. **Estilos** (`ocio/ocio.css`): los selectores de la iteración de saga
+   se agrupan por comas (`.saga-card__open, .rec-card__open`,
+   `.saga-card .rec-card__cover, .rec-card--openable .rec-card__cover`
+   y `.saga-card__hint, .rec-card__hint`, incluidos `:focus-visible` y
+   el override de temas), una sola fuente de verdad por regla (regla 4
+   de AGENTS.md); el hint mantiene el contraste AA (base `#5f5849` en la
+   familia oscura, `--ink-soft` en negro puro, claro y blanco puro).
+
+### Alternativas descartadas
+
+- **Duplicar el helper de preview en cada sección** (una copia para la
+  saga y otra para las recomendaciones): dos flujos casi idénticos que
+  habría que mantener sincronizados; `openExternalPreview` centraliza la
+  mecánica de la issue #22 y cada sección solo aporta el ítem ligero, el
+  enriquecimiento y la función de alta.
+- **Reutilizar `.saga-card__open` también en las recomendaciones**:
+  interferiría con el wiring de eventos, que en las recomendaciones usa
+  `data-rec-index` y en la saga `data-saga-index` (clases e índices
+  distintos evitan colisiones en el mismo modal); por eso la tarjeta de
+  recomendación usa su propia clase `.rec-card__open`, compartiendo las
+  reglas CSS por selectores agrupados.
+
+### Consecuencias
+
+**Positivas:**
+
+- El usuario puede **explorar la información ampliada** de cualquier
+  recomendación —película o serie— antes de añadirla, con el mismo
+  flujo restaurable que las tarjetas de saga: cerrar por cualquiera de
+  las vías o añadir devuelve a la ficha que se estaba viendo.
+- Las series muestran además sus **temporadas** en la preview
+  (enriquecimiento específico por tipo).
+- **Reutilización**: el refactor a `addRecommendationItem` y
+  `openExternalPreview` elimina la duplicación de lógica de alta y de
+  preview sin cambiar el comportamiento del botón «Añadir» original de
+  la tarjeta.
+- El modal de película **convive con las dos secciones pulsables**
+  (saga y recomendaciones) sin interferencia: clases
+  (`.saga-card__open`/`.rec-card__open`) e índices
+  (`data-saga-index`/`data-rec-index`) distintos.
+
+**Negativas / neutras:**
+
+- Cada tarjeta pulsada añade una **llamada a la API** de TMDB para el
+  enriquecimiento (`getMovieDetails`/`getTvExtraDetails`), con
+  **degradación elegante**: si falla, la preview mantiene los datos de
+  la tarjeta y no bloquea el alta (el propio `addRecommendationItem`
+  tampoco se bloquea si falla la consulta de detalles extra).
+- El **manual de usuario** se ha actualizado en la misma PR (regla 3 de
+  AGENTS.md): el bullet «Recomendaciones» de la ficha explica las
+  tarjetas pulsables, la ventana con «Añadir»/«Cerrar», la vuelta a la
+  ficha, el «Ya añadido» deshabilitado y las temporadas en las series.
+- La PR es la **misma #281** (rama `feature/issue-280-otras-peliculas-saga`);
+  no se abre una PR nueva para esta iteración.
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
 | `js/api-movies.js` | **Modificado**: `getCollectionDetails` con caché en memoria de 24 h compartida (`providersCache`, clave `collection_<id>`); solo se cachean respuestas correctas |
-| `js/modal-handlers.js` | **Modificado**: `openMovieItem` carga `sagaParts` (try/catch, degradación elegante); nuevo callback `onAddSagaMovie` (reutiliza `addSagaMovie` + actualiza `existingIds`); `addFromRecommendation` devuelve boolean; `onAddRecommendation` actualiza `existingIds` (fix QA, también en `openTvItem`). **Iteración**: `openSagaMoviePreview` (preview con `openSearchPreviewModal`, `onClose` restaura la ficha, `onAdd` reutiliza `addSagaMovie`), `onOpenSagaMovie` en `openMovieItem` y `closeActiveModal` en `setupModalCloseListeners` (✕, backdrop y Escape respetan `modal._onClose`) |
-| `js/ui.js` | **Modificado**: nueva `renderSagaMovies` (sección «Otras películas de la saga» con `.rec-card`/`.recommendations__scroll` y botón `.saga-card__add`); `openMovieModal` acepta `sagaParts` y propaga todos los argumentos en el re-render; wiring de `.saga-card__add`. **Iteración**: `renderSagaMovies` con tarjeta pulsable `.saga-card__open` + hint «Ver información»; `onClose` (nuevo) en `openSearchPreviewModal` guardado en `modal._onClose`; `closeModal` consume `modal._onClose` |
-| `ocio/ocio.css` | **Modificado**: `.saga-movies`, `.saga-movies__title` (estilo de `.recommendations__title` con variables de tema) y regla agrupada `.rec-card .rec-card__add, .saga-card .saga-card__add`. **Iteración**: `.saga-card__open` (reset de botón, `flex: 1`, `focus-visible`), `.saga-card .rec-card__cover` con `display: block` y `.saga-card__hint` con contraste AA en los 4 temas (override agrupado por temas) |
-| `docs/manual-de-usuario.md` | **Modificado**: sección 11, bullet «Sagas» ampliado con las tarjetas «Otras películas de la saga» y sus botones «Añadir»/«Añadida». **Iteración**: el bullet explica que se puede pulsar la tarjeta para ver la información antes de añadirla (botones «Añadir»/«Cerrar», vuelta a la ficha, «Ya añadido» deshabilitado) |
+| `js/modal-handlers.js` | **Modificado**: `openMovieItem` carga `sagaParts` (try/catch, degradación elegante); nuevo callback `onAddSagaMovie` (reutiliza `addSagaMovie` + actualiza `existingIds`); `addFromRecommendation` devuelve boolean; `onAddRecommendation` actualiza `existingIds` (fix QA, también en `openTvItem`). **Iteración**: `openSagaMoviePreview` (preview con `openSearchPreviewModal`, `onClose` restaura la ficha, `onAdd` reutiliza `addSagaMovie`), `onOpenSagaMovie` en `openMovieItem` y `closeActiveModal` en `setupModalCloseListeners` (✕, backdrop y Escape respetan `modal._onClose`). **Iteración 2026-08-14**: helper compartido `openExternalPreview` (mecánica issue #22: onClose restaura la ficha, onAdd añade + `existingIds.add` + toast + cierre + restauración), `openRecommendationPreview` (movie/tv) y `openSagaMoviePreview` refactorizada sobre el helper; `enrichExternalPreview` por tipo (movie → `getMovieDetails`; tv → `getTvExtraDetails` + `getTvSeasonsMeta` no bloqueante; nunca lanza); extracción `addRecommendationItem` desde `addFromRecommendation` (núcleo sin estado de botón); `onOpenRecommendation` en `openMovieItem` y `openTvItem` |
+| `js/ui.js` | **Modificado**: nueva `renderSagaMovies` (sección «Otras películas de la saga» con `.rec-card`/`.recommendations__scroll` y botón `.saga-card__add`); `openMovieModal` acepta `sagaParts` y propaga todos los argumentos en el re-render; wiring de `.saga-card__add`. **Iteración**: `renderSagaMovies` con tarjeta pulsable `.saga-card__open` + hint «Ver información»; `onClose` (nuevo) en `openSearchPreviewModal` guardado en `modal._onClose`; `closeModal` consume `modal._onClose`. **Iteración 2026-08-14**: `renderRecommendations` con parámetro opcional `onOpen` (tarjeta `.rec-card--openable` con `.rec-card__open` + hint «Ver información» y `.rec-card__add` como hermano); `onOpenRecommendation` en `openMovieModal` y `openTvModal` (render con el quinto argumento y wiring de `.rec-card__open` → `recommendations[index]`) |
+| `ocio/ocio.css` | **Modificado**: `.saga-movies`, `.saga-movies__title` (estilo de `.recommendations__title` con variables de tema) y regla agrupada `.rec-card .rec-card__add, .saga-card .saga-card__add`. **Iteración**: `.saga-card__open` (reset de botón, `flex: 1`, `focus-visible`), `.saga-card .rec-card__cover` con `display: block` y `.saga-card__hint` con contraste AA en los 4 temas (override agrupado por temas). **Iteración 2026-08-14**: selectores agrupados `.saga-card__open, .rec-card__open`, `.saga-card .rec-card__cover, .rec-card--openable .rec-card__cover` y `.saga-card__hint, .rec-card__hint` (una sola fuente de verdad por regla, contraste AA del hint y `:focus-visible` agrupados) |
+| `docs/manual-de-usuario.md` | **Modificado**: sección 11, bullet «Sagas» ampliado con las tarjetas «Otras películas de la saga» y sus botones «Añadir»/«Añadida». **Iteración**: el bullet explica que se puede pulsar la tarjeta para ver la información antes de añadirla (botones «Añadir»/«Cerrar», vuelta a la ficha, «Ya añadido» deshabilitado). **Iteración 2026-08-14**: el bullet «Recomendaciones» explica las tarjetas pulsables con vista previa ampliada (portada, duración, género, reparto, sinopsis, puntuación y tráiler; temporadas en las series), los botones «Añadir»/«Cerrar», la vuelta a la ficha y el «Ya añadido» deshabilitado |
 | `docs/adr-096-otras-peliculas-saga.md` | **Nuevo**: este documento |
 | `tasks/task-issue-280.json` | Task file de la tarea |
 
