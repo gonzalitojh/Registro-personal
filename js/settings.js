@@ -23,8 +23,8 @@ const DEFAULT_SETTINGS = {
   // El peso canónico en Firestore es SIEMPRE kg; esta preferencia solo
   // cambia la presentación (y las entradas) en la interfaz.
   unidadPeso: "kg",
-  visibleSections: { ocio: true, recetas: true, gimnasio: true },
-  visibleTabs: { resumen: true, series: true, peliculas: true, libros: true, recetas: true, ingredientes: true, menu: true, compra: true, entrenos: true, ejercicios: true },
+  visibleSections: { ocio: true, recetas: true, gimnasio: true, todos: true },
+  visibleTabs: { resumen: true, series: true, peliculas: true, libros: true, recetas: true, ingredientes: true, menu: true, compra: true, entrenos: true, ejercicios: true, tareas: true, hechas: true },
 };
 
 // Registro central de secciones y pestañas de la web (issue #97).
@@ -60,6 +60,14 @@ export const SECTION_REGISTRY = {
       resumen: { label: "Resumen", panelId: "panel-gym-summary-tab" },
       entrenos: { label: "Entrenos", panelId: "panel-gym-workouts-tab" },
       ejercicios: { label: "Ejercicios", panelId: "panel-gym-exercises-tab" },
+    },
+  },
+  todos: {
+    label: "Cosas que hacer",
+    tabs: {
+      // Primera pestaña = pestaña por defecto de la sección (#283).
+      tareas: { label: "Tareas", panelId: "panel-todos-tab" },
+      hechas: { label: "Hechas", panelId: "panel-todos-done-tab" },
     },
   },
 };

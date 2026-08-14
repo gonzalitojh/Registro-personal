@@ -16,12 +16,15 @@
 //     (#/recetas, #/recetas/menu, #/recetas/compra).
 //   - Gimnasio (issue #62): Resumen, Entrenos y Ejercicios
 //     (#/gimnasio, #/gimnasio/resumen).
+//   - Cosas que hacer (issue #283): Tareas y Hechas (#/tareas,
+//     #/tareas/hechas).
 //
 // Además de las memorias por sección (lastOcioKey, lastRecipesTab,
-// lastGymTab), el router guarda la última sección de primer nivel
-// visitada (lastSection, issue #213): es la que usa la flecha de
-// volver del perfil para regresar a Ocio, Recetas o Gimnasio según
-// de dónde viniera el usuario, no siempre a Ocio.
+// lastGymTab, lastTodosTab), el router guarda la última sección de
+// primer nivel visitada (lastSection, issue #213): es la que usa la
+// flecha de volver del perfil para regresar a Ocio, Recetas,
+// Gimnasio o Tareas según de dónde viniera el usuario, no siempre a
+// Ocio.
 //
 // El resto de hashes (p. ej. #main-content del skip-link) se
 // considera ajeno al router y se ignora sin tocar el estado.
@@ -64,12 +67,24 @@ export const GYM_TAB_TO_PANEL = {
 // Pestaña por defecto de Gimnasio (#/gimnasio): la primera (Resumen).
 export const GYM_DEFAULT_TAB = "resumen";
 
+// Mapa token de ruta de Cosas que hacer → id del panel en index.html
+// (issue #283). Solo la primera pestaña «Tareas» (por defecto) se
+// canoniza sin segmento: #/tareas.
+export const TODOS_TAB_TO_PANEL = {
+  tareas: "panel-todos-tab",
+  hechas: "panel-todos-done-tab",
+};
+
+// Pestaña por defecto de Cosas que hacer (#/tareas): la primera (Tareas).
+export const TODOS_DEFAULT_TAB = "tareas";
+
 // Prefijos de las secciones de primer nivel. Todo lo que no
 // empiece por uno de ellos se considera ajeno al router.
 const ROUTE_PREFIX = "/ocio";
 const PROFILE_PREFIX = "/perfil";
 const RECIPES_PREFIX = "/recetas";
 const GYM_PREFIX = "/gimnasio";
+const TODOS_PREFIX = "/tareas";
 
 // Mapa token de URL (castellano) → id interno de la sección del
 // perfil. El token público es humano y consistente con las claves
@@ -133,6 +148,14 @@ export function gymHashFor(tab = GYM_DEFAULT_TAB) {
   return safe === GYM_DEFAULT_TAB ? `#${GYM_PREFIX}` : `#${GYM_PREFIX}/${safe}`;
 }
 
+// Hash canónico de Cosas que hacer para una pestaña: #/tareas/<tab>.
+// Si la pestaña no es válida, saneamos a la pestaña por defecto.
+export function todosHashFor(tab = TODOS_DEFAULT_TAB) {
+  const safe = TODOS_TAB_TO_PANEL[tab] ? tab : TODOS_DEFAULT_TAB;
+  // La pestaña por defecto se canoniza como #/tareas (sin segmento).
+  return safe === TODOS_DEFAULT_TAB ? `#${TODOS_PREFIX}` : `#${TODOS_PREFIX}/${safe}`;
+}
+
 // Hash canónico de Perfil para una sección (id interno) y, si es la
 // sección de amigos, opcionalmente el uid. Un id desconocido cae a
 // la sección por defecto (Estadísticas).
@@ -149,6 +172,7 @@ export function profileHashKey(profileSection, uid) {
 // - Perfil  → { section:"perfil", profileSection, uid? } (+default/invalid).
 // - Recetas → { section:"recetas", tab, panelId } (+ default/invalid).
 // - Gimnasio→ { section:"gimnasio", tab, panelId } (+ default/invalid).
+// - Tareas  → { section:"todos", tab, panelId } (+ default/invalid).
 // - Vacío   → ruta por defecto global (Ocio Series).
 // - Ajeno   → { section:null } (se ignora en runtime).
 export function parseHash(hash = location.hash) {
@@ -163,8 +187,26 @@ export function parseHash(hash = location.hash) {
   const first = segments[0];
 
   // Hashes ajenos a las secciones: no son rutas de la web.
-  if (first !== "ocio" && first !== "perfil" && first !== "recetas" && first !== "gimnasio") {
+  if (first !== "ocio" && first !== "perfil" && first !== "recetas" && first !== "gimnasio" && first !== "todos") {
     return { section: null };
+  }
+
+  // ---------- COSAS QUE HACER ----------
+  // #/tareas y #/tareas/ son alias de la primera pestaña.
+  if (first === "todos") {
+    if (segments.length === 1) {
+      return { section: "todos", tab: TODOS_DEFAULT_TAB, panelId: TODOS_TAB_TO_PANEL[TODOS_DEFAULT_TAB], default: true };
+    }
+    // #/tareas/<tab>: solo valen las pestañas conocidas.
+    if (segments.length === 2 && TODOS_TAB_TO_PANEL[segments[1]]) {
+      if (segments[1] === TODOS_DEFAULT_TAB) {
+        // #/tareas/tareas no es canónico: se normaliza a #/tareas.
+        return { section: "todos", tab: TODOS_DEFAULT_TAB, panelId: TODOS_TAB_TO_PANEL[TODOS_DEFAULT_TAB], default: true, invalid: true };
+      }
+      return { section: "todos", tab: segments[1], panelId: TODOS_TAB_TO_PANEL[segments[1]] };
+    }
+    // Dentro del prefijo pero con segmento desconocido (o de más).
+    return { section: "todos", tab: TODOS_DEFAULT_TAB, panelId: TODOS_TAB_TO_PANEL[TODOS_DEFAULT_TAB], default: true, invalid: true };
   }
 
   // ---------- RECETAS ----------
@@ -259,6 +301,9 @@ function canonicalHashFor(route) {
   if (route?.section === "gimnasio") {
     return gymHashFor(route.tab);
   }
+  if (route?.section === "todos") {
+    return todosHashFor(route.tab);
+  }
   return hashForKey(route?.key || DEFAULT_KEY);
 }
 
@@ -286,11 +331,19 @@ export function getLastGymTab() {
   return GYM_TAB_TO_PANEL[lastGymTab] ? lastGymTab : GYM_DEFAULT_TAB;
 }
 
+// Memoria de la última pestaña de Cosas que hacer de la sesión: la
+// entrada de la sidebar vuelve a esa pestaña (issue #283).
+let lastTodosTab = TODOS_DEFAULT_TAB;
+
+export function getLastTodosTab() {
+  return TODOS_TAB_TO_PANEL[lastTodosTab] ? lastTodosTab : TODOS_DEFAULT_TAB;
+}
+
 // Memoria de la última sección de primer nivel (ocio | recetas |
-// gimnasio) de la sesión: la flecha de volver del perfil regresa a
-// esa sección (issue #213). Las rutas de perfil NO la actualizan a
-// propósito: solo las secciones de contenido dejan rastro al entrar
-// en el perfil.
+// gimnasio | todos) de la sesión: la flecha de volver del perfil
+// regresa a esa sección (issue #213). Las rutas de perfil NO la
+// actualizan a propósito: solo las secciones de contenido dejan
+// rastro al entrar en el perfil.
 let lastSection = "ocio";
 
 export function getLastSection() {
@@ -334,6 +387,9 @@ export function initRouter({ onRoute }) {
     } else if (route.section === "gimnasio") {
       lastSection = "gimnasio";
       lastGymTab = route.tab || GYM_DEFAULT_TAB;
+    } else if (route.section === "todos") {
+      lastSection = "todos";
+      lastTodosTab = route.tab || TODOS_DEFAULT_TAB;
     }
     if (route.default || route.invalid) {
       history.replaceState(null, "", canonicalHashFor(route));
@@ -372,9 +428,11 @@ export function initRouter({ onRoute }) {
     profileHashKey,
     recipesHashFor,
     gymHashFor,
+    todosHashFor,
     getLastOcioKey,
     getLastRecipesTab,
     getLastGymTab,
+    getLastTodosTab,
     getLastSection,
     navigate,
     destroy: () => window.removeEventListener("hashchange", handleHashChange),
