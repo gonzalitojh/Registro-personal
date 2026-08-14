@@ -1,0 +1,32 @@
+{
+  "title": "Nueva sección de cosas que hacer",
+  "description": "Implementar una nueva sección de cosas que hacer con su propio endpoint (colección propia en Firestore, users/{uid}/todos/{id}). Debe incluirse en la barra lateral de navegación (igual que el resto de secciones: Ocio, Recetas, Gimnasio). Primera versión para marcar cosas que hacer a corto plazo, largo plazo, diario de la casa, etc. Al igual que el resto de secciones, debe respetar las características de la barra superior (cabecera global, búsqueda acotada a la sección) y las pestañas (barra de pestañas propia ocultable en Ajustes, como Recetas/Gimnasio). Documentar con detalle cualquier idea adicional útil.",
+  "status": "created",
+  "acceptance criteria": [
+    "Nueva sección «Cosas que hacer» accesible desde la barra lateral de navegación, en el mismo estilo que Ocio/Recetas/Gimnasio.",
+    "Endpoint propio: colección Firestore users/{uid}/todos/{id} (alta, edición, borrado, toggle de hecho y suscripción en tiempo real).",
+    "Alta de tareas con texto obligatorio, categoría (presets corto plazo / largo plazo / casa / personal / trabajo / otro) y nota opcional; fecha límite opcional.",
+    "Marcar tareas como hechas y desmarcarlas; listado con pendientes primero y hechas al final (o pestaña específica), orden estable.",
+    "Barra de pestañas propia de la sección, ocultables en Ajustes (misma integración que Recetas/Gimnasio en settings.js).",
+    "Respetar la barra superior: cabecera global visible, marcado de sección activa en la sidebar, búsqueda acotada con placeholder propio.",
+    "Enrutado hash propio (#/tareas, #/tareas/hechas), memoria de última pestaña, integración con la flecha de volver del perfil.",
+    "Responsivo (360/768/1280 px) sin scroll horizontal; contenido largo se ajusta.",
+    "Visualización correcta en los cuatro modos de tema (oscuro, negro puro, claro, blanco puro).",
+    "Manual de usuario actualizado con la nueva sección.",
+    "ADR documentando la decisión y las ideas adicionales propuestas."
+  ],
+  "definition of done": [
+    "Planificación completada (task-architect).",
+    "Implementación completada con micro-commits.",
+    "Validación QA aprobada contra acceptance criteria y edge cases.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR escrito (con «Related issue: #283») y manual de usuario actualizado.",
+    "PR creada contra dev SIN keyword de cierre; issue #283 con label status: needs-review.",
+    "Task file con status review + bloque pr subido al repositorio."
+  ],
+  "issue": {
+    "number": 283,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/283",
+    "title": "Nueva sección de cosas que hacer"
+  }
+}
