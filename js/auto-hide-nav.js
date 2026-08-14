@@ -62,6 +62,12 @@ function activePanel() {
   if (gymView && !gymView.classList.contains("hidden")) {
     return gymView.querySelector(".gym-view__body section:not(.hidden)");
   }
+  // Vista de Cosas que hacer (issue #283): mismo patrón de primer
+  // nivel que Gimnasio.
+  const todosView = document.getElementById("todos-view");
+  if (todosView && !todosView.classList.contains("hidden")) {
+    return todosView.querySelector(".todos-view__body section:not(.hidden)");
+  }
   return null;
 }
 
@@ -132,7 +138,7 @@ function setNavHidden(hidden) {
 // .shopping-toolbar); si el panel no tiene controles, el botón no
 // aparece.
 const CONTROLS_SELECTOR =
-  ".library-controls, .recipes-toolbar, .ingredients-toolbar, .menu-toolbar, .shopping-toolbar, .gym-toolbar";
+  ".library-controls, .recipes-toolbar, .ingredients-toolbar, .menu-toolbar, .shopping-toolbar, .gym-toolbar, .todos-toolbar";
 
 function updateBackToTop() {
   const panel = activePanel();
@@ -218,7 +224,7 @@ export function initAutoHideNav() {
     for (const mutation of mutations) {
       if (
         mutation.target.matches?.(
-          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, #recipes-view, .recipes-view__body section, #gym-view, .gym-view__body section, .recipes-filter__panel, .ingredients-filter__panel, body"
+          ".panel, .modal, .app-sidebar, #notif-dropdown, #profile-dropdown, .global-search__results, #app, #recipes-view, .recipes-view__body section, #gym-view, .gym-view__body section, #todos-view, .todos-view__body section, .recipes-filter__panel, .ingredients-filter__panel, body"
         )
       ) {
         evaluate();

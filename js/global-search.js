@@ -186,6 +186,9 @@ function filterFriends(profiles, query) {
 // - gimnasio → sin resultados aún (issue #62, v1: sin scope de
 //             búsqueda propia; devolver vacío evita caer a la rama
 //             de Ocio y mezclar colecciones ajenas).
+// - todos → sin resultados aún (issue #283, v1: mismo precedente
+//             que gimnasio; el scope de búsqueda de tareas es
+//             iteración futura, ver ADR-100).
 // Síncrono: lo usan performSearch, runExternalSearch y
 // refreshExternalResults.
 function collectionResults(trimmed) {
@@ -200,6 +203,9 @@ function collectionResults(trimmed) {
     return { recipes: searchRecipes(trimmed).slice(0, 6) };
   }
   if (section === "gimnasio") {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  if (section === "todos") {
     return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
   }
   const allItems = searchCtx.getAllItems();
@@ -249,6 +255,9 @@ function sectionHintText() {
   }
   if (currentSection() === "gimnasio") {
     return "Escribe al menos 2 caracteres para buscar en tu gimnasio.";
+  }
+  if (currentSection() === "todos") {
+    return "Escribe al menos 2 caracteres para buscar en tus tareas.";
   }
   return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros y videojuegos.";
 }

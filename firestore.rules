@@ -101,6 +101,15 @@ service cloud.firestore {
         allow write: if isAllowedUser() && isOwner(userId);
       }
 
+      // Sección de cosas que hacer (issue #283): las tareas son datos
+      // personales del usuario (textos y notas privadas), mismo
+      // tratamiento que las notificaciones: solo el dueño las lee y
+      // escribe (ADR-100). No hay sección "Amigos" que necesite leer
+      // las tareas de otro usuario.
+      match /todos/{itemId} {
+        allow read, write: if isAllowedUser() && isOwner(userId);
+      }
+
       // Las notificaciones son privadas: nadie más puede leerlas.
       match /notifications/{notifId} {
         allow read, write: if isAllowedUser() && isOwner(userId);

@@ -13,7 +13,7 @@ import { renderSettings, normalizeTabKey } from "./settings.js";
 import { buildGlobalFeed } from "./activity-feed.js";
 import { logout } from "./firebase.js";
 import { trapFocus } from "./focus-utils.js";
-import { navigate, parseHash, getLastOcioKey, getLastRecipesTab, getLastGymTab, getLastSection } from "./router.js";
+import { navigate, parseHash, getLastOcioKey, getLastRecipesTab, getLastGymTab, getLastTodosTab, getLastSection } from "./router.js";
 
 let activityChart = null;
 let statusChart = null;
@@ -579,6 +579,12 @@ export function setupProfile(ctx) {
       // oculta #app y #profile-view y destapa #gym-view con su
       // pestaña (mismo patrón que la rama Recetas, issue #213).
       navigate({ section: "gimnasio", tab: normalizeTabKey("gimnasio", getLastGymTab()) });
+    } else if (getLastSection() === "todos") {
+      // Rama Cosas que hacer (issue #283): navegar cambia el hash
+      // (#/perfil → #/tareas) y dispara onRoute → openTodos, que ya
+      // oculta #app y #profile-view y destapa #todos-view con su
+      // pestaña (mismo patrón que las ramas Recetas y Gimnasio).
+      navigate({ section: "todos", tab: normalizeTabKey("todos", getLastTodosTab()) });
     } else {
       // Rama Ocio: comportamiento actual (mostrar #app antes de
       // navegar; el onRoute de Ocio activa la pestaña y re-muestra la

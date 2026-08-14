@@ -44,6 +44,10 @@ import {
   addGymExercise,
   updateGymExercise,
   deleteGymExercise,
+  subscribeToTodos,
+  addTodo,
+  updateTodo,
+  deleteTodo,
 } from "./db.js";
 import { getTvSeasonsMeta, getSeasonEpisodes, getMovieDetails, getTvExtraDetails } from "./api-movies.js";
 import { getOpenLibraryDescription } from "./api-books.js";
@@ -70,6 +74,7 @@ import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
 import { setupGym, subscribeGymData, resetGymData } from "./gym.js";
+import { setupTodos, subscribeTodosData, resetTodosData } from "./todos.js";
 
 // ---------- Estado ----------
 
@@ -79,6 +84,7 @@ let unsubscribeNotifications = null;
 let unsubscribeRecipes = null; // recetas (recipes.js)
 let unsubscribeMenuData = null; // menús (menu.js)
 let unsubscribeGymData = null; // gimnasio (gym.js)
+let unsubscribeTodosData = null; // cosas que hacer (todos.js)
 const allItems = { movies: [], tv: [], books: [], games: [] };
 let notifications = [];
 
@@ -155,6 +161,10 @@ function createCtx() {
     addGymExercise,
     updateGymExercise,
     deleteGymExercise,
+    subscribeToTodos,
+    addTodo,
+    updateTodo,
+    deleteTodo,
     todayISO,
     formatDateEs,
     setTheme,
@@ -222,6 +232,8 @@ function stopAllSubscriptions() {
   unsubscribeMenuData = null;
   if (unsubscribeGymData) unsubscribeGymData();
   unsubscribeGymData = null;
+  if (unsubscribeTodosData) unsubscribeTodosData();
+  unsubscribeTodosData = null;
 }
 
 // ---------- Suscripciones a Firestore (lazy, issue #178) ----------
@@ -504,6 +516,15 @@ async function init() {
       const panelEl = document.getElementById(tab.panelId);
       if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
     });
+    // Pestañas de Cosas que hacer (issue #283): mismo patrón que
+    // Gimnasio, con data-todos-tab. Los paneles los re-togglea
+    // openTodos al abrir la sección; aquí solo se añade hidden.
+    Object.entries(SECTION_REGISTRY.todos.tabs).forEach(([tabKey, tab]) => {
+      const tabEl = document.querySelector(`.tab[data-todos-tab="${tabKey}"]`);
+      if (tabEl) tabEl.classList.toggle("hidden", !isTabVisible(tabKey));
+      const panelEl = document.getElementById(tab.panelId);
+      if (panelEl && !isTabVisible(tabKey)) panelEl.classList.add("hidden");
+    });
     // Si la pestaña activa quedó oculta, caer a la primera visible
     // (el mismo guard de activatePanel, issue #97): sin esto el área
     // de contenido quedaría en blanco al ocultar la pestaña activa.
@@ -530,6 +551,7 @@ async function init() {
   let profileApi = null;
   let recipesApi = null;
   let gymApi = null;
+  let todosApi = null;
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el
@@ -564,6 +586,7 @@ async function init() {
         // el render y, si viene con uid, el detalle del amigo).
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
+        document.getElementById("todos-view")?.classList.add("hidden");
         if (profileApi) {
           profileApi.openProfileSection(route.profileSection, ctx, {
             fromRouter: true,
@@ -576,6 +599,7 @@ async function init() {
         // pestaña está oculta en Ajustes, se normaliza a la primera
         // visible y se reescribe la URL (mismo guard que Ocio, #97).
         document.getElementById("gym-view")?.classList.add("hidden");
+        document.getElementById("todos-view")?.classList.add("hidden");
         if (recipesApi) {
           const tab = normalizeTabKey("recetas", route.tab);
           if (tab !== route.tab) {
@@ -592,6 +616,7 @@ async function init() {
         // nada: al entrar, watchAuthState llama a router.applyRoute().
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("todos-view")?.classList.add("hidden");
         if (gymApi) {
           const tab = normalizeTabKey("gimnasio", route.tab);
           if (tab !== route.tab) {
@@ -599,12 +624,30 @@ async function init() {
           }
           gymApi.openGym({ tab, fromRouter: true });
         }
+      } else if (route.section === "todos") {
+        // Ruta de Cosas que hacer (issue #283): abre la sección con
+        // la pestaña pedida (#/tareas, #/tareas/hechas). Mismo guard
+        // de normalización que el resto (#97): si la pestaña está
+        // oculta en Ajustes, se cae a la primera visible y se
+        // reescribe la URL. Sin sesión no se destapa nada: al entrar,
+        // watchAuthState llama a router.applyRoute().
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("gym-view")?.classList.add("hidden");
+        if (todosApi) {
+          const tab = normalizeTabKey("todos", route.tab);
+          if (tab !== route.tab) {
+            router.navigate({ section: "todos", tab }, { replace: true });
+          }
+          todosApi.openTodos({ tab, fromRouter: true });
+        }
       } else if (route.section === "ocio") {
         // Ruta de Ocio: cerrar el perfil si estaba abierto y activar
         // la pestaña (lastOcioKey lo actualiza el router internamente).
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
+        document.getElementById("todos-view")?.classList.add("hidden");
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
@@ -704,6 +747,9 @@ async function init() {
       // pantalla de acceso).
       resetGymData();
       document.getElementById("gym-view")?.classList.add("hidden");
+      // Cosas que hacer (issue #283): mismo patrón que Gimnasio.
+      resetTodosData();
+      document.getElementById("todos-view")?.classList.add("hidden");
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya
@@ -747,6 +793,10 @@ async function init() {
     // puede llamar en cada login sin acumular listeners.
     gymApi = setupGym({ ctx });
 
+    // Cosas que hacer (issue #283): API de apertura para el router.
+    // setupTodos es idempotente, mismo patrón que setupGym.
+    todosApi = setupTodos({ ctx });
+
     // Si la carga inicial pedía una ruta de perfil (#/perfil/...) sin
     // sesión, el onRoute la ignoró (profileApi no existía aún). Al
     // entrar, la retomamos para abrir la sección que se solicitó.
@@ -761,6 +811,11 @@ async function init() {
     // Y con Gimnasio (issue #62): si la recarga pedía #/gimnasio/...
     // sin sesión, se abre la sección al entrar.
     if (router.getCurrentSection() === "gimnasio") {
+      router.applyRoute();
+    }
+    // Y con Cosas que hacer (issue #283): si la recarga pedía
+    // #/tareas/... sin sesión, se abre la sección al entrar.
+    if (router.getCurrentSection() === "todos") {
       router.applyRoute();
     }
 
@@ -849,6 +904,16 @@ async function init() {
       subscribe: ({ onChange, onError }) => subscribeGymData(user.uid, onChange, onError),
       onChange: () => {},
       onError: () => ui.showToast("No se pudieron cargar tus datos de gimnasio."),
+      onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
+    });
+
+    // Cosas que hacer (issue #283): suscripción en tiempo real de las
+    // tareas, con el mismo reintento con backoff (issue #147). El
+    // render lo hace todos.js con cada snapshot; no-op.
+    unsubscribeTodosData = subscribeWithRetry({
+      subscribe: ({ onChange, onError }) => subscribeTodosData(user.uid, onChange, onError),
+      onChange: () => {},
+      onError: () => ui.showToast("No se pudieron cargar tus tareas."),
       onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
     });
   });
