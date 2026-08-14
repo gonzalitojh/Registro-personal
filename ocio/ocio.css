@@ -1843,8 +1843,12 @@ input, textarea, select { font-size: 16px; }
    tarjeta (flex: 1) y el botón "Añadir" (.saga-card__add) queda como
    hermano, anclado abajo con margin-top: auto. Los estilos del cuerpo
    (.rec-card__body) se heredan por clase, ahora sobre span (phrasing
-   content dentro del button). */
-.saga-card__open {
+   content dentro del button). Las tarjetas de recomendación pulsables
+   (.rec-card--openable/.rec-card__open/.rec-card__hint) comparten
+   exactamente estos estilos (issue #280, segunda iteración): una sola
+   fuente de verdad por regla, selectores agrupados. */
+.saga-card__open,
+.rec-card__open {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1859,11 +1863,13 @@ input, textarea, select { font-size: 16px; }
   color: inherit;
 }
 
-.saga-card .rec-card__cover {
+.saga-card .rec-card__cover,
+.rec-card--openable .rec-card__cover {
   display: block; /* evita el gap de baseline de la img inline dentro del button */
 }
 
-.saga-card__hint {
+.saga-card__hint,
+.rec-card__hint {
   font-family: var(--font-mono);
   font-size: 0.62rem;
   /* Contraste AA en la familia oscura por defecto (regla 4 AGENTS.md):
@@ -1876,11 +1882,15 @@ input, textarea, select { font-size: 16px; }
 
 [data-theme="black"] .saga-card__hint,
 [data-theme="light"] .saga-card__hint,
-[data-theme="white"] .saga-card__hint {
+[data-theme="white"] .saga-card__hint,
+[data-theme="black"] .rec-card__hint,
+[data-theme="light"] .rec-card__hint,
+[data-theme="white"] .rec-card__hint {
   color: var(--ink-soft);
 }
 
-.saga-card__open:focus-visible {
+.saga-card__open:focus-visible,
+.rec-card__open:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
