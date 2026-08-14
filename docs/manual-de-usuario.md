@@ -20,18 +20,19 @@ en la web. Léelo por secciones según lo que necesites.
 7. [Videojuegos](#7-videojuegos)
 8. [Recetas](#8-recetas)
 9. [Gimnasio](#9-gimnasio)
-10. [Cómo buscar](#10-cómo-buscar)
-11. [Organizar y ordenar tu registro](#11-organizar-y-ordenar-tu-registro)
-12. [La ficha de cada película, serie, libro o videojuego](#12-la-ficha-de-cada-película-serie-libro-o-videojuego)
-13. [Valoraciones con estrellas](#13-valoraciones-con-estrellas)
-14. [Acciones rápidas](#14-acciones-rápidas)
-15. [Notificaciones](#15-notificaciones)
-16. [Tu perfil](#16-tu-perfil)
-17. [Ajustes](#17-ajustes)
-18. [¿Cuándo se actualizan los datos?](#18-cuándo-se-actualizan-los-datos)
-19. [Privacidad](#19-privacidad)
-20. [Instalar la web en tu teléfono](#20-instalar-la-web-en-tu-teléfono)
-21. [Problemas frecuentes](#21-problemas-frecuentes)
+10. [Cosas que hacer](#10-cosas-que-hacer)
+11. [Cómo buscar](#11-cómo-buscar)
+12. [Organizar y ordenar tu registro](#12-organizar-y-ordenar-tu-registro)
+13. [La ficha de cada película, serie, libro o videojuego](#13-la-ficha-de-cada-película-serie-libro-o-videojuego)
+14. [Valoraciones con estrellas](#14-valoraciones-con-estrellas)
+15. [Acciones rápidas](#15-acciones-rápidas)
+16. [Notificaciones](#16-notificaciones)
+17. [Tu perfil](#17-tu-perfil)
+18. [Ajustes](#18-ajustes)
+19. [¿Cuándo se actualizan los datos?](#19-cuándo-se-actualizan-los-datos)
+20. [Privacidad](#20-privacidad)
+21. [Instalar la web en tu teléfono](#21-instalar-la-web-en-tu-teléfono)
+22. [Problemas frecuentes](#22-problemas-frecuentes)
 
 ---
 
@@ -45,6 +46,8 @@ Mi Registro es una web para anotar:
 - **Videojuegos** jugados, en curso o pendientes, con historial de sesiones.
 - **Entrenos de gimnasio**, con sus ejercicios y los pesos y
   repeticiones de cada serie.
+- **Cosas que hacer**: tus tareas y pendientes, con fecha límite,
+  categoría y nota (más en [sección 10](#10-cosas-que-hacer)).
 
 La web se encarga de completar sola los datos de cada título: portada,
 sinopsis, reparto, fechas de estreno, valoraciones de la comunidad, etc.
@@ -74,36 +77,41 @@ elige **«Cerrar sesión»** en el menú que se despliega.
 Nada más entrar verás:
 
 - **Arriba, la cabecera** (visible en las secciones de **Ocio**,
-  **Recetas** y **Gimnasio**; en **tu perfil no aparece**: allí tienes
+  **Recetas**, **Gimnasio** y **Cosas que hacer**; en **tu perfil no
+  aparece**: allí tienes
   la flecha de volver y las pestañas en la misma fila, ver
-  [sección 16](#16-tu-perfil); en la pantalla de acceso tampoco):
+  [sección 17](#17-tu-perfil); en la pantalla de acceso tampoco):
   - ☰ **Hamburguesa**: abre la barra lateral de navegación (un panel
     deslizante a la izquierda). Tiene la entrada **«Ocio»**, que te
     devuelve a las pestañas de Series, Películas, Libros y Videojuegos,
-    **«Recetas»**, **«Gimnasio»** y, en la parte de abajo,
+    **«Recetas»**, **«Gimnasio»**, **«Cosas que hacer»** y, en la
+    parte de abajo,
     **«Ajustes»**, que abre la
-    sección de ajustes de tu perfil (más en [sección 17](#17-ajustes)).
+    sección de ajustes de tu perfil (más en [sección 18](#18-ajustes)).
     Se cierra pulsando fuera, la ✕, la tecla **Esc** o la propia
-    entrada. Si en [Ajustes → Secciones y pestañas](#17-ajustes) dejas
+    entrada. Si en [Ajustes → Secciones y pestañas](#18-ajustes) dejas
     solo **una sección visible**, la barra lateral se sustituye por un
     botón **engranaje ⚙** en la cabecera que abre directamente Ajustes;
     en cuanto vuelvas a tener más de una sección visible, la barra
     lateral reaparece.
   - **Barra de búsqueda** (en el centro): busca **dentro de la sección
-    en la que estés** (más en [sección 10](#10-cómo-buscar)). Al entrar,
+    en la que estés** (más en [sección 11](#11-cómo-buscar)). Al entrar,
     la barra muestra brevemente el nombre de la web —**«Mi Registro»**—
     y a los pocos segundos pasa al texto de la sección: «Buscar
     películas, series, libros y videojuegos...» en Ocio, «Buscar
-    recetas...» en Recetas y «Buscar en tu gimnasio...» en Gimnasio.
+    recetas...» en Recetas, «Buscar en tu gimnasio...» en Gimnasio y
+    «Buscar tareas...» en Cosas que hacer.
   - A la derecha:
-    - **Icono de campana**: tus notificaciones (más en [sección 15](#15-notificaciones)).
+    - **Icono de campana**: tus notificaciones (más en [sección 16](#16-notificaciones)).
     - **Tu foto**: pulsándola se abre un menú con las cuatro secciones de
       tu perfil (**Estadísticas, Amigos, Actividad, Ajustes**) y la
       opción **«Cerrar sesión»**. Desde aquí entras y sales del perfil:
-      en las secciones de Recetas y de Gimnasio no hay botón de
+      en las secciones de Recetas, de Gimnasio y de Cosas que hacer no
+      hay botón de
       «volver» — la navegación siempre está en la cabecera.
   - La cabecera **se oculta al bajar por las listas de Ocio, de
-    Recetas o de Gimnasio y vuelve al subir**: siempre está ahí cuando
+    Recetas, de Gimnasio o de Cosas que hacer y vuelve al subir**:
+    siempre está ahí cuando
     la necesitas
     ([sección 3.2](#32-la-cabecera-y-las-pestañas-al-hacer-scroll)).
 - **Las pestañas** (en la barra fija bajo la cabecera en el ordenador
@@ -122,7 +130,7 @@ Nada más entrar verás:
   fija de la misma manera (abajo en el móvil, bajo la barra de búsqueda
   en ordenador y tableta), se oculta al bajar por la lista como la de
   Ocio y sus pestañas se pueden ocultar desde
-  [Ajustes → Secciones y pestañas](#17-ajustes) igual que las de Ocio
+  [Ajustes → Secciones y pestañas](#18-ajustes) igual que las de Ocio
   (más en [sección 8](#8-recetas)).
 - **La sección de Gimnasio tiene su propia barra de pestañas
   (Resumen, Entrenos, Ejercicios), igual que Ocio y Recetas**:
@@ -131,8 +139,16 @@ Nada más entrar verás:
   la misma manera (abajo en el móvil, bajo la barra de búsqueda en
   ordenador y tableta), se oculta al bajar por la lista como las
   demás y sus pestañas se pueden ocultar desde
-  [Ajustes → Secciones y pestañas](#17-ajustes) igual que las de Ocio
+  [Ajustes → Secciones y pestañas](#18-ajustes) igual que las de Ocio
   (más en [sección 9](#9-gimnasio)).
+- **La sección de Cosas que hacer tiene su propia barra de pestañas
+  (Tareas, Hechas), igual que Ocio, Recetas y Gimnasio**: **Tareas en
+  teal** y **Hechas en ocre**, cada una con su icono. Es fija de la
+  misma manera (abajo en el móvil, bajo la barra de búsqueda en
+  ordenador y tableta), se oculta al bajar por la lista como las
+  demás y sus pestañas se pueden ocultar desde
+  [Ajustes → Secciones y pestañas](#18-ajustes) igual que las de Ocio
+  (más en [sección 10](#10-cosas-que-hacer)).
 
 La pestaña activa indica siempre en qué colección estás, por eso cada
 colección no repite un título como «Mis series»: nada más entrar ves
@@ -153,12 +169,12 @@ Cada pestaña se divide en dos zonas:
 
 - **Arriba**: tu biblioteca, con su barra de herramientas para filtrar
   por estado, ordenar y cambiar la vista entre cuadrícula y lista
-  (más en [sección 11](#11-organizar-y-ordenar-tu-registro)).
+  (más en [sección 12](#12-organizar-y-ordenar-tu-registro)).
 - **Debajo**: la lista de tus títulos de ese tipo.
 
 Buscar títulos nuevos para añadir ya no se hace dentro de la pestaña:
 todo se busca desde la **barra de búsqueda de la cabecera**
-(más en [sección 10](#10-cómo-buscar)).
+(más en [sección 11](#11-cómo-buscar)).
 
 ### 3.1 Compartir direcciones y volver a las pestañas
 
@@ -180,13 +196,14 @@ ninguna pestaña, la web te lleva siempre a **Series**, igual que
 hasta ahora.
 
 Tu perfil también tiene direcciones propias (`#/perfil/...`): ver
-[sección 16.0](#160-compartir-direcciones-de-tu-perfil).
+[sección 17.0](#170-compartir-direcciones-de-tu-perfil).
 
 ### 3.2 La cabecera y las pestañas al hacer scroll
 
 Al bajar por una lista de **Ocio** (series, películas, libros o
-videojuegos), de **Recetas** (Recetas, Ingredientes, Menú o Compra)
-o de **Gimnasio** (Resumen, Entrenos o Ejercicios),
+videojuegos), de **Recetas** (Recetas, Ingredientes, Menú o Compra),
+de **Gimnasio** (Resumen, Entrenos o Ejercicios) o de **Cosas que
+hacer** (Tareas o Hechas),
 la barra de búsqueda de arriba y las pestañas se ocultan
 deslizándose hacia el borde de la pantalla, como si salieran de ella,
 para que la lista ocupe todo el espacio. En cuanto desplazas hacia
@@ -195,13 +212,15 @@ arriba, vuelven a aparecer deslizándose desde su borde.
 En **tu perfil** no hay cabecera global: tiene su propia cabecera con
 la flecha de volver y las pestañas en la misma fila. La flecha de
 volver del perfil te lleva de vuelta a la sección desde la que
-entraste, **Ocio**, **Recetas** o **Gimnasio**, con la pestaña que
+entraste, **Ocio**, **Recetas**, **Gimnasio** o **Cosas que hacer**,
+con la pestaña que
 tenías activa.
 
 Si sigues bajando y los controles de la lista (los filtros de estado,
 orden y vista en Ocio, la barra de herramientas de la pestaña de
-Recetas activa o el botón «+ Nuevo entreno» / «+ Nuevo ejercicio» de
-Gimnasio) quedan también fuera de la pantalla, verás un pequeño
+Recetas activa, el botón «+ Nuevo entreno» / «+ Nuevo ejercicio» de
+Gimnasio o el botón «+ Nueva tarea» de Cosas que hacer) quedan
+también fuera de la pantalla, verás un pequeño
 botón redondeado **«Volver arriba»** flotando en el centro, arriba,
 sobre la lista: púlsalo para volver al principio de la lista de un
 salto.
@@ -245,7 +264,7 @@ pierde nada.
    resultado: se abrirá una vista previa con los detalles.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
-aparece **«Añadir manualmente»** (más en [sección 10.3](#103-añadir-manualmente)).
+aparece **«Añadir manualmente»** (más en [sección 11.3](#113-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
@@ -265,7 +284,7 @@ Para cada episodio puedes:
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
 - **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
-- **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
+- **Valorarlo** con estrellas, una vez visto (más en [sección 14](#14-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
@@ -302,7 +321,7 @@ anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
 En la ficha: **«✎ Editar información»** te permite corregir datos (título,
 año, portada...), y **«Eliminar»** borra la serie. El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
-arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
+arrepientes (más en [sección 15.3](#153-deshacer-un-borrado)).
 
 ## 5. Películas
 
@@ -325,7 +344,7 @@ Igual que con las series: escribe el título en la **barra de búsqueda
 de la cabecera**, pulsa el botón **«Película»** y luego **«Añadir»** en
 el resultado que quieras, o usa la vista previa pulsando sobre la fila.
 Si no la encuentras, al final de los resultados aparece **«Añadir
-manualmente»** (más en [sección 10.3](#103-añadir-manualmente)).
+manualmente»** (más en [sección 11.3](#113-añadir-manualmente)).
 
 ### 5.3 Marcar como vista
 
@@ -369,7 +388,7 @@ Si el libro tiene varias ediciones, la web te deja **elegir portada y
 sinopsis** antes de añadirlo. Si ya lo tienes en tu registro, el botón
 se muestra como «Añadido». Si no lo encuentras, al final de los
 resultados aparece **«Añadir manualmente»**
-(más en [sección 10.3](#103-añadir-manualmente)).
+(más en [sección 11.3](#113-añadir-manualmente)).
 
 ### 6.3 Empezar y terminar lecturas
 
@@ -425,7 +444,7 @@ valoración de la comunidad y más datos.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Si no lo encuentras, al final de los resultados aparece **«Añadir
-  manualmente»** (más en [sección 10.3](#103-añadir-manualmente)).
+  manualmente»** (más en [sección 11.3](#113-añadir-manualmente)).
 
 ### 7.3 Empezar y terminar partidas
 
@@ -449,7 +468,7 @@ fin (o «jugando» si está en curso). Puedes **editar las fechas** y
 sesiones adicionales. Cada sesión tiene además un campo opcional de
 **horas** (cuántas horas dedicaste en esa partida, en pasos de media
 hora); ese campo se usa para la estadística de **horas jugadas** de tu
-perfil (sección 15.1).
+perfil (sección 17.1).
 
 ## 8. Recetas
 
@@ -461,7 +480,7 @@ de la compra automáticamente. Tiene cuatro pestañas — **Recetas**,
 búsqueda en el ordenador y la tableta, cada una con su icono y su color
 (**ocre**, **violeta**, **verde** y **rojo**). La pestaña activa se
 marca con una franja de su color. Puedes ocultarlas desde [Ajustes →
-Secciones y pestañas](#17-ajustes), igual que las de Ocio.
+Secciones y pestañas](#18-ajustes), igual que las de Ocio.
 
 ### 8.1 Tus recetas
 
@@ -498,7 +517,7 @@ pulsa «Añadir». Las etiquetas propias se guardan en tu cuenta y aparecen
 marcadas como «(propia)».
 
 La **barra de búsqueda de la cabecera** busca **dentro de tus recetas**
-(más en [sección 10.2](#102-buscar-en-tu-registro)): encuentra recetas
+(más en [sección 11.2](#112-buscar-en-tu-registro)): encuentra recetas
 **por nombre, por ingrediente** (por ejemplo «huevo» muestra todas las
 recetas que lo usan) y **por etiqueta** (por ejemplo «vegetariano»).
 Pulsa un resultado para abrir la receta en modo lectura.
@@ -701,7 +720,7 @@ una receta para abrirla en modo lectura) y tiene un botón
   la ✕ de arriba.
 
 Puedes ocultar esta pestaña desde [Ajustes → Secciones y
-pestañas](#17-ajustes) igual que el resto.
+pestañas](#18-ajustes) igual que el resto.
 
 ### 8.6 Datos y sincronización
 
@@ -722,7 +741,7 @@ y bajo la barra de búsqueda en el ordenador y la tableta, cada una con
 su icono y su color (**Resumen en violeta**, **Entrenos en teal** y
 **Ejercicios en ocre**). La pestaña
 activa se marca con una franja de su color. Puedes ocultarlas desde
-[Ajustes → Secciones y pestañas](#17-ajustes), igual que las demás.
+[Ajustes → Secciones y pestañas](#18-ajustes), igual que las demás.
 
 Justo debajo de las pestañas está el selector **«Unidad de peso»**
 (ver 9.4), visible en toda la sección.
@@ -862,19 +881,102 @@ Tu elección **se guarda y se sincroniza entre tus dispositivos**: si
 cambias a libras en el móvil, el ordenador recordará también esa
 preferencia.
 
-## 10. Cómo buscar
+## 10. Cosas que hacer
 
-### 10.1 Buscar en el catálogo
+La sección **«Cosas que hacer»** (en la barra lateral, junto a
+«Ocio», «Recetas» y «Gimnasio») te permite apuntar lo que tienes que
+hacer: cosas a **corto plazo** o a **largo plazo**, tareas de
+**casa**, asuntos **personales** o del **trabajo** y cualquier
+**otro** pendiente. Para cada tarea puedes guardar una **nota** y una
+**fecha límite**.
+
+Tiene dos pestañas — **Tareas** y **Hechas** — en una barra fija
+**igual que las del resto de secciones**: abajo en el móvil y bajo la
+barra de búsqueda en el ordenador y la tableta, cada una con su icono
+y su color (**Tareas en teal** y **Hechas en ocre**). La pestaña
+activa se marca con una franja de su color. Puedes ocultarlas desde
+[Ajustes → Secciones y pestañas](#18-ajustes), igual que las demás.
+La sección recuerda la pestaña en la que estabas la última vez.
+
+### 10.1 Añadir una tarea
+
+Con **«+ Nueva tarea»** creas una con:
+
+- **Texto** (obligatorio): qué hay que hacer (máximo 200 caracteres).
+- **Categoría** (opcional): corto plazo, largo plazo, casa, personal,
+  trabajo u otro.
+- **Fecha límite** (opcional): el día en que deberías tenerla hecha.
+- **Nota** (opcional): detalles, contexto, dónde, cómo…
+
+Pulsa **«Guardar»** para guardarla. Se guarda en tu cuenta y se
+sincroniza en tiempo real entre tus dispositivos, como el resto de la
+web.
+
+### 10.2 Marcar como hecha y desmarcarla
+
+Cada tarea tiene una **casilla** a su izquierda. Cuando la hayas
+hecho, púlsala: la tarea se marca y pasa a la pestaña **«Hechas»**, y
+la web guarda sola la **fecha en que la completaste**. Si te
+equivocas, desmarca la casilla (desde la pestaña Hechas): la tarea
+vuelve a «Tareas» y la fecha de completado se quita.
+
+### 10.3 Editar y eliminar
+
+Cada tarea tiene dos botones: **«✎ Editar»**, que abre la misma
+ventana de alta con lo que ya tenías escrito para corregirlo, y
+**«Eliminar»**, que la borra (la web te pide confirmación antes de
+borrarla).
+
+### 10.4 El orden de las tareas
+
+- En **«Tareas»** (las pendientes): las tareas **con fecha límite
+  aparecen primero**, de la más urgente a la menos; las **sin fecha
+  quedan al final**. Dentro de cada grupo, las **más recientes
+  primero**.
+- En **«Hechas»**: las tareas completadas aparecen por su **fecha de
+  completado**, de la más reciente a la más antigua.
+
+### 10.5 La fecha límite y el color rojo
+
+Si una tarea tiene fecha límite, verás el día junto a ella (📅). Si
+esa fecha **ya ha pasado y la tarea sigue sin completar**, la fecha se
+muestra en **rojo**: la tarea está vencida y toca hacerla.
+
+### 10.6 Buscar tareas
+
+La **barra de búsqueda de la cabecera** está disponible en la sección
+(con el texto «Buscar tareas...»). En esta versión la búsqueda **no
+devuelve resultados** en Cosas que hacer: la barra está ahí, pero las
+tareas no se buscan todavía (está previsto en una versión futura).
+
+### 10.7 Ocultar la sección o sus pestañas
+
+Desde [Ajustes → Secciones y pestañas](#18-ajustes) puedes ocultar la
+sección **«Cosas que hacer»** entera (desaparece de la barra lateral)
+o solo una de sus pestañas (**Tareas** o **Hechas**), igual que con
+el resto de secciones. Ocultar algo **no borra tus tareas**: solo las
+quita de la vista, y puedes volver a mostrarlas cuando quieras.
+
+### 10.8 Tus tareas son privadas
+
+Las tareas son **datos personales tuyos**: solo tú las ves, igual que
+tus notificaciones. Ni siquiera tus amigos pueden verlas cuando
+visitan tu perfil en modo lectura.
+
+## 11. Cómo buscar
+
+### 11.1 Buscar en el catálogo
 
 Todo se busca desde la **barra de búsqueda de la cabecera** (en Ocio,
-en Recetas y en Gimnasio; en tu perfil no hay barra de búsqueda)
+en Recetas, en Gimnasio y en Cosas que hacer; en tu perfil no hay
+barra de búsqueda)
 (también se abre con las teclas **Ctrl+K**, **Cmd+K** en Mac, o **/**).
 En la sección de **Ocio**, al escribir el título (mínimo 2 caracteres)
 verás los resultados, y en la parte superior del panel hay cuatro
 botones, siempre visibles: **«Serie»**, **«Película»**, **«Libro»** y
 **«Videojuego»** (en Recetas no aparecen: allí el buscador solo mira
-dentro de la sección; en Gimnasio tampoco: allí de momento no
-encuentra nada, ver 10.2). Pulsa el
+dentro de la sección; en Gimnasio y en Cosas que hacer tampoco: allí
+de momento no encuentra nada, ver 11.2). Pulsa el
 que corresponda para **buscar en el catálogo**:
 
 - Películas y series se buscan en **TMDB** (el mismo catálogo de
@@ -883,7 +985,7 @@ que corresponda para **buscar en el catálogo**:
   (y se agrupan las ediciones del mismo libro). Se buscan siempre en
   español.
 - Videojuegos se buscan en **IGDB** (igdb.com) a través de un proxy
-  propio (ver sección 21).
+  propio (ver sección 22).
 
 Los resultados del catálogo aparecen en una sección **«Catálogo ·
 Series/Películas/Libros/Videojuegos»** bajo tus resultados de la
@@ -911,7 +1013,7 @@ igual). Para cada resultado:
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
   **«¿No la encuentras? Añadir manualmente…»**
-  (más en [sección 10.3](#103-añadir-manualmente)).
+  (más en [sección 11.3](#113-añadir-manualmente)).
 
 Si no hay resultados del catálogo para esa búsqueda, la web te lo dice
 y te ofrece igualmente añadir el título manualmente.
@@ -927,11 +1029,12 @@ Si una portada no se puede cargar (imagen rota o bloqueada por la web
 que la aloja), se sustituye automáticamente por la imagen «Sin imagen»;
 el resultado sigue funcionando igual.
 
-### 10.2 Buscar en tu registro
+### 11.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
 **Cmd+K** en Mac, o **/**) busca **solo dentro de la sección en la que
-estás** (está disponible en **Ocio**, en **Recetas** y en **Gimnasio**;
+estás** (está disponible en **Ocio**, en **Recetas**, en **Gimnasio**
+y en **Cosas que hacer**;
 en tu perfil no hay barra de búsqueda):
 
 - En **Ocio**: en lo que ya tienes anotado — **películas, series,
@@ -941,6 +1044,10 @@ en tu perfil no hay barra de búsqueda):
 - En **Gimnasio**: **de momento la búsqueda no encuentra nada**: la
   barra está disponible, pero los entrenos y los ejercicios no se
   buscan todavía (está previsto en una versión futura).
+- En **Cosas que hacer**: **de momento la búsqueda no encuentra
+  nada**: la barra está disponible, pero las tareas no se buscan
+  todavía (más en [sección 10.6](#106-buscar-tareas); está previsto
+  en una versión futura).
 
 Al pulsar la barra (o usar el atajo de teclado) se abre un **panel
 desplegable** bajo ella con los resultados. Los resultados se agrupan
@@ -956,7 +1063,7 @@ mientras la búsqueda está abierta, el botón de menú **☰ se convierte en un
 ✕** (con una pequeña animación); pulsa esa ✕ para cerrar el panel y el
 botón vuelve a ser ☰, listo para abrir el menú lateral como siempre.
 
-### 10.3 Añadir manualmente
+### 11.3 Añadir manualmente
 
 Si un título no aparece en el catálogo, usa el enlace
 **«¿No la encuentras? Añadir manualmente»** que aparece al final de los
@@ -971,7 +1078,7 @@ resultados de catálogo del buscador. Rellena:
 Los títulos añadidos manualmente no tienen datos automáticos (fechas de
 episodios, sinopsis...), pero se comportan igual que el resto en tu lista.
 
-## 11. Organizar y ordenar tu registro
+## 12. Organizar y ordenar tu registro
 
 En la barra de cada biblioteca tienes:
 
@@ -1006,7 +1113,7 @@ Cada estado tiene su **color** en la tarjeta: Pendiente en rojo,
 Viendo/Leyendo en verde, Vista/Leído en ocre, Standby en gris y Abandonado
 en rojo con el texto tachado.
 
-## 12. La ficha de cada película, serie, libro o videojuego
+## 13. La ficha de cada película, serie, libro o videojuego
 
 Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
 verás:
@@ -1062,12 +1169,12 @@ En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
 En las series, junto a tu valoración general verás también la **media de
-tus notas de episodios** (ver sección 13).
+tus notas de episodios** (ver sección 14).
 
 En los videojuegos, la ficha incluye además el **historial de sesiones de
 juego** (más en [sección 7.4](#74-historial-de-sesiones)).
 
-## 13. Valoraciones con estrellas
+## 14. Valoraciones con estrellas
 
 Puedes valorar de **1 a 5 estrellas**, incluidas las **medias estrellas**
 (por ejemplo, 2.5):
@@ -1102,9 +1209,9 @@ solo mientras la ventana está abierta.
 En tu lista, cada título muestra tus estrellas (★, con «½» para las
 medias, por ejemplo ★★½) y la nota de la comunidad.
 
-## 14. Acciones rápidas
+## 15. Acciones rápidas
 
-### 14.1 El botón grande de cada fila
+### 15.1 El botón grande de cada fila
 
 En la vista de **lista**, cada título tiene un botón grande con la acción
 más probable:
@@ -1115,7 +1222,7 @@ más probable:
 - **Libro**: «Empezar ✓», «Terminar ✓» o «Releer ↺».
 - **Videojuego**: «Empezar ✓», «Terminar ✓» o «Rejugar ↺».
 
-### 14.2 Deslizar en el móvil
+### 15.2 Deslizar en el móvil
 
 En el móvil (vista de lista) puedes **deslizar el dedo hacia un lado**
 sobre una fila para disparar esa misma acción. Deslizar en vertical sigue
@@ -1127,7 +1234,7 @@ cambia a «Marcado deshecho.» (o «Desmarcado.» para un episodio). En
 series en pausa o abandonadas no funciona: la web te avisa de que la
 abras para retomarla.
 
-### 14.3 Deshacer un borrado
+### 15.3 Deshacer un borrado
 
 Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
 instante: aparece el aviso ««Título» se eliminará…» con un botón
@@ -1135,7 +1242,7 @@ instante: aparece el aviso ««Título» se eliminará…» con un botón
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
 
-## 15. Notificaciones
+## 16. Notificaciones
 
 El **icono de campana** de la cabecera te avisa (solo dentro de la web, una vez al
 día) de:
@@ -1151,14 +1258,14 @@ cada una con su ✕. Pulsa fuera de la ventana (o la tecla **Esc**) para
 cerrarla.
 
 Puedes elegir qué tipos de avisos quieres (o desactivarlos todos) en
-**Ajustes → Notificaciones** ([sección 17](#17-ajustes)).
+**Ajustes → Notificaciones** ([sección 18](#18-ajustes)).
 
 Si además activas **«Notificaciones en el dispositivo»**, esos mismos
 avisos aparecen también como **notificación del sistema** (en la pantalla
 del teléfono o en el escritorio) cuando la web está abierta pero no la
 estás mirando.
 
-## 16. Tu perfil
+## 17. Tu perfil
 
 Pulsa **tu foto** (arriba a la derecha) para abrir el menú de perfil y
 elige la sección a la que quieras ir: **Estadísticas, Amigos, Actividad
@@ -1169,11 +1276,12 @@ dispositivo (móvil, tablet u ordenador).
 En tu perfil **no aparece la cabecera global** (barra lateral,
 búsqueda y botón de perfil): arriba tienes la **flecha de volver** y
 las pestañas de tu perfil en la misma fila. La flecha te devuelve a la
-sección **Ocio**, **Recetas** o **Gimnasio** desde la que entraste al
+sección **Ocio**, **Recetas**, **Gimnasio** o **Cosas que hacer**
+desde la que entraste al
 perfil, con la pestaña que tenías activa.
 Tu perfil tiene cuatro secciones:
 
-### 16.0 Compartir direcciones de tu perfil
+### 17.0 Compartir direcciones de tu perfil
 
 Igual que las pestañas de [sección 3.1](#31-compartir-direcciones-y-volver-a-las-pestañas),
 cada sección del perfil tiene su propia dirección web, que termina en
@@ -1193,7 +1301,7 @@ Entrar con una dirección de perfil sin sesión iniciada abre primero la
 pantalla de entrada; al iniciar sesión, la web te lleva a la sección
 que pedías.
 
-### 16.1 Estadísticas
+### 17.1 Estadísticas
 
 Ocho cifras: **Películas vistas, Episodios vistos, Series completadas,
 Libros leídos, Juegos jugados, Juegos completados, Sesiones de juego y
@@ -1215,7 +1323,7 @@ Debajo hay cinco gráficas:
 - **Géneros**: los 6 géneros más jugados en el periodo.
 - **Plataformas**: las 6 plataformas más jugadas en el periodo.
 
-### 16.2 Amigos
+### 17.2 Amigos
 
 Aquí ves a **todas las personas registradas** (con su foto y su nombre).
 Pulsa en una para ver **su registro en modo solo lectura**. Para que la
@@ -1235,9 +1343,11 @@ vuelves a la lista de amigos y entras de nuevo en un amigo, se
 **restablece** todo: pestaña **Películas** y filtro **Todos**.
 
 Lo que **no** verás de tus amigos: sus notas personales (siempre privadas),
-sus valoraciones episodio a episodio ni sus historiales completos.
+sus valoraciones episodio a episodio, sus historiales completos ni sus
+tareas de Cosas que hacer (también privadas, ver
+[sección 10.8](#108-tus-tareas-son-privadas)).
 
-### 16.3 Actividad
+### 17.3 Actividad
 
 El **feed de actividad** de tus amigos, agrupado por días (Hoy, Ayer,
 fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…»,
@@ -1246,11 +1356,11 @@ fecha): «Vio la película…», «Empezó la serie…», «Vio episodios de…�
 Pulsa en una actividad para ver la ficha del amigo. Si nadie ha hecho
 nada, verás «Todavía no hay actividad reciente de tus amigos.»
 
-### 16.4 Ajustes
+### 17.4 Ajustes
 
-Se explica completo en la [sección 17](#17-ajustes).
+Se explica completo en la [sección 18](#18-ajustes).
 
-## 17. Ajustes
+## 18. Ajustes
 
 Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 (abre el menú con la ☰ de la cabecera) o desde el
@@ -1269,13 +1379,16 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   Tu elección se guarda automáticamente y se mantiene la próxima vez
   que entres.
 - **Secciones y pestañas**: elige qué secciones y pestañas de la web
-  ves. Hoy hay tres secciones: **«Ocio»**, con sus cuatro pestañas
+  ves. Hoy hay cuatro secciones: **«Ocio»**, con sus cuatro pestañas
   (**Series**, **Películas**, **Libros** y **Videojuegos**),
   **«Recetas»**, con sus cuatro pestañas (**Recetas**, **Ingredientes**,
-  **Menú** y **Compra**), y **«Gimnasio»**, con sus tres pestañas
-  (**Resumen**, **Entrenos** y **Ejercicios**). Al **ocultar una pestaña**,
+  **Menú** y **Compra**), **«Gimnasio»**, con sus tres pestañas
+  (**Resumen**, **Entrenos** y **Ejercicios**), y **«Cosas que
+  hacer»**, con sus dos pestañas (**Tareas** y **Hechas**).
+  Al **ocultar una pestaña**,
   desaparece de la barra de pestañas de su sección (la de Ocio, la
-  de Recetas o la de Gimnasio) y de la vista: tus datos, avisos y
+  de Recetas, la de Gimnasio o la de Cosas que hacer) y de la vista:
+  tus datos, avisos y
   actualizaciones siguen funcionando igual, solo deja de verse. Al
   **ocultar una sección**, desaparece de la barra lateral de
   navegación; si solo
@@ -1301,7 +1414,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     la primera vez: si lo deniegas, la opción se desactiva sola (puedes
     re-concederlo después en los ajustes del navegador). Al tocar la
     notificación se abre la web. Para que funcione en el móvil, la web
-    debe estar instalada como app ([sección 20](#20-instalar-la-web-en-tu-teléfono))
+    debe estar instalada como app ([sección 21](#21-instalar-la-web-en-tu-teléfono))
     y en iPhone hace falta **iOS 16.4 o superior**; en el ordenador
     funciona con la pestaña abierta en segundo plano.
 - **Sincronización de datos → «Comprobar estrenos»**: revisa en ese
@@ -1322,7 +1435,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
     Calendar, Apple Calendar o similar y tener todos los estrenos en tu
     agenda.
 
-## 18. ¿Cuándo se actualizan los datos?
+## 19. ¿Cuándo se actualizan los datos?
 
 - **Una vez al día**, al abrir la web, se comprueba automáticamente si ha
   pasado algo: estrenos de tus películas y series pendientes, episodios
@@ -1349,11 +1462,14 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   problemas de conexión. Reintentando…» mientras lo hace; normalmente
   no tienes que hacer nada.
 
-## 19. Privacidad
+## 20. Privacidad
 
 - **Tu registro es tuyo**: solo tú puedes editar tus películas, series,
   libros, videojuegos y notas.
 - Tus **notas personales** son privadas: nadie más las ve.
+- Tus **tareas de «Cosas que hacer»** también son privadas: solo tú
+  las ves, igual que tus notificaciones (más en
+  [sección 10.8](#108-tus-tareas-son-privadas)).
 - Tus **amigos** pueden ver (no editar) tu registro completo: estados,
   valoraciones, progreso y páginas de lectura.
 - Tu **perfil** (nombre y foto) es lo que ven los demás en la lista de
@@ -1361,7 +1477,7 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
 - Los ajustes de notificaciones se guardan en tu dispositivo y también en
   tu cuenta.
 
-## 20. Instalar la web en tu teléfono
+## 21. Instalar la web en tu teléfono
 
 Mi Registro funciona como una web normal, pero también se puede **instalar**
 para que se comporte como una aplicación:
@@ -1375,7 +1491,7 @@ Una vez instalada, tendrás su icono en tu pantalla. La web funciona
 aunque estés sin conexión para **ver lo que ya está cargado**; las
 anotaciones y cambios necesitan conexión a internet.
 
-## 21. Problemas frecuentes
+## 22. Problemas frecuentes
 
 **No puedo entrar con mi correo**
 Tu correo no está en la lista de invitados. Pide que te añadan (quien
@@ -1438,7 +1554,7 @@ Comprueba lo siguiente:
   tu navegador o teléfono (y la opción **«Notificaciones en el
   dispositivo»** activada en Ajustes → Notificaciones).
 - En **iPhone**, la web debe estar **instalada como app**
-  ([sección 20](#20-instalar-la-web-en-tu-teléfono)) y tener **iOS 16.4
+  ([sección 21](#21-instalar-la-web-en-tu-teléfono)) y tener **iOS 16.4
   o superior**.
 
 ---
