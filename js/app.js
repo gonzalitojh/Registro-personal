@@ -291,6 +291,12 @@ const GROUP_TO_PANEL = {
 // primera vez que se activa; las siguientes activaciones no re-fetch.
 const loadedPartials = new Set();
 
+// Timeout del fetch de partials (issue #286): una red colgada no
+// debe dejar el panel sin contenido (ni el «Cargando…» eterno); el
+// AbortController convierte el colgado en un AbortError que cae en
+// el estado de error del panel.
+const PARTIAL_FETCH_TIMEOUT_MS = 8000;
+
 // Marcador de carga de un panel (issue #178). Se antepone al
 // contenido de cada partial al inyectarlo, de modo que el indicador
 // persiste mientras el snapshot del grupo no llega; renderLibraryFor
@@ -398,8 +404,13 @@ async function loadOcioPartial(panelEl) {
   if (!panelEl || loadedPartials.has(panelEl.id)) return;
   loadedPartials.add(panelEl.id);
   const src = panelEl.dataset.ocioSrc;
+  // Timeout del fetch (issue #286): si la red se cuelga, abortar y
+  // caer en el estado de error del panel. Declarado fuera del try
+  // para que el finally pueda limpiar el timer en todos los caminos.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PARTIAL_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(src + "?v=" + APP_VERSION);
+    const res = await fetch(src + "?v=" + APP_VERSION, { signal: controller.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = await res.text();
     panelEl.innerHTML = panelLoadingHtml() + html;
@@ -408,10 +419,17 @@ async function loadOcioPartial(panelEl) {
     if (group && groupReady[group]) renderLibraryFor(group);
   } catch (err) {
     // Se retira del set de cargados para reintentar en la siguiente
-    // activación (p. ej. tras arreglar el origen del fallo).
+    // activación (p. ej. tras arreglar el origen del fallo) o con el
+    // botón «Reintentar» del estado de error.
     loadedPartials.delete(panelEl.id);
-    panelEl.innerHTML = `<p class="empty-state">No se pudo cargar esta sección (${src}). Comprueba que estás sirviendo la web desde un servidor (no abriendo el archivo directamente) y recarga la página.</p>`;
+    const mensaje =
+      err?.name === "AbortError"
+        ? "Esta sección tardó demasiado en cargarse."
+        : "No se pudo cargar esta sección.";
+    showPanelLoadError(panelEl.dataset.typeGroup, mensaje);
     console.error("No se pudo cargar", src, err);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
