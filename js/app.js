@@ -314,12 +314,15 @@ function panelLoadingHtml() {
 // partial), el marcador .panel-loading se retira y se muestra un
 // aviso con botón «Reintentar». Idempotente: si ya hay un error o el
 // loading pendiente, se limpian antes de pintar el nuevo estado.
-function showPanelLoadError(groupKey, message) {
+function showPanelLoadError(groupKey, message, { force = false } = {}) {
   const panelEl = document.getElementById(GROUP_TO_PANEL[groupKey]);
   if (!panelEl) return;
   // Llegó el snapshot tarde (el grupo ya está listo): los datos se
-  // pintan (o se pintarán) y el error ya no tiene sentido.
-  if (groupReady[groupKey]) return;
+  // pintan (o se pintarán) y el error de la suscripción ya no tiene
+  // sentido. La vía del partial usa `force`: aunque el grupo tenga
+  // datos, sin el HTML del panel no hay nada que pintar, así que el
+  // error con su botón «Reintentar» es lo único visible y útil.
+  if (!force && groupReady[groupKey]) return;
   panelEl.querySelector(".panel-loading")?.remove();
   panelEl.querySelector(".panel-error")?.remove();
   panelEl.insertAdjacentHTML(
@@ -426,7 +429,7 @@ async function loadOcioPartial(panelEl) {
       err?.name === "AbortError"
         ? "Esta sección tardó demasiado en cargarse."
         : "No se pudo cargar esta sección.";
-    showPanelLoadError(panelEl.dataset.typeGroup, mensaje);
+    showPanelLoadError(panelEl.dataset.typeGroup, mensaje, { force: true });
     console.error("No se pudo cargar", src, err);
   } finally {
     clearTimeout(timeoutId);
