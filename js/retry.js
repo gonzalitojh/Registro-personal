@@ -82,8 +82,12 @@ export function subscribeWithRetry({
     }
 
     // Sin conexión: no gastar reintentos con timers. Al volver la red
-    // ("online") se re-suscribe al momento.
+    // ("online") se re-suscribe al momento. Se limpia el listener
+    // anterior antes de registrar el nuevo: dos handleError seguidos
+    // estando offline (p. ej. watchdog + error real del stream) no
+    // deben apilar dos listeners "online" idénticos (issue #286).
     if (waitForOnline && navigator.onLine === false) {
+      clearOnlineHandler();
       onlineHandler = retry;
       window.addEventListener("online", onlineHandler);
       return;
