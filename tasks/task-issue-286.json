@@ -1,0 +1,28 @@
+{
+  "title": "Carga de datos robusta con watchdog y timeout de Firestore (issue #286)",
+  "description": "La issue #286 reporta que en ocasiones no cargan los datos al entrar en la web: a veces se queda indefinidamente el indicador «Cargando…», otras veces no aparece nada, y hay que recargar la página. Análisis de causas raíz:\n\n1. Las peticiones GET de Firestore pasan por el service worker con networkFirst SIN timeout y CON cache.put en la caché dinámica: una respuesta de streaming (long-polling) colgada puede bloquear networkFirst indefinidamente (el cache.put de un stream abierto no resuelve), y las respuestas de Firestore nunca deberían cachearse (protobufs stale, streams abiertos). Resultado: ni onChange ni onError → el wrapper subscribeWithRetry (issue #147) nunca se entera → «Cargando…» eterno.\n2. El wrapper subscribeWithRetry solo reacciona a errores del listener; si la suscripción ni falla ni entrega datos (colgada), no hay reintento posible.\n3. Tras agotar los reintentos (onError final), el toast avisa pero el marcador .panel-loading permanece para siempre.\n4. El fetch del partial de cada pestaña (loadOcioPartial) tampoco tiene timeout: una red colgada deja el panel sin contenido («no aparece nada»).\n\nPlan de acción:\n- A. Watchdog de primer snapshot en subscribeWithRetry (js/retry.js): si no llega ningún snapshot en X segundos, tratar como fallo transitorio y reintentar con el backoff existente.\n- B. Estado final de error en los paneles (js/app.js): al agotar los reintentos de un grupo, retirar el marcador .panel-loading y mostrar un mensaje con botón «Reintentar» (que re-arranca la suscripción del grupo).\n- C. Timeout con AbortController en el fetch del partial (js/app.js loadOcioPartial).\n- D. Service worker: las lecturas GET de Firestore pasan a network-only con timeout (sin cache.put, sin servir de caché dinámica); el fallo devuelve el 503 amigable que dispara onError del SDK → reintentos. Bump de cachés a v5 y de APP_VERSION/?v=.\n- E. Manual de usuario (regla 3 de AGENTS.md) y ADR nuevo.\n\nIssue: https://github.com/gonzalitojh/Registro-personal/issues/286 (type: bug, priority: very high)",
+  "status": "created",
+  "acceptance criteria": [
+    "El indicador «Cargando…» nunca se queda para siempre: si una suscripción no entrega datos en un tiempo máximo, se reintenta sola (watchdog en subscribeWithRetry).",
+    "Las lecturas GET de Firestore en el service worker tienen timeout y no se cachean (network-only), de modo que un colgado se convierte en error y dispara el reintento del SDK/wrapper.",
+    "Al agotar los reintentos de un grupo, el panel muestra un estado de error con botón «Reintentar» (ya no queda el spinner eterno), conservando el toast informativo existente.",
+    "El fetch del partial de pestaña tiene timeout (AbortController): si falla o se cuelga, se muestra el estado de error y se reintenta en la siguiente activación.",
+    "El comportamiento visible para el usuario queda documentado en docs/manual-de-usuario.md (sección 18 y apartado de «Cargando…»).",
+    "No hay regresiones en las suscripciones existentes (películas, series, libros, videojuegos, notificaciones, recetas, menús, gimnasio) ni en stopAllSubscriptions().",
+    "La web se ve correctamente en los cuatro modos de tema y en móvil/tablet/escritorio (reglas 2 y 4 de AGENTS.md) — el nuevo estado de error usa variables de tema."
+  ],
+  "definition of done": [
+    "Planificación completada y aprobada (task-architect).",
+    "Implementación realizada con micro-commits incrementales.",
+    "Validación QA superada contra criterios de aceptación y DoD (qa-reviewer).",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR nuevo documentando la decisión (docs/adr-101-carga-datos-watchdog-firestore-timeout.md) con «Related issue: #286».",
+    "PR contra dev SIN keyword de cierre, con task file subido (status review + bloque pr) y label de la issue en status: needs-review.",
+    "Issue #286 actualizada a su estado final al fusionarse (issues-done-on-dev)."
+  ],
+  "issue": {
+    "number": 286,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/286",
+    "title": "Carga de datos"
+  }
+}
