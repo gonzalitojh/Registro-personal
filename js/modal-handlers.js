@@ -79,19 +79,27 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
   return false;
 }
 
-function confirmDelete(item, kind, ctx) {
+function confirmDelete(item, kind, ctx, onDone) {
   return () => {
     scheduleDeletion(item, ctx.getCurrentUser().uid, kind, ctx);
     ui.closeModal();
+    // En modo página (issue #285) «Eliminar» cierra el modal abierto
+    // (si lo hubiera) y vuelve a la pantalla previa: el item se borra
+    // con deshacer (undo-toast) y la lista de origen se repinta sola
+    // vía snapshot al volver.
+    if (onDone) onDone();
   };
 }
 
-function saveMeta(item, kind, ctx) {
+function saveMeta(item, kind, ctx, onDone) {
   return async (changes) => {
     try {
       await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
       ui.showToast("Guardado.");
-      ui.closeModal();
+      // En modo página (issue #285) se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (onDone) onDone();
+      else ui.closeModal();
     } catch (err) {
       ui.showToast("No se pudo guardar: " + err.message);
     }
@@ -130,8 +138,12 @@ function getUserCountry() {
     || "ES";
 }
 
-async function openMovieItem(item, ctx, isRerender = false) {
-  const reopen = () => openMovieItem(item, ctx, true);
+// Abre la ficha de una película. Con target (contenedor de la página
+// de ítem, issue #285) renderiza la ficha en la página en lugar de
+// abrir el modal; sin target, comportamiento clásico en #item-modal.
+// isRerender evita re-pedir detalles/API en los re-renders.
+export async function openMovieItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openMovieItem(item, ctx, true, target);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     // awaitingRelease se limpia siempre al marcar como vista: un ítem
@@ -202,8 +214,8 @@ async function openMovieItem(item, ctx, isRerender = false) {
     },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
-    onSaveMeta: saveMeta(item, "movie", ctx),
-    onDelete: confirmDelete(item, "movie", ctx),
+    onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
+    onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
     onEdit: editHandlerFor(item, "movie", reopen, ctx),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
@@ -248,7 +260,7 @@ async function openMovieItem(item, ctx, isRerender = false) {
     // vuelva como «Añadida».
     onOpenRecommendation: (recItem) =>
       openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds, sagaParts);
+  }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -624,8 +636,11 @@ async function openGameItem(item, ctx, isRerender = false) {
   }
 }
 
-async function openTvItem(item, ctx, isRerender = false) {
-  const reopen = () => openTvItem(item, ctx, true);
+// Abre la ficha de una serie. Con target (contenedor de la página de
+// ítem, issue #285) renderiza la ficha en la página en lugar de abrir
+// el modal; sin target, comportamiento clásico en #item-modal.
+export async function openTvItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openTvItem(item, ctx, true, target);
   let seasonsMeta;
   try {
     seasonsMeta = await getSeasonsMetaFor(item, ctx);
@@ -812,7 +827,10 @@ async function openTvItem(item, ctx, isRerender = false) {
       const changes = startRewatch(item);
       await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
       Object.assign(item, changes);
-      ui.closeModal();
+      // Modo página (issue #285): se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (target) reopen();
+      else ui.closeModal();
       ui.showToast("Nuevo visionado empezado. ¡A por ello!");
     },
 
@@ -823,8 +841,8 @@ async function openTvItem(item, ctx, isRerender = false) {
       return progressWithStatus(seasonsMeta, item);
     },
 
-    onSaveMeta: saveMeta(item, "tv", ctx),
-    onDelete: confirmDelete(item, "tv", ctx),
+    onSaveMeta: saveMeta(item, "tv", ctx, target ? reopen : null),
+    onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
     onEdit: editHandlerFor(item, "tv", reopen, ctx),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
@@ -838,7 +856,7 @@ async function openTvItem(item, ctx, isRerender = false) {
     // tarjeta vuelva como «Añadida».
     onOpenRecommendation: (recItem) =>
       openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds);
+  }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -853,6 +871,20 @@ export function openItem(item, ctx) {
   else if (item.type === "movie") openMovieItem(item, ctx);
   else if (item.type === "game") openGameItem(item, ctx);
   else openBookItem(item, ctx);
+}
+
+// Hook de «volver a la pantalla previa» que registra item-page.js
+// (issue #285): lo usa confirmDelete en modo página para salir de la
+// ficha tras eliminar un ítem. Se inyecta para evitar una dependencia
+// circular (item-page.js importa de aquí openMovieItem/openTvItem).
+let itemPageBackHandler = null;
+
+export function setItemPageBackHandler(fn) {
+  itemPageBackHandler = fn;
+}
+
+function goBackFromItemPage() {
+  if (itemPageBackHandler) itemPageBackHandler();
 }
 
 export function setupModalCloseListeners() {
