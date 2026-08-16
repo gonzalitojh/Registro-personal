@@ -20,6 +20,10 @@ import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+// navigate (issue #285, iteración): las tarjetas de saga y de
+// recomendación navegan a la PÁGINA de detalle del ítem. Import seguro
+// sin dependencia circular: router.js no importa nada de la app.
+import { navigate } from "./router.js";
 
 // Detalles de ficha bajo demanda (issue #200, almacenamiento mínimo):
 // si el documento no trae la ficha (solo tarjeta + avisos), el modal
@@ -255,20 +259,18 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
           }
         }
       : undefined,
-    // Vista previa de una película de la saga al pulsar su tarjeta
-    // (issue #280, iteración): abre la preview (patrón issue #22) y al
-    // cerrar o añadir restaura la ficha con reopen; el Set existingIds
-    // compartido hace que la tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una película de la saga (issue #285,
+    // iteración): ya no abre la vista previa en ventana — navega a la
+    // PÁGINA de detalle de esa película (#/ocio/peliculas/<id>), igual
+    // que cualquier otra película pulsable. Si no está en el registro,
+    // la página muestra la vista previa con «Añadir».
     onOpenSagaMovie: item.collectionId
-      ? (movie) => openSagaMoviePreview(movie, ctx, reopen, existingIds)
+      ? (movie) => navigate({ section: "item", kind: "movie", externalId: movie.externalId })
       : undefined,
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que las tarjetas de saga — abre
-    // la preview (issue #22) y al cerrar o añadir restaura la ficha
-    // con reopen; el Set existingIds compartido hace que la tarjeta
-    // vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // misma navegación a la página de detalle de la película/serie.
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
   }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -303,124 +305,17 @@ async function addSagaMovie(movie, ctx) {
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
 }
 
-/**
- * Vista previa compartida de un ítem externo desde la ficha (issue
- * #280): lo usan las tarjetas de «Otras películas de la saga» y las de
- * recomendaciones (películas y series), con el mismo patrón que la
- * vista previa de búsqueda (issue #22). Al cerrar la vista previa o
- * tras añadir el ítem, se restaura la ficha que se estaba viendo
- * (restoreModal). El Set existingIds compartido con el render hace
- * que, al restaurar la ficha, la tarjeta vuelva como «Añadida».
- * @param {Object}   previewItem  - {externalId, type, title, year, coverUrl, overview}
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- * @param {Function} performAdd   - async (item) => alta del ítem (lanza si falla)
- */
-async function openExternalPreview(previewItem, ctx, restoreModal, existingIds, performAdd) {
-  ui.closeModal(); // limpia trap/foco del modal de ficha antes de abrir la preview
-  ui.openSearchPreviewModal(previewItem, {
-    added: existingIds.has(String(previewItem.externalId)),
-    onClose: () => {
-      ui.closeModal(); // limpia trap/foco de la preview...
-      restoreModal();  // ...y restaura la ficha
-    },
-    onAdd: async (item, btn) => {
-      btn.disabled = true;
-      btn.textContent = "Añadiendo…";
-      try {
-        await performAdd(item);
-        existingIds.add(String(item.externalId));
-        ui.showToast(`«${item.title}» añadida a tu registro.`);
-        ui.closeModal();
-        restoreModal(); // la ficha restaurada muestra la tarjeta como «Añadida»
-        return true;
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = "Añadir";
-        ui.showToast("No se pudo añadir: " + err.message);
-        return false;
-      }
-    },
-    onEnrich: (item) => enrichExternalPreview(item),
-  });
-}
-
-/**
- * Enriquecimiento de la vista previa externa (issue #280): películas
- * con getMovieDetails; series con getTvExtraDetails + temporadas
- * (getTvSeasonsMeta, no bloqueante). Nunca lanza: devuelve {} si falla.
- */
-async function enrichExternalPreview(item) {
-  if (item.type === "tv") {
-    try {
-      const details = await getTvExtraDetails(item.externalId);
-      try {
-        details.seasonsMeta = await getTvSeasonsMeta(item.externalId);
-      } catch (err) {
-        // no bloqueamos la preview si fallan las temporadas
-      }
-      return details;
-    } catch (err) {
-      return {};
-    }
-  }
-  try {
-    return await getMovieDetails(item.externalId);
-  } catch (err) {
-    return {};
-  }
-}
-
-/**
- * Vista previa de una película de la saga (issue #280, iteración):
- * al pulsar una tarjeta de «Otras películas de la saga» se muestra su
- * información antes de añadirla.
- * @param {Object}   movie        - Parte de la saga ({externalId, title, year, posterUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha de la película original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openSagaMoviePreview(movie, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(movie.externalId),
-    type: "movie",
-    title: movie.title,
-    year: movie.year || "",
-    coverUrl: movie.posterUrl || null,
-    posterUrl: movie.posterUrl || null, // addSagaMovie espera posterUrl
-    overview: movie.overview || "",
-  };
-  // addSagaMovie lanza si la alta falla; openExternalPreview lo
-  // captura y restaura el botón sin cerrar la preview (issue #280).
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addSagaMovie(item, ctx)
-  );
-}
-
-/**
- * Vista previa de una recomendación (issue #280, iteración): al pulsar
- * una tarjeta de «Si te gustó esto…» (película o serie) se muestra su
- * información ampliada antes de añadirla, igual que en las tarjetas de
- * saga y en la vista previa de búsqueda (issue #22).
- * @param {Object}   recItem      - Recomendación ({externalId, type, title, year, coverUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openRecommendationPreview(recItem, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(recItem.externalId),
-    type: recItem.type === "tv" ? "tv" : "movie",
-    title: recItem.title,
-    year: recItem.year || "",
-    coverUrl: recItem.coverUrl || null,
-    overview: recItem.overview || "",
-  };
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addRecommendationItem(item, ctx)
-  );
-}
+// NOTA (issue #285, iteración): los helpers de vista previa en ventana
+// de saga/recomendaciones (openExternalPreview, enrichExternalPreview,
+// openSagaMoviePreview, openRecommendationPreview) se han ELIMINADO:
+// pulsar la tarjeta de una saga o de una recomendación ahora navega a
+// la página de detalle del ítem (callbacks onOpenSagaMovie/
+// onOpenRecommendation → navigate()), igual que cualquier otra
+// película o serie pulsable. La página muestra la ficha o la vista
+// previa con «Añadir» según el ítem esté o no en el registro (ver
+// js/item-page.js), por lo que la preview en ventana ya no hace falta
+// en esta vía. La preview de búsqueda (issue #22) sigue viva para
+// libros y videojuegos en search.js.
 
 /**
  * Añade un ítem recomendado (película o serie) al registro del usuario.
@@ -858,13 +753,13 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
         existingIds.add(String(recItem.externalId));
       }
     },
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que en la ficha de película —
-    // abre la preview (issue #22) y al cerrar o añadir restaura la
-    // ficha con reopen; el Set existingIds compartido hace que la
-    // tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // navega a la PÁGINA de detalle de la serie/película (#/ocio/
+    // series/<id> o #/ocio/peliculas/<id>) en lugar de la preview en
+    // ventana; si no está en el registro, la página muestra la vista
+    // previa con «Añadir».
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
   }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -898,9 +793,10 @@ function goBackFromItemPage() {
 
 export function setupModalCloseListeners() {
   // Cierra el modal activo respetando un cierre personalizado registrado
-  // (modal._onClose, lo usa la vista previa de saga —issue #280— para
-  // restaurar la ficha; se consume antes de invocarlo). Si no hay
-  // personalizado, cierre normal.
+  // (modal._onClose, lo registra ui.openSearchPreviewModal para las
+  // vistas previas de búsqueda —issue #22/#280— cuando quieren
+  // restaurar algo al cerrar; se consume antes de invocarlo). Si no
+  // hay personalizado, cierre normal.
   const closeActiveModal = () => {
     const modal = document.getElementById("item-modal");
     if (modal._onClose) {
