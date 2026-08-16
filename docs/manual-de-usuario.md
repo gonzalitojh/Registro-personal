@@ -249,7 +249,9 @@ aparece **«Añadir manualmente»** (más en [sección 10.3](#103-añadir-manual
 
 ### 4.3 Ver y marcar episodios
 
-Pulsa sobre la serie de tu lista para abrir su ficha. Verás las
+Pulsa sobre la serie de tu lista para abrir su ficha: se abre en una
+**página nueva**; usa el botón **←** de arriba para volver a la lista.
+Verás las
 **temporadas**; pulsa en una para desplegar sus **episodios**.
 
 Para cada episodio puedes:
@@ -341,8 +343,10 @@ Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 
 ### 5.4 Historial de visionados (revisionados)
 
-En la ficha de la película ves la lista de todas las veces que la has
-visto, con sus fechas. Puedes **editar la fecha** de cada visionado o
+La ficha de la película se abre en una **página nueva**; usa el botón
+**←** de arriba para volver a tu lista. Dentro ves la lista de todas
+las veces que la has visto, con sus fechas. Puedes
+**editar la fecha** de cada visionado o
 **«Quitar»** uno del historial. En tu lista, si la has visto más de una vez,
 aparece «Vista el FECHA · ×2» (o el número que corresponda).
 
@@ -906,7 +910,10 @@ igual). Para cada resultado:
   aún no está estrenada, o la serie tiene temporadas sin estrenar, la
   web te lo pregunta antes de continuar.
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
-  con sus detalles antes de añadirlo.
+  con sus detalles antes de añadirlo. En **películas y series** esa
+  vista previa se abre en una **página nueva** (el botón **←** de arriba
+  te devuelve a la búsqueda y el botón **«Añadir»** funciona igual que
+  siempre); en libros y videojuegos se sigue abriendo su ventana.
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
@@ -947,7 +954,10 @@ desplegable** bajo ella con los resultados. Los resultados se agrupan
 con iconos: los mismos de las pestañas, cada uno en su color (series en
 verde, películas en rojo, libros en ocre, videojuegos en violeta) y el
 icono 🍽️ para recetas. Pulsa un resultado para abrir su ficha (o la
-receta, según la sección).
+receta, según la sección). Si pulsas una **película o serie**, su ficha
+se abre en una **página nueva** — usa el botón **←** de arriba para
+volver —; los **libros y videojuegos** siguen abriendo su ventana de
+siempre.
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con la
 **✕** que aparece dentro de la barra (que además borra lo escrito). También
@@ -1008,8 +1018,14 @@ en rojo con el texto tachado.
 
 ## 12. La ficha de cada película, serie, libro o videojuego
 
-Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
-verás:
+Pulsa cualquier título de tu lista para abrir su ficha. En **películas
+y series**, la ficha se abre en una **página nueva** (la web navega a
+la ficha, no abre una ventana): arriba verás un botón **«atrás» (←)**
+en lugar del ☰ para volver a tu lista (la búsqueda y la campana siguen
+en su sitio). También puedes cerrar la ficha con la tecla **Esc** o con
+el botón atrás de tu navegador. En **libros y videojuegos**, en cambio,
+la ficha se sigue abriendo en su ventana (modal), como siempre. Según el
+tipo, verás:
 
 - **Portada, título y año** (en la vista previa de búsqueda se indica el
   tipo: «Película · año», «Serie · año» o «Videojuego · año»).
