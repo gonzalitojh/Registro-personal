@@ -88,6 +88,21 @@
         </svg>
       </button>
 
+      <!-- Botón atrás de la página de ítem (issue #285): en la ficha
+           en página nueva de una película o serie, la cabecera
+           superior se respeta pero el ☰ (y el ⚙) se sustituyen por
+           este botón para volver a la pantalla previa. El swap se
+           hace por CSS con la clase body.is-item-page (regla única
+           de verdad, sobrevive a re-renders de la barra lateral).
+           Sale oculto por defecto. -->
+      <button type="button" class="icon-btn hidden" id="btn-item-back"
+              aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
       <!-- Búsqueda global: input en la cabecera + dropdown de resultados
            anclado bajo la barra (js/global-search.js). Busca SOLO dentro
            de la sección activa (issue #206): Ocio (colecciones y
@@ -240,6 +255,16 @@
     <footer class="app-footer">
       Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books · Datos de videojuegos vía IGDB (igdb.com)
     </footer>
+  </div>
+
+  <!-- Página de detalle de un ítem de Ocio (issue #285): al pulsar
+       una película o serie (colección o barra de búsqueda) se abre
+       esta vista de primer nivel (hermana de profile-view, fuera de
+       #app) con la ficha en página. La cabecera global superior se
+       respeta (con el botón atrás en lugar del ☰) y el contenido lo
+       renderiza js/item-page.js dentro de #item-view-content. -->
+  <div id="item-view" class="item-view hidden" role="main" aria-label="Ficha de película o serie">
+    <div id="item-view-content"></div>
   </div>
 
   <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
