@@ -55,7 +55,9 @@ function communityRatingHtml(item) {
 
 // Para modales: siempre muestra una línea, ya sea la nota real o
 // un indicador de "Sin puntuaciones" cuando no hay datos de TMDB/IGDB.
-function communityRatingDisplay(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar la misma información del título que la ficha.
+export function communityRatingDisplay(item) {
   const label = item.type === "game" ? "IGDB" : "TMDB";
   if (item.communityRating != null) {
     const val = Number(item.communityRating).toFixed(1);
@@ -73,7 +75,8 @@ function communityRatingDisplay(item) {
 
 // HTML para el botón de tráiler de YouTube.
 // Devuelve cadena vacía si no hay URL de tráiler disponible.
-function trailerButtonHtml(item) {
+// Exportado (issue #290): lo reutiliza la preview de la página de ítem.
+export function trailerButtonHtml(item) {
   if (!item.trailerUrl) return "";
   return `<a href="${escapeHtml(item.trailerUrl)}" target="_blank" rel="noopener noreferrer" class="trailer-btn" aria-label="Ver tráiler en YouTube">
     <span class="trailer-btn__icon" aria-hidden="true">▶</span>
@@ -371,7 +374,9 @@ function quickActionLabel(item) {
   return "Empezar ✓";
 }
 
-function upcomingBadge(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar el distintivo de "sin estrenar" igual que la ficha.
+export function upcomingBadge(item) {
   if (!isItemUnreleased(item)) return "";
   const cls = "item-card__upcoming item-card__upcoming--unreleased";
   if (item.type === "movie") {
@@ -720,7 +725,8 @@ function wireStatusActions(content, handleStatusChange) {
 // Información ampliada de TMDB (duración, género, director/creadores,
 // reparto, sinopsis) o de la fuente de libros (sinopsis). No todos
 // los campos están siempre disponibles, así que cada línea es opcional.
-function extraInfoHtml(item) {
+// Exportado (issue #290): lo reutiliza la preview de la página de ítem.
+export function extraInfoHtml(item) {
   const lines = [];
   const metaBits = [];
   if (item.runtime) metaBits.push(`${item.runtime} min`);
@@ -788,7 +794,9 @@ function detailStatusHtml(item) {
 // Bloque de temporadas para la vista previa de una serie: lista de
 // solo lectura (nº de episodios y fecha de emisión por temporada)
 // más el total. Vacío si no hay datos (sin seasonsMeta o vacío).
-function previewSeasonsHtml(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar la misma información de temporadas que la ficha.
+export function previewSeasonsHtml(item) {
   const seasons = item.seasonsMeta;
   if (!seasons || !seasons.length) return "";
   const rows = seasons.map((s) => {
@@ -985,13 +993,16 @@ function providersGroupHtml(providers, label) {
     </div>`;
 }
 
-function watchProvidersHtml(item) {
+// Plataformas de streaming (dónde ver el título). Devuelve cadena
+// vacía si no hay datos. Exportado (issue #290): la preview de la
+// página de ítem lo reutiliza para mostrar la misma información que
+// la ficha.
+export function watchProvidersHtml(item) {
   const wp = item.watchProviders;
   if (!wp) return "";
   const hasAny = (wp.flatrate && wp.flatrate.length) ||
                  (wp.rent && wp.rent.length) ||
-                 (wp.buy && wp.buy.length);
-  if (!hasAny) {
+                 (wp.buy && wp.buy.length);  if (!hasAny) {
     return `<div class="watch-providers watch-providers--empty">
       <span class="watch-providers__title">Sin info. de streaming para este país</span>
     </div>`;
@@ -1037,7 +1048,7 @@ function gamePlatformsHtml(item) {
  *                               (issue #280, iteración)
  * @returns {string} HTML del bloque de recomendaciones, o cadena vacía
  */
-function renderRecommendations(items, existingIds, group, interactive, onOpen) {
+export function renderRecommendations(items, existingIds, group, interactive, onOpen) {
   if (!items || !items.length) return "";
   const accentClass = "btn--accent-media";
   const cardsHtml = items
@@ -1107,7 +1118,7 @@ function renderRecommendations(items, existingIds, group, interactive, onOpen) {
  *                               película antes de añadirla (issue #280)
  * @returns {string} HTML de la sección, o cadena vacía
  */
-function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
+export function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
   if (!sagaParts || !sagaParts.length) return "";
   const cardsHtml = sagaParts
     .map((m, index) => {
