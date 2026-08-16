@@ -690,7 +690,14 @@ function navigateTo(result) {
     return;
   }
   closeGlobalSearch();
-  // Pequeño delay para que el cierre del dropdown no interfiera
+  // Issue #285: películas y series abren la página de detalle
+  // (#/ocio/{series|peliculas}/<id>); libros y videojuegos conservan
+  // el modal (el cierre del dropdown se retarda 150 ms para que el
+  // focus no lo reabra).
+  if (item.type === "tv" || item.type === "movie") {
+    navigate({ section: "item", kind: item.type, externalId: item.externalId });
+    return;
+  }
   setTimeout(() => {
     openItem(item, searchCtx);
   }, 150);

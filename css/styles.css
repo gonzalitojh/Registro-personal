@@ -1717,6 +1717,19 @@ body.is-item-page #btn-item-back {
   display: inline-flex;
 }
 
+/* Aviso de preview («aún no en tu registro») sobre la tarjeta:
+   llamada sutil con la tinta secundaria, sin destacar sobre el resto
+   de la ficha. */
+.item-preview__hint {
+  margin: 0 0 0.9rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--paper-dim);
+  color: var(--ink-raised);
+  font-size: 0.92rem;
+  overflow-wrap: break-word;
+}
+
 /* =========================================================
    Perfil y estadísticas
    ========================================================= */

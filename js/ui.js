@@ -1332,8 +1332,17 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   });
 
   // En modo página no se abre el modal ni se atrapa el foco: el
-  // contenido ya vive en el documento (#item-view-content).
-  if (target) return;
+  // contenido ya vive en el documento (#item-view-content). Se enfoca
+  // el título de la ficha (patrón de foco de las rutas de Ocio); el
+  // re-render posterior a una acción recupera el foco al título.
+  if (target) {
+    const title = target.querySelector(".modal-detail__title");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true });
+    }
+    return;
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
@@ -2286,8 +2295,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   }
 
   // En modo página no se abre el modal ni se atrapa el foco: el
-  // contenido ya vive en el documento (#item-view-content).
-  if (target) return;
+  // contenido ya vive en el documento (#item-view-content). Se enfoca
+  // el título de la ficha (ver openMovieModal).
+  if (target) {
+    const title = target.querySelector(".modal-detail__title");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true });
+    }
+    return;
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
