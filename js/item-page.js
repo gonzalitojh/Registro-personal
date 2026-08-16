@@ -20,11 +20,38 @@
 // =============================================================
 
 import * as ui from "./ui.js";
-import { openMovieItem, openTvItem, setItemPageBackHandler } from "./modal-handlers.js";
-import { getMovieDetails, getTvExtraDetails, getTvSeasonsMeta } from "./api-movies.js";
+import {
+  openMovieItem,
+  openTvItem,
+  setItemPageBackHandler,
+  addSagaMovie,
+  addFromRecommendation,
+  openSagaSelector,
+} from "./modal-handlers.js";
+import {
+  getMovieDetails,
+  getTvExtraDetails,
+  getTvSeasonsMeta,
+  getWatchProviders,
+  getSimilarMovies,
+  getSimilarTv,
+  getCollectionDetails,
+  getUserCountry,
+} from "./api-movies.js";
+import {
+  upcomingBadge,
+  communityRatingDisplay,
+  trailerButtonHtml,
+  watchProvidersHtml,
+  extraInfoHtml,
+  previewSeasonsHtml,
+  renderSagaMovies,
+  renderRecommendations,
+} from "./ui.js";
 import { handleAdd } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
+import { isUnreleasedDate } from "./release.js";
 
 let pageCtx = null;
 let ensureGroup = null;
@@ -130,6 +157,9 @@ function renderFicha(item) {
 // Construye el ítem de preview consultando TMDB (URL compartida sin
 // objeto de búsqueda). Devuelve el ítem o null si la API no trae
 // datos (p. ej. id no existe o fallo de red: getXDetails devuelve {}).
+// Copia TODOS los campos de la ficha (issue #290) para que la preview
+// muestre la misma información del título que la ficha: director/
+// creadores, duración por episodio, fecha de estreno, saga, etc.
 async function buildPreviewItem(kind, externalId) {
   const id = String(externalId);
   if (kind === "tv") {
@@ -153,6 +183,22 @@ async function buildPreviewItem(kind, externalId) {
       communityRating: details.communityRating ?? null,
       trailerUrl: details.trailerUrl || null,
       seasonsMeta,
+      // Más campos de la ficha (issue #290): la preview muestra la
+      // misma información que la ficha.
+      episodeRuntime: details.episodeRuntime || null,
+      creators: details.creators || [],
+      firstAirDate: details.firstAirDate || null,
+      seasonAirDates: details.seasonAirDates || {},
+      tmdbStatus: details.tmdbStatus || null,
+      // Modelado "recién añadida" (issue #290): el distintivo de
+      // "sin estrenar" de la ficha depende de nextEpisode y
+      // awaitingRelease; handleAdd (search.js) fija estos valores al
+      // dar de alta un ítem, así que replicamos ese estado inicial
+      // para que el badge salga de forma idéntica en la preview.
+      manual: false,
+      nextEpisode: { season: 1, episode: 1 },
+      awaitingRelease:
+        details.firstAirDate !== undefined && isUnreleasedDate(details.firstAirDate),
     };
   }
   const details = await getMovieDetails(id);
@@ -169,37 +215,80 @@ async function buildPreviewItem(kind, externalId) {
     runtime: details.runtime || null,
     communityRating: details.communityRating ?? null,
     trailerUrl: details.trailerUrl || null,
+    // Más campos de la ficha (issue #290): ídem y datos de saga.
+    director: details.director || null,
+    releaseDate: details.releaseDate || null,
+    manual: false,
+    collectionId: details.collectionId || null,
+    collectionName: details.collectionName || null,
+    collectionPoster: details.collectionPoster || null,
   };
 }
 
-// Pinta la tarjeta de preview: cabecera (portada, título, meta),
-// aviso de «aún no añadido», bloques de detalles y acciones
-// (Volver / Añadir). `loading` muestra el aviso de carga de detalles.
-function paintPreview(target, item, { loading = false } = {}) {
-  const kindLabel = item.type === "tv" ? "Serie" : "Película";
+// Carga en paralelo los bloques NO críticos de la ficha (issue #290):
+// dónde verla (watch providers), recomendaciones, ids ya añadidos y
+// películas de la saga. Promise.allSettled: un fallo de red degrada el
+// bloque correspondiente sin romper la preview (misma política de
+// degradación elegante que la ficha). Nunca lanza.
+async function loadPreviewExtras(token, item) {
+  const group = groupFor(token.kind);
+  const similar = token.kind === "tv" ? getSimilarTv : getSimilarMovies;
+  const results = await Promise.allSettled([
+    getWatchProviders(token.externalId, token.kind, getUserCountry()),
+    similar(token.externalId),
+    pageCtx.getGroupItemsResolved(group),
+    item.collectionId ? getCollectionDetails(item.collectionId) : Promise.resolve(null),
+  ]);
+  const [providers, recs, ids, saga] = results;
+  return {
+    watchProviders: providers.status === "fulfilled" ? providers.value : null,
+    recommendations: (recs.status === "fulfilled" ? recs.value : []).slice(0, 10),
+    existingIds: new Set(
+      (ids.status === "fulfilled" ? ids.value : []).map((i) => i.externalId)
+    ),
+    sagaParts:
+      item.collectionId && saga.status === "fulfilled" && saga.value && saga.value.parts.length
+        ? saga.value.parts
+        : null,
+  };
+}
+
+// Pinta la tarjeta de preview con la MISMA información del título que
+// la ficha (issue #290): distintivo de no estrenado, puntuación de la
+// comunidad, tráiler, dónde verla, información ampliada (duración,
+// géneros, director/creadores, reparto, sinopsis), temporadas
+// detalladas (series), saga (si movie con collectionId) y
+// recomendaciones. Las acciones del REGISTRO (visionados, valoración
+// personal, notas, editar, eliminar) no aplican sin ítem en el
+// registro: se conservan el aviso «aún no añadido» y el botón Añadir.
+function paintPreview(
+  target,
+  item,
+  { loading = false, recommendations = [], existingIds = new Set(), sagaParts = null } = {}
+) {
+  const kind = item.type === "tv" ? "tv" : "movie";
+  const kindLabel = kind === "tv" ? "Serie" : "Película";
   const metaLine = [kindLabel, item.year].filter(Boolean).join(" · ");
-  const ratingLine =
-    item.communityRating != null
-      ? `<p class="extra-info__line"><strong>Valoración de la comunidad:</strong> ${item.communityRating.toFixed(1)}/10</p>`
-      : "";
-  const detailsBlock = [
-    item.overview ? `<p class="extra-info__line">${escapeHtml(item.overview)}</p>` : "",
-    item.genres && item.genres.length
-      ? `<p class="extra-info__line"><strong>Géneros:</strong> ${escapeHtml(item.genres.join(", "))}</p>`
-      : "",
-    item.runtime
-      ? `<p class="extra-info__line"><strong>Duración:</strong> ${item.runtime} min</p>`
-      : "",
-    item.seasonsMeta && item.seasonsMeta.length
-      ? `<p class="extra-info__line"><strong>Temporadas:</strong> ${item.seasonsMeta.length}</p>`
-      : "",
-    item.cast && item.cast.length
-      ? `<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`
-      : "",
-    ratingLine,
-  ]
-    .filter(Boolean)
-    .join("");
+
+  const onOpenSagaMovie = (movie) =>
+    navigate({ section: "item", kind: "movie", externalId: movie.externalId });
+  const onOpenRecommendation = (recItem) =>
+    navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId });
+
+  // Badge de "sin estrenar" solo cuando hay fecha conocida de estreno
+  // (el render optimista de búsqueda no la trae; llegarían falsos
+  // "Aún no estrenada" sin fecha).
+  const unreleasedBadge =
+    item.releaseDate || item.firstAirDate ? upcomingBadge(item) : "";
+
+  const sagaHtml = item.collectionId
+    ? `
+    <div class="saga-banner">
+      <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName || "")}</span>
+      <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
+    </div>
+    ${renderSagaMovies(sagaParts, existingIds, true, onOpenSagaMovie)}`
+    : "";
 
   target.innerHTML = `
     <div class="modal-detail__header">
@@ -210,10 +299,17 @@ function paintPreview(target, item, { loading = false } = {}) {
       </div>
     </div>
     <p class="item-preview__hint">Este título aún no está en tu registro.</p>
+    ${unreleasedBadge}
+    ${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}
+    ${watchProvidersHtml(item)}
     <div class="field-group" id="preview-details">
-      ${detailsBlock}
+      ${extraInfoHtml(item)}
+      ${previewSeasonsHtml(item)}
       ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     </div>
+    ${sagaHtml}
+    ${renderRecommendations(recommendations, existingIds, kind, true, onOpenRecommendation)}
     <div class="modal-actions">
       <button type="button" class="btn btn--outline" id="btn-preview-back">Volver</button>
       <button type="button" class="btn btn--accent-media" id="btn-preview-add">Añadir</button>
@@ -221,6 +317,62 @@ function paintPreview(target, item, { loading = false } = {}) {
   `;
 
   target.querySelector("#btn-preview-back").addEventListener("click", goBack);
+
+  // Saga: añadir una película de la saga (mismo patrón que el callback
+  // onAddSagaMovie de la ficha, modal-handlers.js) y abrir el selector.
+  const addSagaBtn = target.querySelector("#btn-add-saga");
+  if (addSagaBtn) {
+    addSagaBtn.addEventListener("click", () => {
+      openSagaSelector(item, pageCtx);
+    });
+  }
+  if (sagaParts) {
+    target.querySelectorAll(".saga-card__add").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const movie = sagaParts[Number(btn.dataset.sagaIndex)];
+        if (!movie) return;
+        btn.disabled = true;
+        btn.textContent = "Añadiendo…";
+        try {
+          await addSagaMovie(movie, pageCtx);
+          existingIds.add(String(movie.externalId));
+          btn.textContent = "Añadida";
+          ui.showToast(`«${movie.title}» añadida a tu registro.`);
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = "Añadir";
+          ui.showToast("No se pudo añadir: " + err.message);
+        }
+      });
+    });
+    target.querySelectorAll(".saga-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const movie = sagaParts[Number(btn.dataset.sagaIndex)];
+        if (movie) onOpenSagaMovie(movie);
+      });
+    });
+  }
+
+  // Recomendaciones: añadir y abrir la página del ítem (mismo patrón
+  // que los callbacks onAddRecommendation/onOpenRecommendation de la
+  // ficha, modal-handlers.js).
+  if (recommendations.length) {
+    target.querySelectorAll(".rec-card__add").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const rec = recommendations[Number(btn.dataset.recIndex)];
+        if (!rec) return;
+        if (await addFromRecommendation(rec, btn, pageCtx)) {
+          existingIds.add(String(rec.externalId));
+        }
+      });
+    });
+    target.querySelectorAll(".rec-card__open").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const rec = recommendations[Number(btn.dataset.recIndex)];
+        if (rec) onOpenRecommendation(rec);
+      });
+    });
+  }
 
   const addBtn = target.querySelector("#btn-preview-add");
   addBtn.addEventListener("click", async () => {
@@ -253,7 +405,9 @@ function paintPreview(target, item, { loading = false } = {}) {
 // Vista previa: pinta al momento con el resultado de búsqueda si lo
 // hay y enriquece desde TMDB en segundo plano; por URL directa se
 // consulta TMDB y se pinta cuando llega (patrón de la preview de
-// búsqueda, issue #22).
+// búsqueda, issue #22). Issue #290: la preview final muestra la MISMA
+// información del título que la ficha (badge, nota TMDB, tráiler,
+// dónde verla, info ampliada, temporadas, saga y recomendaciones).
 async function renderPreview(optimisticItem = null) {
   currentMode = "preview";
   const token = currentToken;
@@ -270,8 +424,20 @@ async function renderPreview(optimisticItem = null) {
       }
     : null;
 
+  // Pintado inmediato: con dato optimista se pinta la tarjeta con los
+  // datos de búsqueda y el aviso de carga; sin optimista (URL directa
+  // o ítem borrado desde otro dispositivo) se muestra un spinner en la
+  // tarjeta hasta que lleguen los datos (antes quedaba vacía).
   let target = renderCardShell();
-  if (immediate) paintPreview(target, immediate, { loading: true });
+  if (immediate) {
+    paintPreview(target, immediate, { loading: true });
+  } else {
+    target.innerHTML = `
+      <div class="panel-loading" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Cargando…</span>
+      </div>`;
+  }
 
   let details = null;
   try {
@@ -295,6 +461,11 @@ async function renderPreview(optimisticItem = null) {
     return;
   }
 
+  // Bloques no críticos (dónde verla, recomendaciones, saga) en
+  // paralelo; los fallos degradan su bloque sin romper la preview.
+  const extras = await loadPreviewExtras(token, details);
+  if (!isCurrent(token)) return;
+
   // ¿Se añadió mientras cargaba? → ficha directamente.
   const found = await findInCollection(token);
   if (!isCurrent(token)) return;
@@ -303,14 +474,13 @@ async function renderPreview(optimisticItem = null) {
     return;
   }
 
-  if (immediate) {
-    Object.assign(immediate, details);
-    // Re-pintar sin el aviso de carga (la estructura ya está).
-    target = renderCardShell();
-    paintPreview(target, immediate, { loading: false });
-  } else {
-    paintPreview(target, details, { loading: false });
-  }
+  // Repintado completo único con detalles + extras (los extras están
+  // cacheados 24 h; repintar dos veces añade parpadeo sin beneficio).
+  if (immediate) Object.assign(immediate, details);
+  const finalItem = immediate || details;
+  Object.assign(finalItem, extras);
+  target = renderCardShell();
+  paintPreview(target, finalItem, { loading: false, ...extras });
 }
 
 /* ---------- Resolución del ítem ---------- */
