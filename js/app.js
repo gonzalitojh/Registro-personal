@@ -713,16 +713,10 @@ async function init() {
   // Issue #285: página de detalle de película/serie (la creamos al
   // final del arranque; el onRoute la usa con optional chaining, así
   // que una ruta item inicial sin sesión la retoma watchAuthState).
-  itemApi = setupItemPage({
-    ctx,
-    onBeforeOpen: () => {
-      // Modo página: nada de drawer ni backdrops sobre la ficha.
-      // (La ruta de ítem oculta #app y su botón ☰ con
-      // body.is-item-page; por si el drawer quedara abierto, se cierra.)
-      document.getElementById("app-sidebar")?.classList.remove("is-open");
-      document.getElementById("app-sidebar-backdrop")?.classList.add("hidden");
-    },
-  });
+  // ensureGroup: suscribe el grupo del ítem si aún no está activo
+  // (lazy loading, issue #178) para que los snapshots refresquen la
+  // página (notifyGroupChanged) y el alta desde preview funcione.
+  itemApi = setupItemPage(ctx, { ensureGroup: ensureGroupSubscribed });
   // Reflejar las pestañas ocultas guardadas en el estado inicial
   // (el sidebar ya se re-renderizó dentro de setupSidebar).
   applyTabVisibility();

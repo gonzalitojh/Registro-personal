@@ -106,7 +106,7 @@ function saveMeta(item, kind, ctx, onDone) {
   };
 }
 
-function editHandlerFor(item, kind, reopen, ctx) {
+function editHandlerFor(item, kind, reopen, ctx, target = null) {
   return () => {
     ui.openEditModal(item, {
       onSave: async (changes) => {
@@ -114,12 +114,21 @@ function editHandlerFor(item, kind, reopen, ctx) {
           await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
           Object.assign(item, changes);
           ui.showToast("Información actualizada.");
+          // En modo página (issue #285) el modal de edición se abre
+          // SIEMPRE (es un form con foco atrapado): al guardar o
+          // cancelar hay que cerrarlo — el re-render va en la página,
+          // no dentro del modal. En el modal clásico el re-render
+          // ocurre dentro y no debe cerrarse aquí.
+          if (target) ui.closeModal();
           reopen();
         } catch (err) {
           ui.showToast("No se pudo guardar: " + err.message);
         }
       },
-      onCancel: reopen,
+      onCancel: () => {
+        if (target) ui.closeModal();
+        reopen();
+      },
     });
   };
 }
@@ -216,7 +225,7 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
     onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
     onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
-    onEdit: editHandlerFor(item, "movie", reopen, ctx),
+    onEdit: editHandlerFor(item, "movie", reopen, ctx, target),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
@@ -843,7 +852,7 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
 
     onSaveMeta: saveMeta(item, "tv", ctx, target ? reopen : null),
     onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
-    onEdit: editHandlerFor(item, "tv", reopen, ctx),
+    onEdit: editHandlerFor(item, "tv", reopen, ctx, target),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));

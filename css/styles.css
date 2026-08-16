@@ -379,6 +379,7 @@
 [data-theme="black"] .back-to-top,
 [data-theme="black"] .tab.is-active,
 [data-theme="black"] .modal__card,
+[data-theme="black"] .item-view__card,
 [data-theme="black"] .modal__close,
 [data-theme="black"] .toast,
 [data-theme="black"] .notif-dropdown,
@@ -1718,14 +1719,17 @@ body.is-item-page #btn-item-back {
 }
 
 /* Aviso de preview («aún no en tu registro») sobre la tarjeta:
-   llamada sutil con la tinta secundaria, sin destacar sobre el resto
-   de la ficha. */
+   llamada invertida (fondo de tinta, texto de papel). --ink/--paper
+   se intercambian automáticamente por familia de tema (oscura:
+   marrón oscuro con texto crema; clara: tinta oscura con texto
+   blanco; negro puro hereda --ink #000 con texto claro), así que la
+   misma regla cumple contraste AA en los cuatro modos sin overrides. */
 .item-preview__hint {
   margin: 0 0 0.9rem;
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius-sm, 8px);
-  background: var(--paper-dim);
-  color: var(--ink-raised);
+  background: var(--ink);
+  color: var(--paper);
   font-size: 0.92rem;
   overflow-wrap: break-word;
 }
