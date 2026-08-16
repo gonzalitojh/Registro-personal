@@ -2,7 +2,12 @@
 // Service Worker — Mi Registro (PWA offline support)
 // Estrategias: Cache First para recursos estáticos,
 // Network First para APIs externas, Network Only para
-// escrituras y endpoints de autenticación.
+// escrituras y endpoints de autenticación, y Network Only con
+// timeout para las lecturas GET de Firestore (issue #286):
+// un stream colgado se convierte en un 503 que dispara los
+// reintentos del wrapper subscribeWithRetry (issue #147), y las
+// respuestas de Firestore nunca se cachean (protobufs stale,
+// streams de long-polling imposibles de guardar).
 // =============================================================
 
 // -------------------------------------------------------------
@@ -16,8 +21,8 @@ const scopeURL = new URL(self.registration.scope);
 const scopePath = scopeURL.pathname;
 const resolved = (p) => new URL(p, scopeURL).toString();
 
-const CACHE_STATIC = 'mi-registro-v4-static';
-const CACHE_DYNAMIC = 'mi-registro-v4-dynamic';
+const CACHE_STATIC = 'mi-registro-v5-static';
+const CACHE_DYNAMIC = 'mi-registro-v5-dynamic';
 const DYNAMIC_MAX_ENTRIES = 100; // issue #200: la ficha bajo demanda cachea más imágenes (pósters/backdrops) en la caché dinámica
 
 // -------------------------------------------------------------
@@ -29,9 +34,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20260929',
-  './css/ocio.css?v=20260929',
-  './js/app.js?v=20260929',
+  './css/styles.css?v=20261001',
+  './css/ocio.css?v=20261001',
+  './js/app.js?v=20261001',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -79,10 +84,10 @@ const STATIC_ASSETS = [
   // Sección de gimnasio (issue #62)
   './js/gym.js',
   './resources/icon.png',
-  './ocio/series.html?v=20260929',
-  './ocio/peliculas.html?v=20260929',
-  './ocio/libros.html?v=20260929',
-  './ocio/videojuegos.html?v=20260929',
+  './ocio/series.html?v=20261001',
+  './ocio/peliculas.html?v=20261001',
+  './ocio/libros.html?v=20261001',
+  './ocio/videojuegos.html?v=20261001',
 ];
 
 // -------------------------------------------------------------
@@ -161,13 +166,31 @@ function fetchWithTimeout(request, ms = 3000) {
 }
 
 /**
+ * Respuesta 503 amigable para cuando una petición falla o se cuelga.
+ * Es la fuente única del fallback: el SDK de Firestore la interpreta
+ * como error de red y dispara el onError de la suscripción, que el
+ * wrapper subscribeWithRetry convierte en reintento (ADR-057).
+ */
+function offlineApiResponse() {
+  return new Response(
+    JSON.stringify({ error: 'offline', message: 'No hay conexión' }),
+    {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+
+/**
  * Network First: intenta la red primero; si falla, busca en la
  * caché dinámica. Limita el número de entradas en caché.
  *
  * `timeoutMs` es opcional y SOLO debe usarse para navegación: evita
  * que una red lenta o colgada bloquee la carga del documento. Las
- * APIs externas y Firestore no llevan timeout para no provocar
- * falsos "offline" en redes lentas.
+ * APIs externas no llevan timeout para no provocar falsos "offline"
+ * en redes lentas. (Las lecturas GET de Firestore ya no pasan por
+ * aquí: desde la issue #286 usan networkOnlyWithTimeout.)
  *
  * Devuelve `{ response, fromNetwork }` para que el llamador sepa si
  * la respuesta vino de la red (y pueda refrescar caches canónicas).
@@ -194,14 +217,24 @@ async function networkFirst(request, timeoutMs = null) {
       return { response: await caches.match(resolved('./index.html')), fromNetwork: false };
     }
     // Para APIs, devolver un 503 amigable
-    return {
-      response: new Response(JSON.stringify({ error: 'offline', message: 'No hay conexión' }), {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'application/json' },
-      }),
-      fromNetwork: false,
-    };
+    return { response: offlineApiResponse(), fromNetwork: false };
+  }
+}
+
+/**
+ * Network Only con timeout (issue #286): para las lecturas GET de
+ * Firestore. Sin caché de ningún tipo (ni match ni put: un stream de
+ * long-polling abierto hace que cache.put no resuelva jamás, y los
+ * protobufs no deben servirse stale desde la dinámica) y sin propagar
+ * el rechazo: el timeout o el fallo devuelven el 503 amigable, que es
+ * el camino probado que dispara el onError del SDK y los reintentos
+ * del wrapper subscribeWithRetry (ADR-057).
+ */
+async function networkOnlyWithTimeout(request, ms = 8000) {
+  try {
+    return await fetchWithTimeout(request, ms);
+  } catch (err) {
+    return offlineApiResponse();
   }
 }
 
@@ -320,12 +353,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ---- Network First: lecturas de Firestore (GET) ----
+  // ---- Network Only con timeout: lecturas GET de Firestore (issue #286) ----
+  // networkFirst NO sirve aquí: las respuestas de Firestore son
+  // streams de long-polling; el cache.put de un stream abierto no
+  // resuelve y deja la petición colgada para siempre (ni onChange ni
+  // onError en el SDK → «Cargando…» eterno, sin reintentos), y los
+  // protobufs nunca deberían servirse desde la caché dinámica. Con
+  // networkOnlyWithTimeout, un colgado se convierte en un 503 que el
+  // SDK trata como error de red: el wrapper subscribeWithRetry
+  // (issue #147) reintenta y la web se recupera sola.
   if (
     url.hostname === 'firestore.googleapis.com' &&
     event.request.method === 'GET'
   ) {
-    event.respondWith(networkFirst(event.request).then(({ response }) => response));
+    event.respondWith(networkOnlyWithTimeout(event.request));
     return;
   }
 

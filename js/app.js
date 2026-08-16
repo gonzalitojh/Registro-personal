@@ -192,6 +192,7 @@ function renderLibraryFor(group) {
   // .panel-loading (el que antepone loadOcioPartial al inyectar).
   const panelEl = gridEl.closest(".panel");
   panelEl?.querySelector(".panel-loading")?.remove();
+  panelEl?.querySelector(".panel-error")?.remove();
   let items = applyFilter(itemsByGroup(group), activeFilters[group]);
   items = applySort(items, activeSort[group]);
   const ctx = createCtx();
@@ -250,7 +251,10 @@ function subscribeGroup(uid, groupKey) {
       renderLibraryFor(groupKey);
       refreshExternalResults(createCtx());
     },
-    onError: () => ui.showToast(cfg.error),
+    onError: (err) => {
+      ui.showToast(cfg.error);
+      showPanelLoadError(groupKey, cfg.error);
+    },
     onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
   });
 }
@@ -274,9 +278,24 @@ const PANEL_TO_GROUP = {
   "panel-games": "games",
 };
 
+// Inverso de PANEL_TO_GROUP: lo usa showPanelLoadError/retryPanelLoad
+// para localizar el panel de un grupo (issue #286).
+const GROUP_TO_PANEL = {
+  tv: "panel-tv",
+  movies: "panel-movies",
+  books: "panel-books",
+  games: "panel-games",
+};
+
 // Partial ya inyectado por panel: cada pestaña carga su HTML solo la
 // primera vez que se activa; las siguientes activaciones no re-fetch.
 const loadedPartials = new Set();
+
+// Timeout del fetch de partials (issue #286): una red colgada no
+// debe dejar el panel sin contenido (ni el «Cargando…» eterno); el
+// AbortController convierte el colgado en un AbortError que cae en
+// el estado de error del panel.
+const PARTIAL_FETCH_TIMEOUT_MS = 8000;
 
 // Marcador de carga de un panel (issue #178). Se antepone al
 // contenido de cada partial al inyectarlo, de modo que el indicador
@@ -288,6 +307,54 @@ function panelLoadingHtml() {
       <span class="spinner" aria-hidden="true"></span>
       <span>Cargando…</span>
     </div>`;
+}
+
+// Estado final de error de un panel de Ocio (issue #286): al agotar
+// los reintentos de la suscripción del grupo (o fallar el fetch del
+// partial), el marcador .panel-loading se retira y se muestra un
+// aviso con botón «Reintentar». Idempotente: si ya hay un error o el
+// loading pendiente, se limpian antes de pintar el nuevo estado.
+function showPanelLoadError(groupKey, message, { force = false } = {}) {
+  const panelEl = document.getElementById(GROUP_TO_PANEL[groupKey]);
+  if (!panelEl) return;
+  // Llegó el snapshot tarde (el grupo ya está listo): los datos se
+  // pintan (o se pintarán) y el error de la suscripción ya no tiene
+  // sentido. La vía del partial usa `force`: aunque el grupo tenga
+  // datos, sin el HTML del panel no hay nada que pintar, así que el
+  // error con su botón «Reintentar» es lo único visible y útil.
+  if (!force && groupReady[groupKey]) return;
+  panelEl.querySelector(".panel-loading")?.remove();
+  panelEl.querySelector(".panel-error")?.remove();
+  panelEl.insertAdjacentHTML(
+    "afterbegin",
+    `<div class="panel-error" role="alert">
+      <p class="panel-error__message">${message}</p>
+      <button type="button" class="btn btn--small">Reintentar</button>
+    </div>`
+  );
+  panelEl.querySelector(".panel-error button").addEventListener("click", () => retryPanelLoad(groupKey));
+}
+
+// Re-arranca la carga de un grupo de Ocio desde su estado de error:
+// retira el aviso, restaura el marcador de carga, cancela la
+// suscripción agotada (REQUERIDO: si no, el guard de subscribeGroup
+// ignora la nueva), borra el partial de `loadedPartials` (REQUERIDO:
+// si no, loadOcioPartial no re-fetcha) y arranca de nuevo la
+// suscripción y el fetch del partial.
+function retryPanelLoad(groupKey) {
+  const panelEl = document.getElementById(GROUP_TO_PANEL[groupKey]);
+  if (!panelEl) return;
+  panelEl.querySelector(".panel-error")?.remove();
+  if (!panelEl.querySelector(".panel-loading")) {
+    panelEl.insertAdjacentHTML("afterbegin", panelLoadingHtml());
+  }
+  if (unsubscribeItems[groupKey]) {
+    unsubscribeItems[groupKey]();
+    unsubscribeItems[groupKey] = null;
+  }
+  loadedPartials.delete(panelEl.id);
+  loadOcioPartial(panelEl);
+  if (currentUser) ensureGroupSubscribed(groupKey);
 }
 
 // Wiring de los controles de un panel (filtros, orden y vista).
@@ -340,8 +407,13 @@ async function loadOcioPartial(panelEl) {
   if (!panelEl || loadedPartials.has(panelEl.id)) return;
   loadedPartials.add(panelEl.id);
   const src = panelEl.dataset.ocioSrc;
+  // Timeout del fetch (issue #286): si la red se cuelga, abortar y
+  // caer en el estado de error del panel. Declarado fuera del try
+  // para que el finally pueda limpiar el timer en todos los caminos.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PARTIAL_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(src + "?v=" + APP_VERSION);
+    const res = await fetch(src + "?v=" + APP_VERSION, { signal: controller.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = await res.text();
     panelEl.innerHTML = panelLoadingHtml() + html;
@@ -350,10 +422,17 @@ async function loadOcioPartial(panelEl) {
     if (group && groupReady[group]) renderLibraryFor(group);
   } catch (err) {
     // Se retira del set de cargados para reintentar en la siguiente
-    // activación (p. ej. tras arreglar el origen del fallo).
+    // activación (p. ej. tras arreglar el origen del fallo) o con el
+    // botón «Reintentar» del estado de error.
     loadedPartials.delete(panelEl.id);
-    panelEl.innerHTML = `<p class="empty-state">No se pudo cargar esta sección (${src}). Comprueba que estás sirviendo la web desde un servidor (no abriendo el archivo directamente) y recarga la página.</p>`;
+    const mensaje =
+      err?.name === "AbortError"
+        ? "Esta sección tardó demasiado en cargarse."
+        : "No se pudo cargar esta sección.";
+    showPanelLoadError(panelEl.dataset.typeGroup, mensaje, { force: true });
     console.error("No se pudo cargar", src, err);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -713,6 +792,7 @@ async function init() {
       // reaparecer hasta el primer snapshot.
       Object.values(panels).forEach((p) => {
         if (p && loadedPartials.has(p.id) && !p.querySelector(".panel-loading")) {
+          p.querySelector(".panel-error")?.remove();
           p.insertAdjacentHTML("afterbegin", panelLoadingHtml());
         }
       });
