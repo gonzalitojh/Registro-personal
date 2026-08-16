@@ -650,8 +650,16 @@ export function refreshExternalResults(ctx) {
 // ---- Navegación ----
 
 function navigateTo(result) {
-  // Resultado del catálogo: vista previa sin cerrar el dropdown.
+  // Resultado del catálogo: películas y series abren la página de
+  // detalle (#/ocio/series/<id> o #/ocio/peliculas/<id>); libros y
+  // videojuegos conservan la vista previa sin cerrar el dropdown.
   if (result.kind === "external") {
+    const item = result.item;
+    if (item.type === "tv" || item.type === "movie") {
+      closeGlobalSearch();
+      navigate({ section: "item", kind: item.type, externalId: item.externalId });
+      return;
+    }
     openSearchPreviewFromResults(result.item, false, searchCtx);
     return;
   }
