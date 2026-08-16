@@ -1,7 +1,7 @@
 {
   "title": "Abrir películas y series en página nueva (issue #285)",
   "description": "Al pulsar sobre una serie o película, tanto en la colección como en la barra de búsqueda, en lugar de abrir una ventana (modal), abrir una nueva página a partir del endpoint '/ocio/series' o '/ocio/peliculas' (según sea película o serie) con el id del item en cuestión en el nuevo endpoint. En la nueva página se debe respetar la barra de navegación superior pero, en lugar del botón de hamburguesa para acceder a la barra lateral, un botón atrás para volver a la pantalla previa. La base de trabajo es la rama feat/issue-201 y la PR debe ir a esa rama (no a dev), según instrucción explícita del usuario en la issue.",
-  "status": "implemented",
+  "status": "validated",
   "acceptance_criteria": [
     "Pulsar una serie o película en la colección abre una página nueva (no un modal) con URL #/ocio/series/<id> o #/ocio/peliculas/<id>.",
     "Pulsar una serie o película en la barra de búsqueda (resultado de colección o del catálogo) abre la misma página nueva.",
@@ -39,6 +39,13 @@
       "Búsqueda de catálogo (global-search): resultados externos movie/tv navegan a la página de detalle (libros/videojuegos conservan preview).",
       "Tarjetas de saga (onOpenSagaMovie) y recomendaciones (onOpenRecommendation, movie y tv) navegan a la página de detalle; se eliminan openExternalPreview/enrichExternalPreview/openSagaMoviePreview/openRecommendationPreview (sin llamadores).",
       "Manual de usuario (4.2 y 12) y ADR-100 actualizados; bump ?v=20261002."
+    ],
+    "date": "2026-08-16"
+  },
+  "qa": {
+    "result": "APROBADO (QA reviewer, iteración 2026-08-16)",
+    "findings_fixed": [
+      "import muerto getTvSeasonsMeta eliminado"
     ],
     "date": "2026-08-16"
   }
