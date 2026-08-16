@@ -1176,10 +1176,13 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null) {
+export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
   const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
+  // Modo página (issue #285): con target (contenedor de #item-view) la
+  // ficha se renderiza en la página y no se abre el modal ni su focus
+  // trap; sin target, comportamiento clásico sobre #modal-content.
+  const content = target || document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
 
   content.innerHTML = `
@@ -1231,8 +1234,9 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // Propaga todos los argumentos en el re-render (issue #280): tras
   // marcar como vista, la sección de saga (y las recomendaciones)
   // permanece, y el botón "Añadida" se mantiene gracias al Set
-  // existingIds compartido.
-  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts);
+  // existingIds compartido. El target se propaga para que la ficha
+  // vuelva a pintarse en la página en modo página (issue #285).
+  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts, { target });
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
@@ -1326,6 +1330,10 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
     onDelete();
   });
+
+  // En modo página no se abre el modal ni se atrapa el foco: el
+  // contenido ya vive en el documento (#item-view-content).
+  if (target) return;
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
@@ -1821,7 +1829,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
     .join("");
 }
 
-export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set()) {
+export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set(), { target = null } = {}) {
   const {
     onExpandSeason,
     onSetEpisodeDate,
@@ -1839,7 +1847,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
+  // Modo página (issue #285): ver openMovieModal.
+  const content = target || document.getElementById("modal-content");
 
   const nextLine = progress.nextEpisode
     ? `Siguiente: T${progress.nextEpisode.season}E${progress.nextEpisode.episode}`
@@ -2234,7 +2243,9 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   wireStatusActions(content, async (newStatusOrNull) => {
     const newProgress = await onSetStatus(newStatusOrNull);
-    openTvModal(item, seasonsMeta, newProgress, callbacks);
+    // El target se propaga en el re-render (issue #285): en modo
+    // página la ficha de serie se repinta en #item-view-content.
+    openTvModal(item, seasonsMeta, newProgress, callbacks, recommendations, existingIds, { target });
   });
 
   const getRating = wireRatingAndGetValue(content, item.rating);
@@ -2273,6 +2284,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       });
     });
   }
+
+  // En modo página no se abre el modal ni se atrapa el foco: el
+  // contenido ya vive en el documento (#item-view-content).
+  if (target) return;
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
