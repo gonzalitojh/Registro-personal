@@ -1,7 +1,7 @@
 {
   "title": "Abrir películas y series en página nueva (issue #285)",
   "description": "Al pulsar sobre una serie o película, tanto en la colección como en la barra de búsqueda, en lugar de abrir una ventana (modal), abrir una nueva página a partir del endpoint '/ocio/series' o '/ocio/peliculas' (según sea película o serie) con el id del item en cuestión en el nuevo endpoint. En la nueva página se debe respetar la barra de navegación superior pero, en lugar del botón de hamburguesa para acceder a la barra lateral, un botón atrás para volver a la pantalla previa. La base de trabajo es la rama feat/issue-201 y la PR debe ir a esa rama (no a dev), según instrucción explícita del usuario en la issue.",
-  "status": "security-cleared",
+  "status": "documented",
   "acceptance_criteria": [
     "Pulsar una serie o película en la colección abre una página nueva (no un modal) con URL #/ocio/series/<id> o #/ocio/peliculas/<id>.",
     "Pulsar una serie o película en la barra de búsqueda (resultado de colección o del catálogo) abre la misma página nueva.",
