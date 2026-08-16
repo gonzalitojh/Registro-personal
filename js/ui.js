@@ -1002,7 +1002,8 @@ export function watchProvidersHtml(item) {
   if (!wp) return "";
   const hasAny = (wp.flatrate && wp.flatrate.length) ||
                  (wp.rent && wp.rent.length) ||
-                 (wp.buy && wp.buy.length);  if (!hasAny) {
+                 (wp.buy && wp.buy.length);
+  if (!hasAny) {
     return `<div class="watch-providers watch-providers--empty">
       <span class="watch-providers__title">Sin info. de streaming para este país</span>
     </div>`;
