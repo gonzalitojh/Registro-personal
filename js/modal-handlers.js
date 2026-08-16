@@ -13,13 +13,17 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getTvSeasonsMeta, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
 import { addItem } from "./db.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+// navigate (issue #285, iteración): las tarjetas de saga y de
+// recomendación navegan a la PÁGINA de detalle del ítem. Import seguro
+// sin dependencia circular: router.js no importa nada de la app.
+import { navigate } from "./router.js";
 
 // Detalles de ficha bajo demanda (issue #200, almacenamiento mínimo):
 // si el documento no trae la ficha (solo tarjeta + avisos), el modal
@@ -79,26 +83,34 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
   return false;
 }
 
-function confirmDelete(item, kind, ctx) {
+function confirmDelete(item, kind, ctx, onDone) {
   return () => {
     scheduleDeletion(item, ctx.getCurrentUser().uid, kind, ctx);
     ui.closeModal();
+    // En modo página (issue #285) «Eliminar» cierra el modal abierto
+    // (si lo hubiera) y vuelve a la pantalla previa: el item se borra
+    // con deshacer (undo-toast) y la lista de origen se repinta sola
+    // vía snapshot al volver.
+    if (onDone) onDone();
   };
 }
 
-function saveMeta(item, kind, ctx) {
+function saveMeta(item, kind, ctx, onDone) {
   return async (changes) => {
     try {
       await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
       ui.showToast("Guardado.");
-      ui.closeModal();
+      // En modo página (issue #285) se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (onDone) onDone();
+      else ui.closeModal();
     } catch (err) {
       ui.showToast("No se pudo guardar: " + err.message);
     }
   };
 }
 
-function editHandlerFor(item, kind, reopen, ctx) {
+function editHandlerFor(item, kind, reopen, ctx, target = null) {
   return () => {
     ui.openEditModal(item, {
       onSave: async (changes) => {
@@ -106,12 +118,21 @@ function editHandlerFor(item, kind, reopen, ctx) {
           await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
           Object.assign(item, changes);
           ui.showToast("Información actualizada.");
+          // En modo página (issue #285) el modal de edición se abre
+          // SIEMPRE (es un form con foco atrapado): al guardar o
+          // cancelar hay que cerrarlo — el re-render va en la página,
+          // no dentro del modal. En el modal clásico el re-render
+          // ocurre dentro y no debe cerrarse aquí.
+          if (target) ui.closeModal();
           reopen();
         } catch (err) {
           ui.showToast("No se pudo guardar: " + err.message);
         }
       },
-      onCancel: reopen,
+      onCancel: () => {
+        if (target) ui.closeModal();
+        reopen();
+      },
     });
   };
 }
@@ -130,8 +151,12 @@ function getUserCountry() {
     || "ES";
 }
 
-async function openMovieItem(item, ctx, isRerender = false) {
-  const reopen = () => openMovieItem(item, ctx, true);
+// Abre la ficha de una película. Con target (contenedor de la página
+// de ítem, issue #285) renderiza la ficha en la página en lugar de
+// abrir el modal; sin target, comportamiento clásico en #item-modal.
+// isRerender evita re-pedir detalles/API en los re-renders.
+export async function openMovieItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openMovieItem(item, ctx, true, target);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     // awaitingRelease se limpia siempre al marcar como vista: un ítem
@@ -202,9 +227,9 @@ async function openMovieItem(item, ctx, isRerender = false) {
     },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
-    onSaveMeta: saveMeta(item, "movie", ctx),
-    onDelete: confirmDelete(item, "movie", ctx),
-    onEdit: editHandlerFor(item, "movie", reopen, ctx),
+    onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
+    onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
+    onEdit: editHandlerFor(item, "movie", reopen, ctx, target),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
@@ -234,21 +259,19 @@ async function openMovieItem(item, ctx, isRerender = false) {
           }
         }
       : undefined,
-    // Vista previa de una película de la saga al pulsar su tarjeta
-    // (issue #280, iteración): abre la preview (patrón issue #22) y al
-    // cerrar o añadir restaura la ficha con reopen; el Set existingIds
-    // compartido hace que la tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una película de la saga (issue #285,
+    // iteración): ya no abre la vista previa en ventana — navega a la
+    // PÁGINA de detalle de esa película (#/ocio/peliculas/<id>), igual
+    // que cualquier otra película pulsable. Si no está en el registro,
+    // la página muestra la vista previa con «Añadir».
     onOpenSagaMovie: item.collectionId
-      ? (movie) => openSagaMoviePreview(movie, ctx, reopen, existingIds)
+      ? (movie) => navigate({ section: "item", kind: "movie", externalId: movie.externalId })
       : undefined,
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que las tarjetas de saga — abre
-    // la preview (issue #22) y al cerrar o añadir restaura la ficha
-    // con reopen; el Set existingIds compartido hace que la tarjeta
-    // vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // misma navegación a la página de detalle de la película/serie.
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds, sagaParts);
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+  }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -282,124 +305,17 @@ async function addSagaMovie(movie, ctx) {
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
 }
 
-/**
- * Vista previa compartida de un ítem externo desde la ficha (issue
- * #280): lo usan las tarjetas de «Otras películas de la saga» y las de
- * recomendaciones (películas y series), con el mismo patrón que la
- * vista previa de búsqueda (issue #22). Al cerrar la vista previa o
- * tras añadir el ítem, se restaura la ficha que se estaba viendo
- * (restoreModal). El Set existingIds compartido con el render hace
- * que, al restaurar la ficha, la tarjeta vuelva como «Añadida».
- * @param {Object}   previewItem  - {externalId, type, title, year, coverUrl, overview}
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- * @param {Function} performAdd   - async (item) => alta del ítem (lanza si falla)
- */
-async function openExternalPreview(previewItem, ctx, restoreModal, existingIds, performAdd) {
-  ui.closeModal(); // limpia trap/foco del modal de ficha antes de abrir la preview
-  ui.openSearchPreviewModal(previewItem, {
-    added: existingIds.has(String(previewItem.externalId)),
-    onClose: () => {
-      ui.closeModal(); // limpia trap/foco de la preview...
-      restoreModal();  // ...y restaura la ficha
-    },
-    onAdd: async (item, btn) => {
-      btn.disabled = true;
-      btn.textContent = "Añadiendo…";
-      try {
-        await performAdd(item);
-        existingIds.add(String(item.externalId));
-        ui.showToast(`«${item.title}» añadida a tu registro.`);
-        ui.closeModal();
-        restoreModal(); // la ficha restaurada muestra la tarjeta como «Añadida»
-        return true;
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = "Añadir";
-        ui.showToast("No se pudo añadir: " + err.message);
-        return false;
-      }
-    },
-    onEnrich: (item) => enrichExternalPreview(item),
-  });
-}
-
-/**
- * Enriquecimiento de la vista previa externa (issue #280): películas
- * con getMovieDetails; series con getTvExtraDetails + temporadas
- * (getTvSeasonsMeta, no bloqueante). Nunca lanza: devuelve {} si falla.
- */
-async function enrichExternalPreview(item) {
-  if (item.type === "tv") {
-    try {
-      const details = await getTvExtraDetails(item.externalId);
-      try {
-        details.seasonsMeta = await getTvSeasonsMeta(item.externalId);
-      } catch (err) {
-        // no bloqueamos la preview si fallan las temporadas
-      }
-      return details;
-    } catch (err) {
-      return {};
-    }
-  }
-  try {
-    return await getMovieDetails(item.externalId);
-  } catch (err) {
-    return {};
-  }
-}
-
-/**
- * Vista previa de una película de la saga (issue #280, iteración):
- * al pulsar una tarjeta de «Otras películas de la saga» se muestra su
- * información antes de añadirla.
- * @param {Object}   movie        - Parte de la saga ({externalId, title, year, posterUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha de la película original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openSagaMoviePreview(movie, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(movie.externalId),
-    type: "movie",
-    title: movie.title,
-    year: movie.year || "",
-    coverUrl: movie.posterUrl || null,
-    posterUrl: movie.posterUrl || null, // addSagaMovie espera posterUrl
-    overview: movie.overview || "",
-  };
-  // addSagaMovie lanza si la alta falla; openExternalPreview lo
-  // captura y restaura el botón sin cerrar la preview (issue #280).
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addSagaMovie(item, ctx)
-  );
-}
-
-/**
- * Vista previa de una recomendación (issue #280, iteración): al pulsar
- * una tarjeta de «Si te gustó esto…» (película o serie) se muestra su
- * información ampliada antes de añadirla, igual que en las tarjetas de
- * saga y en la vista previa de búsqueda (issue #22).
- * @param {Object}   recItem      - Recomendación ({externalId, type, title, year, coverUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openRecommendationPreview(recItem, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(recItem.externalId),
-    type: recItem.type === "tv" ? "tv" : "movie",
-    title: recItem.title,
-    year: recItem.year || "",
-    coverUrl: recItem.coverUrl || null,
-    overview: recItem.overview || "",
-  };
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addRecommendationItem(item, ctx)
-  );
-}
+// NOTA (issue #285, iteración): los helpers de vista previa en ventana
+// de saga/recomendaciones (openExternalPreview, enrichExternalPreview,
+// openSagaMoviePreview, openRecommendationPreview) se han ELIMINADO:
+// pulsar la tarjeta de una saga o de una recomendación ahora navega a
+// la página de detalle del ítem (callbacks onOpenSagaMovie/
+// onOpenRecommendation → navigate()), igual que cualquier otra
+// película o serie pulsable. La página muestra la ficha o la vista
+// previa con «Añadir» según el ítem esté o no en el registro (ver
+// js/item-page.js), por lo que la preview en ventana ya no hace falta
+// en esta vía. La preview de búsqueda (issue #22) sigue viva para
+// libros y videojuegos en search.js.
 
 /**
  * Añade un ítem recomendado (película o serie) al registro del usuario.
@@ -624,8 +540,11 @@ async function openGameItem(item, ctx, isRerender = false) {
   }
 }
 
-async function openTvItem(item, ctx, isRerender = false) {
-  const reopen = () => openTvItem(item, ctx, true);
+// Abre la ficha de una serie. Con target (contenedor de la página de
+// ítem, issue #285) renderiza la ficha en la página en lugar de abrir
+// el modal; sin target, comportamiento clásico en #item-modal.
+export async function openTvItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openTvItem(item, ctx, true, target);
   let seasonsMeta;
   try {
     seasonsMeta = await getSeasonsMetaFor(item, ctx);
@@ -812,7 +731,10 @@ async function openTvItem(item, ctx, isRerender = false) {
       const changes = startRewatch(item);
       await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
       Object.assign(item, changes);
-      ui.closeModal();
+      // Modo página (issue #285): se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (target) reopen();
+      else ui.closeModal();
       ui.showToast("Nuevo visionado empezado. ¡A por ello!");
     },
 
@@ -823,22 +745,22 @@ async function openTvItem(item, ctx, isRerender = false) {
       return progressWithStatus(seasonsMeta, item);
     },
 
-    onSaveMeta: saveMeta(item, "tv", ctx),
-    onDelete: confirmDelete(item, "tv", ctx),
-    onEdit: editHandlerFor(item, "tv", reopen, ctx),
+    onSaveMeta: saveMeta(item, "tv", ctx, target ? reopen : null),
+    onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
+    onEdit: editHandlerFor(item, "tv", reopen, ctx, target),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
       }
     },
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que en la ficha de película —
-    // abre la preview (issue #22) y al cerrar o añadir restaura la
-    // ficha con reopen; el Set existingIds compartido hace que la
-    // tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // navega a la PÁGINA de detalle de la serie/película (#/ocio/
+    // series/<id> o #/ocio/peliculas/<id>) en lugar de la preview en
+    // ventana; si no está en el registro, la página muestra la vista
+    // previa con «Añadir».
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds);
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+  }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -855,11 +777,26 @@ export function openItem(item, ctx) {
   else openBookItem(item, ctx);
 }
 
+// Hook de «volver a la pantalla previa» que registra item-page.js
+// (issue #285): lo usa confirmDelete en modo página para salir de la
+// ficha tras eliminar un ítem. Se inyecta para evitar una dependencia
+// circular (item-page.js importa de aquí openMovieItem/openTvItem).
+let itemPageBackHandler = null;
+
+export function setItemPageBackHandler(fn) {
+  itemPageBackHandler = fn;
+}
+
+function goBackFromItemPage() {
+  if (itemPageBackHandler) itemPageBackHandler();
+}
+
 export function setupModalCloseListeners() {
   // Cierra el modal activo respetando un cierre personalizado registrado
-  // (modal._onClose, lo usa la vista previa de saga —issue #280— para
-  // restaurar la ficha; se consume antes de invocarlo). Si no hay
-  // personalizado, cierre normal.
+  // (modal._onClose, lo registra ui.openSearchPreviewModal para las
+  // vistas previas de búsqueda —issue #22/#280— cuando quieren
+  // restaurar algo al cerrar; se consume antes de invocarlo). Si no
+  // hay personalizado, cierre normal.
   const closeActiveModal = () => {
     const modal = document.getElementById("item-modal");
     if (modal._onClose) {

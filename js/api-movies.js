@@ -151,6 +151,9 @@ export async function getMovieDetails(id) {
     (c) => c.job === "Director"
   );
   const result = {
+    // Título: lo consume la preview de página directa del ítem (issue
+    // #285) y es aditivo para el resto de llamadores (lo ignoran).
+    title: data.title || "",
     runtime: data.runtime || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
@@ -220,6 +223,10 @@ export async function getTvExtraDetails(id) {
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   const result = {
+    // Título: lo consume la preview de página directa del ítem (issue
+    // #285) y es aditivo para el resto de llamadores (lo ignoran). En
+    // TMDB las series usan "name" (ver getMovieDetails para movies).
+    title: data.name || "",
     episodeRuntime: (data.episode_run_time && data.episode_run_time[0]) || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),

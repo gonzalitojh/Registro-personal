@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20260929" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20260929" />
+  <link rel="stylesheet" href="css/styles.css?v=20261002" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20261002" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -72,6 +72,23 @@
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      <!-- Botón atrás de la página de ítem (issue #285): en la ficha
+           en página nueva de una película o serie, la cabecera
+           superior se respeta pero se coloca en el LUGAR del botón de
+           hamburguesa de la barra lateral (☰, y también del ⚙ de
+           ajustes) para volver a la pantalla previa. El swap se hace
+           por CSS con la clase body.is-item-page (regla única de
+           verdad, sobrevive a re-renders de la barra lateral): por
+           defecto está oculto con CSS (display:none, NUNCA con la
+           clase .hidden, cuyo display:none !important ganaría a la
+           regla de swap), y solo body.is-item-page lo muestra. -->
+      <button type="button" class="icon-btn" id="btn-item-back" aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
 
@@ -240,6 +257,16 @@
     <footer class="app-footer">
       Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books · Datos de videojuegos vía IGDB (igdb.com)
     </footer>
+  </div>
+
+  <!-- Página de detalle de un ítem de Ocio (issue #285): al pulsar
+       una película o serie (colección o barra de búsqueda) se abre
+       esta vista de primer nivel (hermana de profile-view, fuera de
+       #app) con la ficha en página. La cabecera global superior se
+       respeta (con el botón atrás en lugar del ☰) y el contenido lo
+       renderiza js/item-page.js dentro de #item-view-content. -->
+  <div id="item-view" class="item-view hidden" role="main" aria-label="Ficha de película o serie">
+    <div id="item-view-content"></div>
   </div>
 
   <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
@@ -852,7 +879,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20260929"></script>
+  <script type="module" src="js/app.js?v=20261002"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

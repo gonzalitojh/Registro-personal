@@ -66,6 +66,7 @@ import { setupSidebar, renderSidebar, setActiveSection } from "./sidebar.js";
 import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
+import { setupItemPage } from "./item-page.js";
 import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.js";
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
@@ -180,6 +181,11 @@ const GRID_IDS = {
   games: ["library-games", "empty-games"],
 };
 
+// API del router a nivel de módulo: renderLibraryFor (ámbito módulo)
+// navega a la página de ítem (issue #285) y el router se crea dentro
+// de init(). Se asigna tras initRouter y solo se usa en runtime.
+let routerApi = null;
+
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
   const gridEl = document.getElementById(gridId);
@@ -196,7 +202,15 @@ function renderLibraryFor(group) {
   items = applySort(items, activeSort[group]);
   const ctx = createCtx();
   ui.renderLibrary(gridEl, document.getElementById(emptyId), items, viewMode[group], {
-    onOpen: (item) => openItem(item, ctx),
+    // Issue #285: películas y series abren la página de detalle en
+    // lugar del modal; libros y videojuegos conservan el modal.
+    onOpen: (item) => {
+      if (item.type === "tv" || item.type === "movie") {
+        routerApi?.navigate({ section: "item", kind: item.type, externalId: item.externalId });
+      } else {
+        openItem(item, ctx);
+      }
+    },
     onQuickAction: (item, btn) => quickAction(item, btn, ctx),
   });
 }
@@ -249,6 +263,10 @@ function subscribeGroup(uid, groupKey) {
       groupReady[groupKey] = true;
       renderLibraryFor(groupKey);
       refreshExternalResults(createCtx());
+      // Issue #285: si la página de detalle está abierta sobre este
+      // grupo, repinta la ficha/preview ante cambios estructurales
+      // (alta/borrado desde otro dispositivo o desde la propia página).
+      itemApi?.notifyGroupChanged(groupKey, items);
     },
     onError: () => ui.showToast(cfg.error),
     onRetrying: () => ui.showToast("Hay problemas de conexión. Reintentando…"),
@@ -530,6 +548,7 @@ async function init() {
   let profileApi = null;
   let recipesApi = null;
   let gymApi = null;
+  let itemApi = null;
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el
@@ -551,11 +570,14 @@ async function init() {
       // iteración 2026-08-11): el marcado sigue a la ruta. En el
       // perfil solo se marca «Ajustes» (entrada pinned) cuando se
       // está en esa subsección; el resto del perfil no tiene entrada.
+      // La página de ítem (issue #285) tampoco tiene entrada propia.
       setActiveSection(
         route.section === "perfil"
           ? route.profileSection === "settings"
             ? "settings"
             : null
+          : route.section === "item"
+          ? null
           : route.section
       );
 
@@ -564,6 +586,7 @@ async function init() {
         // el render y, si viene con uid, el detalle del amigo).
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
+        itemApi?.closePage();
         if (profileApi) {
           profileApi.openProfileSection(route.profileSection, ctx, {
             fromRouter: true,
@@ -576,6 +599,7 @@ async function init() {
         // pestaña está oculta en Ajustes, se normaliza a la primera
         // visible y se reescribe la URL (mismo guard que Ocio, #97).
         document.getElementById("gym-view")?.classList.add("hidden");
+        itemApi?.closePage();
         if (recipesApi) {
           const tab = normalizeTabKey("recetas", route.tab);
           if (tab !== route.tab) {
@@ -592,6 +616,7 @@ async function init() {
         // nada: al entrar, watchAuthState llama a router.applyRoute().
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
+        itemApi?.closePage();
         if (gymApi) {
           const tab = normalizeTabKey("gimnasio", route.tab);
           if (tab !== route.tab) {
@@ -605,6 +630,7 @@ async function init() {
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
+        itemApi?.closePage();
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
@@ -616,9 +642,22 @@ async function init() {
         // sesión. La única vía de destapar #app es ui.showApp tras el
         // login: este remove condicional es el único permitido.
         if (currentUser) document.getElementById("app").classList.remove("hidden");
+      } else if (route.section === "item") {
+        // Página de detalle de un ítem (issue #285): se ocultan #app
+        // y las vistas de primer nivel y se muestra la página con la
+        // ficha en #item-view (la cabecera superior se mantiene, con
+        // el botón atrás en lugar del ☰ vía body.is-item-page).
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("gym-view")?.classList.add("hidden");
+        document.getElementById("app").classList.add("hidden");
+        itemApi?.openPage(route.kind, route.externalId);
       }
     },
   });
+
+  // API del router a nivel de módulo (issue #285: renderLibraryFor).
+  routerApi = router;
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -671,6 +710,13 @@ async function init() {
     isSectionVisible: (id) => isSectionVisible(id),
   });
   setupGlobalSearch(ctx);
+  // Issue #285: página de detalle de película/serie (la creamos al
+  // final del arranque; el onRoute la usa con optional chaining, así
+  // que una ruta item inicial sin sesión la retoma watchAuthState).
+  // ensureGroup: suscribe el grupo del ítem si aún no está activo
+  // (lazy loading, issue #178) para que los snapshots refresquen la
+  // página (notifyGroupChanged) y el alta desde preview funcione.
+  itemApi = setupItemPage(ctx, { ensureGroup: ensureGroupSubscribed });
   // Reflejar las pestañas ocultas guardadas en el estado inicial
   // (el sidebar ya se re-renderizó dentro de setupSidebar).
   applyTabVisibility();
@@ -704,6 +750,9 @@ async function init() {
       // pantalla de acceso).
       resetGymData();
       document.getElementById("gym-view")?.classList.add("hidden");
+      // Issue #285: si la sesión se cerró desde la página de detalle,
+      // se cierra también (quedaría sobre la pantalla de acceso).
+      itemApi?.closePage();
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya
@@ -761,6 +810,12 @@ async function init() {
     // Y con Gimnasio (issue #62): si la recarga pedía #/gimnasio/...
     // sin sesión, se abre la sección al entrar.
     if (router.getCurrentSection() === "gimnasio") {
+      router.applyRoute();
+    }
+    // Y con la página de ítem (issue #285): si la recarga pedía
+    // #/ocio/{series|peliculas}/<id> sin sesión, se muestra al entrar
+    // (el loader inicial de openPage repinta con la sesión ya activa).
+    if (router.getCurrentSection() === "item") {
       router.applyRoute();
     }
 

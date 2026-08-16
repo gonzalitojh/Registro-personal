@@ -650,8 +650,16 @@ export function refreshExternalResults(ctx) {
 // ---- Navegación ----
 
 function navigateTo(result) {
-  // Resultado del catálogo: vista previa sin cerrar el dropdown.
+  // Resultado del catálogo: películas y series abren la página de
+  // detalle (#/ocio/series/<id> o #/ocio/peliculas/<id>); libros y
+  // videojuegos conservan la vista previa sin cerrar el dropdown.
   if (result.kind === "external") {
+    const item = result.item;
+    if (item.type === "tv" || item.type === "movie") {
+      closeGlobalSearch();
+      navigate({ section: "item", kind: item.type, externalId: item.externalId });
+      return;
+    }
     openSearchPreviewFromResults(result.item, false, searchCtx);
     return;
   }
@@ -690,7 +698,14 @@ function navigateTo(result) {
     return;
   }
   closeGlobalSearch();
-  // Pequeño delay para que el cierre del dropdown no interfiera
+  // Issue #285: películas y series abren la página de detalle
+  // (#/ocio/{series|peliculas}/<id>); libros y videojuegos conservan
+  // el modal (el cierre del dropdown se retarda 150 ms para que el
+  // focus no lo reabra).
+  if (item.type === "tv" || item.type === "movie") {
+    navigate({ section: "item", kind: item.type, externalId: item.externalId });
+    return;
+  }
   setTimeout(() => {
     openItem(item, searchCtx);
   }, 150);

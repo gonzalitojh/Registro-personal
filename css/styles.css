@@ -277,6 +277,14 @@
   color: var(--ink);
 }
 
+/* Página de detalle de ítem (issue #285): misma familia clara que
+   el perfil — fondo general claro, tinta oscura. */
+[data-theme="light"] .item-view,
+[data-theme="white"] .item-view {
+  background: var(--paper-dim);
+  color: var(--ink);
+}
+
 [data-theme="light"] .icon-btn,
 [data-theme="white"] .icon-btn {
   color: var(--ink);
@@ -371,6 +379,7 @@
 [data-theme="black"] .back-to-top,
 [data-theme="black"] .tab.is-active,
 [data-theme="black"] .modal__card,
+[data-theme="black"] .item-view__card,
 [data-theme="black"] .modal__close,
 [data-theme="black"] .toast,
 [data-theme="black"] .notif-dropdown,
@@ -1658,6 +1667,80 @@ body.is-back-to-top-visible .back-to-top {
   outline-offset: 2px;
 }
 
+
+/* =========================================================
+   Página de detalle de ítem (issue #285)
+   ========================================================= */
+
+.item-view {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--paper);
+  max-width: 720px;
+  margin: 0 auto;
+  /* Padding superior: hueco para la cabecera fija (--header-h) + aire.
+     La cabecera global SÍ se muestra en la página de ítem (con el
+     botón atrás en lugar del ☰), a diferencia del perfil. */
+  padding: calc(var(--header-h) + 1.25rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 3.5rem);
+}
+
+/* La ficha de ítem en página reutiliza las clases de detalle del
+   modal (.modal-detail__*, .field-group, .rec-card…, definidas en
+   ocio/ocio.css sin anidar bajo .modal__card). Este contenedor
+   aporta la «tarjeta» de superficie con las variables del tema
+   (mismo aspecto que .modal__card, ancho a favor de lectura). */
+.item-view__card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: 1.6rem 1.4rem 1.4rem;
+  overflow-wrap: anywhere;
+}
+
+/* El botón flotante "Volver arriba" (issue #137) no aplica en la
+   página de ítem: la cabecera con el botón atrás tampoco se oculta
+   al desplazar (auto-hide-nav no trata esta vista). */
+.item-view .back-to-top {
+  display: none;
+}
+
+/* Swap ☰/⚙ → atrás en la cabecera (issue #285): la página de ítem
+   respeta la barra de navegación superior pero sustituye el botón de
+   hamburguesa (y el ⚙ de ajustes) por el botón atrás, que ocupa el
+   MISMO sitio que el ☰ de la barra lateral. Regla única de verdad vía
+   clase de body: sobrevive a los re-renders de la barra lateral
+   (sidebar.js, issue #97) sin coordinar estado en JS.
+   El botón sale oculto por defecto con display:none (sin la clase
+   .hidden: su display:none !important ganaría a la regla de swap y el
+   botón nunca llegaría a verse). */
+#btn-item-back {
+  display: none;
+}
+body.is-item-page #btn-sidebar-toggle,
+body.is-item-page #btn-header-settings {
+  display: none;
+}
+body.is-item-page #btn-item-back {
+  display: inline-flex;
+}
+
+/* Aviso de preview («aún no en tu registro») sobre la tarjeta:
+   llamada invertida (fondo de tinta, texto de papel). --ink/--paper
+   se intercambian automáticamente por familia de tema (oscura:
+   marrón oscuro con texto crema; clara: tinta oscura con texto
+   blanco; negro puro hereda --ink #000 con texto claro), así que la
+   misma regla cumple contraste AA en los cuatro modos sin overrides. */
+.item-preview__hint {
+  margin: 0 0 0.9rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--paper-alpha-20);
+  font-size: 0.92rem;
+  overflow-wrap: break-word;
+}
 
 /* =========================================================
    Perfil y estadísticas
