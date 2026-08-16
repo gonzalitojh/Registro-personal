@@ -1,7 +1,7 @@
 {
     "title": "Unificar ventanas de series y películas (issue #290)",
     "description": "Al pulsar sobre una película o serie, actualmente se muestra diferente información dependiendo de si el item está añadido (en la colección) o no (catálogo). El usuario quiere que SIEMPRE se muestre la misma información. La base de trabajo es la rama feat/issue-201 y la PR debe ir a esa rama (no a dev), según instrucción explícita del usuario en la issue.",
-    "status": "security-cleared",
+    "status": "documented",
     "acceptance_criteria": [
         "Al pulsar una película o serie se muestra la misma información esté o no añadida a la colección.",
         "La unificación aplica a todos los puntos de entrada: colección, búsqueda de colección, búsqueda de catálogo, saga y recomendaciones.",
