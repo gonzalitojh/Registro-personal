@@ -271,7 +271,9 @@ cache-first: sin el bump, la app seguiría sirviendo el JS viejo en caché.
   «Añadir» igual que siempre; libros y videojuegos siguen abriendo su
   ventana.
 - Las tarjetas de **recomendaciones y de sagas dentro de una ficha
-  siguen abriendo su ventana clásica** (no cambian).
+  navegan a la página de detalle** del ítem pulsado (iteración 2026-08-16):
+  si no está en el registro, la página muestra la vista previa con
+  «Añadir»; el botón ← vuelve a la ficha anterior.
 - **Libros y videojuegos no cambian nada**: siguen abriendo su modal.
 
 ### Para el mantenimiento
@@ -301,21 +303,96 @@ cache-first: sin el bump, la app seguiría sirviendo el JS viejo en caché.
   evitan pintados obsoletos tras navegar rápido.
 - **Ninguna otra conocida.**
 
+## Iteración 2026-08-16: botón atrás visible y todas las superficies pulsables navegan a la página
+
+### Contexto
+
+El usuario reportó (comentario en la issue #285, 2026-08-16):
+
+1. «No se ha puesto el botón atrás en el lugar del botón de la barra
+   lateral» — el botón ← no aparecía en la cabecera de la página de ítem.
+2. «todos los sitios donde se puede pulsar sobre una película o serie
+   deben llevar a esta nueva página» — colección, búsqueda de colección,
+   búsqueda de catálogo, otras películas de la saga y recomendaciones.
+
+### Causa raíz del botón atrás
+
+El botón `#btn-item-back` nacía con la clase `.hidden` en el HTML y la
+regla de swap `body.is-item-page #btn-item-back { display: inline-flex }`
+no podía ganar: `.hidden { display: none !important }` (css/styles.css)
+tiene mayor prioridad por `!important`, así que el botón **nunca se
+mostraba** (el ☰ sí se ocultaba, dejando la cabecera sin botón alguno).
+
+### Decisión (iteración)
+
+- **Botón atrás**: se elimina la clase `hidden` del botón y se oculta con
+  una regla base propia `#btn-item-back { display: none }` (sin
+  `!important`), de modo que el swap `body.is-item-page` lo muestra en el
+  mismo hueco del ☰. El botón se mueve en el DOM a continuación inmediata
+  de `#btn-sidebar-toggle` (antes del ⚙): en la página de ítem ocupa
+  literalmente el lugar del botón de la barra lateral.
+- **Superficies pulsables → página** (navegación `navigate({ section:
+  "item", kind, externalId })`, misma vía que la colección):
+  - **Catálogo en la búsqueda global** (`js/global-search.js`): los
+    resultados externos de película/serie (botón de tipo Serie/Película)
+    navegan a la página en lugar de abrir la preview en ventana; libros y
+    videojuegos conservan la preview.
+  - **Otras películas de la saga** (`onOpenSagaMovie`): la tarjeta navega
+    a `#/ocio/peliculas/<id>`.
+  - **Recomendaciones** (`onOpenRecommendation` en películas y series):
+    la tarjeta navega a `#/ocio/peliculas/<id>` o `#/ocio/series/<id>`.
+  - La página muestra la **ficha** si el ítem ya está en el registro o la
+    **vista previa con «Añadir»** si no (patrón ya existente del ADR), así
+    que el flujo «ver información antes de añadir» se conserva en la
+    página.
+- **Código muerto eliminado**: `openExternalPreview`,
+  `enrichExternalPreview`, `openSagaMoviePreview` y
+  `openRecommendationPreview` ya no tienen llamadores (la preview de
+  búsqueda clásica sigue viva para libros/videojuegos en `search.js`).
+  `modal._onClose` se conserva como mecanismo general de
+  `openSearchPreviewModal`.
+
+### Alternativas descartadas
+
+- **Añadir `!important` a la regla de swap**: descartada — funcionaría,
+  pero convierte la regla de mostrar en una batalla de prioridades
+  frágil; quitar la clase `hidden` del HTML y ocultar por regla base es
+  la causa raíz limpia.
+- **Dejar saga/recomendaciones con su preview en ventana**: descartada —
+  el usuario pide explícitamente que toda superficie pulsable lleve a la
+  página nueva; mantener dos flujos (ventana dentro del modal + página)
+  contradice la decisión original del ADR.
+
+### Consecuencias
+
+- El botón ← aparece ahora **en el lugar exacto del ☰** en la página de
+  ítem (y oculta también el ⚙, como ya hacía).
+- Todos los puntos de entrada de una película o serie (colección,
+  búsqueda de colección, búsqueda de catálogo, tarjetas de saga y
+  recomendaciones) llevan a la misma página de detalle con URL propia; el
+  historial nativo hace que ←/Esc/atrás del navegador vuelvan a la
+  pantalla previa (incluida la ficha anterior si se navegó de ficha a
+  ficha vía saga/recomendaciones).
+- Los botones «Añadir» de las tarjetas no cambian: siguen añadiendo
+  directamente sin navegar.
+- El manual de usuario se actualiza en la misma PR (regla 3 de AGENTS.md):
+  secciones 4.2 y 12 (sagas y recomendaciones ya no abren ventana).
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
 | `js/router.js` | **Modificado**: rutas de ítem — `ITEM_KEY_TO_KIND` (series→tv, peliculas→movie), `ITEM_ID_RE` (`^[A-Za-z0-9._-]{1,64}$`, admite ids `manual-…`), `parseHash` con 3 segmentos (`decodeURIComponent` validado + `try/catch`, saneo a la pestaña Ocio por defecto), `itemHashFor`/`canonicalHashFor` caso item, `navigate` con `{ section: "item", kind, externalId }` |
-| `index.html` | **Modificado**: botón `#btn-item-back` (oculto) en la cabecera; `#item-view`/`#item-view-content` (vista hermana de primer nivel de `profile-view`, fuera de `#app`); bump `?v=20260929` → `?v=20261001` |
-| `css/styles.css` | **Modificado**: `.item-view` (max-width 720px, padding `calc(var(--header-h) + 1.25rem)…`), `.item-view__card` (misma superficie que `.modal__card`; reutiliza las clases de detalle del modal de ocio/ocio.css sin anidar), overrides `[data-theme="light"]/[data-theme="white"] .item-view` (`--paper-dim`/`--ink`, patrón del perfil), `.item-view__card` en el selector agrupado de negro puro (`--ink-raised` + borde), `.item-preview__hint` invertido (`background: var(--ink); color: var(--paper)`, contraste AA en los 4 temas), swap `body.is-item-page` (oculta `#btn-sidebar-toggle` y `#btn-header-settings`, muestra `#btn-item-back`), `.item-view .back-to-top { display: none }` |
+| `index.html` | **Modificado**: botón `#btn-item-back` (oculto) en la cabecera; `#item-view`/`#item-view-content` (vista hermana de primer nivel de `profile-view`, fuera de `#app`); bump `?v=20260929` → `?v=20261001`. **Iteración 2026-08-16**: el botón atrás se mueve a continuación inmediata de `#btn-sidebar-toggle` (ocupa el hueco del ☰) y se le quita la clase `hidden` (su `display:none !important` impedía el swap del CSS) |
+| `css/styles.css` | **Modificado**: `.item-view` (max-width 720px, padding `calc(var(--header-h) + 1.25rem)…`), `.item-view__card` (misma superficie que `.modal__card`; reutiliza las clases de detalle del modal de ocio/ocio.css sin anidar), overrides `[data-theme="light"]/[data-theme="white"] .item-view` (`--paper-dim`/`--ink`, patrón del perfil), `.item-view__card` en el selector agrupado de negro puro (`--ink-raised` + borde), `.item-preview__hint` invertido (`background: var(--ink); color: var(--paper)`, contraste AA en los 4 temas), swap `body.is-item-page` (oculta `#btn-sidebar-toggle` y `#btn-header-settings`, muestra `#btn-item-back`), `.item-view .back-to-top { display: none }`. **Iteración 2026-08-16**: nueva regla base `#btn-item-back { display: none }` (sin `!important`) para que el swap `body.is-item-page` pueda mostrarlo (la clase `.hidden` ganaba con `!important` y el botón nunca aparecía) |
 | `js/ui.js` | **Modificado**: `openMovieModal`/`openTvModal(…, { target })` — con target renderizan la ficha en el contenedor dado sin abrir modal ni focus trap, enfocan el título (`tabindex="-1"`) y propagan el target en los re-renders |
-| `js/modal-handlers.js` | **Modificado**: `openMovieItem`/`openTvItem(item, ctx, isRerender, target)` exportados; `confirmDelete`/`saveMeta` con `onDone` (modo página: volver al eliminar / re-render al guardar); `editHandlerFor` target-aware (cierra `#item-modal` al guardar/cancelar en modo página); hook `setItemPageBackHandler(fn)` (evita dependencia circular); `openItem` intacto (books/games → modal) |
+| `js/modal-handlers.js` | **Modificado**: `openMovieItem`/`openTvItem(item, ctx, isRerender, target)` exportados; `confirmDelete`/`saveMeta` con `onDone` (modo página: volver al eliminar / re-render al guardar); `editHandlerFor` target-aware (cierra `#item-modal` al guardar/cancelar en modo página); hook `setItemPageBackHandler(fn)` (evita dependencia circular); `openItem` intacto (books/games → modal). **Iteración 2026-08-16**: import de `navigate` (router.js, sin dependencia circular); `onOpenSagaMovie`/`onOpenRecommendation` (películas y series) navegan a `{ section: "item", kind, externalId }`; ELIMINADOS `openExternalPreview`, `enrichExternalPreview`, `openSagaMoviePreview`, `openRecommendationPreview` (sin llamadores tras la iteración) |
 | `js/api-movies.js` | **Modificado**: `getMovieDetails`/`getTvExtraDetails` devuelven `title` aditivo (lo consume la preview de página directa; el resto de llamadores lo ignoran) |
 | `js/item-page.js` | **Nuevo**: módulo de la página de detalle — `setupItemPage(ctx, { ensureGroup })` → API `{ openPage, closePage, notifyGroupChanged, isActive }`; estados mensaje/ficha/preview; preview vía `buildPreviewItem` + botón Añadir (`handleAdd` → `refreshAfterAdd` con `getItemsOnce`); anti-race con token por ruta (`isCurrent` tras cada await); `goBack()` con fallback timeout a `navigate(normalizeTabKey("ocio", getLastOcioKey()))`; Escape en fase de captura con guardas; `notifyGroupChanged` solo en cambios estructurales |
 | `js/app.js` | **Modificado**: onRoute caso `section === "item"` (oculta `#app`/perfil/recetas/gym y llama `itemApi?.openPage(route.kind, route.externalId)`); `itemApi?.closePage()` en el resto de secciones y en logout; `setActiveSection(null)` para item; `routerApi` a nivel de módulo; `renderLibraryFor` onOpen → tv/movie navega (books/games → `openItem`); `subscribeGroup` onChange → `notifyGroupChanged`; login con ruta item → `router.applyRoute()`; `ensureGroupSubscribed` pasado a `setupItemPage` |
-| `js/global-search.js` | **Modificado**: `navigateTo` para tv/movie → `closeGlobalSearch()` + `navigate` item; books/games conservan el modal con su delay |
+| `js/global-search.js` | **Modificado**: `navigateTo` para tv/movie → `closeGlobalSearch()` + `navigate` item; books/games conservan el modal con su delay. **Iteración 2026-08-16**: los resultados EXTERNOS del catálogo (botones de tipo Serie/Película) de tipo movie/tv también navegan a la página; libros/videojuegos conservan la preview en ventana |
 | `service-worker.js` | **Modificado**: `?v=20260929` → `?v=20261001` en todos los assets; `./js/item-page.js` añadido a `STATIC_ASSETS` (cache-first: sin bump seguiría sirviendo el JS viejo en caché) |
-| `docs/manual-de-usuario.md` | **Modificado**: secciones 4.3, 5.4, 10.1, 10.2 y 12 actualizadas con el nuevo comportamiento (ficha en página nueva para películas/series, botón ←, Esc; libros/videojuegos sin cambios) |
-| `docs/adr-100-item-page.md` | **Nuevo**: este documento |
+| `docs/manual-de-usuario.md` | **Modificado**: secciones 4.3, 5.4, 10.1, 10.2 y 12 actualizadas con el nuevo comportamiento (ficha en página nueva para películas/series, botón ←, Esc; libros/videojuegos sin cambios). **Iteración 2026-08-16**: secciones 4.2 y 12 actualizadas — los resultados de catálogo (películas/series), las tarjetas de saga y las de recomendaciones abren la página de detalle (con «Añadir» si el ítem no está en el registro) en lugar de la ventana de vista previa |
+| `docs/adr-100-item-page.md` | **Nuevo**: este documento. **Iteración 2026-08-16**: sección «Iteración 2026-08-16: botón atrás visible y todas las superficies pulsables navegan a la página» (Contexto/Decisión/Alternativas/Consecuencias) |
 
 Related issue: #285 — https://github.com/gonzalitojh/Registro-personal/issues/285
