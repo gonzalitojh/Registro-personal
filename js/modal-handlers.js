@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getTvSeasonsMeta, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
