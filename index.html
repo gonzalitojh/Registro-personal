@@ -75,6 +75,23 @@
         </svg>
       </button>
 
+      <!-- Botón atrás de la página de ítem (issue #285): en la ficha
+           en página nueva de una película o serie, la cabecera
+           superior se respeta pero se coloca en el LUGAR del botón de
+           hamburguesa de la barra lateral (☰, y también del ⚙ de
+           ajustes) para volver a la pantalla previa. El swap se hace
+           por CSS con la clase body.is-item-page (regla única de
+           verdad, sobrevive a re-renders de la barra lateral): por
+           defecto está oculto con CSS (display:none, NUNCA con la
+           clase .hidden, cuyo display:none !important ganaría a la
+           regla de swap), y solo body.is-item-page lo muestra. -->
+      <button type="button" class="icon-btn" id="btn-item-back" aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
       <!-- Botón engranaje (issue #97): sustituye a la barra lateral
            ☰ cuando solo hay una sección visible (decide sidebar.js).
            Abre Ajustes directamente, como la entrada pinned de la
@@ -85,21 +102,6 @@
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3.2" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      </button>
-
-      <!-- Botón atrás de la página de ítem (issue #285): en la ficha
-           en página nueva de una película o serie, la cabecera
-           superior se respeta pero el ☰ (y el ⚙) se sustituyen por
-           este botón para volver a la pantalla previa. El swap se
-           hace por CSS con la clase body.is-item-page (regla única
-           de verdad, sobrevive a re-renders de la barra lateral).
-           Sale oculto por defecto. -->
-      <button type="button" class="icon-btn hidden" id="btn-item-back"
-              aria-label="Volver a la pantalla anterior">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
 

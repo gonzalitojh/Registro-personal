@@ -1707,9 +1707,16 @@ body.is-back-to-top-visible .back-to-top {
 
 /* Swap ☰/⚙ → atrás en la cabecera (issue #285): la página de ítem
    respeta la barra de navegación superior pero sustituye el botón de
-   hamburguesa (y el ⚙ de ajustes) por el botón atrás. Regla única de
-   verdad vía clase de body: sobrevive a los re-renders de la barra
-   lateral (sidebar.js, issue #97) sin coordinar estado en JS. */
+   hamburguesa (y el ⚙ de ajustes) por el botón atrás, que ocupa el
+   MISMO sitio que el ☰ de la barra lateral. Regla única de verdad vía
+   clase de body: sobrevive a los re-renders de la barra lateral
+   (sidebar.js, issue #97) sin coordinar estado en JS.
+   El botón sale oculto por defecto con display:none (sin la clase
+   .hidden: su display:none !important ganaría a la regla de swap y el
+   botón nunca llegaría a verse). */
+#btn-item-back {
+  display: none;
+}
 body.is-item-page #btn-sidebar-toggle,
 body.is-item-page #btn-header-settings {
   display: none;
