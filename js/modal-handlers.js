@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
@@ -145,11 +145,9 @@ function progressWithStatus(seasonsMeta, item) {
   return base;
 }
 
-function getUserCountry() {
-  return localStorage.getItem("watch-provider-country")
-    || (navigator.language && navigator.language.split("-")[1]?.toUpperCase())
-    || "ES";
-}
+// País del usuario para los watch providers (definido y exportado
+// desde api-movies.js, issue #290: fuente de verdad compartida con la
+// página de ítem).
 
 // Abre la ficha de una película. Con target (contenedor de la página
 // de ítem, issue #285) renderiza la ficha en la página en lugar de
@@ -283,7 +281,9 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
 
 /* ---------- Lógica de colecciones/sagas ---------- */
 
-async function addSagaMovie(movie, ctx) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para el botón "Añadir" de las tarjetas de saga en la vista previa.
+export async function addSagaMovie(movie, ctx) {
   const details = await getMovieDetails(movie.externalId);
   const draft = {
     externalId: movie.externalId,
@@ -377,7 +377,9 @@ async function addRecommendationItem(item, ctx) {
  * addRecommendationItem.
  * @returns {Promise<boolean>} true si se añadió correctamente.
  */
-async function addFromRecommendation(item, btn, ctx) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para el botón "Añadir" de las tarjetas de recomendación.
+export async function addFromRecommendation(item, btn, ctx) {
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
   try {
@@ -394,7 +396,9 @@ async function addFromRecommendation(item, btn, ctx) {
   }
 }
 
-async function openSagaSelector(item, ctx) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para el botón «Añadir resto de la saga» del banner de saga.
+export async function openSagaSelector(item, ctx) {
   if (!item.collectionId) return;
   try {
     const collection = await getCollectionDetails(item.collectionId);

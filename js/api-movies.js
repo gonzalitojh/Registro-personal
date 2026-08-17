@@ -261,6 +261,17 @@ export async function getTvExtraDetails(id) {
 // redundantes durante la misma sesión.
 // =============================================================
 
+// País del usuario para los watch providers: ajuste guardado en
+// localStorage, o el idioma del navegador (segunda parte del locale,
+// ej. "es-ES" → "ES"), o "ES" por defecto. Movido aquí desde
+// modal-handlers.js (issue #290) para que la página de ítem y la ficha
+// compartan la misma fuente de verdad.
+export function getUserCountry() {
+  return localStorage.getItem("watch-provider-country")
+    || (navigator.language && navigator.language.split("-")[1]?.toUpperCase())
+    || "ES";
+}
+
 const IMG_LOGO = "https://image.tmdb.org/t/p/w92";
 const providersCache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas

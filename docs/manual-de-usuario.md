@@ -916,7 +916,14 @@ igual). Para cada resultado:
   con sus detalles antes de añadirlo. En **películas y series** esa
   vista previa se abre en una **página nueva** (el botón **←** de arriba
   te devuelve a la búsqueda y el botón **«Añadir»** funciona igual que
-  siempre); en libros y videojuegos se sigue abriendo su ventana.
+  siempre) y muestra **la misma información del título que la ficha**:
+  distintivo de no estrenado si aplica, puntuación de la comunidad,
+  tráiler, dónde verla, información ampliada (duración, género,
+  director/creadores, reparto y sinopsis), temporadas (series), saga
+  (películas) y recomendaciones; en libros y videojuegos la vista
+  previa se sigue abriendo en su ventana. Cuando añadas el título, la
+  página pasa a la ficha con tus acciones personales (visionados,
+  valoración, notas...).
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
@@ -1057,26 +1064,42 @@ tipo, verás:
 
   También puedes **pulsar sobre la tarjeta** de cualquiera de esas
   películas para ver su información (portada, duración, género, director,
-  reparto, sinopsis, puntuación de la comunidad y tráiler si lo tiene)
-  antes de añadirla: se abre la **página de esa película** (navega, no
-  es una ventana) — si aún no está en tu registro, verás su información
-  con el botón **«Añadir»**; usa el botón **←** de arriba para volver a
-  la ficha en la que estabas. Las películas que ya tienes en tu registro
-  se muestran con **«Ya añadido»** (botón deshabilitado).
+  reparto, sinopsis, puntuación de la comunidad, dónde verla y tráiler
+  si lo tiene) antes de añadirla: se abre la **página de esa película**
+  (navega, no es una ventana) — si aún no está en tu registro, verás su
+  información completa con el botón **«Añadir»** (lo mismo que en la
+  vista previa del catálogo; ver sección 12); usa el botón **←** de
+  arriba para volver a la ficha en la que estabas. Las películas que ya
+  tienes en tu registro se muestran con **«Ya añadido»** (botón
+  deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
   con títulos similares que puedes añadir directamente. También puedes
   **pulsar sobre la tarjeta** de una recomendación para ver su
   información ampliada (igual que las tarjetas de saga: portada,
-  duración, género, reparto, sinopsis, puntuación de la comunidad y
-  tráiler si lo tiene; en las series, además, sus temporadas) antes de
-  añadirla: se abre la **página de esa película o serie** (navega, no
-  es una ventana) — si aún no está en tu registro, verás su información
-  con el botón **«Añadir»**; usa el botón **←** de arriba para volver a
-  la ficha en la que estabas. Los títulos que ya tienes en tu registro
-  se muestran con **«Ya añadido»** (botón deshabilitado).
+  duración, género, reparto, sinopsis, puntuación de la comunidad,
+  dónde verla y tráiler si lo tiene; en las series, además, sus
+  temporadas) antes de añadirla: se abre la **página de esa película o
+  serie** (navega, no es una ventana) — si aún no está en tu registro,
+  verás su información completa con el botón **«Añadir»** (lo mismo que
+  en la vista previa del catálogo; ver sección 12); usa el botón **←**
+  de arriba para volver a la ficha en la que estabas. Los títulos que ya
+  tienes en tu registro se muestran con **«Ya añadido»** (botón
+  deshabilitado).
 - **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
   «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
   **«Eliminar»** para borrar el título.
+
+Si el título **aún no está en tu registro** (por ejemplo, lo abriste
+desde la búsqueda del catálogo, desde una tarjeta de saga o de
+recomendación, o desde una dirección compartida), la página muestra la
+**misma información del título** que la ficha — distintivo de no
+estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
+información ampliada, temporadas (series), saga y recomendaciones con
+sus botones **«Añadir»** — con el aviso **«Este título aún no está en tu
+registro»** y el botón **«Añadir»** principal. Tu valoración, tus notas,
+tu progreso y los botones **«Guardar»** y **«Eliminar»** solo aparecen
+cuando el título ya está en tu registro: al añadirlo, la página pasa a
+la ficha completa al momento.
 
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
