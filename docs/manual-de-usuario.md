@@ -1037,19 +1037,33 @@ el botón atrás de tu navegador. En **libros y videojuegos**, en cambio,
 la ficha se sigue abriendo en su ventana (modal), como siempre. Según el
 tipo, verás:
 
-- **Portada, título y año** (en la vista previa de búsqueda se indica el
-  tipo: «Película · año», «Serie · año» o «Videojuego · año»).
+- **En películas y series, la ficha va directamente sobre el fondo de la
+  página** (sin recuadro ni panel): a la izquierda, la **portada en
+  grande**; a la derecha, el **título en grande**; debajo del título,
+  **pequeñas etiquetas** con la fecha de estreno (o el año), la duración
+  (en las series, la de cada episodio) y los géneros; debajo, la
+  **valoración de la comunidad**, **tu valoración** (solo si ya se la
+  has puesto) y el botón **Tráiler ▶**; y debajo de todo, la
+  **sinopsis**.
+- **Portada, título y año**: la cabecera clásica se mantiene en libros y
+  videojuegos (en la vista previa de búsqueda de estos se indica el tipo
+  y el año, p. ej. «Videojuego · año»).
 - **Puntuación de la comunidad**: de TMDB para películas y series (sobre
-  10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones».
+  10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones». En
+  películas y series aparece en la cabecera, bajo el título.
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
-  tiene; en los videojuegos, solo cuando IGDB dispone de uno).
+  tiene; en los videojuegos, solo cuando IGDB dispone de uno). En
+  películas y series, el botón está en la cabecera, junto a la
+  valoración.
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
   **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB».
-- **Información ampliada**: duración, género, director (películas),
-  creadores (series), reparto y sinopsis. En los videojuegos:
-  desarrolladores, editores y clasificación por edades (ESRB).
+- **Información ampliada**: en películas y series, director
+  (películas), creadores (series) y reparto — la duración, los géneros
+  y la sinopsis ya se muestran arriba, en la cabecera (etiquetas y
+  bloque de sinopsis) —. En los videojuegos: desarrolladores, editores y
+  clasificación por edades (ESRB).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
