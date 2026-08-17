@@ -726,13 +726,19 @@ function wireStatusActions(content, handleStatusChange) {
 // reparto, sinopsis) o de la fuente de libros (sinopsis). No todos
 // los campos están siempre disponibles, así que cada línea es opcional.
 // Exportado (issue #290): lo reutiliza la preview de la página de ítem.
-export function extraInfoHtml(item) {
+// Opciones (issue #292): con skipMetaBits/skipOverview la página de
+// ítem (ficha y preview) mueve duración+géneros y sinopsis al bloque
+// hero (itemHeroHtml) y deja aquí solo director/creadores/reparto.
+// Los llamadores clásicos (modales) no pasan opciones: sin cambios.
+export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false } = {}) {
   const lines = [];
   const metaBits = [];
-  if (item.runtime) metaBits.push(`${item.runtime} min`);
-  if (item.episodeRuntime) metaBits.push(`~${item.episodeRuntime} min/episodio`);
-  if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
-  if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
+  if (!skipMetaBits) {
+    if (item.runtime) metaBits.push(`${item.runtime} min`);
+    if (item.episodeRuntime) metaBits.push(`~${item.episodeRuntime} min/episodio`);
+    if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
+    if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
+  }
   if (item.director) {
     lines.push(`<p class="extra-info__line"><strong>Director:</strong> ${escapeHtml(item.director)}</p>`);
   }
@@ -765,7 +771,7 @@ export function extraInfoHtml(item) {
     }
   }
   const overview = item.overview || item.description;
-  if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
+  if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
   if (!lines.length) return detailStatusHtml(item);
   return `<div class="extra-info">${lines.join("")}</div>`;
 }
@@ -776,7 +782,9 @@ export function extraInfoHtml(item) {
 // en lugar de un bloque vacío (degradación elegante a «solo tarjeta»).
 // Los libros conservan la sinopsis en el documento y los ítems
 // manuales no tienen API que consultar: nunca aplican.
-function detailStatusHtml(item) {
+// Exportado (issue #292): el bloque hero de la página de ítem lo
+// reutiliza para el hueco de sinopsis mientras cargan los detalles.
+export function detailStatusHtml(item) {
   if (item._detailsFailed) {
     return `<p class="extra-info__loading">No se pudieron cargar los detalles (revisa tu conexión).</p>`;
   }
@@ -789,6 +797,78 @@ function detailStatusHtml(item) {
     }
   }
   return "";
+}
+
+// Bloque «hero» de la página de ítem (issue #292): portada grande a
+// la izquierda y a la derecha el título en grande; debajo, pequeñas
+// etiquetas con la fecha de estreno, la duración y los géneros;
+// debajo, la valoración de la comunidad y la propia del usuario (solo
+// en la ficha: showUserRating) y el botón de tráiler; bajo todo ello,
+// la sinopsis. Cada sub-bloque es opcional: si faltan datos (p. ej.
+// render optimista de búsqueda sin detalles) las etiquetas se omiten
+// enteras y el hero queda con lo que haya. Exportado (issue #292): lo
+// usan la ficha (openMovieModal/openTvModal en modo página) y la
+// preview (paintPreview) para mostrar la misma cabecera.
+export function itemHeroHtml(item, { showUserRating = true } = {}) {
+  const tags = [];
+  const releaseDate =
+    item.type === "tv" ? item.firstAirDate || null : item.releaseDate || null;
+  if (releaseDate) {
+    tags.push(`<li class="item-hero__tag">${escapeHtml(formatDateEs(releaseDate))}</li>`);
+  } else if (item.year) {
+    tags.push(`<li class="item-hero__tag">${escapeHtml(item.year)}</li>`);
+  }
+  if (item.type === "tv") {
+    if (item.episodeRuntime) tags.push(`<li class="item-hero__tag">~${escapeHtml(String(item.episodeRuntime))} min</li>`);
+  } else if (item.runtime) {
+    tags.push(`<li class="item-hero__tag">${escapeHtml(String(item.runtime))} min</li>`);
+  }
+  if (item.genres && item.genres.length) {
+    item.genres.forEach((g) => {
+      tags.push(`<li class="item-hero__tag">${escapeHtml(g)}</li>`);
+    });
+  }
+  const tagsHtml = tags.length
+    ? `<ul class="item-hero__tags">${tags.join("")}</ul>`
+    : "";
+
+  let ownRatingHtml = "";
+  if (showUserRating && item.rating) {
+    const v = Number(item.rating).toFixed(1).replace(".", ",");
+    ownRatingHtml = `<span class="item-hero__own-rating" role="img" aria-label="Tu valoración: ${v} de 5" title="Tu valoración: ${v} de 5">${ratingStarsHtml(item.rating)}</span>`;
+  }
+
+  const overview = item.overview || item.description;
+  let synopsis = "";
+  if (overview) {
+    synopsis = `<p class="item-hero__synopsis">${escapeHtml(overview)}</p>`;
+  } else {
+    // Sin sinopsis aún (almacenamiento mínimo, issue #200): el mismo
+    // aviso de carga/error que la ficha, con la tipografía del bloque.
+    // detailStatusHtml devuelve un <p> propio; se extrae el texto para
+    // no anidar párrafos.
+    const statusLine = detailStatusHtml(item);
+    if (statusLine) {
+      const text = statusLine.replace(/<[^>]+>/g, "");
+      synopsis = `<p class="item-hero__synopsis">${text}</p>`;
+    }
+  }
+
+  return `
+    <section class="item-hero" aria-label="Información del título">
+      <img class="item-hero__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div class="item-hero__body">
+        <h3 class="item-hero__title">${escapeHtml(item.title)}</h3>
+        ${tagsHtml}
+        <div class="item-hero__ratings">
+          ${communityRatingDisplay(item)}
+          ${ownRatingHtml}
+          ${trailerButtonHtml(item)}
+        </div>
+      </div>
+    </section>
+    ${synopsis}
+  `;
 }
 
 // Bloque de temporadas para la vista previa de una serie: lista de
@@ -1197,21 +1277,37 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   const content = target || document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
 
-  content.innerHTML = `
+  // Cabecera (issue #292): en modo página la ficha usa el bloque hero
+  // (portada grande + título, etiquetas, valoraciones, tráiler y
+  // sinopsis) directamente sobre el fondo; en el modal clásico se
+  // conserva la cabecera de siempre.
+  const headerHtml = target
+    ? itemHeroHtml(item)
+    : `
     <div class="modal-detail__header">
       <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
       <div>
         <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
         <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
       </div>
-    </div>
+    </div>`;
+  // En modo página la valoración de la comunidad y el tráiler ya viven
+  // en el hero; en el modal clásico se muestran como bloques propios.
+  const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}`;
+  // En modo página la duración, géneros y sinopsis ya viven en el hero.
+  const infoHtml = target
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })
+    : extraInfoHtml(item);
+
+  content.innerHTML = `
+    ${headerHtml}
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
-    ${communityRatingDisplay(item)}
-    ${trailerButtonHtml(item)}
+    ${ratingsHtml}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${infoHtml}
 
     ${item.collectionId ? `
     <div class="saga-banner">
@@ -1348,7 +1444,7 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // el título de la ficha (patrón de foco de las rutas de Ocio); el
   // re-render posterior a una acción recupera el foco al título.
   if (target) {
-    const title = target.querySelector(".modal-detail__title");
+    const title = target.querySelector(".item-hero__title");
     if (title) {
       title.setAttribute("tabindex", "-1");
       title.focus({ preventScroll: true });
@@ -1879,21 +1975,37 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     : 0;
   const times = (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 
-  content.innerHTML = `
+  // Cabecera (issue #292): en modo página la ficha usa el bloque hero
+  // (portada grande + título, etiquetas, valoraciones, tráiler y
+  // sinopsis) directamente sobre el fondo; en el modal clásico se
+  // conserva la cabecera de siempre.
+  const headerHtml = target
+    ? itemHeroHtml(item)
+    : `
     <div class="modal-detail__header">
       <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
       <div>
         <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
         <div class="modal-detail__meta">${escapeHtml(item.year || "")}</div>
       </div>
-    </div>
+    </div>`;
+  // En modo página la valoración de la comunidad y el tráiler ya viven
+  // en el hero; en el modal clásico se muestran como bloques propios.
+  const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}`;
+  // En modo página la duración, géneros y sinopsis ya viven en el hero.
+  const infoHtml = target
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })
+    : extraInfoHtml(item);
+
+  content.innerHTML = `
+    ${headerHtml}
     ${editButtonHtml()}
 
     ${upcomingBadge(item)}
-    ${communityRatingDisplay(item)}
-    ${trailerButtonHtml(item)}
+    ${ratingsHtml}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${infoHtml}
 
     ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation, onOpenRecommendation)}
 
@@ -2310,7 +2422,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   // contenido ya vive en el documento (#item-view-content). Se enfoca
   // el título de la ficha (ver openMovieModal).
   if (target) {
-    const title = target.querySelector(".modal-detail__title");
+    const title = target.querySelector(".item-hero__title");
     if (title) {
       title.setAttribute("tabindex", "-1");
       title.focus({ preventScroll: true });

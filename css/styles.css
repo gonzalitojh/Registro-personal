@@ -1688,7 +1688,9 @@ body.is-back-to-top-visible .back-to-top {
    modal (.modal-detail__*, .field-group, .rec-card…, definidas en
    ocio/ocio.css sin anidar bajo .modal__card). Este contenedor
    aporta la «tarjeta» de superficie con las variables del tema
-   (mismo aspecto que .modal__card, ancho a favor de lectura). */
+   (mismo aspecto que .modal__card, ancho a favor de lectura).
+   (issue #292): solo lo usan los estados transitorios (cargando y
+   mensajes); la ficha y la preview van ya directas sobre el fondo. */
 .item-view__card {
   background: var(--paper);
   color: var(--ink);
@@ -1696,6 +1698,167 @@ body.is-back-to-top-visible .back-to-top {
   box-shadow: var(--shadow-pop);
   padding: 1.6rem 1.4rem 1.4rem;
   overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Cabecera «hero» de la ficha/preview (issue #292)
+   La ficha de película/serie va directa sobre el fondo de la
+   página (sin el recuadro .item-view__card): portada grande a
+   la izquierda, título en grande a la derecha, debajo pequeñas
+   etiquetas (fecha de estreno, duración, géneros), debajo la
+   valoración de la comunidad + la propia + tráiler, y bajo
+   todo ello la sinopsis.
+   Colores: el texto hereda el del fondo de la página (--paper
+   en la familia oscura, --ink en la clara), que cumple AAA en
+   los cuatro modos; las etiquetas usan el patrón de tinte de
+   --paper-alpha-14 (claro sobre fondo oscuro, oscuro sobre
+   fondo claro) y la sinopsis --ink-soft (AA en los 4 modos
+   sobre el fondo de la página: 6.2 / 6.2 / 5.9 / 6.2:1).
+   ========================================================= */
+
+.item-hero {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.1rem;
+}
+
+.item-hero__cover {
+  width: 150px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.item-hero__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.item-hero__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.15;
+  margin: 0 0 0.6rem;
+  overflow-wrap: anywhere;
+}
+
+.item-hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+}
+
+.item-hero__tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: var(--paper-alpha-14);
+  overflow-wrap: anywhere;
+}
+
+.item-hero__ratings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+/* Neutraliza los márgenes de los bloques reutilizados del modal */
+.item-hero__ratings .modal-detail__ratings {
+  margin-bottom: 0;
+}
+.item-hero .trailer-btn {
+  margin-bottom: 0;
+}
+
+.item-hero__own-rating {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+}
+
+.item-hero__synopsis {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+/* Portada algo más contenida en pantallas muy estrechas para que el
+   bloque de texto de la derecha conserve un ancho legible */
+@media (max-width: 420px) {
+  .item-hero {
+    gap: 0.9rem;
+  }
+  .item-hero__cover {
+    width: 128px;
+  }
+  .item-hero__title {
+    font-size: 1.45rem;
+  }
+}
+
+/* =========================================================
+   Ajustes de la página sin tarjeta (issue #292)
+   Al desaparecer el recuadro, los paneles interiores conservan
+   su propia superficie clara pero heredarían el texto de la
+   página: en la familia oscura se les restaura la tinta.
+   ========================================================= */
+
+[data-theme="dark"] .item-view .progress-banner,
+[data-theme="dark"] .item-view .standby-banner,
+[data-theme="dark"] .item-view .season-episodes,
+[data-theme="dark"] .item-view .rec-card,
+[data-theme="dark"] .item-view .saga-card {
+  color: var(--ink);
+}
+
+/* Acentos que asumían la superficie clara de la tarjeta y quedarían
+   invisibles sobre el fondo oscuro de la página. Hex hardcodeados:
+   son las variantes claras que el modo negro puro ya define para
+   --teal-reel-dark / --stamp-dark (ocio.css), necesarias porque las
+   variables base de la familia oscura son demasiado oscuras aquí. */
+.item-view .community-rating__value {
+  color: #4f9c8e; /* ≈5.9:1 sobre --ink #171512; coincide con [data-theme="black"] */
+}
+[data-theme="light"] .item-view .community-rating__value,
+[data-theme="white"] .item-view .community-rating__value {
+  color: var(--teal-reel-dark);
+}
+[data-theme="dark"] .item-view .item-card__upcoming {
+  color: #cf6655; /* ≈4.8:1 sobre --ink #171512; variante clara de --stamp */
+}
+[data-theme="dark"] .item-view .item-card__upcoming--unreleased,
+[data-theme="black"] .item-view .item-card__upcoming--unreleased {
+  background: var(--paper-alpha-20);
+}
+[data-theme="dark"] .item-view .episode-average strong,
+[data-theme="dark"] .item-view .rewatch-history summary {
+  color: var(--paper);
+}
+/* Botones transparentes sobre el fondo oscuro de la página (antes
+   se apoyaban en la superficie clara de la tarjeta): el contorno y
+   el texto pasan papel; el peligro usa la variante clara del sello
+   (hex de la familia oscura, ≈4.8:1 sobre #171512, igual que la del
+   modo negro puro). */
+[data-theme="dark"] .item-view .btn--outline {
+  color: var(--paper);
+  border-color: var(--paper-alpha-40);
+}
+[data-theme="dark"] .item-view .btn--outline:hover {
+  background: var(--paper-alpha-10);
+}
+[data-theme="dark"] .item-view .btn--danger {
+  color: #cf6655;
+  border-color: #cf6655;
 }
 
 /* El botón flotante "Volver arriba" (issue #137) no aplica en la

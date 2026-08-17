@@ -40,10 +40,9 @@ import {
 } from "./api-movies.js";
 import {
   upcomingBadge,
-  communityRatingDisplay,
-  trailerButtonHtml,
   watchProvidersHtml,
   extraInfoHtml,
+  itemHeroHtml,
   previewSeasonsHtml,
   renderSagaMovies,
   renderRecommendations,
@@ -65,7 +64,6 @@ let currentMode = null; // "ficha" | "preview" | "mensaje"
 let visible = false;
 
 const CONTENT_ID = "item-view-content";
-const CARD_ID = "item-view-card";
 
 function viewEl() {
   return document.getElementById("item-view");
@@ -129,20 +127,22 @@ function renderMessage(title, text) {
   document.getElementById("btn-item-back")?.focus();
 }
 
-// Crea el contenedor «tarjeta» de la ficha (mismo aspecto que el
-// modal clásico, ancho a favor de lectura).
-function renderCardShell() {
-  contentEl().innerHTML = `<div class="item-view__card" id="${CARD_ID}"></div>`;
-  return document.getElementById(CARD_ID);
+// Crea el contenedor de la ficha/preview (issue #292): el contenido de
+// la página va DIRECTO sobre el fondo, sin la «tarjeta» de superficie
+// (el recuadro se elimina). El contenedor .item-view__card se conserva
+// solo para los estados transitorios (renderLoading/renderMessage).
+function renderItemContent() {
+  contentEl().innerHTML = "";
+  return contentEl();
 }
 
 /* ---------- Ficha completa (ítem en el registro) ---------- */
 
 function renderFicha(item) {
   currentMode = "ficha";
-  const target = renderCardShell();
+  const target = renderItemContent();
   const kind = item.type === "tv" ? "tv" : "movie";
-  // Modo página: target = contenedor de la tarjeta; los re-renders
+  // Modo página: target = contenedor del contenido; los re-renders
   // (reopen) propagan el target y repintan en la página. El foco al
   // título lo gestiona ui.js en el modo página.
   if (kind === "tv") {
@@ -267,8 +267,6 @@ function paintPreview(
   { loading = false, recommendations = [], existingIds = new Set(), sagaParts = null } = {}
 ) {
   const kind = item.type === "tv" ? "tv" : "movie";
-  const kindLabel = kind === "tv" ? "Serie" : "Película";
-  const metaLine = [kindLabel, item.year].filter(Boolean).join(" · ");
 
   const onOpenSagaMovie = (movie) =>
     navigate({ section: "item", kind: "movie", externalId: movie.externalId });
@@ -291,20 +289,12 @@ function paintPreview(
     : "";
 
   target.innerHTML = `
-    <div class="modal-detail__header">
-      <img class="modal-detail__cover" src="${item.coverUrl || ui.PLACEHOLDER_COVER}" alt="" />
-      <div>
-        <h3 class="modal-detail__title" tabindex="-1">${escapeHtml(item.title)}</h3>
-        <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
-      </div>
-    </div>
+    ${itemHeroHtml(item, { showUserRating: false })}
     <p class="item-preview__hint">Este título aún no está en tu registro.</p>
     ${unreleasedBadge}
-    ${communityRatingDisplay(item)}
-    ${trailerButtonHtml(item)}
     ${watchProvidersHtml(item)}
     <div class="field-group" id="preview-details">
-      ${extraInfoHtml(item)}
+      ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })}
       ${previewSeasonsHtml(item)}
       ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     </div>
@@ -397,8 +387,11 @@ function paintPreview(
   });
 
   requestAnimationFrame(() => {
-    const title = target.querySelector(".modal-detail__title");
-    if (title && document.activeElement !== title) title.focus({ preventScroll: true });
+    const title = target.querySelector(".item-hero__title");
+    if (title && document.activeElement !== title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true });
+    }
   });
 }
 
@@ -428,7 +421,7 @@ async function renderPreview(optimisticItem = null) {
   // datos de búsqueda y el aviso de carga; sin optimista (URL directa
   // o ítem borrado desde otro dispositivo) se muestra un spinner en la
   // tarjeta hasta que lleguen los datos (antes quedaba vacía).
-  let target = renderCardShell();
+  let target = renderItemContent();
   if (immediate) {
     paintPreview(target, immediate, { loading: true });
   } else {
@@ -479,7 +472,7 @@ async function renderPreview(optimisticItem = null) {
   if (immediate) Object.assign(immediate, details);
   const finalItem = immediate || details;
   Object.assign(finalItem, extras);
-  target = renderCardShell();
+  target = renderItemContent();
   paintPreview(target, finalItem, { loading: false, ...extras });
 }
 
