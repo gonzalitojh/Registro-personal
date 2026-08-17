@@ -294,7 +294,7 @@ function paintPreview(
     ${unreleasedBadge}
     ${watchProvidersHtml(item)}
     <div class="field-group" id="preview-details">
-      ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })}
+      ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })}
       ${previewSeasonsHtml(item)}
       ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     </div>

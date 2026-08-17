@@ -728,9 +728,11 @@ function wireStatusActions(content, handleStatusChange) {
 // Exportado (issue #290): lo reutiliza la preview de la página de ítem.
 // Opciones (issue #292): con skipMetaBits/skipOverview la página de
 // ítem (ficha y preview) mueve duración+géneros y sinopsis al bloque
-// hero (itemHeroHtml) y deja aquí solo director/creadores/reparto.
-// Los llamadores clásicos (modales) no pasan opciones: sin cambios.
-export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false } = {}) {
+// hero (itemHeroHtml) y deja aquí solo director/creadores/reparto;
+// con skipStatusFallback (solo junto a los anteriores) no se duplica
+// la línea de carga/error que ya pinta el hero. Los llamadores
+// clásicos (modales) no pasan opciones: sin cambios.
+export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false } = {}) {
   const lines = [];
   const metaBits = [];
   if (!skipMetaBits) {
@@ -772,7 +774,7 @@ export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false
   }
   const overview = item.overview || item.description;
   if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
-  if (!lines.length) return detailStatusHtml(item);
+  if (!lines.length) return skipStatusFallback ? "" : detailStatusHtml(item);
   return `<div class="extra-info">${lines.join("")}</div>`;
 }
 
@@ -834,8 +836,11 @@ export function itemHeroHtml(item, { showUserRating = true } = {}) {
 
   let ownRatingHtml = "";
   if (showUserRating && item.rating) {
-    const v = Number(item.rating).toFixed(1).replace(".", ",");
-    ownRatingHtml = `<span class="item-hero__own-rating" role="img" aria-label="Tu valoración: ${v} de 5" title="Tu valoración: ${v} de 5">${ratingStarsHtml(item.rating)}</span>`;
+    const rated = normalizeRating(item.rating);
+    if (rated) {
+      const v = rated.toFixed(1).replace(".", ",");
+      ownRatingHtml = `<span class="item-hero__own-rating" role="img" aria-label="Tu valoración: ${v} de 5" title="Tu valoración: ${v} de 5">${ratingStarsHtml(rated)}</span>`;
+    }
   }
 
   const overview = item.overview || item.description;
@@ -1295,9 +1300,10 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // en el hero; en el modal clásico se muestran como bloques propios.
   const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}`;
-  // En modo página la duración, géneros y sinopsis ya viven en el hero.
+  // En modo página la duración, géneros y sinopsis ya viven en el hero
+  // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
     : extraInfoHtml(item);
 
   content.innerHTML = `
@@ -1993,9 +1999,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   // en el hero; en el modal clásico se muestran como bloques propios.
   const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}`;
-  // En modo página la duración, géneros y sinopsis ya viven en el hero.
+  // En modo página la duración, géneros y sinopsis ya viven en el hero
+  // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true })
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
     : extraInfoHtml(item);
 
   content.innerHTML = `
