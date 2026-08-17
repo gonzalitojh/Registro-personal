@@ -1,7 +1,7 @@
 {
   "title": "Visualización ventanas series y películas",
   "description": "La base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev).\n\nLas nuevas ventanas de series y películas, no deben estar en un recuadro, sino directamente sobre el fondo.\n\nAdemás, ampliar el tamaño de la portada y poner a la derecha el título en grande, debajo la fecha de estreno, duración y géneros como pequeñas etiquetas. Debajo la valoración de la comunidad y la mía y el botón para ver el trailer. Bajo ello la sinopsis.",
-  "status": "security-cleared",
+  "status": "review",
   "acceptance criteria": [
     "Las ventanas (fichas) de series y películas no se muestran dentro de un recuadro/panel con borde, sino directamente sobre el fondo de la página.",
     "La portada (póster/carátula) de la ficha se amplía en tamaño.",
@@ -26,5 +26,9 @@
     "number": 292,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/292",
     "title": "Visualización ventanas series y películas"
+  },
+  "pr": {
+    "number": null,
+    "url": null
   }
 }
