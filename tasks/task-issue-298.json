@@ -1,14 +1,15 @@
 {
   "title": "Botón flotante para películas y series",
-  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nQuiero que, para películas y series, haya un botón flotante abajo a la derecha que, al pulsarlo, despliegue las siguientes opciones:\n- Añadir serie/película (si ya está añadida no se debe mostrar esta opción)\n- Marcar como vista\n- Valorar\n\nDicho botón flotante debe verse diferente en caso de que ya se haya visto o no. En el caso de las series, si se marca como vista, se marcaría la serie completa.",
+  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nQuiero que, para películas y series, haya un botón flotante abajo a la derecha que, al pulsarlo, despliegue las siguientes opciones:\n- Añadir serie/película (si ya está añadida no se debe mostrar esta opción)\n- Marcar como vista\n- Valorar\n\nDicho botón flotante debe verse diferente en caso de que ya se haya visto o no. En el caso de las series, si se marca como vista, se marcaría la serie completa.\n\nIT-2 (comentario de revisión PR #299): en la vista previa deben aparecer también «Marcar como vista» y «Valorar» (añadiendo el título primero), y el menú debe desplegarse en abanico circular animado alrededor del botón.",
   "status": "review",
   "acceptance_criteria": [
     "Existe un botón flotante abajo a la derecha en la vista de películas y de series.",
-    "Al pulsarlo, despliega las opciones: 'Añadir serie/película' (oculta si ya está añadida), 'Marcar como vista' y 'Valorar'.",
+    "Al pulsarlo, despliega las opciones en abanico circular: 'Añadir serie/película' (oculta si ya está añadida), 'Marcar como vista' y 'Valorar'; en la ficha, 'Añadir' no aparece.",
+    "En la vista previa (título aún no añadido) aparecen las tres opciones; 'Marcar como vista' y 'Valorar' añaden el título al registro y encadenan la acción.",
     "El botón flotante se ve diferente si el elemento ya se ha visto (estado completado) respecto a si no se ha visto.",
     "En series, marcar como vista marca la serie completa.",
-    "Las acciones desplegadas funcionan igual que las acciones existentes (añadir, marcar vista, valorar).",
-    "Responsividad: sin scroll horizontal ni textos desbordados en ningún ancho (360, 768, 1280 px).",
+    "Las acciones desplegadas funcionan igual que las acciones existentes (añadir, marcar vista, valorar), con el candado anti doble alta compartido.",
+    "Responsividad: sin scroll horizontal ni textos desbordados en ningún ancho (360, 768, 1280 px); sin solapes entre opciones del abanico.",
     "Visualización correcta en los cuatro modos de tema (oscuro, negro puro, claro, blanco puro).",
     "Manual de usuario actualizado si cambia algo visible para el usuario."
   ],
@@ -30,6 +31,7 @@
   "pr": {
     "number": 299,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/299",
-    "branch": "feat/issue-298-boton-flotante"
+    "branch": "feat/issue-298-boton-flotante",
+    "note": "Iteración 2: abanico circular animado + 3 opciones en preview (marcar/valorar añaden primero). Sin keyword de cierre."
   }
 }
