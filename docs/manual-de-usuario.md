@@ -1170,14 +1170,25 @@ momento:
   y abre la valoración después (así puedes dejarle las estrellas desde
   el primer momento).
 
-El botón flotante **se ve diferente** según el estado: con el icono **✓
-y fondo dorado** si el título ya está visto (película con al menos un
-visionado, o serie completada); con el icono **+ y fondo verde** si aún
-no lo está. En series ya completadas (o en pausa/abandonadas), la
-opción «Marcar como vista» no aparece, porque no tiene sentido; la
-ficha ofrece «Volver a verla desde el principio» para un nuevo
-visionado. El abanico se cierra pulsando fuera, con **Esc** o volviendo
-a pulsar el botón.
+El botón flotante **se ve diferente** según el estado, para que sepas
+de un vistazo en qué situación está el título:
+
+- **Icono + con fondo verde**: el título **aún no está en tu registro**
+  (vista previa del catálogo, de una saga o de una recomendación).
+- **Icono + con fondo azul**: el título **ya está añadido pero no lo
+  has visto** (ficha). En las series también se usa este estado para
+  cualquier serie añadida que aún no esté completada.
+- **Icono ✓ con fondo dorado**: el título **ya está visto** (película
+  con al menos un visionado, o serie completada). Si una **película se
+  ha visto más de una vez**, en lugar del ✓ aparece el **número de
+  veces** que la has visto (2, 3, 4…).
+
+En series ya completadas (o en pausa/abandonadas), la opción «Marcar
+como vista» no aparece, porque no tiene sentido; la ficha ofrece
+«Volver a verla desde el principio» para un nuevo visionado. Las
+opciones que se despliegan del botón **salen con un sombreado** para
+que se distingan del fondo y del contenido de la página. El abanico se
+cierra pulsando fuera, con **Esc** o volviendo a pulsar el botón.
 
 ## 13. Valoraciones con estrellas
 
