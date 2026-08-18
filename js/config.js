@@ -10,7 +10,7 @@
 // Versión de despliegue/caché. Se incrementa con scripts/bump-version.sh
 // y se usa para versionar las URLs de los assets (?v=...) de modo que
 // cada deploy invalide las cachés del service worker y del navegador.
-export const APP_VERSION = '20261011';
+export const APP_VERSION = '20261012';
 
 // Configuración de tu proyecto de Firebase
 // (Firebase console → Configuración del proyecto → Tus apps → SDK)

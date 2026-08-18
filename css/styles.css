@@ -30,6 +30,13 @@
   --stamp-dark: #7e2c22;
   --games: #7a5a9e;
   --games-dark: #5d4780;
+  /* Azul acero: estado «añadido y no visto» del botón flotante
+     (issue #298, iteración 3), tercer estado junto al + verde (no
+     añadido) y el ✓ ocre (visto). Icono ink sobre --steel #5c7ea6
+     ≈ 4.4:1 (AA gráficos); hover --steel-dark #3d5c80 con icono
+     paper ≈ 5.9:1 (AA). */
+  --steel: #5c7ea6;
+  --steel-dark: #3d5c80;
 
   /* Neutros */
   --white: #ffffff;
@@ -76,6 +83,12 @@
   --radius: 3px;
   --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.35);
   --shadow-pop: 0 20px 45px rgba(0, 0, 0, 0.5);
+  /* Sombra de las pastillas del botón flotante (issue #298,
+     iteración 3): doble capa (sombra de contacto + difusa), más
+     marcada que --shadow-pop, para que las opciones desplegadas se
+     distingan del fondo y del contenido de la página. En negro puro
+     la separación la da el borde (las sombras negras no se ven). */
+  --fab-action-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* =========================================================
@@ -197,6 +210,9 @@
 
   --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.12);
+  /* Pastillas del botón flotante: sombra propia de la familia clara,
+     más marcada que --shadow-pop (los fondos claros no separan) */
+  --fab-action-shadow: 0 2px 8px rgba(44, 40, 34, 0.18), 0 12px 28px rgba(44, 40, 34, 0.22);
 }
 
 /* =========================================================
@@ -244,6 +260,10 @@
 
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-pop: 0 16px 44px rgba(0, 0, 0, 0.18);
+  /* Pastillas del botón flotante: la sombra es la única separación
+     de las superficies blancas sobre blanco puro (heredan la de la
+     familia clara; aquí se refuerza para que el menú destaque) */
+  --fab-action-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 /* =========================================================
@@ -410,6 +430,15 @@
    el hover usa el mismo tinte claro que el resto de superficies. */
 [data-theme="black"] .item-fab__action:hover {
   background: var(--paper-alpha-14);
+}
+
+/* Borde de las pastillas del botón flotante en negro puro
+   (iteración 3 de la issue #298): las sombras negras no separan
+   sobre fondo negro, así que se refuerza el borde que les da el
+   selector agrupado para que las opciones se distingan del fondo
+   y del contenido de la página. */
+[data-theme="black"] .item-fab__action {
+  border-color: var(--paper-alpha-35);
 }
 
 /* Icono de la pestaña activa: seguía a --ink (ahora #000, invisible) */
@@ -1899,11 +1928,16 @@ body.is-back-to-top-visible .back-to-top {
    animación escalonada que las hace salir «desde el botón».
    Acciones según el contexto: ficha → «Marcar como vista» +
    «Valorar»; preview → «Añadir» + «Marcar como vista» +
-   «Valorar». El botón se ve DISTINTO si el ítem ya está visto
-   (película con visionados / serie completada): icono ✓ y fondo
-   ocre frente al icono + verde de «no visto». z-index 40: sobre
-   el contenido, por debajo de la cabecera (46), de las pestañas
-   (45) y de los modales (≥50) para que nunca tape las ventanas.
+   «Valorar». El toggle se ve DISTINTO según el estado (iteración
+   3 de la issue #298), con tres estados diferenciados:
+   preview/no añadido → + verde; ficha añadido y no visto → +
+   azul acero (--steel, clase .item-fab--added); ficha visto →
+   ✓ ocre (clase .item-fab--seen), con el NÚMERO de visionados
+   (.item-fab__count, clase en películas vistas más de una vez)
+   en lugar del ✓. En series solo cuentan estos tres estados
+   (completada = vista). z-index 40: sobre el contenido, por
+   debajo de la cabecera (46), de las pestañas (45) y de los
+   modales (≥50) para que nunca tape las ventanas.
    Nota de animación: el menú usa la clase .is-open en .item-fab
    (no .hidden) para que las transiciones de apertura/cierre
    funcionen; con prefers-reduced-motion las transiciones se
@@ -1959,6 +1993,35 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--paper);
 }
 
+/* Ítem añadido pero aún NO visto (iteración 3 de la issue #298):
+   + azul acero, tercer estado distinto del + verde de «no añadido»
+   (preview) y del ✓ ocre de visto. El negro puro hereda estos
+   colores (el toggle conserva su fondo de acento, como el teal y
+   el ocre, así que no necesita override). Contraste: icono ink
+   sobre --steel ≈ 4.4:1 en oscuro / ≈ 4.9:1 en negro puro (AA
+   gráficos); hover --steel-dark + icono paper ≈ 5.9:1 (AA). */
+.item-fab--added .item-fab__toggle {
+  background: var(--steel);
+  color: var(--ink);
+}
+.item-fab--added .item-fab__toggle:hover {
+  background: var(--steel-dark);
+  color: var(--paper);
+}
+
+/* Nº de visionados (película vista más de una vez): sustituye al ✓
+   dentro del toggle ocre (iteración 3 de la issue #298). Tamaño
+   ajustado para que entren hasta dos dígitos en el círculo de
+   3.5rem; por encima de 99 se muestra «99+» (defensa en JS). El
+   dúo ocre/ink supera 4.5:1 (AA texto). */
+.item-fab__count {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
 .item-fab__menu {
   position: absolute;
   inset: 0;
@@ -1994,7 +2057,10 @@ body.is-back-to-top-visible .back-to-top {
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink);
-  box-shadow: var(--shadow-pop);
+  /* Sombra propia (--fab-action-shadow, iteración 3 de la issue
+     #298): doble capa más marcada que --shadow-pop para que las
+     opciones se distingan del fondo y del contenido de la página. */
+  box-shadow: var(--fab-action-shadow);
   font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;

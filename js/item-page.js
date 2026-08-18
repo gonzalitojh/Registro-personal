@@ -151,9 +151,14 @@ function renderItemContent() {
 //   - preview (ítem aún no añadido): «Añadir», «Marcar como vista»
 //     (añade y marca como vista) y «Valorar» (añade y abre la
 //     valoración).
-// El botón se ve DISTINTO si el ítem ya está visto (película con al
-// menos un visionado o serie completada): icono ✓ y color ocre frente
-// al icono + verde de «no visto».
+// El botón se ve DISTINTO según el estado (iteración 3 de la issue
+// #298), con TRES estados diferenciados:
+//   - no añadido (preview): icono + verde (se puede añadir).
+//   - añadido y no visto (ficha): icono + azul acero.
+//   - visto (ficha): ✓ ocre; en una película vista MÁS DE UNA VEZ el
+//     ✓ se sustituye por el NÚMERO de visionados.
+// En series solo se distinguen estos tres estados (completada =
+// vista), igual que en películas.
 const FAB_ID = "item-fab";
 
 const FAB_ICONS = {
@@ -257,12 +262,31 @@ function fabOptions(item, mode) {
 
 // Pinta (o repinta) el botón flotante dentro de #item-view. mode:
 // "ficha" (ítem en el registro) o "preview" (aún no añadido).
+// Tres estados visuales (iteración 3 de la issue #298), ver cabecera
+// de la sección: preview → + verde; ficha sin ver → + azul acero
+// (clase .item-fab--added); ficha visto → ✓ ocre (clase
+// .item-fab--seen), con el NÚMERO de visionados en lugar del ✓ cuando
+// una película se ha visto más de una vez. El aria-label del toggle
+// refleja el estado («no añadido», «pendiente», «visto» o «visto N
+// veces»).
 function renderFab(item, mode) {
   removeFab();
-  const seen = mode === "ficha" && isItemSeen(item);
+  const isPreview = mode === "preview";
+  const seen = !isPreview && isItemSeen(item);
+  // Nº de visionados: solo aplica a películas en ficha (para series
+  // solo cuentan los tres estados: añadido / no vista / vista).
+  const watchCount =
+    !isPreview && item.type === "movie"
+      ? item.watchLog
+        ? item.watchLog.length
+        : 0
+      : 0;
+  const showCount = seen && watchCount > 1;
   const fab = document.createElement("div");
   fab.id = FAB_ID;
-  fab.className = "item-fab" + (seen ? " item-fab--seen" : "");
+  fab.className =
+    "item-fab" +
+    (isPreview ? "" : seen ? " item-fab--seen" : " item-fab--added");
   const options = fabOptions(item, mode);
   const angles = FAB_ARC_ANGLES[options.length] || FAB_ARC_ANGLES[2];
   const actionsHtml = options
@@ -271,12 +295,24 @@ function renderFab(item, mode) {
       return `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="${opt.action}" style="--fx:${fx.toFixed(2)}rem; --fy:${fy.toFixed(2)}rem; --i:${i}">${opt.icon}<span>${opt.label}</span></button>`;
     })
     .join("");
+  const stateLabel = isPreview
+    ? "no añadido"
+    : seen
+      ? showCount
+        ? `visto ${watchCount} veces`
+        : "visto"
+      : "pendiente";
+  const toggleIcon = showCount
+    ? `<span class="item-fab__count" aria-hidden="true">${watchCount > 99 ? "99+" : watchCount}</span>`
+    : seen
+      ? FAB_ICONS.check
+      : FAB_ICONS.plus;
   fab.innerHTML = `
     <div class="item-fab__menu" role="menu" aria-label="Acciones rápidas">
       ${actionsHtml}
     </div>
-    <button type="button" class="item-fab__toggle" aria-label="Acciones rápidas (${seen ? "visto" : "pendiente"})" aria-haspopup="true" aria-expanded="false">
-      ${seen ? FAB_ICONS.check : FAB_ICONS.plus}
+    <button type="button" class="item-fab__toggle" aria-label="Acciones rápidas (${stateLabel})" aria-haspopup="true" aria-expanded="false">
+      ${toggleIcon}
     </button>`;
   viewEl().appendChild(fab);
 
