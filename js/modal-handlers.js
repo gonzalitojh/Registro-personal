@@ -210,7 +210,6 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
   ui.openMovieModal(item, {
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
-    onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
     // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
@@ -675,7 +674,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       return progressWithStatus(seasonsMeta, item);
     },
 
-    onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
@@ -703,20 +701,6 @@ export function openItem(item, ctx) {
   else if (item.type === "movie") openMovieItem(item, ctx);
   else if (item.type === "game") openGameItem(item, ctx);
   else openBookItem(item, ctx);
-}
-
-// Hook de «volver a la pantalla previa» que registra item-page.js
-// (issue #285): lo usa confirmDelete en modo página para salir de la
-// ficha tras eliminar un ítem. Se inyecta para evitar una dependencia
-// circular (item-page.js importa de aquí openMovieItem/openTvItem).
-let itemPageBackHandler = null;
-
-export function setItemPageBackHandler(fn) {
-  itemPageBackHandler = fn;
-}
-
-function goBackFromItemPage() {
-  if (itemPageBackHandler) itemPageBackHandler();
 }
 
 export function setupModalCloseListeners() {

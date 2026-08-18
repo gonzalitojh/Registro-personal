@@ -1485,7 +1485,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
-  const { onUpdateWatch, onRemoveWatch, onDelete, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
+  const { onUpdateWatch, onRemoveWatch, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   // Modo página (issue #285): con target (contenedor de #item-view) la
   // ficha se renderiza en la página y no se abre el modal ni su focus
@@ -1541,10 +1541,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
           </details>`
         : ""
     }
-
-    <div class="modal-actions">
-      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-    </div>
   `;
 
   // Propaga todos los argumentos en el re-render (issue #280): tras
@@ -1620,10 +1616,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
       await onRemoveWatch(Number(btn.dataset.index));
       rerender();
     });
-  });
-
-  content.querySelector("#btn-delete-item").addEventListener("click", () => {
-    onDelete();
   });
 
   // En modo página no se abre el modal ni se atrapa el foco: el
@@ -2077,7 +2069,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onToggleSeason,
     onRewatch,
     onSetStatus,
-    onDelete,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
@@ -2182,10 +2173,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       // #298/#300) y el picker ya no vive en la ficha.
       episodeAverageHtml(item.watched, "field-rating")
     }
-
-    <div class="modal-actions">
-      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-    </div>
   `;
 
   function updateBanner(newProgress) {
@@ -2505,10 +2492,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     // El target se propaga en el re-render (issue #285): en modo
     // página la ficha de serie se repinta en #item-view-content.
     openTvModal(item, seasonsMeta, newProgress, callbacks, recommendations, existingIds, { target });
-  });
-
-  content.querySelector("#btn-delete-item").addEventListener("click", () => {
-    onDelete();
   });
 
   // Wire recommendation "Añadir" buttons
