@@ -10,7 +10,9 @@
     "C5: Funciona tanto en la ficha modal clásica como en la página de ítem (ficha y preview); los datos vienen de TMDB como hasta ahora (cast/crew completos, no solo 5).",
     "C6: Responsividad obligatoria (360/768/1280 px): sin scroll horizontal a nivel de página; los carruseles desplazan en horizontal dentro de su contenedor.",
     "C7: Todos los modos de tema (oscuro, negro puro, claro, blanco puro) muestran los carruseles y la ventana con contraste AA.",
-    "C8: El manual de usuario refleja el nuevo bloque de elenco."
+    "C8: El manual de usuario refleja el nuevo bloque de elenco.",
+    "C9 (iteración): El scroll de los carruseles de elenco es suave y avanza rápido (el gesto recorre varias tarjetas en un solo arrastre; el encaje solo ocurre al terminar cerca de una tarjeta).",
+    "C10 (iteración): La ventana de detalle (producción y reparto) tiene una lupa/buscador arriba que filtra al teclear por nombre de la persona y por su función (producción) o personaje (reparto); con Esc se limpia la búsqueda."
   ],
   "definition of done": [
     "Planificación completada (plan detallado).",

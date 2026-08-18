@@ -23,6 +23,16 @@ const PLACEHOLDER_PERSON_COVER =
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="100%" height="100%" fill="#8f918e"/><circle cx="100" cy="105" r="45" fill="#d9dad7"/><path d="M30 285c8-65 40-95 70-95s62 30 70 95z" fill="#d9dad7"/></svg>'
   );
 
+// Lupa del buscador de la ventana de detalle (iteración issue #294):
+// trazo actualColor (hereda el color del wrapper, --ink-soft en CSS).
+const SEARCH_ICON = `
+  <svg class="cast-modal__search-icon" viewBox="0 0 24 24" width="16" height="16"
+       fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+       aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="15.8" y2="15.8" />
+  </svg>`;
+
 // Estado del modal abierto actualmente (o null). closeCastModal() lo
 // usa para cerrar la ventana desde fuera (p. ej. la tecla Escape del
 // handler global de modal-handlers.js).
@@ -180,14 +190,37 @@ function personRowHtml(person) {
     </li>`;
 }
 
+// Filtra las personas por el texto del buscador (iteración issue
+// #294): coincide con el NOMBRE de la persona y con su personaje (en
+// el reparto) o su función —job y área/departamento— (en la
+// producción). Query vacía devuelve la lista completa. El filtrado se
+// hace sobre las entradas sin agrupar (el crew se reagrupa después),
+// igual que el render sin filtro.
+function filterPeopleByQuery(people, query) {
+  const q = (query || "").trim().toLocaleLowerCase("es");
+  if (!q) return people;
+  return people.filter((p) => {
+    const name = (p.name || "").toLocaleLowerCase("es");
+    const role = (p.character || p.job || p.department || "").toLocaleLowerCase("es");
+    return name.includes(q) || role.includes(q);
+  });
+}
+
 // Lista completa de personas: cast (personajes) o crew (roles
 // fusionados). El crew se agrupa por áreas (departamentos); el cast
 // se ordena por order (facturación) y se muestra en una sola lista.
-function peopleListHtml(people) {
+// query: texto del buscador (si no hay resultados se muestra el
+// aviso correspondiente en lugar del mensaje de lista vacía).
+function peopleListHtml(people, query) {
+  const emptyMessage = (query || "").trim()
+    ? `No hay resultados para «${escapeHtml((query || "").trim())}».`
+    : null;
   const isCrew = people.some((p) => p.department !== undefined);
   if (isCrew) {
     const sections = groupCrewByDepartment(people);
-    if (!sections.length) return `<p class="cast-modal__empty">No hay información de producción.</p>`;
+    if (!sections.length) {
+      return `<p class="cast-modal__empty">${emptyMessage || "No hay información de producción."}</p>`;
+    }
     return sections
       .map(
         (section) => `
@@ -201,7 +234,9 @@ function peopleListHtml(people) {
       .join("");
   }
   const sorted = [...people].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-  if (!sorted.length) return `<p class="cast-modal__empty">No hay información de reparto.</p>`;
+  if (!sorted.length) {
+    return `<p class="cast-modal__empty">${emptyMessage || "No hay información de reparto."}</p>`;
+  }
   return `<ul class="cast-modal__list">${sorted.map(personRowHtml).join("")}</ul>`;
 }
 
@@ -220,18 +255,50 @@ export function openCastModal({ title, subtitle, people }) {
     const content = document.getElementById("cast-modal-content");
     const peopleList = Array.isArray(people) ? people : [];
     const count = peopleList.length;
+    const isCrew = peopleList.some((p) => p.department !== undefined);
 
     modal.setAttribute("aria-label", `${subtitle} de ${title}`);
 
+    // El buscador (lupa, iteración issue #294) vive entre la cabecera y
+    // la lista: filtra por nombre y por personaje (reparto) o función
+    // (producción) sin recargar la ventana. Esc limpia la búsqueda
+    // primero; con el campo vacío, el Escape global cierra la ventana.
+    const searchPlaceholder = isCrew
+      ? "Buscar por nombre o función…"
+      : "Buscar por nombre o personaje…";
     content.innerHTML = `
       <div class="cast-modal__header">
         <h3 class="cast-modal__title">${escapeHtml(subtitle)}</h3>
         <p class="cast-modal__subtitle">${escapeHtml(title)}${count ? ` · ${count} personas` : ""}</p>
       </div>
+      <div class="cast-modal__search">
+        ${SEARCH_ICON}
+        <input type="text" class="cast-modal__search-input"
+               placeholder="${searchPlaceholder}"
+               aria-label="${searchPlaceholder.replace("…", "")}"
+               autocomplete="off" spellcheck="false">
+      </div>
       <div class="cast-modal__body">
         ${peopleListHtml(peopleList)}
       </div>
     `;
+
+    const searchInput = content.querySelector(".cast-modal__search-input");
+    const body = content.querySelector(".cast-modal__body");
+    if (searchInput && body) {
+      searchInput.addEventListener("input", () => {
+        body.innerHTML = peopleListHtml(filterPeopleByQuery(peopleList, searchInput.value));
+      });
+      // Esc con texto en el buscador: limpia el filtro y se queda en la
+      // ventana (sin propagar al handler global que la cerraría).
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && searchInput.value) {
+          e.stopPropagation();
+          searchInput.value = "";
+          body.innerHTML = peopleListHtml(peopleList);
+        }
+      });
+    }
 
     let settled = false;
     const close = () => {

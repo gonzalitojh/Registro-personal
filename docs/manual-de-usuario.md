@@ -1064,7 +1064,10 @@ tipo, verás:
   deslizables en horizontal: **«Producción»** (director, guionista,
   compositor...) y **«Reparto»** (los actores y actrices, en el orden
   del cartel). Cada persona tiene su tarjeta con **foto**, **nombre**
-  y su **personaje** (actores) o su **puesto** (producción). Cada
+  y su **personaje** (actores) o su **puesto** (producción). Los
+  carruseles se deslizan con **suavidad**: puedes arrastrarlos con el
+  dedo o girar la rueda del ratón para recorrerlos rápido, y se paran
+  encajados en la tarjeta más cercana. Cada
   carrusel tiene el botón **«Ver en más detalle»**, que abre una
   ventana con la **lista completa** de ese carrusel: el reparto con
   foto, nombre y personaje; la producción **agrupada por áreas de
@@ -1073,7 +1076,11 @@ tipo, verás:
   especiales, Equipo técnico e Interpretación; en las series, también
   Creadores), con el puesto de cada persona (si una persona tiene
   varios puestos en un área, se muestran juntos, p. ej. «Director,
-  Guionista»). La ventana se cierra con la **✕**, con la tecla **Esc**
+  Guionista»). En la parte superior de la ventana hay una **lupa**:
+  escribe en el buscador para filtrar por el **nombre** de la persona
+  o por su **personaje** (en el reparto) o su **función** (en la
+  producción); con la tecla **Esc** se limpia la búsqueda. La ventana
+  se cierra con la **✕**, con la tecla **Esc**
   o pulsando fuera de ella. La fecha de estreno, la duración (o
   temporadas y episodios en series), los géneros y la sinopsis ya se
   muestran arriba, en la cabecera. En los videojuegos: desarrolladores,

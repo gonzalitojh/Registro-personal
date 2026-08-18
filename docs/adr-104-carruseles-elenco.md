@@ -203,22 +203,57 @@ una sola lista; la producción **agrupada por áreas**):
 - Versión PWA bumped a `20261006`: un precache/recarga adicional para
   los usuarios al desplegar.
 
+## Iteración (2026-08-18): scroll suave y buscador en la ventana de detalle
+
+Tras la revisión del usuario (comentario en la issue #294) se aplican
+dos ajustes de experiencia:
+
+1. **Scroll de los carruseles más suave y rápido**: el
+   `scroll-snap-type: x mandatory` original encajaba el carrusel en
+   cada tarjeta al soltar el gesto, haciendo que un arrastre rápido se
+   quedase «pegado» a la tarjeta siguiente (avance lento y a tirones).
+   Se cambia a **`x proximity`**: el carrusel solo encaja cuando el
+   gesto termina cerca del borde de una tarjeta, de modo que el
+   impulso del arrastre/rueda recorre varias tarjetas y el avance es
+   más fluido. Se añade además `overscroll-behavior-x: contain` para
+   que el rebote del gesto no arrastre la página. Decisión estética de
+   producto, sin impacto en el render ni en la accesibilidad (el
+   carrusel sigue siendo un `overflow-x: auto` con teclado).
+
+2. **Buscador (lupa) en la ventana «Ver en más detalle»**: un input
+   con icono de lupa en la parte superior de `#cast-modal` filtra la
+   lista **al teclear** (sin recargar la ventana) por el **nombre** de
+   la persona y por su **personaje** (en el reparto) o su **función**
+   —`job` y área/departamento— (en la producción). El filtro se aplica
+   sobre las entradas sin agrupar y el crew se reagrupa por áreas tras
+   filtrar, reutilizando `groupCrewByDepartment`; si no hay
+   coincidencias se muestra «No hay resultados para «…»». La tecla
+   **Esc** con texto en el campo **limpia la búsqueda** (sin propagar
+   al handler global que cerraría la ventana); con el campo vacío, Esc
+   cierra la ventana como siempre. El input sigue el patrón visual de
+   `.global-search__input` (`--ink-raised`/`--paper`), que se adapta
+   solo a los cuatro modos de tema sin overrides.
+
+No cambia el modelo de datos ni las llamadas a TMDB: todo es
+transformación local de los datos ya cargados. La versión PWA sube a
+`20261007` para invalidar las cachés del precache.
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/cast-modal.js` | **Nuevo**: ventana «Ver en más detalle» de producción/reparto (`.modal--top` + `.modal__card--wide`, patrón ADR-022): focus trap, cierre ✕/backdrop/Escape con restauración de foco; reparto en lista (foto, nombre, personaje); producción agrupada por áreas (departamentos traducidos al español, `DEPARTMENT_ORDER` estable, puestos fusionados «Director, Guionista»); `safePhotoUrl` (solo `https:`/`data:image/*`) y silueta SVG de fallback; `openCastModal`/`closeCastModal` |
+| `js/cast-modal.js` | **Nuevo**: ventana «Ver en más detalle» de producción/reparto (`.modal--top` + `.modal__card--wide`, patrón ADR-022): focus trap, cierre ✕/backdrop/Escape con restauración de foco; reparto en lista (foto, nombre, personaje); producción agrupada por áreas (departamentos traducidos al español, `DEPARTMENT_ORDER` estable, puestos fusionados «Director, Guionista»); `safePhotoUrl` (solo `https:`/`data:image/*`) y silueta SVG de fallback; `openCastModal`/`closeCastModal`. **Iteración**: buscador con lupa (`filterPeopleByQuery` por nombre + personaje/función/departamento, re-render local del listado, Esc limpia el filtro) |
 | `js/api-movies.js` | **Modificado**: `mapCastPerson`/`mapCrewPerson` (`{id, name, character\|job, department, profileUrl, order}`) y `mergeCreatorsIntoCrew` (creadores de series como área «Creadores», `order: -1`, sin duplicar); `getMovieDetails`/`getTvExtraDetails` mapean **cast y crew completos** en vez de 5 strings; `IMG_PERSON` (w185) — sin llamadas API nuevas, caché de 24 h intacta |
 | `js/ui.js` | **Modificado**: `castCrewHtml`/`castCrewSectionHtml` (carruseles «Producción» y «Reparto» con tarjeta `.cast-card`: foto, nombre, personaje/puesto; botón `.cast-crew__more` «Ver en más detalle»), normalización del cast legacy (strings), `wireCastCrewClicks` (cableado de los botones a `openCastModal`) y render en modal clásico, página de ítem, preview de búsqueda y ficha de amigo |
 | `js/item-page.js` | **Modificado**: `crew` en `buildPreviewItem` y `wireCastCrewClicks` en `paintPreview` (carruseles en la preview de la página de ítem, render inicial y tras enrich) |
 | `js/modal-handlers.js` | **Modificado**: cierre de la ventana de elenco integrado en `setupModalCloseListeners` (✕, backdrop y Escape, patrón `closeActiveModal` del ADR-096) |
 | `js/constants.js` | **Modificado**: `"crew"` añadido a `ON_DEMAND_DETAIL_FIELDS` (la migración existente lo poda de documentos viejos) |
-| `index.html` | **Modificado**: marcado de la ventana `#cast-modal` y bump PWA a `20261006` |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261006` |
-| `service-worker.js` | **Modificado**: `js/cast-modal.js` en `STATIC_ASSETS` y bump PWA a `20261006` |
+| `index.html` | **Modificado**: marcado de la ventana `#cast-modal` y bump PWA a `20261006` (iteración: `20261007`) |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261006` (iteración: `20261007`) |
+| `service-worker.js` | **Modificado**: `js/cast-modal.js` en `STATIC_ASSETS` y bump PWA a `20261006` (iteración: `20261007`) |
 | `css/styles.css` | **Modificado**: `.cast-card` incluida en el override oscuro de `--ink` de `.item-view` |
-| `ocio/ocio.css` | **Modificado**: carruseles `.cast-crew`/`.cast-card` (tarjetas flex 96 px, 84 px ≤400 px, scroll horizontal solo en `.cast-crew__scroll`, `overflow-wrap`), ventana `.cast-modal`, hint/personaje con contraste AA (base `#5f5849` en familia oscura, `--ink-soft` restaurado en negro puro/claro/blanco puro con selectores agrupados) |
-| `docs/manual-de-usuario.md` | **Modificado**: sección 12, bullet «Información ampliada» con los carruseles y la ventana de detalle; términos «director/reparto» adecuados en los bullets «Sagas», «Recomendaciones» y en la vista previa del catálogo (sección 10) |
+| `ocio/ocio.css` | **Modificado**: carruseles `.cast-crew`/`.cast-card` (tarjetas flex 96 px, 84 px ≤400 px, scroll horizontal solo en `.cast-crew__scroll`, `overflow-wrap`), ventana `.cast-modal`, hint/personaje con contraste AA (base `#5f5849` en familia oscura, `--ink-soft` restaurado en negro puro/claro/blanco puro con selectores agrupados). **Iteración**: `scroll-snap-type: x proximity` + `overscroll-behavior-x: contain` en `.cast-crew__scroll` (scroll suave y rápido) y buscador `.cast-modal__search` (lupa SVG + input, patrón `.global-search__input`, cuatro modos sin overrides) |
+| `docs/manual-de-usuario.md` | **Modificado**: sección 12, bullet «Información ampliada» con los carruseles y la ventana de detalle; términos «director/reparto» adecuados en los bullets «Sagas», «Recomendaciones» y en la vista previa del catálogo (sección 10). **Iteración**: scroll suave y buscador (lupa) de la ventana de detalle |
 | `docs/adr-104-carruseles-elenco.md` | **Nuevo**: este documento |
 | `tasks/task-issue-294.json` | Task file de la tarea |
 

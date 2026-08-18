@@ -2189,8 +2189,17 @@ button, a, input, select, textarea { touch-action: manipulation; }
   gap: 0.6rem;
   overflow-x: auto;
   padding-bottom: 0.4rem;
-  scroll-snap-type: x mandatory;
+  /* Scroll suave (iteración issue #294): con `x mandatory` cada gesto
+     rápido quedaba "pegado" a la siguiente tarjeta y el avance se
+     sentía lento y a tirones. `x proximity` solo encaja la tarjeta
+     cuando el gesto termina cerca de su borde: el impulso del arrastre
+     (o de la rueda) recorre varias tarjetas y el carrusel avanza más
+     rápido y fluido. */
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  /* El rebote del gesto no debe arrastrar la página entera: el scroll
+     horizontal se queda dentro del contenedor del carrusel. */
+  overscroll-behavior-x: contain;
 }
 
 .cast-crew__scroll::-webkit-scrollbar {
@@ -2364,6 +2373,49 @@ button, a, input, select, textarea { touch-action: manipulation; }
      .cast-modal__subtitle (ver comentario allí). */
   color: #5f5849;
   margin: 0.4rem 0;
+}
+
+/* Buscador de la ventana de detalle del elenco (iteración issue #294):
+   lupa a la izquierda + input que filtra por nombre de la persona y
+   por su personaje (reparto) o función (producción). El input usa las
+   mismas variables que .global-search__input (--ink-raised fondo /
+   --paper texto): se adapta solo a los cuatro modos de tema, sin
+   overrides (mismo razonamiento que el comentario de aquella regla). */
+.cast-modal__search {
+  position: relative;
+  margin-bottom: 0.8rem;
+}
+
+.cast-modal__search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.cast-modal__search-input {
+  width: 100%;
+  border: 1px solid var(--paper-alpha-20);
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-radius: 999px;
+  padding: 0.45rem 1rem 0.45rem 2.1rem;
+  font-size: 1rem; /* 16px evita el zoom automático de iOS al enfocar */
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.cast-modal__search-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.cast-modal__search-input:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
 }
 
 /* Restauración de --ink-soft en negro puro y familia clara (ver
