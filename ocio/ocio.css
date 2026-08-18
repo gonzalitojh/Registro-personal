@@ -2162,6 +2162,16 @@ button, a, input, select, textarea { touch-action: manipulation; }
   overflow-wrap: anywhere;
 }
 
+/* Contraste AA en el modal clásico con la familia oscura por defecto
+   (QA #294): --ink-soft (#948a76) sobre --paper (#f1ead9) = 2.84:1,
+   insuficiente; #5f5849 ≈ 5.9:1. En la página de ítem el fondo es
+   --ink (#171512) y --ink-soft sí cumple (≈5.5:1), por eso la
+   restauración se limita a la superficie clara del modal; el resto de
+   temas cumple con --ink-soft (5.2-5.9:1) y no necesita override. */
+[data-theme="dark"] .modal__card .cast-crew__title {
+  color: #5f5849;
+}
+
 .cast-crew__count {
   font-weight: 400;
   letter-spacing: 0;
