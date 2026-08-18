@@ -11,7 +11,7 @@ import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
-import { openCastModal } from "./cast-modal.js";
+import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
 
 function scopeFor(type) {
@@ -97,19 +97,6 @@ export const PLACEHOLDER_COVER =
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
   );
-
-// Placeholder de FOTO DE PERSONA del elenco (issue #294): silueta
-// genérica cuando TMDB no tiene profile_path. Colores hardcodeados
-// porque es una imagen data: (no puede usar variables de tema); la
-// silueta sobre gris neutro mantiene contraste suficiente en los
-// cuatro modos (mismo patrón que PLACEHOLDER_COVER).
-export const PERSON_PLACEHOLDER =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#8f918e'/><circle cx='100' cy='105' r='45' fill='#d9dad7'/><path d='M30 285c8-65 40-95 70-95s62 30 70 95z' fill='#d9dad7'/></svg>`
-  );
-
-/* ---------- Pantallas ---------- */
 
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
 // se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
@@ -856,7 +843,7 @@ function castCrewSectionHtml(label, people, role, roleTextOf) {
     .map(
       (p) => `
       <div class="cast-card">
-        <img class="cast-card__photo" src="${escapeHtml(p.profileUrl || PERSON_PLACEHOLDER)}" alt="" loading="lazy" />
+        <img class="cast-card__photo" src="${escapeHtml(safePhotoUrl(p.profileUrl))}" alt="" loading="lazy" />
         <span class="cast-card__name">${escapeHtml(p.name)}</span>
         ${roleTextOf(p) ? `<span class="cast-card__role">${escapeHtml(roleTextOf(p))}</span>` : ""}
       </div>`
@@ -890,7 +877,12 @@ export function wireCastCrewClicks(root, item) {
       openCastModal({
         title: item.title || "",
         subtitle: isCrew ? "Producción" : "Reparto",
-        people: isCrew ? item.crew || [] : item.cast || [],
+        // Normalizados como en castCrewHtml: el cast puede venir en el
+        // formato viejo (array de strings, docs pre-issue #294) y el
+        // crew debe filtrar entradas sin nombre (QA issue #294).
+        people: isCrew
+          ? (item.crew || []).filter((c) => c && c.name)
+          : normalizeCastPeople(item.cast),
       });
     });
   });

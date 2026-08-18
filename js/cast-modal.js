@@ -53,8 +53,9 @@ function escapeHtml(str) {
 
 // Foto segura para el atributo src: solo URLs https o data:image/
 // (mismo patrón de defensa que rating-modal.js). Cualquier otro
-// esquema cae al placeholder de persona.
-function safePhotoUrl(url) {
+// esquema cae al placeholder de persona. Exportado (issue #294):
+// ui.js lo reutiliza para el src de las tarjetas de los carruseles.
+export function safePhotoUrl(url) {
   if (!url) return PLACEHOLDER_PERSON_COVER;
   try {
     const parsed = new URL(url, window.location.href);
@@ -127,8 +128,12 @@ export function groupCrewByDepartment(people) {
     const department = translateDepartment(person.department || "Otros");
     if (!byDepartment.has(department)) byDepartment.set(department, new Map());
     const peopleOfDept = byDepartment.get(department);
-    if (!peopleOfDept.has(person.id)) {
-      peopleOfDept.set(person.id, {
+    // Clave defensiva (QA #294): TMDB siempre envía id, pero si una
+    // entrada no lo trae no debe colapsar con otra sin id en la
+    // misma fila; se usa el nombre como respaldo.
+    const key = person.id ?? person.name;
+    if (!peopleOfDept.has(key)) {
+      peopleOfDept.set(key, {
         id: person.id,
         name: person.name,
         profileUrl: person.profileUrl || null,
@@ -136,7 +141,7 @@ export function groupCrewByDepartment(people) {
         order: person.order ?? 999,
       });
     }
-    const entry = peopleOfDept.get(person.id);
+    const entry = peopleOfDept.get(key);
     if (person.job && !entry.roles.includes(person.job)) entry.roles.push(person.job);
   }
 
