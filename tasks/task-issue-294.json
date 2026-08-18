@@ -1,0 +1,29 @@
+{
+  "title": "Elenco de películas/series",
+  "description": "Issue #294: En lugar de poner el creador y reparto y breve información del elenco de la película/serie, hacer un carrousel con todos las personas involucradas, con fotografía, nombre y en el caso de los actores, nombre del personaje. Debería haber de momento dos carrousel, uno para miembros de la producción (director, guionista, compositor, etc) y otro para actores y actrices. En ambos casos debe haber un botón para verlo en más detalle que despliegue una ventana con todas las personas de esa lista en particular en forma de lista y mayor detalle de cada una, organizados además (en el caso de los miembros de la producción) por áreas.\n\nLa base de la que iniciar el trabajo es la rama style/issue-292-visualizacion-ventanas. Crear una nueva rama a partir de ahí y hacer la PR a feat/issue-201 (no a dev).",
+  "status": "created",
+  "acceptance criteria": [
+    "C1: La ficha (y preview) de películas y series sustituye las líneas de texto de director/creadores/reparto por dos carruseles: uno de producción (crew: director, guionista, compositor...) y otro de reparto (actores/actrices).",
+    "C2: Cada tarjeta del carrusel muestra fotografía de la persona (con fallback elegante si TMDB no tiene foto), nombre y, en los actores, el personaje; en producción, su puesto (job).",
+    "C3: Cada carrusel tiene un botón de «ver en más detalle» que abre una ventana con TODAS las personas de esa lista, en forma de lista y con mayor detalle de cada una.",
+    "C4: En la ventana de producción, las personas se organizan por áreas/departamentos (dirección, guion, arte, cámara, etc.).",
+    "C5: Funciona tanto en la ficha modal clásica como en la página de ítem (ficha y preview); los datos vienen de TMDB como hasta ahora (cast/crew completos, no solo 5).",
+    "C6: Responsividad obligatoria (360/768/1280 px): sin scroll horizontal a nivel de página; los carruseles desplazan en horizontal dentro de su contenedor.",
+    "C7: Todos los modos de tema (oscuro, negro puro, claro, blanco puro) muestran los carruseles y la ventana con contraste AA.",
+    "C8: El manual de usuario refleja el nuevo bloque de elenco."
+  ],
+  "definition of done": [
+    "Planificación completada (plan detallado).",
+    "Implementación en rama derivada de style/issue-292-visualizacion-ventanas.",
+    "Validación QA contra criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentando el cambio (con 'Related issue: #294').",
+    "Manual de usuario actualizado.",
+    "PR contra feat/issue-201 (NO dev) SIN keyword de cierre; task file subido con status review + bloque pr; issue #294 a status: needs-review."
+  ],
+  "issue": {
+    "number": 294,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/294",
+    "title": "Elenco de películas/series"
+  }
+}
