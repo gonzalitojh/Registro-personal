@@ -202,8 +202,12 @@ function fabOptionsHtml(item, mode) {
   }
   const isTv = item.type === "tv";
   const seen = isItemSeen(item);
+  // «Marcar como vista» se oculta cuando no hay nada que marcar:
+  // series completadas / en pausa / abandonadas, o series completas
+  // con estado manual (p. ej. «en_curso» con todos los episodios
+  // vistos, que no tiene nextEpisode pendiente).
   const markable =
-    !isTv || !["completado", "standby", "abandonado"].includes(item.status);
+    !isTv || (!["completado", "standby", "abandonado"].includes(item.status) && item.nextEpisode);
   const actions = [];
   if (markable) {
     // Película ya vista: «Marcar como vista» añade otro visionado
@@ -254,7 +258,7 @@ async function runFabAction(item, action) {
   closeFabMenu();
   try {
     if (action === "add") {
-      await addFromPreview(item, { disabled: false, textContent: "" });
+      await addFromPreview(item);
       return;
     }
     if (action === "mark") {
@@ -269,24 +273,39 @@ async function runFabAction(item, action) {
   }
 }
 
+// Alta en curso desde la preview (issue #298): candado compartido
+// entre el botón real «Añadir» y el botón flotante. Previene dobles
+// altas concurrentes (el botón real solo se deshabilita durante el
+// handleAdd del propio alta; el FAB puede reabrir su menú mientras
+// tanto y volver a ofrecer «Añadir»).
+let previewAddInFlight = false;
+
 // Alta desde la vista previa (botón «Añadir» o botón flotante):
 // handleAdd da de alta en el registro y refreshAfterAdd pasa a la
-// ficha completa leyendo el ítem recién creado.
+// ficha completa leyendo el ítem recién creado. Si existe el botón
+// real de la preview se usa (handleAdd lo deshabilita y restaura su
+// estado); el objeto local es un fallback para el botón flotante.
 async function addFromPreview(item, btn) {
-  btn.disabled = true;
-  btn.textContent = "Añadiendo…";
+  if (previewAddInFlight) return;
+  previewAddInFlight = true;
+  const realBtn = document.getElementById("btn-preview-add");
+  const target = realBtn || btn || { disabled: false, textContent: "" };
+  target.disabled = true;
+  target.textContent = "Añadiendo…";
   try {
-    const ok = await handleAdd(item, btn, pageCtx);
+    const ok = await handleAdd(item, target, pageCtx);
     if (ok) {
       refreshAfterAdd();
     } else {
-      btn.disabled = false;
-      btn.textContent = "Añadir";
+      target.disabled = false;
+      target.textContent = "Añadir";
     }
   } catch (err) {
-    btn.disabled = false;
-    btn.textContent = "Añadir";
+    target.disabled = false;
+    target.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + (err && err.message ? err.message : err));
+  } finally {
+    previewAddInFlight = false;
   }
 }
 

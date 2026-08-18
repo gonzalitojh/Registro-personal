@@ -63,6 +63,12 @@ export async function quickMarkMovie(item, ctx) {
   // que en el modal de detalle): un ítem ya visto no puede seguir
   // "sin estrenar".
   await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status, awaitingRelease: false });
+  // Mutación en memoria (issue #298): el botón flotante de la ficha
+  // repinta con el MISMO objeto tras la acción; sin esto, la ficha y
+  // el propio botón quedarían con el estado visual anterior al
+  // marcado (mismo patrón de mutación que persist() en el modal).
+  item.watchLog = newLog;
+  item.status = status;
   item.awaitingRelease = false;
   // Deshacer (issue #136): restaura el watchLog/status/awaitingRelease
   // previos sin forzar awaitingRelease:false. El status se restaura
