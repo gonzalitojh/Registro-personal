@@ -1407,7 +1407,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 /* Notas del ítem en la ventana de valoración (issue #300): el campo
    vive aquí porque la ficha de película/serie ya no tiene sección de
-   notas. Reutiliza .field-group (borde, fondo y 4 temas incluidos). */
+   notas. Reutiliza .field-group (borde, fondo y 4 temas incluidos);
+   el margen inferior lo pone .rating-modal__actions. */
+.rating-modal__notes {
+  margin-bottom: 0;
+}
+
 .rating-modal__notes textarea {
   min-height: 56px;
 }
