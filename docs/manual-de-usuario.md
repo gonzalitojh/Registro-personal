@@ -919,7 +919,7 @@ igual). Para cada resultado:
   siempre) y muestra **la misma información del título que la ficha**:
   distintivo de no estrenado si aplica, puntuación de la comunidad,
   tráiler, dónde verla, información ampliada (duración, género,
-  director/creadores, reparto y sinopsis), temporadas (series), saga
+  producción y reparto, sinopsis), temporadas (series), saga
   (películas) y recomendaciones; en libros y videojuegos la vista
   previa se sigue abriendo en su ventana. Cuando añadas el título, la
   página pasa a la ficha con tus acciones personales (visionados,
@@ -1060,11 +1060,32 @@ tipo, verás:
   **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB».
-- **Información ampliada**: en películas y series, director
-  (películas), creadores (series) y reparto — la fecha de estreno, la
-  duración (o temporadas y episodios en series), los géneros y la
-  sinopsis ya se muestran arriba, en la cabecera —. En los videojuegos:
-  desarrolladores, editores y clasificación por edades (ESRB).
+- **Información ampliada**: en películas y series, dos carruseles
+  deslizables en horizontal: **«Producción»** (director, guionista,
+  compositor...) y **«Reparto»** (los actores y actrices, en el orden
+  del cartel). Cada persona tiene su tarjeta con **foto**, **nombre**
+  y su **personaje** (actores) o su **puesto** (producción). Los
+  carruseles se deslizan con **desplazamiento inercial**: arrastra con
+  el dedo o gira la rueda del ratón y el carrusel continúa
+  deslizándose solo, frenando poco a poco hasta pararse (sin encajarse
+  en las tarjetas). Cada
+  carrusel tiene el botón **«Ver en más detalle»**, que abre una
+  ventana con la **lista completa** de ese carrusel: el reparto con
+  foto, nombre y personaje; la producción **agrupada por áreas de
+  trabajo** (Dirección, Guion, Producción, Sonido, Cámara, Montaje,
+  Arte, Vestuario y maquillaje, Iluminación, Efectos visuales, Efectos
+  especiales, Equipo técnico e Interpretación; en las series, también
+  Creadores), con el puesto de cada persona (si una persona tiene
+  varios puestos en un área, se muestran juntos, p. ej. «Director,
+  Guionista»). En la parte superior de la ventana hay una **lupa**:
+  escribe en el buscador para filtrar por el **nombre** de la persona
+  o por su **personaje** (en el reparto) o su **función** (en la
+  producción); con la tecla **Esc** se limpia la búsqueda. La ventana
+  se cierra con la **✕**, con la tecla **Esc**
+  o pulsando fuera de ella. La fecha de estreno, la duración (o
+  temporadas y episodios en series), los géneros y la sinopsis ya se
+  muestran arriba, en la cabecera. En los videojuegos: desarrolladores,
+  editores y clasificación por edades (ESRB).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
@@ -1078,9 +1099,10 @@ tipo, verás:
   **«Añadida»** (botón deshabilitado).
 
   También puedes **pulsar sobre la tarjeta** de cualquiera de esas
-  películas para ver su información (portada, duración, género, director,
-  reparto, sinopsis, puntuación de la comunidad, dónde verla y tráiler
-  si lo tiene) antes de añadirla: se abre la **página de esa película**
+  películas para ver su información (portada, duración, género,
+  producción y reparto del título, sinopsis, puntuación de la
+  comunidad, dónde verla y tráiler si lo tiene) antes de añadirla: se
+  abre la **página de esa película**
   (navega, no es una ventana) — si aún no está en tu registro, verás su
   información completa con el botón **«Añadir»** (lo mismo que en la
   vista previa del catálogo; ver sección 12); usa el botón **←** de
@@ -1091,9 +1113,9 @@ tipo, verás:
   con títulos similares que puedes añadir directamente. También puedes
   **pulsar sobre la tarjeta** de una recomendación para ver su
   información ampliada (igual que las tarjetas de saga: portada,
-  duración, género, reparto, sinopsis, puntuación de la comunidad,
-  dónde verla y tráiler si lo tiene; en las series, además, sus
-  temporadas) antes de añadirla: se abre la **página de esa película o
+  duración, género, producción y reparto, sinopsis, puntuación de la
+  comunidad, dónde verla y tráiler si lo tiene; en las series, además,
+  sus temporadas) antes de añadirla: se abre la **página de esa película o
   serie** (navega, no es una ventana) — si aún no está en tu registro,
   verás su información completa con el botón **«Añadir»** (lo mismo que
   en la vista previa del catálogo; ver sección 12); usa el botón **←**

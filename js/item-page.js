@@ -46,6 +46,7 @@ import {
   previewSeasonsHtml,
   renderSagaMovies,
   renderRecommendations,
+  wireCastCrewClicks,
 } from "./ui.js";
 import { handleAdd } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
@@ -180,6 +181,7 @@ async function buildPreviewItem(kind, externalId) {
       overview: details.overview || "",
       genres: details.genres || [],
       cast: details.cast || [],
+      crew: details.crew || [],
       communityRating: details.communityRating ?? null,
       trailerUrl: details.trailerUrl || null,
       seasonsMeta,
@@ -212,6 +214,7 @@ async function buildPreviewItem(kind, externalId) {
     overview: details.overview || "",
     genres: details.genres || [],
     cast: details.cast || [],
+    crew: details.crew || [],
     runtime: details.runtime || null,
     communityRating: details.communityRating ?? null,
     trailerUrl: details.trailerUrl || null,
@@ -307,6 +310,10 @@ function paintPreview(
   `;
 
   target.querySelector("#btn-preview-back").addEventListener("click", goBack);
+
+  // Carruseles de elenco (issue #294): los botones «Ver en más
+  // detalle» de la preview (producción/reparto) con los datos del ítem.
+  wireCastCrewClicks(target, item);
 
   // Saga: añadir una película de la saga (mismo patrón que el callback
   // onAddSagaMovie de la ficha, modal-handlers.js) y abrir el selector.

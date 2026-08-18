@@ -1831,7 +1831,8 @@ body.is-back-to-top-visible .back-to-top {
 [data-theme="dark"] .item-view .standby-banner,
 [data-theme="dark"] .item-view .season-episodes,
 [data-theme="dark"] .item-view .rec-card,
-[data-theme="dark"] .item-view .saga-card {
+[data-theme="dark"] .item-view .saga-card,
+[data-theme="dark"] .item-view .cast-card {
   color: var(--ink);
 }
 

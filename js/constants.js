@@ -78,6 +78,7 @@ export const ON_DEMAND_DETAIL_FIELDS = [
   "description",
   "genres",
   "cast",
+  "crew",
   "director",
   "creators",
   "trailerUrl",

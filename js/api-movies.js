@@ -10,6 +10,10 @@ import { fetchJson } from "./http.js";
 
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMG_BASE = "https://image.tmdb.org/t/p/w342";
+// Fotos de personas del elenco (issue #294): w185 equilibra nitidez y
+// peso para las tarjetas de los carruseles y las filas de la ventana
+// (mismo patrón de tamaño alternativo que las colecciones).
+const IMG_PERSON = "https://image.tmdb.org/t/p/w185";
 
 export async function searchMovies(searchTerm, page = 1) {
   const url = `${BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&language=es-ES&include_adult=false&page=${page}&query=${encodeURIComponent(
@@ -57,6 +61,52 @@ function mapTvResult(r) {
     coverUrl: r.poster_path ? `${IMG_BASE}${r.poster_path}` : null,
     overview: r.overview || "",
   };
+}
+
+// Persona del reparto (issue #294): nombre, personaje y foto. Se
+// conserva el orden de facturación de TMDB (order) para respetarlo en
+// carruseles y ventanas. Sin profile_path → profileUrl null (la UI
+// pone un placeholder).
+function mapCastPerson(c) {
+  return {
+    id: c.id,
+    name: c.name || "",
+    character: c.character || "",
+    profileUrl: c.profile_path ? `${IMG_PERSON}${c.profile_path}` : null,
+    order: c.order ?? 999,
+  };
+}
+
+// Persona del equipo técnico (issue #294): puesto (job) y área
+// (department) de TMDB, para agrupar la producción por áreas en la
+// ventana de detalle. Sin profile_path → profileUrl null.
+function mapCrewPerson(c) {
+  return {
+    id: c.id,
+    name: c.name || "",
+    job: c.job || "",
+    department: c.department || "Otros",
+    profileUrl: c.profile_path ? `${IMG_PERSON}${c.profile_path}` : null,
+    order: c.order ?? 999,
+  };
+}
+
+// Fusiona los creadores de una serie (data.created_by) en la lista de
+// crew, cuando no estén ya presentes por id: los creadores se muestran
+// en el carrusel de producción junto al resto del equipo (issue #294).
+function mergeCreatorsIntoCrew(crew, createdBy) {
+  const ids = new Set(crew.map((c) => c.id));
+  const creators = (createdBy || [])
+    .filter((c) => c.id && !ids.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      name: c.name || "",
+      job: "Creador",
+      department: "Creadores",
+      profileUrl: c.profile_path ? `${IMG_PERSON}${c.profile_path}` : null,
+      order: -1, // los creadores encabezan la producción
+    }));
+  return [...creators, ...crew];
 }
 
 // Normaliza la lista de temporadas que devuelve TMDB: se ignoran los
@@ -133,12 +183,13 @@ function _extractTrailerUrl(videos) {
 }
 
 // Datos ampliados de una película: duración, sinopsis, género,
-// director, reparto principal, colección/saga y tráiler. Con el
-// almacenamiento mínimo (issue #200) se piden bajo demanda al
-// abrir la ficha (y de paso al alta para conocer la fecha de
-// estreno), con caché en memoria de 24 h (la misma compartida que
-// los watch providers): una ficha recién añadida o ya visitada no
-// vuelve a llamar a la API.
+// ELENCO COMPLETO (issue #294): reparto (cast) con personaje y foto, y
+// equipo técnico (crew) con puesto y área para los carruseles de la
+// ficha, colección/saga y tráiler. Con el almacenamiento mínimo
+// (issue #200) se piden bajo demanda al abrir la ficha (y de paso al
+// alta para conocer la fecha de estreno), con caché en memoria de 24 h
+// (la misma compartida que los watch providers): una ficha recién
+// añadida o ya visitada no vuelve a llamar a la API.
 export async function getMovieDetails(id) {
   const cacheKey = `details_movie_${id}`;
   const cached = getCached(cacheKey);
@@ -157,7 +208,10 @@ export async function getMovieDetails(id) {
     runtime: data.runtime || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
-    cast: ((data.credits && data.credits.cast) || []).slice(0, 5).map((c) => c.name),
+    // Elenco completo (issue #294), para los carruseles de producción
+    // y reparto de la ficha. Antes solo se guardaban 5 nombres.
+    cast: ((data.credits && data.credits.cast) || []).map(mapCastPerson),
+    crew: ((data.credits && data.credits.crew) || []).map(mapCrewPerson),
     director: director ? director.name : null,
     releaseDate: data.release_date || null,
     communityRating: data.vote_count > 0 ? data.vote_average : null,
@@ -209,7 +263,9 @@ export async function getCollectionDetails(collectionId) {
 }
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,
-// género, creadores, reparto principal, estado de emisión, próximo
+// género, creadores, ELENCO COMPLETO (issue #294): reparto (cast) con
+// personaje y foto, y equipo técnico (crew) con puesto y área (con los
+// creadores fusionados al principio), estado de emisión, próximo
 // episodio a emitir (si lo hay) y tráiler. Con el almacenamiento
 // mínimo (issue #200) se piden bajo demanda al abrir la ficha (y de
 // paso al alta para conocer estrenos/fechas de temporada), con caché
@@ -230,7 +286,14 @@ export async function getTvExtraDetails(id) {
     episodeRuntime: (data.episode_run_time && data.episode_run_time[0]) || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
-    cast: ((data.credits && data.credits.cast) || []).slice(0, 5).map((c) => c.name),
+    // Elenco completo (issue #294): antes solo 5 nombres. Los
+    // creadores se añaden al crew como área "Creadores" (sin duplicar
+    // por id), además de conservarse en el campo creators (compat).
+    cast: ((data.credits && data.credits.cast) || []).map(mapCastPerson),
+    crew: mergeCreatorsIntoCrew(
+      ((data.credits && data.credits.crew) || []).map(mapCrewPerson),
+      data.created_by
+    ),
     creators: (data.created_by || []).map((c) => c.name),
     tmdbStatus: data.status || null,
     firstAirDate: data.first_air_date || null,
