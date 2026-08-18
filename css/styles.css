@@ -2013,13 +2013,20 @@ body.is-back-to-top-visible .back-to-top {
    dentro del toggle ocre (iteración 3 de la issue #298). Tamaño
    ajustado para que entren hasta dos dígitos en el círculo de
    3.5rem; por encima de 99 se muestra «99+» (defensa en JS). El
-   dúo ocre/ink supera 4.5:1 (AA texto). */
+   dúo ocre/ink de la familia oscura supera 4.5:1 (AA texto).
+   Modo claro: --ink #2c2822 sobre el ocre se queda en 4.39:1, así
+   que el contador (texto) usa negro puro; el blanco puro ya hereda
+   --ink #000. El hover (toggle ocre oscuro + texto paper) supera
+   5:1 en las cuatro familias. */
 .item-fab__count {
   font-family: var(--font-body);
   font-size: 1.15rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.01em;
+}
+[data-theme="light"] .item-fab__count {
+  color: #000000;
 }
 
 .item-fab__menu {
