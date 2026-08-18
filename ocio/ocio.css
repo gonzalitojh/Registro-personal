@@ -807,29 +807,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 
 /* =========================================================
-   Saga/collection banner (modal de película)
-   ========================================================= */
-
-.saga-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  background: var(--paper-dim);
-  border-radius: var(--radius);
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 1.1rem;
-  font-size: 0.85rem;
-}
-
-.saga-banner__label {
-  font-size: 0.85rem;
-  color: var(--ink);
-}
-
-
-/* =========================================================
    Formulario de alta manual
    ========================================================= */
 
@@ -846,10 +823,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-size: 1rem;
 }
 
-
-/* =========================================================
-   Modal selector de saga (checklist de películas)
-   ========================================================= */
 
 .view-toggle {
   display: flex;
@@ -1499,82 +1472,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* =========================================================
-   Modal selector de saga (checklist de películas)
-   ========================================================= */
-
-.saga-subtitle {
-  font-size: 0.82rem;
-  color: var(--ink-soft);
-  margin: 0 0 0.8rem;
-}
-
-.saga-list {
-  max-height: 340px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  padding: 0.4rem;
-  background: #fff;
-}
-
-.saga-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.35rem 0.4rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.1s ease;
-}
-.saga-row:hover {
-  background: var(--paper-dim);
-}
-
-.saga-row input[type="checkbox"] {
-  accent-color: var(--teal-reel);
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-}
-
-.saga-row__cover {
-  width: 36px;
-  height: 54px;
-  object-fit: cover;
-  border-radius: 2px;
-  flex-shrink: 0;
-  background: var(--paper-dim);
-}
-
-.saga-row__title {
-  flex: 1;
-  font-size: 0.82rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.saga-row__year {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--ink-soft);
-  flex-shrink: 0;
-}
-
-
-.saga-count {
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  text-align: right;
-  margin: 0 0 0.2rem;
-}
-
-/* =========================================================
    Móvil: evitar que iOS haga zoom automático al enfocar los
    campos propios de ocio (Safari hace zoom si el font-size es
    menor de 16px)
@@ -1934,12 +1831,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   outline-offset: 2px;
 }
 
-.saga-row:focus-within {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 2px;
-  border-radius: var(--radius);
-}
-
 .sort-select:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
@@ -1995,7 +1886,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .season-episodes,
 [data-theme="black"] .view-toggle__btn.is-active,
 [data-theme="black"] .list-row__content,
-[data-theme="black"] .saga-list,
 [data-theme="black"] .watch-provider,
 [data-theme="black"] .game-platform {
   background: var(--ink-raised);
@@ -2055,7 +1945,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .season-toggle,
 [data-theme="black"] .episode-average strong,
 [data-theme="black"] .rewatch-history summary,
-[data-theme="black"] .saga-banner__label,
 [data-theme="black"] .desc-picker__text,
 [data-theme="black"] .extra-info__line,
 [data-theme="black"] .extra-info__loading,
