@@ -3,7 +3,7 @@
 // episodio o avanzar lectura sin abrir el modal. Extraído de app.js.
 // =============================================================
 
-import { addWatch, statusFromWatchLog } from "./watch-log.js";
+import { addWatch, removeWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
 import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry, markAllSeasonsWatched } from "./tv-progress.js";
@@ -92,6 +92,77 @@ export async function quickMarkMovie(item, ctx) {
     },
   });
   ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);
+}
+
+// Exportado (issue #298): «Quitar última visualización» del botón
+// flotante en ficha. Quita la última entrada del watchLog (la de
+// fecha más reciente); si era el único visionado la película vuelve
+// a «pendiente» (y el FAB repinta al estado añadido/verde).
+// Mismo patrón de persistencia/mutación que quickMarkMovie (sin
+// ventana de valoración: la acción inversa no la abre, issue #136
+// aplica a marcas nuevas).
+export async function quickUnwatchMovie(item, ctx) {
+  const log = item.watchLog || [];
+  if (!log.length) return;
+  const newLog = removeWatch(log, log.length - 1);
+  const status = statusFromWatchLog(newLog);
+  await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
+    watchLog: newLog,
+    status,
+    awaitingRelease: false,
+  });
+  item.watchLog = newLog;
+  item.status = status;
+  item.awaitingRelease = false;
+  ctx.showToast(`«${item.title}»: última visualización quitada.`);
+}
+
+// Exportado (issue #298): «Quitar última visualización» del botón
+// flotante en ficha de SERIE. La última visualización de una serie
+// es la del episodio con la fecha de marcado MÁS RECIENTE; si varios
+// episodios comparten fecha (marcados en bloque tras «Ver siguiente»
+// o al marcar la serie completa), se desmarca el de mayor
+// temporada/episodio. Si era el episodio que completaba la serie,
+// vuelve a «en curso» (el FAB repinta a añadido/verde).
+export async function quickUnwatchTv(item, ctx) {
+  const watched = item.watched || {};
+  // Clave del último episodio visto: season|episode con la fecha
+  // máxima; desempate por temporada/episodio más altos. La entrada
+  // guardada puede ser string legacy o {date, rating, times}, así que
+  // se normaliza antes de comparar (issue #133 / #298).
+  let lastKey = null;
+  let lastDate = "";
+  for (const [s, eps] of Object.entries(watched)) {
+    for (const [e, d] of Object.entries(eps)) {
+      const entry = normalizeEntry(d);
+      const date = entry ? entry.date : "";
+      if (date > lastDate || (date === lastDate && (Number(s) > Number(lastKey.split("|")[0]) || (Number(s) === Number(lastKey.split("|")[0]) && Number(e) > Number(lastKey.split("|")[1]))))) {
+        lastDate = date;
+        lastKey = `${s}|${e}`;
+      }
+    }
+  }
+  if (!lastKey) return;
+  const [season, episode] = lastKey.split("|").map(Number);
+  const newWatched = setEpisodeDate(watched, season, episode, null);
+  const seasonsMeta = await getSeasonsMetaFor(item, ctx);
+  const progress = computeProgress(seasonsMeta, newWatched);
+  const payload = {
+    watched: newWatched,
+    status: progress.status,
+    nextEpisode: progress.nextEpisode,
+    firstWatchedAt: progress.firstWatchedAt,
+    lastWatchedAt: progress.lastWatchedAt,
+    awaitingRelease: false,
+  };
+  await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
+  item.watched = newWatched;
+  item.status = payload.status;
+  item.nextEpisode = payload.nextEpisode;
+  item.firstWatchedAt = payload.firstWatchedAt;
+  item.lastWatchedAt = payload.lastWatchedAt;
+  item.awaitingRelease = false;
+  ctx.showToast(`«${item.title}»: última visualización quitada.`);
 }
 
 async function quickMarkBook(item, ctx) {

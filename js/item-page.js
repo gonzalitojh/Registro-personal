@@ -23,7 +23,6 @@ import * as ui from "./ui.js";
 import {
   openMovieItem,
   openTvItem,
-  setItemPageBackHandler,
   addSagaMovie,
   addFromRecommendation,
 } from "./modal-handlers.js";
@@ -51,7 +50,8 @@ import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
-import { quickMarkMovie, quickMarkTvComplete, promptItemRating } from "./quick-actions.js";
+import { quickMarkMovie, quickMarkTvComplete, promptItemRating, quickUnwatchMovie, quickUnwatchTv } from "./quick-actions.js";
+import { scheduleDeletion } from "./undo-delete.js";
 
 let pageCtx = null;
 let ensureGroup = null;
@@ -151,10 +151,16 @@ function renderItemContent() {
 //   - preview (ítem aún no añadido): «Añadir», «Marcar como vista»
 //     (añade y marca como vista) y «Valorar» (añade y abre la
 //     valoración).
-// El botón se ve DISTINTO según el estado (iteración 3 de la issue
-// #298), con TRES estados diferenciados:
-//   - no añadido (preview): icono + verde (se puede añadir).
-//   - añadido y no visto (ficha): icono + azul acero.
+//   - ficha (ítem en el registro): opción inversa («Quitar de
+//     añadidos» si no está visto; «Quitar última visualización» si
+//     sí lo está — en series, el último episodio marcado; en
+//     películas, la última entrada del historial), «Marcar como
+//     vista» (u «Añadir otro visionado» en películas ya vistas) y
+//     «Valorar».
+// El botón se ve DISTINTO según el estado (iteraciones 3 y 4 de la
+// issue #298), con TRES estados diferenciados:
+//   - no añadido (preview): icono + gris del tema (se puede añadir).
+//   - añadido y no visto (ficha): icono + verde.
 //   - visto (ficha): ✓ ocre; en una película vista MÁS DE UNA VEZ el
 //     ✓ se sustituye por el NÚMERO de visionados.
 // En series solo se distinguen estos tres estados (completada =
@@ -165,6 +171,11 @@ const FAB_ICONS = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  // Iteración 4 (issue #298): opción inversa según el estado de la
+  // ficha — papelera para «Quitar de añadidos» (no visto) y flecha
+  // circular para «Quitar última visualización» (visto).
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  rotateCcw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
 };
 
 // Ángulos (grados) de las opciones alrededor del botón, medidos desde
@@ -232,6 +243,11 @@ function openFabMenu() {
 // Opciones del menú según el contexto (ver cabecera de la sección).
 // Devuelve [{ action, icon, label }]: la posición circular la calcula
 // renderFab (ángulos de FAB_ARC_ANGLES según el número de opciones).
+// Iteración 4 (issue #298): en la ficha la opción inversa a «Añadir»
+// es la primera del abanico — «Quitar de añadidos» si el ítem NO está
+// visto, «Quitar última visualización» si SÍ lo está (en series, la
+// última visualización es el último episodio marcado; en películas,
+// la última entrada del watchLog).
 function fabOptions(item, mode) {
   if (mode === "preview") {
     const label = item.type === "tv" ? "Añadir serie" : "Añadir película";
@@ -250,6 +266,21 @@ function fabOptions(item, mode) {
   const markable =
     !isTv || (!["completado", "standby", "abandonado"].includes(item.status) && item.nextEpisode);
   const actions = [];
+  // Opción inversa a «Añadir» (ficha): quitar de añadidos, o quitar
+  // la última visualización si ya está visto (issue #298, iteración 4).
+  if (seen) {
+    actions.push({
+      action: "unwatch",
+      icon: FAB_ICONS.rotateCcw,
+      label: "Quitar última visualización",
+    });
+  } else {
+    actions.push({
+      action: "remove",
+      icon: FAB_ICONS.trash,
+      label: "Quitar de añadidos",
+    });
+  }
   if (markable) {
     // Película ya vista: «Marcar como vista» añade otro visionado
     // (mismo comportamiento que el botón Vista de la lista).
@@ -262,9 +293,9 @@ function fabOptions(item, mode) {
 
 // Pinta (o repinta) el botón flotante dentro de #item-view. mode:
 // "ficha" (ítem en el registro) o "preview" (aún no añadido).
-// Tres estados visuales (iteración 3 de la issue #298), ver cabecera
-// de la sección: preview → + verde; ficha sin ver → + azul acero
-// (clase .item-fab--added); ficha visto → ✓ ocre (clase
+// Tres estados visuales (iteraciones 3 y 4 de la issue #298), ver
+// cabecera de la sección: preview → + gris del tema; ficha sin ver →
+// + verde (clase .item-fab--added); ficha visto → ✓ ocre (clase
 // .item-fab--seen), con el NÚMERO de visionados en lugar del ✓ cuando
 // una película se ha visto más de una vez. El aria-label del toggle
 // refleja el estado («no añadido», «pendiente», «visto» o «visto N
@@ -339,6 +370,15 @@ async function runFabAction(item, action) {
       await addFromPreview(item);
       return;
     }
+    if (action === "remove") {
+      // Iteración 4 (issue #298): «Quitar de añadidos» programa el
+      // borrado con deshacer (mismo flujo que el antiguo botón
+      // «Eliminar» del final de la ficha, scheduleDeletion de
+      // undo-delete.js) y vuelve a la pantalla previa.
+      scheduleDeletion(item, pageCtx.getCurrentUser().uid, item.type, pageCtx);
+      goBack();
+      return;
+    }
     if (currentMode === "preview") {
       if (action === "mark") await addSeenFromPreview(item);
       else if (action === "rate") await addAndRateFromPreview(item);
@@ -349,6 +389,12 @@ async function runFabAction(item, action) {
       else await quickMarkMovie(item, pageCtx);
     } else if (action === "rate") {
       await promptItemRating(item, pageCtx);
+    } else if (action === "unwatch") {
+      // Iteración 4 (issue #298): «Quitar última visualización».
+      // Película: elimina la última entrada del watchLog; serie:
+      // desmarca el último episodio visto (ver quick-actions.js).
+      if (item.type === "tv") await quickUnwatchTv(item, pageCtx);
+      else await quickUnwatchMovie(item, pageCtx);
     }
     if (isCurrent(currentToken)) {
       renderFicha(item, true);
@@ -985,9 +1031,6 @@ function handleEscape(e) {
 export function setupItemPage(ctx, opts = {}) {
   pageCtx = ctx;
   ensureGroup = opts.ensureGroup || null;
-
-  // Hook de «volver» para modal-handlers (eliminar en modo página).
-  setItemPageBackHandler(goBack);
 
   document.getElementById("btn-item-back")?.addEventListener("click", goBack);
   document.addEventListener("keydown", handleEscape, true);
