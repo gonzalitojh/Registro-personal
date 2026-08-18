@@ -2130,3 +2130,214 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .item-card__stamp--en_curso { color: #1c4a41; }
 [data-theme="black"] .item-card__stamp--completado { color: #8f6522; }
 [data-theme="black"] .item-card__stamp--abandonado { color: #7e2c22; }
+
+/* =========================================================
+   Carruseles de elenco (issue #294): producción y reparto en
+   la ficha de películas/series. Mismo patrón que las
+   recomendaciones (.recommendations__scroll + .rec-card):
+   scroll horizontal SOLO dentro de su contenedor (permitido
+   por AGENTS.md), tarjetas con foto, nombre y puesto/personaje.
+   ========================================================= */
+
+.cast-crew {
+  margin: 1.2rem 0 0.4rem;
+}
+
+.cast-crew__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.cast-crew__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cast-crew__count {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.cast-crew__more {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.55rem;
+  min-height: 28px;
+}
+
+.cast-crew__scroll {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cast-crew__scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.cast-crew__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cast-crew__scroll::-webkit-scrollbar-thumb {
+  background: var(--paper-line);
+  border-radius: 4px;
+}
+
+.cast-card {
+  flex: 0 0 96px;
+  scroll-snap-align: start;
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+}
+
+.cast-card__photo {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background: var(--paper-dim);
+}
+
+.cast-card__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0.35rem 0.4rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.cast-card__role {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--ink-soft);
+  line-height: 1.3;
+  padding: 0.15rem 0.4rem 0.45rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Ventana de detalle del elenco (issue #294): #cast-modal.
+   Lista completa del reparto o de la producción; la producción
+   se agrupa por áreas (departamentos). Reutiliza el armazón
+   .modal__card--wide y las variables de tema del modal.
+   ========================================================= */
+
+.cast-modal__header {
+  border-bottom: 1px solid var(--paper-line);
+  padding-bottom: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.cast-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin: 0 0 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__subtitle {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__section {
+  margin-bottom: 0.9rem;
+}
+
+.cast-modal__area {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0 0 0.35rem;
+}
+
+.cast-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cast-modal__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--paper-alpha-14);
+  min-width: 0;
+}
+
+.cast-modal__row:last-child {
+  border-bottom: none;
+}
+
+.cast-modal__photo {
+  width: 44px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.cast-modal__person {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cast-modal__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__role {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__empty {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0.4rem 0;
+}
+
+/* Tarjetas de elenco algo más compactas en móvil estrecho */
+@media (max-width: 400px) {
+  .cast-card {
+    flex-basis: 84px;
+  }
+}
