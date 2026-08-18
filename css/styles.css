@@ -1980,6 +1980,13 @@ body.is-back-to-top-visible .back-to-top {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  /* Shrink-to-fit: sin width explícito, un elemento posicionado con
+     left:50% dentro del menú de 3.5rem se encoge al ancho disponible
+     (~28 px) y el texto envuelve a una letra por línea (pastillas
+     verticales con solapes). max-content da el ancho natural de la
+     etiqueta; max-width + overflow-wrap son la red de seguridad para
+     etiquetas largas en móvil (regla 2 de AGENTS.md). */
+  width: max-content;
   max-width: min(11.5rem, calc(100vw - 3.5rem));
   overflow-wrap: anywhere;
   white-space: normal;

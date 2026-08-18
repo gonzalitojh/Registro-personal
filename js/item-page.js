@@ -163,8 +163,8 @@ const FAB_ICONS = {
 };
 
 // Ángulos (grados) de las opciones alrededor del botón, medidos desde
-// el centro del FAB: 0° = arriba, 90° = izquierda (los ángulos
-// negativos giran hacia la derecha). El abanico vive en el cuadrante
+// el centro del FAB: 0° = arriba, -90° = izquierda (los ángulos
+// negativos giran hacia la izquierda). El abanico vive en el cuadrante
 // superior-izquierdo: es el espacio libre para un botón anclado abajo
 // a la derecha (la parte derecha del círculo no cabe en pantallas
 // estrechas). Los ángulos están espaciados para que las pastillas
@@ -314,7 +314,13 @@ async function runFabAction(item, action) {
     } else if (action === "rate") {
       await promptItemRating(item, pageCtx);
     }
-    if (isCurrent(currentToken)) renderFicha(item, true);
+    if (isCurrent(currentToken)) {
+      renderFicha(item, true);
+      // El repintado elimina la pastilla que tenía el foco (y el modal
+      // de valoración lo deja en body al cerrarse): restaurar el foco
+      // en el toggle del FAB nuevo para no perder el anclaje de teclado.
+      fabEl()?.querySelector(".item-fab__toggle")?.focus();
+    }
   } catch (err) {
     ui.showToast("No se pudo actualizar: " + (err && err.message ? err.message : err));
   }
@@ -411,6 +417,9 @@ async function addAndRateFromPreview(item) {
     if (registered && isCurrent(currentToken)) {
       await promptItemRating(registered, pageCtx);
       renderFicha(registered, true);
+      // Mismo patrón que runFabAction: devolver el foco al toggle del
+      // FAB nuevo (el repintado y el modal lo dejan en body).
+      fabEl()?.querySelector(".item-fab__toggle")?.focus();
     }
   } catch (err) {
     target.disabled = false;
