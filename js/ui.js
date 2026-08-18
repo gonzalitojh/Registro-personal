@@ -1485,7 +1485,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   // Modo página (issue #285): con target (contenedor de #item-view) la
   // ficha se renderiza en la página y no se abre el modal ni su focus
@@ -1519,7 +1519,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
 
   content.innerHTML = `
     ${headerHtml}
-    ${editButtonHtml()}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
@@ -1562,8 +1561,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // existingIds compartido. El target se propaga para que la ficha
   // vuelva a pintarse en la página en modo página (issue #285).
   const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts, { target });
-
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
   // Carruseles de elenco (issue #294): cablear los botones «Ver en más
   // detalle» de producción/reparto con los datos de este ítem.
@@ -2178,7 +2175,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onSetStatus,
     onSaveMeta,
     onDelete,
-    onEdit,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
@@ -2224,7 +2220,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   content.innerHTML = `
     ${headerHtml}
-    ${editButtonHtml()}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
@@ -2595,8 +2590,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       await onRewatch();
     });
   }
-
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
   // Carruseles de elenco (issue #294): ver openMovieModal.
   wireCastCrewClicks(content, item);

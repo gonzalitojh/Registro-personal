@@ -228,7 +228,6 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
     onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
     onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
-    onEdit: editHandlerFor(item, "movie", reopen, ctx, target),
     onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
@@ -752,7 +751,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
 
     onSaveMeta: saveMeta(item, "tv", ctx, target ? reopen : null),
     onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
-    onEdit: editHandlerFor(item, "tv", reopen, ctx, target),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
