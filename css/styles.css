@@ -1900,7 +1900,8 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-20);
 }
 [data-theme="dark"] .item-view .episode-average strong,
-[data-theme="dark"] .item-view .rewatch-history summary {
+[data-theme="dark"] .item-view .rewatch-history summary,
+[data-theme="dark"] .item-view .watch-log-details summary {
   color: var(--paper);
 }
 /* Botones transparentes sobre el fondo oscuro de la página (antes
