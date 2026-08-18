@@ -12,7 +12,7 @@
 // #app). Dos modos de contenido:
 //   - El ítem YA está en el registro → ficha completa en página
 //     (openMovieItem/openTvItem en modo target, con todas sus
-//     acciones: visionados, temporadas, valoración, editar, borrar).
+//     acciones: visionados, temporadas, valoración, borrar).
 //   - El ítem NO está en el registro (resultado del catálogo o URL
 //     compartida) → vista previa con los detalles de TMDB y botón
 //     «Añadir»; al añadirlo, la página pasa a la ficha completa.
@@ -26,7 +26,6 @@ import {
   setItemPageBackHandler,
   addSagaMovie,
   addFromRecommendation,
-  openSagaSelector,
 } from "./modal-handlers.js";
 import {
   getMovieDetails,
@@ -262,7 +261,7 @@ async function loadPreviewExtras(token, item) {
 // géneros, director/creadores, reparto, sinopsis), temporadas
 // detalladas (series), saga (si movie con collectionId) y
 // recomendaciones. Las acciones del REGISTRO (visionados, valoración
-// personal, notas, editar, eliminar) no aplican sin ítem en el
+// personal, notas, eliminar) no aplican sin ítem en el
 // registro: se conservan el aviso «aún no añadido» y el botón Añadir.
 function paintPreview(
   target,
@@ -283,12 +282,7 @@ function paintPreview(
     item.releaseDate || item.firstAirDate ? upcomingBadge(item) : "";
 
   const sagaHtml = item.collectionId
-    ? `
-    <div class="saga-banner">
-      <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName || "")}</span>
-      <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
-    </div>
-    ${renderSagaMovies(sagaParts, existingIds, true, onOpenSagaMovie)}`
+    ? renderSagaMovies(sagaParts, existingIds, true, onOpenSagaMovie)
     : "";
 
   target.innerHTML = `
@@ -316,13 +310,7 @@ function paintPreview(
   wireCastCrewClicks(target, item);
 
   // Saga: añadir una película de la saga (mismo patrón que el callback
-  // onAddSagaMovie de la ficha, modal-handlers.js) y abrir el selector.
-  const addSagaBtn = target.querySelector("#btn-add-saga");
-  if (addSagaBtn) {
-    addSagaBtn.addEventListener("click", () => {
-      openSagaSelector(item, pageCtx);
-    });
-  }
+  // onAddSagaMovie de la ficha, modal-handlers.js).
   if (sagaParts) {
     target.querySelectorAll(".saga-card__add").forEach((btn) => {
       btn.addEventListener("click", async () => {

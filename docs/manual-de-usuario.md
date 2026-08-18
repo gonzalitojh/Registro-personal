@@ -302,10 +302,9 @@ reinicia la serie para que empieces de nuevo. Verás el aviso
 En la ficha de una serie terminada puedes desplegar **«Visionados
 anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
 
-### 4.7 Editar y eliminar
+### 4.7 Eliminar
 
-En la ficha: **«✎ Editar información»** te permite corregir datos (título,
-año, portada...), y **«Eliminar»** borra la serie. El borrado no es
+En la ficha, **«Eliminar»** borra la serie. El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
 
@@ -1084,19 +1083,17 @@ tipo, verás:
   se cierra con la **✕**, con la tecla **Esc**
   o pulsando fuera de ella. La fecha de estreno, la duración (o
   temporadas y episodios en series), los géneros y la sinopsis ya se
-  muestran arriba, en la cabecera. En los videojuegos: desarrolladores,
-  editores y clasificación por edades (ESRB).
+  muestran arriba, en la cabecera. Cada sección de la ficha va
+  separada por una **línea horizontal**. En los videojuegos:
+  desarrolladores, editores y clasificación por edades (ESRB).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
-- **Sagas** (películas): si la película forma parte de una saga, aparece
-  el aviso **«Saga: ...»** con el botón **«Añadir resto de la saga»**. Pulsa
-  el botón, marca las películas que quieras en la lista y pulsa
-  **«Añadir seleccionadas»**. Justo debajo del aviso se muestran también
-  **«Otras películas de la saga»** como tarjetas deslizables (portada,
-  título y año), igual que las recomendaciones: cada película que aún no
-  tengas en tu registro tiene un botón **«Añadir»** para añadirla
-  directamente; las que ya están en tu registro aparecen como
-  **«Añadida»** (botón deshabilitado).
+- **Sagas** (películas): si la película forma parte de una saga, se
+  muestran **«Otras películas de la saga»** como tarjetas deslizables
+  (portada, título y año), igual que las recomendaciones: cada
+  película que aún no tengas en tu registro tiene un botón **«Añadir»**
+  para añadirla directamente; las que ya están en tu registro aparecen
+  como **«Añadida»** (botón deshabilitado).
 
   También puedes **pulsar sobre la tarjeta** de cualquiera de esas
   películas para ver su información (portada, duración, género,

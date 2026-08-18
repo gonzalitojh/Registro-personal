@@ -1411,8 +1411,8 @@ export function renderRecommendations(items, existingIds, group, interactive, on
  * @param {boolean} interactive - true si se muestran botones "Añadir"
  * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
  *                               un botón pulsable que llama onOpen(movie)
- *                               para abrir la vista previa de esa
- *                               película antes de añadirla (issue #280)
+ *                               para abrir la página de detalle de esa
+ *                               película (issue #285)
  * @returns {string} HTML de la sección, o cadena vacía
  */
 export function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
@@ -1485,7 +1485,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
+  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   // Modo página (issue #285): con target (contenedor de #item-view) la
   // ficha se renderiza en la página y no se abre el modal ni su focus
@@ -1519,19 +1519,13 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
 
   content.innerHTML = `
     ${headerHtml}
-    ${editButtonHtml()}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
     ${watchProvidersHtml(item)}
     ${infoHtml}
 
-    ${item.collectionId ? `
-    <div class="saga-banner">
-      <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
-      <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
-    </div>
-    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie)}` : ""}
+    ${item.collectionId ? renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie) : ""}
 
     ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation, onOpenRecommendation)}
 
@@ -1563,18 +1557,9 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // vuelva a pintarse en la página en modo página (issue #285).
   const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts, { target });
 
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
-
   // Carruseles de elenco (issue #294): cablear los botones «Ver en más
   // detalle» de producción/reparto con los datos de este ítem.
   wireCastCrewClicks(content, item);
-
-  const addSagaBtn = content.querySelector("#btn-add-saga");
-  if (addSagaBtn) {
-    addSagaBtn.addEventListener("click", () => {
-      if (onAddSaga) onAddSaga();
-    });
-  }
 
   // Wire recommendation "Añadir" buttons
   if (onAddRecommendation) {
@@ -1672,71 +1657,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     }
     return;
   }
-
-  // Record previous focus and trap
-  modal._previousActiveElement = document.activeElement;
-  modal.classList.remove("hidden");
-  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
-}
-
-/* ---------- Modal selector de sagas ---------- */
-
-// Muestra un modal con checklist de películas de una saga para que
-// el usuario seleccione cuáles quiere añadir a su registro.
-export function openSagaSelectionModal(collectionName, movies, callbacks) {
-  const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
-
-  function renderList() {
-    return movies.map((m, i) => `
-      <label class="saga-row" data-index="${i}">
-        <input type="checkbox" class="saga-checkbox" data-index="${i}" checked />
-        <img class="saga-row__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
-        <span class="saga-row__title">${escapeHtml(m.title)}</span>
-        <span class="saga-row__year">${escapeHtml(m.year || "")}</span>
-      </label>
-    `).join("");
-  }
-
-  content.innerHTML = `
-    <h3 class="modal-detail__title" style="margin-bottom:0.3rem">${escapeHtml(collectionName)}</h3>
-    <p class="saga-subtitle">Selecciona las películas que quieras añadir:</p>
-    <div class="saga-list" id="saga-list">
-      ${renderList()}
-    </div>
-    <p class="saga-count" id="saga-count">Seleccionadas: ${movies.length}/${movies.length}</p>
-    <div class="modal-actions">
-      <button type="button" class="btn btn--outline" id="btn-saga-cancel">Cancelar</button>
-      <button type="button" class="btn btn--accent-media" id="btn-saga-confirm">Añadir seleccionadas</button>
-    </div>
-  `;
-
-  function allSelected() {
-    return content.querySelectorAll(".saga-checkbox:checked").length;
-  }
-
-  content.querySelectorAll(".saga-checkbox").forEach((cb) => {
-    cb.addEventListener("change", () => {
-      content.querySelector("#saga-count").textContent =
-        `Seleccionadas: ${allSelected()}/${movies.length}`;
-    });
-  });
-
-  content.querySelector("#btn-saga-cancel").addEventListener("click", () => {
-    callbacks.onCancel();
-  });
-
-  content.querySelector("#btn-saga-confirm").addEventListener("click", () => {
-    const selectedIndices = [];
-    content.querySelectorAll(".saga-checkbox:checked").forEach((cb) => {
-      selectedIndices.push(Number(cb.dataset.index));
-    });
-    if (!selectedIndices.length) {
-      showToast("Selecciona al menos una película.");
-      return;
-    }
-    callbacks.onConfirm(selectedIndices.map((i) => movies[i]));
-  });
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
@@ -2178,7 +2098,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onSetStatus,
     onSaveMeta,
     onDelete,
-    onEdit,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
@@ -2224,7 +2143,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   content.innerHTML = `
     ${headerHtml}
-    ${editButtonHtml()}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
@@ -2595,8 +2513,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       await onRewatch();
     });
   }
-
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
   // Carruseles de elenco (issue #294): ver openMovieModal.
   wireCastCrewClicks(content, item);
