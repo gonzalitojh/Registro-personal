@@ -267,9 +267,10 @@ la rueda del ratón el scroll nativo avanza a saltos, sin inercia.
    horizontal).
 
 Accesibilidad intacta: el carrusel sigue siendo un `overflow-x: auto`
-navegable por teclado (flechas) y el scroll inercial es una mejora
-progresiva que no interfiere con táctil. La versión PWA sube a
-`20261008` para invalidar las cachés del precache.
+(navegable igual que antes de esta iteración: el snap no aportaba
+teclado) y el scroll inercial es una mejora progresiva que no interfiere
+con táctil. La versión PWA sube a `20261008` para invalidar las cachés
+del precache.
 
 ## Archivos creados/modificados
 
