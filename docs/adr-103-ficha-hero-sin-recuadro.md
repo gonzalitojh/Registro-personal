@@ -44,19 +44,26 @@ un recuadro: el contenido va **directo sobre el fondo de la página** y
 ambos modos comparten una nueva cabecera «hero»:
 
 1. **Fuente única de verdad: `itemHeroHtml(item, { showUserRating =
-   true } = {})`**, exportado desde `js/ui.js`. Devuelve un
-   `<section class="item-hero">` con:
+   true, seasonsMeta = null } = {})`**, exportado desde `js/ui.js`.
+   Devuelve un `<section class="item-hero">` con:
    - **Portada grande a la izquierda** (`.item-hero__cover`): 150 px de
      ancho con `aspect-ratio: 2/3` (antes 92×138); 128 px en pantallas
      de ≤420 px para que el bloque de texto de la derecha conserve un
      ancho legible.
    - **A la derecha, el título en grande** (`.item-hero__title`, fuente
      display, `overflow-wrap: anywhere`).
-   - Debajo del título, **pequeñas etiquetas** (`.item-hero__tags`):
-     fecha de estreno formateada (o el año como fallback), duración
-     (`runtime` min; en series `~episodeRuntime` min, la de cada
-     episodio) y un tag por género. Si faltan datos (p. ej. render
-     optimista de búsqueda sin detalles), la lista se omite entera.
+   - Debajo del título, una **línea de meta en texto normal**
+     (`.item-hero__meta`, iteración issue #292): fecha de estreno
+     formateada (o el año como fallback) y duración — en **películas**,
+     `runtime` min; en **series**, el **nº de temporadas y episodios**
+     calculado de `seasonsMeta` (parámetro en la ficha, `item.seasonsMeta`
+     en la preview) en lugar de la duración; si no hay temporadas
+     (render optimista sin detalles), degradación a `~episodeRuntime`
+     min por episodio como texto.
+   - Debajo, **pequeñas etiquetas** (`.item-hero__tags`) **solo con los
+     géneros** (un tag por género). Si faltan datos (p. ej. render
+     optimista de búsqueda sin detalles), la línea de meta o la lista
+     se omiten enteras.
    - Debajo, una **fila de valoraciones** (`.item-hero__ratings`) con
      la nota de la comunidad (TMDB), las **estrellas de la valoración
      propia** (solo con `showUserRating` y solo si el ítem está
@@ -69,13 +76,15 @@ ambos modos comparten una nueva cabecera «hero»:
 
 2. **Compartido por ficha y preview**: en modo página
    (`openMovieModal`/`openTvModal` con `target`) la ficha usa
-   `itemHeroHtml(item)` con `showUserRating: true`; la preview
-   (`paintPreview` en item-page.js) usa
-   `itemHeroHtml(item, { showUserRating: false })` — la valoración
-   propia no aplica sin ítem en el registro. El **modal clásico** (sin
-   `target`: libros, videojuegos, preview de búsqueda y ficha de amigo
-   en solo lectura) conserva su cabecera `.modal-detail__header` y sus
-   bloques propios: sin cambios.
+   `itemHeroHtml(item)` con `showUserRating: true` (en series se pasa
+   además `seasonsMeta`, consultada aparte —issue #290—, para mostrar
+   temporadas y episodios); la preview (`paintPreview` en item-page.js)
+   usa `itemHeroHtml(item, { showUserRating: false })` — la valoración
+   propia no aplica sin ítem en el registro y las temporadas llegan en
+   `item.seasonsMeta` —. El **modal clásico** (sin `target`: libros,
+   videojuegos, preview de búsqueda y ficha de amigo en solo lectura)
+   conserva su cabecera `.modal-detail__header` y sus bloques propios:
+   sin cambios.
 
 3. **`extraInfoHtml` con opciones**: `{ skipMetaBits, skipOverview,
    skipStatusFallback }`. En la página (ficha y preview) la duración,
@@ -132,9 +141,16 @@ ambos modos comparten una nueva cabecera «hero»:
 
 - La ficha y la preview de películas/series se ven ahora **directas
   sobre el fondo de la página**, sin recuadro, con la cabecera hero:
-  portada grande, título en grande, etiquetas de fecha/duración/
-  géneros, fila de valoraciones (comunidad + propia + tráiler) y
-  sinopsis debajo.
+  portada grande, título en grande, línea de meta en texto normal
+  (fecha y duración; en series, temporadas y episodios), etiquetas
+  solo de géneros, fila de valoraciones (comunidad + propia + tráiler)
+  y sinopsis debajo.
+- La **fecha y la duración** ya no son etiquetas sino **texto normal**
+  (iteración issue #292); en las **series** se muestra el **nº de
+  temporadas y episodios** en lugar de la duración, calculado de
+  `seasonsMeta` (ficha: parámetro de `openTvModal`; preview:
+  `item.seasonsMeta`). Solo los **géneros** siguen como pequeñas
+  etiquetas.
 - La **nota de la comunidad y el botón de tráiler** pasan a la cabecera
   (antes eran bloques propios bajo el título); la **duración, los
   géneros y la sinopsis** salen de la «información ampliada», que en la
@@ -162,11 +178,11 @@ ambos modos comparten una nueva cabecera «hero»:
 - `js/item-page.js`: `renderItemContent` sin la tarjeta; `paintPreview`
   con `itemHeroHtml(item, { showUserRating: false })` y opciones de
   `extraInfoHtml`; foco al `.item-hero__title` en la preview.
-- `css/styles.css`: bloque `.item-hero` (portada, título, tags,
-  valoraciones, sinopsis), media query de ≤420 px y overrides de
-  familia oscura acotados a `.item-view`.
+- `css/styles.css`: bloque `.item-hero` (portada, título, línea de
+  meta, tags, valoraciones, sinopsis), media query de ≤420 px y
+  overrides de familia oscura acotados a `.item-view`.
 - `index.html` / `service-worker.js` / `js/config.js`: bump de versión
-  PWA a `20261004`.
+  PWA a `20261005`.
 - `docs/manual-de-usuario.md`: sección 12.
 - `docs/adr-103-ficha-hero-sin-recuadro.md`: este documento.
 

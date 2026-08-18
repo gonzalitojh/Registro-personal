@@ -802,29 +802,55 @@ export function detailStatusHtml(item) {
 }
 
 // Bloque «hero» de la página de ítem (issue #292): portada grande a
-// la izquierda y a la derecha el título en grande; debajo, pequeñas
-// etiquetas con la fecha de estreno, la duración y los géneros;
-// debajo, la valoración de la comunidad y la propia del usuario (solo
-// en la ficha: showUserRating) y el botón de tráiler; bajo todo ello,
-// la sinopsis. Cada sub-bloque es opcional: si faltan datos (p. ej.
-// render optimista de búsqueda sin detalles) las etiquetas se omiten
-// enteras y el hero queda con lo que haya. Exportado (issue #292): lo
-// usan la ficha (openMovieModal/openTvModal en modo página) y la
-// preview (paintPreview) para mostrar la misma cabecera.
-export function itemHeroHtml(item, { showUserRating = true } = {}) {
-  const tags = [];
+// la izquierda y a la derecha el título en grande; debajo, una línea
+// de meta en TEXTO NORMAL con la fecha de estreno y la duración (en
+// las series, el nº de temporadas y episodios en lugar de la
+// duración; iteración issue #292); debajo, pequeñas etiquetas solo
+// con los géneros; debajo, la valoración de la comunidad y la propia
+// del usuario (solo en la ficha: showUserRating) y el botón de
+// tráiler; bajo todo ello, la sinopsis. Cada sub-bloque es opcional:
+// si faltan datos (p. ej. render optimista de búsqueda sin detalles)
+// la línea de meta o las etiquetas se omiten enteras y el hero queda
+// con lo que haya. Exportado (issue #292): lo usan la ficha
+// (openMovieModal/openTvModal en modo página) y la preview
+// (paintPreview) para mostrar la misma cabecera.
+export function itemHeroHtml(item, { showUserRating = true, seasonsMeta = null } = {}) {
+  // Línea de meta como texto normal (iteración issue #292): la fecha
+  // de estreno (o el año) y la duración ya NO son etiquetas. En las
+  // series se muestra el nº de temporadas y episodios en lugar de la
+  // duración; seasonsMeta llega como parámetro en la ficha (issue
+  // #290: se consulta aparte) o en item.seasonsMeta en la preview.
+  const metaBits = [];
   const releaseDate =
     item.type === "tv" ? item.firstAirDate || null : item.releaseDate || null;
   if (releaseDate) {
-    tags.push(`<li class="item-hero__tag">${escapeHtml(formatDateEs(releaseDate))}</li>`);
+    metaBits.push(formatDateEs(releaseDate));
   } else if (item.year) {
-    tags.push(`<li class="item-hero__tag">${escapeHtml(item.year)}</li>`);
+    metaBits.push(String(item.year));
   }
   if (item.type === "tv") {
-    if (item.episodeRuntime) tags.push(`<li class="item-hero__tag">~${escapeHtml(String(item.episodeRuntime))} min</li>`);
+    const seasons = seasonsMeta || item.seasonsMeta || [];
+    if (seasons.length) {
+      const totalEpisodes = seasons.reduce((sum, s) => sum + (s.episodeCount || 0), 0);
+      metaBits.push(
+        `${seasons.length} temporada${seasons.length === 1 ? "" : "s"}${
+          totalEpisodes ? ` · ${totalEpisodes} episodio${totalEpisodes === 1 ? "" : "s"}` : ""
+        }`
+      );
+    } else if (item.episodeRuntime) {
+      // Degradación elegante: sin temporadas (render optimista sin
+      // detalles) se conserva la duración por episodio, como texto.
+      metaBits.push(`~${String(item.episodeRuntime)} min/episodio`);
+    }
   } else if (item.runtime) {
-    tags.push(`<li class="item-hero__tag">${escapeHtml(String(item.runtime))} min</li>`);
+    metaBits.push(`${String(item.runtime)} min`);
   }
+  const metaHtml = metaBits.length
+    ? `<p class="item-hero__meta">${escapeHtml(metaBits.join(" · "))}</p>`
+    : "";
+
+  // Etiquetas: solo los géneros (fecha y duración son texto normal).
+  const tags = [];
   if (item.genres && item.genres.length) {
     item.genres.forEach((g) => {
       tags.push(`<li class="item-hero__tag">${escapeHtml(g)}</li>`);
@@ -864,6 +890,7 @@ export function itemHeroHtml(item, { showUserRating = true } = {}) {
       <img class="item-hero__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
       <div class="item-hero__body">
         <h3 class="item-hero__title">${escapeHtml(item.title)}</h3>
+        ${metaHtml}
         ${tagsHtml}
         <div class="item-hero__ratings">
           ${communityRatingDisplay(item)}
@@ -1982,11 +2009,13 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const times = (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 
   // Cabecera (issue #292): en modo página la ficha usa el bloque hero
-  // (portada grande + título, etiquetas, valoraciones, tráiler y
-  // sinopsis) directamente sobre el fondo; en el modal clásico se
-  // conserva la cabecera de siempre.
+  // (portada grande + título, meta y etiquetas, valoraciones, tráiler
+  // y sinopsis) directamente sobre el fondo; en el modal clásico se
+  // conserva la cabecera de siempre. seasonsMeta (issue #292,
+  // iteración): las series muestran el nº de temporadas y episodios
+  // en lugar de la duración, y llega consultado aparte (issue #290).
   const headerHtml = target
-    ? itemHeroHtml(item)
+    ? itemHeroHtml(item, { showUserRating: true, seasonsMeta })
     : `
     <div class="modal-detail__header">
       <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />

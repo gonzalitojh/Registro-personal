@@ -1040,11 +1040,12 @@ tipo, verás:
 - **En películas y series, la ficha va directamente sobre el fondo de la
   página** (sin recuadro ni panel): a la izquierda, la **portada en
   grande**; a la derecha, el **título en grande**; debajo del título,
-  **pequeñas etiquetas** con la fecha de estreno (o el año), la duración
-  (en las series, la de cada episodio) y los géneros; debajo, la
-  **valoración de la comunidad**, **tu valoración** (solo si ya se la
-  has puesto) y el botón **Tráiler ▶**; y debajo de todo, la
-  **sinopsis**.
+  una **línea de texto normal** con la fecha de estreno (o el año) y la
+  duración — en las series, en lugar de la duración se indica el
+  **número de temporadas y episodios** —; debajo, **pequeñas etiquetas**
+  con los géneros; debajo, la **valoración de la comunidad**, **tu
+  valoración** (solo si ya se la has puesto) y el botón **Tráiler ▶**;
+  y debajo de todo, la **sinopsis**.
 - **Portada, título y año**: la cabecera clásica se mantiene en libros y
   videojuegos (en la vista previa de búsqueda de estos se indica el tipo
   y el año, p. ej. «Videojuego · año»).
@@ -1060,10 +1061,10 @@ tipo, verás:
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: en películas y series, director
-  (películas), creadores (series) y reparto — la duración, los géneros
-  y la sinopsis ya se muestran arriba, en la cabecera (etiquetas y
-  bloque de sinopsis) —. En los videojuegos: desarrolladores, editores y
-  clasificación por edades (ESRB).
+  (películas), creadores (series) y reparto — la fecha de estreno, la
+  duración (o temporadas y episodios en series), los géneros y la
+  sinopsis ya se muestran arriba, en la cabecera —. En los videojuegos:
+  desarrolladores, editores y clasificación por edades (ESRB).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, aparece
