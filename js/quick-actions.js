@@ -6,9 +6,9 @@
 import { addWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
-import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry } from "./tv-progress.js";
+import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry, markAllSeasonsWatched } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
-import { unreleasedConfirmMessage, episodeUnreleasedMessage } from "./release.js";
+import { unreleasedConfirmMessage, episodeUnreleasedMessage, isUnreleasedDate } from "./release.js";
 import { getNextEpisodeAirInfo } from "./sorting.js";
 import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 
@@ -49,7 +49,9 @@ async function maybeQuickItemRating(item, ctx, type, opts = {}) {
   return false;
 }
 
-async function quickMarkMovie(item, ctx) {
+// Exportado (issue #298): el botón flotante de la ficha en página lo
+// usa para «Marcar como vista» (mismo flujo que la acción rápida).
+export async function quickMarkMovie(item, ctx) {
   const confirmMsg = unreleasedConfirmMessage(item);
   if (confirmMsg && !window.confirm(confirmMsg)) return;
   const prevLog = item.watchLog;
@@ -317,6 +319,100 @@ async function quickMarkTv(item, ctx) {
     },
   });
   ctx.showToast(undone ? "Desmarcado." : `T${season}E${episode} marcado como visto.`);
+}
+
+// Marca TODA una serie como vista: todos los episodios de todas las
+// temporadas quedan marcados con la fecha de hoy (issue #298, botón
+// flotante de la ficha en página). Mismo patrón que quickMarkTv:
+// confirmación cuando hay temporadas aún no estrenadas, persistencia
+// del progreso recomputado y ventana de valoración con deshacer
+// (issue #136) — la valoración es de la serie en su conjunto (sin
+// episodeLabel, igual que el alta como vista del catálogo).
+export async function quickMarkTvComplete(item, ctx) {
+  if (item.status === "standby" || item.status === "abandonado") {
+    ctx.showToast("Está en pausa/abandonada. Ábrela para retomarla.");
+    return;
+  }
+  if (!item.nextEpisode) {
+    ctx.showToast("Esta serie ya está completa.");
+    return;
+  }
+  const seasonsMeta = await getSeasonsMetaFor(item, ctx);
+  if (!seasonsMeta.length) {
+    ctx.showToast("No se pudieron obtener las temporadas de esta serie.");
+    return;
+  }
+  // Confirmación si hay temporadas aún no estrenadas (mismo criterio
+  // que la alta directa como vista del catálogo, search.js). Las
+  // series manuales no tienen fechas reales de TMDB: se excluyen.
+  if (!item.manual) {
+    const unreleasedSeasons = seasonsMeta.filter((s) => isUnreleasedDate(s.airDate));
+    if (unreleasedSeasons.length) {
+      const msg = `«${item.title}» · ${unreleasedSeasons.length} de ${seasonsMeta.length} temporadas aún no están estrenadas. ¿Marcarlas todas igualmente como vistas?`;
+      if (!window.confirm(msg)) return;
+    }
+  }
+  const prevWatched = item.watched;
+  const prevStatus = item.status;
+  const prevAwaitingRelease = item.awaitingRelease;
+  const prevNextEpisode = item.nextEpisode;
+  const prevFirstWatchedAt = item.firstWatchedAt;
+  const prevLastWatchedAt = item.lastWatchedAt;
+  const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
+  // Todos los episodios de todas las temporadas, marcados hoy.
+  const newWatched = markAllSeasonsWatched(item.watched, seasonsMeta, todayISO());
+  const newProgress = computeProgress(seasonsMeta, newWatched);
+  const payload = {
+    watched: newWatched,
+    status: newProgress.status,
+    nextEpisode: newProgress.nextEpisode,
+    firstWatchedAt: newProgress.firstWatchedAt,
+    lastWatchedAt: newProgress.lastWatchedAt,
+    // Una serie con episodios vistos no puede seguir "sin estrenar".
+    awaitingRelease: false,
+  };
+  await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
+  item.watched = newWatched;
+  item.status = payload.status;
+  item.nextEpisode = payload.nextEpisode;
+  item.firstWatchedAt = payload.firstWatchedAt;
+  item.lastWatchedAt = payload.lastWatchedAt;
+  item.awaitingRelease = false;
+  // Valoración de la serie en su conjunto. Deshacer (issue #136):
+  // restaura el progreso previo (watched, status literal del
+  // capturado, nextEpisode, fechas y awaitingRelease) para que la UI
+  // repinte el estado anterior.
+  const undone = await maybeQuickItemRating(item, ctx, "tv", {
+    onUndo: async () => {
+      const prevProgress = computeProgress(seasonsMeta, prevWatched || {});
+      const undoPayload = {
+        watched: prevWatched || {},
+        status: prevStatus,
+        nextEpisode: prevNextEpisode ?? prevProgress.nextEpisode,
+        firstWatchedAt: prevFirstWatchedAt ?? prevProgress.firstWatchedAt,
+        lastWatchedAt: prevLastWatchedAt ?? prevProgress.lastWatchedAt,
+        awaitingRelease: prevAwaitingRelease,
+        nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+      };
+      await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, undoPayload);
+      item.watched = undoPayload.watched;
+      item.status = undoPayload.status;
+      item.nextEpisode = undoPayload.nextEpisode;
+      item.firstWatchedAt = undoPayload.firstWatchedAt;
+      item.lastWatchedAt = undoPayload.lastWatchedAt;
+      item.awaitingRelease = undoPayload.awaitingRelease;
+      item.nextEpisodeAirDate = undoPayload.nextEpisodeAirDate;
+    },
+  });
+  ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);
+}
+
+// Abre la ventana de valoración del ítem (película o serie) SIN marcar
+// nada (issue #298, botón flotante de la ficha en página). Reutiliza
+// el flujo de maybeQuickItemRating: nunca lanza; si el usuario guarda,
+// onSave persiste la valoración del ítem.
+export async function promptItemRating(item, ctx) {
+  await maybeQuickItemRating(item, ctx, item.type === "tv" ? "tv" : "movie");
 }
 
 export async function quickAction(item, btn, ctx) {
