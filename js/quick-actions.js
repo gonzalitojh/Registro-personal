@@ -35,9 +35,15 @@ async function maybeQuickItemRating(item, ctx, type, opts = {}) {
       communityRating: item.communityRating ?? null,
       communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
-      onSave: async (rating) => {
-        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
+      // Notas del ítem (issue #300): el campo de notas vive en la
+      // ventana de valoración; sin notas previas se muestra vacío.
+      initialNotes: item.notes ?? "",
+      onSave: async (rating, notes) => {
+        const payload = { rating };
+        if (notes !== undefined) payload.notes = notes;
+        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, payload);
         item.rating = rating;
+        if (notes !== undefined) item.notes = notes;
       },
       onUndo: opts.onUndo,
       undoLabel: opts.undoLabel,
