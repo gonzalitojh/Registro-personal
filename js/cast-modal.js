@@ -193,16 +193,21 @@ function personRowHtml(person) {
 // Filtra las personas por el texto del buscador (iteración issue
 // #294): coincide con el NOMBRE de la persona y con su personaje (en
 // el reparto) o su función —job y área/departamento— (en la
-// producción). Query vacía devuelve la lista completa. El filtrado se
-// hace sobre las entradas sin agrupar (el crew se reagrupa después),
-// igual que el render sin filtro.
+// producción). El área se compara TANTO en inglés crudo de TMDB como
+// traducida (translateDepartment): la UI muestra «Dirección», «Guion»,
+// «Cámara»… y el usuario teclea lo que ve (QA iteración #294). Query
+// vacía devuelve la lista completa. El filtrado se hace sobre las
+// entradas sin agrupar (el crew se reagrupa después), igual que el
+// render sin filtro.
 function filterPeopleByQuery(people, query) {
   const q = (query || "").trim().toLocaleLowerCase("es");
   if (!q) return people;
   return people.filter((p) => {
     const name = (p.name || "").toLocaleLowerCase("es");
-    const role = (p.character || p.job || p.department || "").toLocaleLowerCase("es");
-    return name.includes(q) || role.includes(q);
+    const role = (p.character || p.job || "").toLocaleLowerCase("es");
+    const department = (p.department || "").toLocaleLowerCase("es");
+    const departmentEs = (p.department ? translateDepartment(p.department) : "").toLocaleLowerCase("es");
+    return name.includes(q) || role.includes(q) || department.includes(q) || departmentEs.includes(q);
   });
 }
 

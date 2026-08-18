@@ -2379,8 +2379,10 @@ button, a, input, select, textarea { touch-action: manipulation; }
    lupa a la izquierda + input que filtra por nombre de la persona y
    por su personaje (reparto) o función (producción). El input usa las
    mismas variables que .global-search__input (--ink-raised fondo /
-   --paper texto): se adapta solo a los cuatro modos de tema, sin
-   overrides (mismo razonamiento que el comentario de aquella regla). */
+   --paper texto): en la familia clara --ink-raised y --paper son
+   ambos blancos, así que —igual que hace css/styles.css para
+   .global-search__input— la familia clara restaura la tinta con
+   --ink (selectores agrupados, una sola fuente de verdad por regla). */
 .cast-modal__search {
   position: relative;
   margin-bottom: 0.8rem;
@@ -2416,6 +2418,14 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .cast-modal__search-input:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 1px;
+}
+
+/* Familia clara (Claro/Blanco puro): --ink-raised y --paper son ambos
+   blancos, el texto del input sería invisible (1:1). Mismo override
+   que [data-theme="light"] .global-search__input de css/styles.css. */
+[data-theme="light"] .cast-modal__search-input,
+[data-theme="white"] .cast-modal__search-input {
+  color: var(--ink);
 }
 
 /* Restauración de --ink-soft en negro puro y familia clara (ver
