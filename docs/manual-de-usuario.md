@@ -300,7 +300,8 @@ reinicia la serie para que empieces de nuevo. Verás el aviso
 ### 4.6 Historial de visionados
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
-anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
+anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
+cada vez que la has visto.
 
 ### 4.7 Eliminar
 
@@ -346,7 +347,8 @@ Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 ### 5.4 Historial de visionados (revisionados)
 
 La ficha de la película se abre en una **página nueva**; usa el botón
-**←** de arriba para volver a tu lista. Dentro ves la lista de todas
+**←** de arriba para volver a tu lista. Los visionados están **ocultos
+por defecto**: despliega **«Visionados (N)»** y verás la lista de todas
 las veces que la has visto, con sus fechas. Puedes
 **editar la fecha** de cada visionado o
 **«Quitar»** uno del historial. En tu lista, si la has visto más de una vez,
@@ -1119,9 +1121,12 @@ tipo, verás:
   de arriba para volver a la ficha en la que estabas. Los títulos que ya
   tienes en tu registro se muestran con **«Ya añadido»** (botón
   deshabilitado).
-- **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
-  «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
-  **«Eliminar»** para borrar el título.
+- **Tu valoración y tus notas** se gestionan desde el **botón flotante**
+  (opción **«Valorar»**; la ventana que se despliega incluye las
+  estrellas y un campo de **notas**). El botón **«Eliminar»** borra el
+  título. En las películas, la lista de **visionados** aparece **oculta
+  por defecto**: despliega **«Visionados (N)»** para verla y poder
+  editar la fecha de cada visionado o quitarlo del historial.
 
 Si el título **aún no está en tu registro** (por ejemplo, lo abriste
 desde la búsqueda del catálogo, desde una tarjeta de saga o de
@@ -1131,14 +1136,14 @@ estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
 información ampliada, temporadas (series), saga y recomendaciones con
 sus botones **«Añadir»** — con el aviso **«Este título aún no está en tu
 registro»** y el botón **«Añadir»** principal. Tu valoración, tus notas,
-tu progreso y los botones **«Guardar»** y **«Eliminar»** solo aparecen
+tu progreso y el botón **«Eliminar»** solo aparecen
 cuando el título ya está en tu registro: al añadirlo, la página pasa a
 la ficha completa al momento.
 
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
-En las series, junto a tu valoración general verás también la **media de
+En las series, junto a las temporadas verás también la **media de
 tus notas de episodios** (ver sección 13).
 
 En los videojuegos, la ficha incluye además el **historial de sesiones de
@@ -1165,10 +1170,12 @@ momento:
   título aún no está en tu registro (vista previa), **marcar como vista
   lo añade a la vez**, en un solo paso, y después abre la valoración.
 - **«Valorar»**: abre la ventana de valoración **sin marcar nada**,
-  para poner o cambiar tus estrellas cuando quieras. En la vista previa
+  para poner o cambiar tus estrellas cuando quieras. La ventana incluye
+  además un campo de **notas** (tus impresiones sobre el título), que
+  se guarda junto a la valoración. En la vista previa
   de un título aún no añadido, **«Valorar» lo añade al registro primero**
-  y abre la valoración después (así puedes dejarle las estrellas desde
-  el primer momento).
+  y abre la valoración después (así puedes dejarle las estrellas y las
+  notas desde el primer momento).
 
 El botón flotante **se ve diferente** según el estado, para que sepas
 de un vistazo en qué situación está el título:
@@ -1200,9 +1207,15 @@ Puedes valorar de **1 a 5 estrellas**, incluidas las **medias estrellas**
 - **Videojuegos**: al terminar una partida se abre la misma ventana.
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
-  que se guarda desde su ficha).
+  que se guarda desde su ficha con el **botón flotante**, opción
+  «Valorar»).
 
-En la ficha de una **serie**, debajo de la valoración general, se muestra
+Desde la **ficha de una película o serie**, la ventana de valoración se
+abre con el **botón flotante** (opción **«Valorar»**) e incluye también
+el campo de **notas**: puedes escribir (o cambiar) tus impresiones y
+guardarlas junto a las estrellas con **«Guardar valoración»**.
+
+En la ficha de una **serie**, junto a las temporadas se muestra
 la **media de tus valoraciones de episodios** (por ejemplo
 «Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
 vistos sin valorar no se tienen en cuenta (la valoración mínima de un
