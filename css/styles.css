@@ -30,13 +30,17 @@
   --stamp-dark: #7e2c22;
   --games: #7a5a9e;
   --games-dark: #5d4780;
-  /* Azul acero: estado «añadido y no visto» del botón flotante
-     (issue #298, iteración 3), tercer estado junto al + verde (no
-     añadido) y el ✓ ocre (visto). Icono ink sobre --steel #5c7ea6
-     ≈ 4.3:1 (AA gráficos); hover --steel-dark #3d5c80 con icono
-     paper ≈ 5.8:1 (AA). */
-  --steel: #5c7ea6;
-  --steel-dark: #3d5c80;
+  /* Gris «no añadido» del botón flotante (issue #298, iteración 4):
+     el estado sin registrar es coherente con el tema — gris OSCURO
+     en la familia oscura, gris CLARO en la familia clara — en lugar
+     del anterior + verde (que ahora identifica al estado «añadido»,
+     ver .item-fab--added). Icono paper sobre el gris oscuro de la
+     familia oscura: #57544d ≈ 6.3:1 (AA); hover #45423c ≈ 8.35:1.
+     En la familia clara el icono pasa a ink (overrides al final de
+     la sección .item-fab). El negro puro y el blanco puro usan sus
+     propias variantes (ver bloques de tema). */
+  --fab-idle: #57544d;
+  --fab-idle-dark: #45423c;
   /* Hover del FAB visto (issue #298, iteración 3): el ocre oscuro
      global (#8f6522) con texto paper da 4.32:1, justo por debajo de
      AA texto 4.5:1 (el contador de visionados es texto). Este ocre
@@ -149,6 +153,13 @@
   --ochre-spine-dark: #c99a4e;
   --stamp-dark: #cf6655;
   --games-dark: #9a7bc4;
+
+  /* FAB «no añadido» (issue #298, iteración 4): el gris del modo
+     oscuro (#57544d) sobre fondo negro se pierde, así que en negro
+     puro se usa un gris neutro oscuro; el icono paper conserva el
+     contraste AA (11.3:1 / hover 13.3:1). */
+  --fab-idle: #2e2e2e;
+  --fab-idle-dark: #222222;
 }
 
 /* =========================================================
@@ -178,6 +189,12 @@
   --stamp-dark: #8c3025;
   --games: #7a5a9e;
   --games-dark: #5d4780;
+
+  /* FAB «no añadido» (issue #298, iteración 4): gris CLARO en la
+     familia clara, con icono ink (override al final de la sección
+     .item-fab): base #d8d3c8 ≈ 9.8:1 e hover #c6c0b2 ≈ 8.1:1. */
+  --fab-idle: #d8d3c8;
+  --fab-idle-dark: #c6c0b2;
 
   --white: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.25);
@@ -241,6 +258,12 @@
   --paper: #ffffff;
   --paper-dim: #ffffff;
   --paper-line: #d9cfc0;
+
+  /* FAB «no añadido» (issue #298, iteración 4): como en claro, gris
+     claro con icono ink; sobre blanco puro el gris base #e4e0d6 da
+     15.9:1 con el texto negro (hover #d4cfc2 ≈ 13.5:1). */
+  --fab-idle: #e4e0d6;
+  --fab-idle-dark: #d4cfc2;
 
   --backdrop: rgba(0, 0, 0, 0.25);
 
@@ -1934,13 +1957,15 @@ body.is-back-to-top-visible .back-to-top {
    720px). Al pulsarlo despliega las acciones A SU ALREDEDOR en
    forma de abanico circular (iteración issue #298), con una
    animación escalonada que las hace salir «desde el botón».
-   Acciones según el contexto: ficha → «Marcar como vista» +
+   Acciones según el contexto: ficha → opción inversa («Quitar de
+   añadidos» o «Quitar última visualización») + «Marcar como vista» +
    «Valorar»; preview → «Añadir» + «Marcar como vista» +
-   «Valorar». El toggle se ve DISTINTO según el estado (iteración
-   3 de la issue #298), con tres estados diferenciados:
-   preview/no añadido → + verde; ficha añadido y no visto → +
-   azul acero (--steel, clase .item-fab--added); ficha visto →
-   ✓ ocre (clase .item-fab--seen), con el NÚMERO de visionados
+   «Valorar». El toggle se ve DISTINTO según el estado (iteraciones
+   3 y 4 de la issue #298), con tres estados diferenciados:
+   preview/no añadido → + gris del tema (--fab-idle, clase base);
+   ficha añadido y no visto → + verde (--teal-reel, clase
+   .item-fab--added); ficha visto → ✓ ocre (clase
+   .item-fab--seen), con el NÚMERO de visionados
    (.item-fab__count, clase en películas vistas más de una vez)
    en lugar del ✓. En series solo cuentan estos tres estados
    (completada = vista). z-index 40: sobre el contenido, por
@@ -1970,7 +1995,7 @@ body.is-back-to-top-visible .back-to-top {
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: var(--teal-reel);
+  background: var(--fab-idle);
   color: var(--paper);
   box-shadow: var(--shadow-card);
   display: grid;
@@ -1979,11 +2004,20 @@ body.is-back-to-top-visible .back-to-top {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .item-fab__toggle:hover {
-  background: var(--teal-reel-dark);
+  background: var(--fab-idle-dark);
 }
+/* Foco del FAB (iteración 4): el outline del toggle usa el dúo
+   icono/fondo del estado base — paper en la familia oscura, ink en
+   la clara — para que el anillo sea visible sobre el gris del botón
+   y sobre el fondo de la página (AA: oscuro/negro ≈ 5:1–17:1;
+   claro/blanco ≈ 4.4:1–15.9:1). */
 .item-fab__toggle:focus-visible {
-  outline: 2px solid var(--teal-reel);
+  outline: 2px solid var(--paper);
   outline-offset: 2px;
+}
+[data-theme="light"] .item-fab__toggle:focus-visible,
+[data-theme="white"] .item-fab__toggle:focus-visible {
+  outline-color: var(--ink);
 }
 .item-fab__toggle svg {
   width: 1.4rem;
@@ -2024,27 +2058,40 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--white);
 }
 
-/* Hover del toggle base (preview, teal) en negro puro: --teal-reel-
-   dark #4f9c8e con texto paper = 2.7:1 (falla AA gráficos); con
-   --white ≈ 5.9:1. El azul acero (--steel-dark #3d5c80) ya supera
-   5:1 con paper y se excluye con :not para no romperlo. */
-[data-theme="black"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle:hover {
+/* Hover del FAB añadido (verde) en negro puro: --teal-reel-dark
+   #4f9c8e con texto paper = 2.7:1 (falla AA gráficos); con --white
+   ≈ 5.9:1. El estado base (gris del tema) ya supera 5:1 con paper
+   (13.3:1) y no necesita override. */
+[data-theme="black"] .item-fab--added .item-fab__toggle:hover {
   color: var(--white);
 }
 
-/* Ítem añadido pero aún NO visto (iteración 3 de la issue #298):
-   + azul acero, tercer estado distinto del + verde de «no añadido»
-   (preview) y del ✓ ocre de visto. El negro puro hereda estos
-   colores (el toggle conserva su fondo de acento, como el teal y
-   el ocre, así que no necesita override). Contraste: icono ink
-   sobre --steel ≈ 4.3:1 en oscuro / ≈ 5:1 en negro puro (AA
-   gráficos); hover --steel-dark + icono paper ≈ 5.8:1 (AA). */
-.item-fab--added .item-fab__toggle {
-  background: var(--steel);
+/* Familia clara (claro + blanco puro): el estado base del FAB es gris
+   CLARO (--fab-idle #d8d3c8 / #e4e0d6), así que el icono pasa de
+   paper a ink para mantener AA (9.8:1 / 15.9:1; hover 8.1:1 / 13.5:1).
+   Los estados añadido (verde) y visto (ocre) conservan su dúo
+   paper/ink original (sus reglas específicas ganan por especificidad
+   a este selector agrupado). */
+[data-theme="light"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle,
+[data-theme="white"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle {
   color: var(--ink);
 }
+
+/* Ítem añadido pero aún NO visto (iteración 4 de la issue #298): el
+   + pasa de azul acero a VERDE (--teal-reel, el mismo verde que antes
+   identificaba al estado «no añadido», que ahora es gris del tema).
+   El negro puro hereda estos colores (el toggle conserva su fondo de
+   acento oscuro, el icono paper 5.7:1 en reposo; el hover de la
+   variante clara se resuelve arriba con --white). Contraste: icono
+   paper sobre --teal-reel #2b6459 ≈ 5.7:1 en oscuro / 6.8:1 en claro
+   (AA gráficos); hover --teal-reel-dark #1c4a41 + icono paper
+   ≈ 8.3:1 (AA). */
+.item-fab--added .item-fab__toggle {
+  background: var(--teal-reel);
+  color: var(--paper);
+}
 .item-fab--added .item-fab__toggle:hover {
-  background: var(--steel-dark);
+  background: var(--teal-reel-dark);
   color: var(--paper);
 }
 
