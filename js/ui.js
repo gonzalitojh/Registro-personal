@@ -9,7 +9,7 @@ import { STATUS_LABELS } from "./constants.js";
 import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
 import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
-import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
+import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
@@ -1485,7 +1485,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
+  const { onUpdateWatch, onRemoveWatch, onDelete, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   // Modo página (issue #285): con target (contenedor de #item-view) la
   // ficha se renderiza en la página y no se abre el modal ni su focus
@@ -1529,27 +1529,24 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
 
     ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation, onOpenRecommendation)}
 
-    <div class="field-group">
-      <label>Visionados</label>
-      ${renderWatchLogRows(item.watchLog)}
-      <div class="log-add-row">
-        <input type="date" id="field-new-watch-date" value="${todayISO()}" />
-        <button type="button" class="btn btn--small btn--accent-media" id="btn-add-watch">
-          ${item.watchLog && item.watchLog.length ? "Añadir otro visionado" : "Marcar como vista"}
-        </button>
-      </div>
-    </div>
-
-    ${ratingPickerHtml(item.rating)}
-    ${notesFieldHtml(item.notes)}
+    ${
+      // Visionados (issue #300): ocultos por defecto y sin botón de
+      // añadir — «Marcar como vista»/«Añadir otro visionado» viven en
+      // el botón flotante (issue #298). Solo se muestran cuando hay
+      // historial (con un ítem sin ver el FAB ya comunica el estado).
+      item.watchLog && item.watchLog.length
+        ? `<details class="watch-log-details">
+            <summary>Visionados (${item.watchLog.length})</summary>
+            ${renderWatchLogRows(item.watchLog)}
+          </details>`
+        : ""
+    }
 
     <div class="modal-actions">
       <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
     </div>
   `;
 
-  const getRating = wireRatingAndGetValue(content, item.rating);
   // Propaga todos los argumentos en el re-render (issue #280): tras
   // marcar como vista, la sección de saga (y las recomendaciones)
   // permanece, y el botón "Añadida" se mantiene gracias al Set
@@ -1609,15 +1606,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     });
   }
 
-  content.querySelector("#btn-add-watch").addEventListener("click", async () => {
-    const dateVal = content.querySelector("#field-new-watch-date").value;
-    if (!dateVal) return;
-    const confirmMsg = unreleasedConfirmMessage(item);
-    if (confirmMsg && !window.confirm(confirmMsg)) return;
-    await onAddWatch(dateVal);
-    rerender();
-  });
-
   content.querySelectorAll(".watch-date").forEach((input) => {
     input.addEventListener("change", async () => {
       if (!input.value) return;
@@ -1631,13 +1619,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
       if (!window.confirm("¿Quitar este visionado del historial?")) return;
       await onRemoveWatch(Number(btn.dataset.index));
       rerender();
-    });
-  });
-
-  content.querySelector("#btn-save-item").addEventListener("click", () => {
-    onSaveMeta({
-      rating: getRating() || null,
-      notes: content.querySelector("#field-notes").value.trim(),
     });
   });
 
@@ -2096,7 +2077,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onToggleSeason,
     onRewatch,
     onSetStatus,
-    onSaveMeta,
     onDelete,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
@@ -2196,12 +2176,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
     </div>
 
-    ${ratingPickerHtml(item.rating, "field-rating", episodeAverageHtml(item.watched, "field-rating"))}
-    ${notesFieldHtml(item.notes)}
+    ${
+      // Media de episodios (issue #80) como línea informativa: la
+      // valoración general se hace con el botón flotante (issue
+      // #298/#300) y el picker ya no vive en la ficha.
+      episodeAverageHtml(item.watched, "field-rating")
+    }
 
     <div class="modal-actions">
       <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
     </div>
   `;
 
@@ -2522,15 +2505,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     // El target se propaga en el re-render (issue #285): en modo
     // página la ficha de serie se repinta en #item-view-content.
     openTvModal(item, seasonsMeta, newProgress, callbacks, recommendations, existingIds, { target });
-  });
-
-  const getRating = wireRatingAndGetValue(content, item.rating);
-
-  content.querySelector("#btn-save-item").addEventListener("click", () => {
-    onSaveMeta({
-      rating: getRating() || null,
-      notes: content.querySelector("#field-notes").value.trim(),
-    });
   });
 
   content.querySelector("#btn-delete-item").addEventListener("click", () => {
