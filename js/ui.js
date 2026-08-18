@@ -864,13 +864,87 @@ function castCrewSectionHtml(label, people, role, roleTextOf) {
     </section>`;
 }
 
+// Desplazamiento INERCIAL de los carruseles de elenco (issue #294,
+// iteración 2): el snap CSS (`x mandatory` y luego `x proximity`) seguía
+// «atascando» el carrusel al encajar tarjetas al terminar cada gesto, y
+// con la rueda del ratón el scroll nativo avanza a saltos sin inercia.
+// Solución: sin snap CSS (en táctil el impulso nativo del navegador
+// desliza y frena solo) y, para la rueda, inercia propia: el delta se
+// normaliza a píxeles y se amplifica (un gesto recorre varias tarjetas),
+// y un bucle rAF continúa el deslizamiento con fricción al soltar la
+// rueda, frenando poco a poco. Si el carrusel ya está en un borde y no
+// puede avanzar en esa dirección, el gesto NO se consume y el scroll
+// pasa a la página (comportamiento natural).
+export function wireCastCrewInertialScroll(scrollEl) {
+  const GAIN = 1.7; // amplificación del delta de la rueda
+  const FRICTION = 0.93; // deceleración por frame (~60 fps)
+  const MIN_STOP = 0.05; // px/frame bajo el que la inercia se detiene
+  const MIX = 0.45; // peso del impulso anterior al mezclar velocidades
+
+  let velocity = 0;
+  let rafId = null;
+
+  const stop = () => {
+    velocity = 0;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  };
+
+  const step = () => {
+    rafId = null;
+    velocity *= FRICTION;
+    if (Math.abs(velocity) < MIN_STOP) {
+      stop();
+      return;
+    }
+    const prev = scrollEl.scrollLeft;
+    scrollEl.scrollLeft += velocity;
+    if (scrollEl.scrollLeft === prev) {
+      // Borde alcanzado: la inercia se corta en seco (sin rebote)
+      stop();
+      return;
+    }
+    rafId = requestAnimationFrame(step);
+  };
+
+  scrollEl.addEventListener(
+    "wheel",
+    (e) => {
+      // Dirección efectiva del gesto y normalización a píxeles
+      // (deltaMode: 0 = px, 1 = líneas, 2 = páginas)
+      const toPx = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scrollEl.clientWidth : 1;
+      const raw = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * toPx;
+      if (Math.abs(raw) < 0.5) return;
+      const max = scrollEl.scrollWidth - scrollEl.clientWidth;
+      if (max <= 0) return;
+      // ¿Queda recorrido en la dirección del gesto? Si no, se deja
+      // pasar el evento para que la página haga su scroll natural.
+      const canScroll = raw > 0 ? scrollEl.scrollLeft < max : scrollEl.scrollLeft > 0;
+      if (!canScroll) return;
+      e.preventDefault();
+      // Impulso inmediato amplificado (avance rápido) + velocidad para
+      // la inercia posterior, mezclada con la previa para suavizar las
+      // ráfagas rápidas del trackpad.
+      scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + raw * GAIN));
+      velocity = velocity * MIX + raw * GAIN * (1 - MIX);
+      if (rafId === null) rafId = requestAnimationFrame(step);
+    },
+    { passive: false }
+  );
+}
+
 // Cablea los botones «Ver en más detalle» de los carruseles de elenco
-// (issue #294) con los datos del ítem en mano. Invocar tras cada
-// render que incluya castCrewHtml (modal clásico, página de ítem,
-// previews y ficha de amigo). Un botón sin cablear no hace nada
-// (degradación silenciosa si un futuro llamador olvida el wiring).
+// (issue #294) con los datos del ítem en mano, y el desplazamiento
+// inercial de los propios carruseles (iteración issue #294). Invocar
+// tras cada render que incluya castCrewHtml (modal clásico, página de
+// ítem, previews y ficha de amigo). Un botón sin cablear no hace nada
+// (degradación silenciosa si un futuro llamador olvida el wiring). Cada
+// render crea nodos nuevos, así que los listeners nunca se duplican.
 export function wireCastCrewClicks(root, item) {
   if (!root) return;
+  root.querySelectorAll(".cast-crew__scroll").forEach(wireCastCrewInertialScroll);
   root.querySelectorAll("[data-cast-role]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const isCrew = btn.dataset.castRole === "crew";
