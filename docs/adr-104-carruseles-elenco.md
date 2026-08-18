@@ -231,8 +231,10 @@ dos ajustes de experiencia:
    **Esc** con texto en el campo **limpia la búsqueda** (sin propagar
    al handler global que cerraría la ventana); con el campo vacío, Esc
    cierra la ventana como siempre. El input sigue el patrón visual de
-   `.global-search__input` (`--ink-raised`/`--paper`), que se adapta
-   solo a los cuatro modos de tema sin overrides.
+   `.global-search__input` (`--ink-raised`/`--paper`) con el mismo
+   override de tinta para la familia clara
+   (`[data-theme="light"/"white"] .cast-modal__search-input { color: var(--ink) }`,
+   ver `css/styles.css` para `.global-search__input`).
 
 No cambia el modelo de datos ni las llamadas a TMDB: todo es
 transformación local de los datos ya cargados. La versión PWA sube a
@@ -252,7 +254,7 @@ transformación local de los datos ya cargados. La versión PWA sube a
 | `js/config.js` | **Modificado**: `APP_VERSION` a `20261006` (iteración: `20261007`) |
 | `service-worker.js` | **Modificado**: `js/cast-modal.js` en `STATIC_ASSETS` y bump PWA a `20261006` (iteración: `20261007`) |
 | `css/styles.css` | **Modificado**: `.cast-card` incluida en el override oscuro de `--ink` de `.item-view` |
-| `ocio/ocio.css` | **Modificado**: carruseles `.cast-crew`/`.cast-card` (tarjetas flex 96 px, 84 px ≤400 px, scroll horizontal solo en `.cast-crew__scroll`, `overflow-wrap`), ventana `.cast-modal`, hint/personaje con contraste AA (base `#5f5849` en familia oscura, `--ink-soft` restaurado en negro puro/claro/blanco puro con selectores agrupados). **Iteración**: `scroll-snap-type: x proximity` + `overscroll-behavior-x: contain` en `.cast-crew__scroll` (scroll suave y rápido) y buscador `.cast-modal__search` (lupa SVG + input, patrón `.global-search__input`, cuatro modos sin overrides) |
+| `ocio/ocio.css` | **Modificado**: carruseles `.cast-crew`/`.cast-card` (tarjetas flex 96 px, 84 px ≤400 px, scroll horizontal solo en `.cast-crew__scroll`, `overflow-wrap`), ventana `.cast-modal`, hint/personaje con contraste AA (base `#5f5849` en familia oscura, `--ink-soft` restaurado en negro puro/claro/blanco puro con selectores agrupados). **Iteración**: `scroll-snap-type: x proximity` + `overscroll-behavior-x: contain` en `.cast-crew__scroll` (scroll suave y rápido) y buscador `.cast-modal__search` (lupa SVG + input, patrón `.global-search__input`, con override de tinta `--ink` para la familia clara) |
 | `docs/manual-de-usuario.md` | **Modificado**: sección 12, bullet «Información ampliada» con los carruseles y la ventana de detalle; términos «director/reparto» adecuados en los bullets «Sagas», «Recomendaciones» y en la vista previa del catálogo (sección 10). **Iteración**: scroll suave y buscador (lupa) de la ventana de detalle |
 | `docs/adr-104-carruseles-elenco.md` | **Nuevo**: este documento |
 | `tasks/task-issue-294.json` | Task file de la tarea |
