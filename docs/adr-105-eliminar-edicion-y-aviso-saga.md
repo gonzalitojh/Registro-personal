@@ -156,6 +156,37 @@ películas de la saga» como única vía de gestión de sagas:
   ADR-016, ADR-084) quedan como **registro histórico**: el
   comportamiento vigente es el descrito en este ADR.
 
+## Iteración: separadores horizontales entre secciones de la ficha (2026-08-18)
+
+La issue #296 añadió un comentario de seguimiento pidiendo una **barra
+horizontal** encima de las secciones «Producción», «Reparto» y «Otras
+películas de la saga», igual que la que ya existía encima de «Si te
+gustó esto, quizá te guste...». Aplica a **películas y series** (las
+series no tienen sección de saga, así que solo reciben la barra los
+carruseles de elenco).
+
+**Decisión**: CSS puro en `ocio/ocio.css`, sin tocar JS ni markup:
+`.cast-crew` (carruseles de elenco, Producción y Reparto) y
+`.saga-movies` (carrusel de saga) adoptan el mismo patrón de separación
+que `.recommendations`: `padding-top: 0.8rem` + `border-top: 1px solid
+var(--paper-line)`. Al ser una variable de tema (dos familias, regla 4
+de AGENTS.md), la línea se ve correcta en los cuatro modos sin
+overrides adicionales. El margen superior de `.saga-movies` pasa de
+`0.4rem` a `1.2rem` para mantener el mismo aire que el resto de
+secciones con barra.
+
+**Alternativa descartada**: añadir un elemento HTML de separación por
+cada sección — más superficie que mantener y sin ventaja visual; el
+borde superior del contenedor ya existente da exactamente la misma
+línea que la de recomendaciones.
+
+**Consecuencias**: las secciones de elenco y saga de la ficha quedan
+visualmente delimitadas como las recomendaciones; el manual de usuario
+se actualiza con una mención breve («Cada sección de la ficha va
+separada por una línea horizontal»). Sin cambios de comportamiento ni
+de accesibilidad (el separador es decorativo, `border` no se anuncia a
+lectores de pantalla).
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
@@ -163,12 +194,12 @@ películas de la saga» como única vía de gestión de sagas:
 | `js/ui.js` | **Modificado**: `openMovieModal` y `openTvModal` sin `editButtonHtml()` ni wiring de `#btn-edit-item` (la edición queda solo en `openBookModal`/`openGameModal`); eliminado el banner `.saga-banner` con `#btn-add-saga` de la ficha de película (ahora `collectionId` renderiza directamente `renderSagaMovies`); eliminada `openSagaSelectionModal` y el callback `onAddSaga`; jsdoc de `renderSagaMovies` actualizado (onOpen abre la página de detalle, issue #285) |
 | `js/modal-handlers.js` | **Modificado**: eliminada `openSagaSelector`; `openMovieItem` y `openTvItem` sin `onEdit` (libros y videojuegos conservan `editHandlerFor`) y `openMovieItem` sin `onAddSaga`; comentario de carga de `sagaParts` actualizado (el carrusel no se renderiza si falla, sin banner que conservar) |
 | `js/item-page.js` | **Modificado**: `paintPreview` sin banner `.saga-banner` ni listener de `#btn-add-saga` (solo `renderSagaMovies` con su wiring `.saga-card__add`); comentarios de cabecera y de acciones de la preview sin «editar» |
-| `ocio/ocio.css` | **Modificado**: eliminados los estilos del banner (`.saga-banner`, `.saga-banner__label`) y del selector (`.saga-subtitle`, `.saga-list`, `.saga-row`, `.saga-row__cover/__title/__year`, `.saga-count`, `.saga-row:focus-within`) y los overrides `[data-theme="black"]` asociados (`.saga-list`, `.saga-banner__label`) |
+| `ocio/ocio.css` | **Modificado**: eliminados los estilos del banner (`.saga-banner`, `.saga-banner__label`) y del selector (`.saga-subtitle`, `.saga-list`, `.saga-row`, `.saga-row__cover/__title/__year`, `.saga-count`, `.saga-row:focus-within`) y los overrides `[data-theme="black"]` asociados (`.saga-list`, `.saga-banner__label`); **iteración**: `.cast-crew` y `.saga-movies` con `padding-top: 0.8rem` + `border-top: 1px solid var(--paper-line)` (barra horizontal como la de recomendaciones) y `.saga-movies` con margen superior de `1.2rem` |
 | `css/styles.css` | **Modificado**: comentario de los checkboxes de la lista de la compra sin referencia a `.saga-row` (patrón ya eliminado de Ocio) |
 | `index.html` | **Modificado**: bump PWA a `20261009` en las URLs versionadas de estilos y `js/app.js` |
 | `js/config.js` | **Modificado**: `APP_VERSION` a `20261009` |
 | `service-worker.js` | **Modificado**: bump PWA a `20261009` en `STATIC_ASSETS` |
-| `docs/manual-de-usuario.md` | **Modificado**: sección 4.7 renombrada «Editar y eliminar» → **«Eliminar»** (sin «✎ Editar información»); bullet «Sagas» de la sección 12 sin aviso «Saga: …», sin «Añadir resto de la saga» ni selector (solo el carrusel con sus botones y la navegación por tarjeta) |
+| `docs/manual-de-usuario.md` | **Modificado**: sección 4.7 renombrada «Editar y eliminar» → **«Eliminar»** (sin «✎ Editar información»); bullet «Sagas» de la sección 12 sin aviso «Saga: …», sin «Añadir resto de la saga» ni selector (solo el carrusel con sus botones y la navegación por tarjeta); **iteración**: mención breve en la sección 12 de que cada sección de la ficha va separada por una línea horizontal |
 | `docs/adr-105-eliminar-edicion-y-aviso-saga.md` | **Nuevo**: este documento |
 | `tasks/task-issue-296.json` | Task file de la tarea |
 

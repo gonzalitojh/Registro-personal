@@ -1727,7 +1727,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
    ========================================================= */
 
 .saga-movies {
-  margin: 0.4rem 0 1.2rem;
+  margin: 1.2rem 0 1.2rem;
+  /* Barra horizontal de separación igual que la de recomendaciones
+     (issue #296, iteración): misma línea de separación con --paper-line
+     y mismo aire superior (0.8rem) antes del título. */
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
 }
 
 .saga-movies__title {
@@ -2030,6 +2035,11 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 .cast-crew {
   margin: 1.2rem 0 0.4rem;
+  /* Barra horizontal de separación igual que la de recomendaciones
+     (issue #296, iteración): misma línea de separación con --paper-line
+     y mismo aire superior (0.8rem) antes del título del carrusel. */
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
 }
 
 .cast-crew__head {

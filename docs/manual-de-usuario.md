@@ -1083,8 +1083,9 @@ tipo, verás:
   se cierra con la **✕**, con la tecla **Esc**
   o pulsando fuera de ella. La fecha de estreno, la duración (o
   temporadas y episodios en series), los géneros y la sinopsis ya se
-  muestran arriba, en la cabecera. En los videojuegos: desarrolladores,
-  editores y clasificación por edades (ESRB).
+  muestran arriba, en la cabecera. Cada sección de la ficha va
+  separada por una **línea horizontal**. En los videojuegos:
+  desarrolladores, editores y clasificación por edades (ESRB).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
