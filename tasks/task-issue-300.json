@@ -1,7 +1,7 @@
 {
   "title": "Ocultación visualizaciones",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-298-boton-flotante`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR a `feat/issue-201` (no a `dev`).\n\nAl final de películas y series aparecen visionados, valoración y notas. Como la valoración ya se hará a través del botón flotante:\n- La sección de valoración debe eliminarse de esa zona.\n- Las notas deben incluirse en la ventana que se despliega para valorar un ítem, y por tanto eliminarlas también de esa sección.\n- En los visionados se debe quitar el botón para añadir un nuevo visionado (ya se hace a través del botón flotante) y ocultarlos por defecto, permitiendo al usuario mostrar todos los visionados.",
-  "status": "documented",
+  "status": "review",
   "acceptance_criteria": [
     "La sección de valoración al final de películas y series ya no aparece (valorar se hace con el botón flotante).",
     "La sección de notas se elimina de la ficha y las notas se editan dentro de la ventana que se despliega para valorar un ítem.",
@@ -26,5 +26,11 @@
     "number": 300,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/300",
     "title": "Ocultación visualizaciones"
+  },
+  "pr": {
+    "number": 301,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/301",
+    "branch": "style/issue-300-ocultacion-visualizaciones",
+    "note": "PR contra feat/issue-201 (instrucción explícita de la issue #300, patrón apilado). Sin keyword de cierre: la issue se cierra al fusionar vía issues-done-on-dev.yml."
   }
 }
