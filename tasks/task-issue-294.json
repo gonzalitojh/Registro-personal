@@ -1,7 +1,7 @@
 {
   "title": "Elenco de películas/series",
   "description": "Issue #294: En lugar de poner el creador y reparto y breve información del elenco de la película/serie, hacer un carrousel con todos las personas involucradas, con fotografía, nombre y en el caso de los actores, nombre del personaje. Debería haber de momento dos carrousel, uno para miembros de la producción (director, guionista, compositor, etc) y otro para actores y actrices. En ambos casos debe haber un botón para verlo en más detalle que despliegue una ventana con todas las personas de esa lista en particular en forma de lista y mayor detalle de cada una, organizados además (en el caso de los miembros de la producción) por áreas.\n\nLa base de la que iniciar el trabajo es la rama style/issue-292-visualizacion-ventanas. Crear una nueva rama a partir de ahí y hacer la PR a feat/issue-201 (no a dev).",
-  "status": "validated",
+  "status": "documented",
   "acceptance criteria": [
     "C1: La ficha (y preview) de películas y series sustituye las líneas de texto de director/creadores/reparto por dos carruseles: uno de producción (crew: director, guionista, compositor...) y otro de reparto (actores/actrices).",
     "C2: Cada tarjeta del carrusel muestra fotografía de la persona (con fallback elegante si TMDB no tiene foto), nombre y, en los actores, el personaje; en producción, su puesto (job).",
