@@ -1,0 +1,36 @@
+{
+  "title": "Visualización ventanas series y películas",
+  "description": "La base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev).\n\nLas nuevas ventanas de series y películas, no deben estar en un recuadro, sino directamente sobre el fondo.\n\nAdemás, ampliar el tamaño de la portada y poner a la derecha el título en grande, debajo la fecha de estreno, duración y géneros como pequeñas etiquetas. Debajo la valoración de la comunidad y la mía y el botón para ver el trailer. Bajo ello la sinopsis.\n\nITERACIÓN (comentario 2026-08-18): la fecha y la duración no se deben ver como una etiqueta sino como texto normal. En el caso de las series, poner nº de temporadas y episodios en lugar de la duración.",
+  "status": "review",
+  "acceptance criteria": [
+    "Las ventanas (fichas) de series y películas no se muestran dentro de un recuadro/panel con borde, sino directamente sobre el fondo de la página.",
+    "La portada (póster/carátula) de la ficha se amplía en tamaño.",
+    "A la derecha de la portada se muestra el título en grande.",
+    "Debajo del título se muestran la fecha de estreno, la duración y los géneros como pequeñas etiquetas.",
+    "ITERACIÓN: la fecha de estreno y la duración se muestran como TEXTO NORMAL (no como etiqueta); solo los géneros siguen como pequeñas etiquetas.",
+    "ITERACIÓN: en las series se muestra el nº de temporadas y episodios en lugar de la duración.",
+    "Debajo se muestran la valoración de la comunidad y la propia valoración del usuario.",
+    "Se muestra el botón para ver el tráiler.",
+    "Bajo todo ello se muestra la sinopsis.",
+    "El trabajo se realiza sobre una rama creada a partir de feat/issue-201 y la PR se dirige a feat/issue-201 (no a dev)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación realizada sobre rama creada desde feat/issue-201.",
+    "Validación (QA) superada contra criterios de aceptación y reglas del proyecto (responsividad, 4 modos de tema).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #292'.",
+    "PR creada contra feat/issue-201 SIN keyword de cierre.",
+    "Task file actualizado (status 'review' + bloque pr) subido a la rama.",
+    "Labels de la issue #292 actualizados (status: needs-review)."
+  ],
+  "issue": {
+    "number": 292,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/292",
+    "title": "Visualización ventanas series y películas"
+  },
+  "pr": {
+    "number": 293,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/293"
+  }
+}
