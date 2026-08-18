@@ -295,7 +295,9 @@ async function addFromPreview(item, btn) {
   try {
     const ok = await handleAdd(item, target, pageCtx);
     if (ok) {
-      refreshAfterAdd();
+      // await: el candado permanece hasta que la ficha está en
+      // pantalla y la preview ya no puede reabrir «Añadir».
+      await refreshAfterAdd();
     } else {
       target.disabled = false;
       target.textContent = "Añadir";
