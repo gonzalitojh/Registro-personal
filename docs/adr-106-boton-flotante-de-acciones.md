@@ -106,6 +106,16 @@ none`; las acciones individuales llevan `role="menuitem"`):
   vista»** (`mark`) y **«Valorar»** (`rate`). «Marcar como vista» y
   «Valorar» **añaden el título al registro primero** (ver punto 4).
 - **Ficha** (modo `"ficha"`):
+  - **Opción inversa a «Añadir»** (iteración 4, primera del abanico):
+    **«Quitar de añadidos»** (`remove`) si el ítem NO está visto —
+    programa el borrado con deshacer (`scheduleDeletion` de
+    `undo-delete.js`, el mismo flujo que tenía el botón «Eliminar» del
+    final de la ficha) y vuelve a la pantalla previa (`goBack()`); si
+    SÍ está visto se convierte en **«Quitar última visualización»**
+    (`unwatch`): en películas elimina la última entrada del `watchLog`;
+    en series desmarca el último episodio visto (mayor fecha de marcado;
+    desempate por temporada/episodio), de modo que una serie completada
+    vuelve a «en curso» si ese episodio era el que la completaba.
   - **«Marcar como vista»** (`data-fab-action="mark"`), **oculto cuando
     no hay nada que marcar**: no se ofrece en series con estado
     `completado`, `standby` o `abandonado`, ni en series completas con
@@ -141,15 +151,19 @@ none`; las acciones individuales llevan `role="menuitem"`):
 
 ### 3. Estado visual del botón
 
-El toggle refleja **tres estados diferenciados** (iteración 3 de la
-issue #298):
+El toggle refleja **tres estados diferenciados** (iteraciones 3 y 4 de
+la issue #298):
 
-- **No añadido** (modo `"preview"`): icono **`+` verde**
-  (`--teal-reel`/`--paper`, hover `--teal-reel-dark`).
-- **Añadido y no visto** (ficha): icono **`+` azul acero** (nuevos
-  `--steel` `#5c7ea6`/`--steel-dark` `#3d5c80`, clase
-  `.item-fab--added` — `--ink` en reposo, `--paper` en hover). Antes
-  de la iteración 3 este estado se veía igual que «no añadido».
+- **No añadido** (modo `"preview"`): icono **`+` gris del tema**
+  (iteración 4, clase base — antes `+` verde): gris OSCURO en la
+  familia oscura (`--fab-idle` `#57544d`, hover `#45423c`) y gris
+  CLARO en la familia clara (`#d8d3c8`/`#c6c0b2` en claro,
+  `#e4e0d6`/`#d4cfc2` en blanco puro; negro puro `#2e2e2e`/`#222222`).
+  El icono es `--paper` en la familia oscura y `--ink` en la clara
+  (selector agrupado `[data-theme="light|white"] .item-fab:not(...)`).
+- **Añadido y no visto** (ficha): icono **`+` verde** (iteración 4;
+  antes azul acero `--steel`, variables eliminadas): `--teal-reel`
+  `#2b6459`/`--paper` en reposo, hover `--teal-reel-dark` `#1c4a41`.
 - **Visto** (ficha, `isItemSeen`): **`✓` ocre**
   (`.item-fab--seen`, `--ochre-spine`/`--ink`, hover
   `--ochre-spine-hover` `#74501d`/`--paper`). En una **película vista
@@ -168,21 +182,22 @@ el contador es TEXTO (exige 4.5:1) y los iconos GRÁFICOS (3:1):
 
 | Estado | oscuro | negro puro | claro | blanco puro |
 |---|---|---|---|---|
-| `+` teal (reposo/hover) | 5.7 / 8.3 ✓ | 5.7 / 5.9 ✓ | 6.8 / 10 ✓ | 6.8 / 10 ✓ |
-| `+` acero (reposo/hover) | 4.3 / 5.8 ✓ | 5.0 / 5.8 ✓ | 3.5 / 6.9 ✓ | 5.0 / 6.9 ✓ |
+| `+` gris no añadido (reposo/hover) | 6.3 / 8.4 ✓ | 11.3 / 13.3 ✓ | 9.8 / 8.1 ✓ | 15.9 / 13.5 ✓ |
+| `+` verde (reposo/hover) | 5.7 / 8.3 ✓ | 5.7 / 5.9 ✓ | 6.8 / 10 ✓ | 6.8 / 10 ✓ |
 | `✓` ocre (reposo/hover) | 5.5 / 6.0 ✓ | 6.3 / 7.5 ✓ | 4.4 / 5.2 ✓ | 6.3 / 5.2 ✓ |
 | contador (reposo/hover) | 5.5 / 6.0 ✓ | 6.3 / 7.5 ✓ | 6.3 / 5.2 ✓ | 6.3 / 5.2 ✓ |
 
 Matices por tema (regla 4 de AGENTS.md): en **negro puro** las
 variantes claras de los acentos (`--ochre-spine-dark` `#c99a4e`,
 `--teal-reel-dark` `#4f9c8e`) con texto `paper` quedan en 2.1:1–2.7:1,
-así que el hover del toggle (teal y ocre) pasa el texto a `--white`
-(`#0f0f0f`), excluyendo el hover acero con `:not` (ya supera 5:1); el
-**modo claro** fija el contador a negro puro en reposo (la tinta clara
-sobre el ocre da 4.39:1) y lo devuelve al `paper` en hover; en la
-**familia oscura** el hover del FAB visto usa `--ochre-spine-hover`
-(la pareja global `#8f6522`+`paper` da 4.32:1, justo por debajo de
-4.5:1 para texto).
+así que el hover del toggle en el estado añadido (teal claro) pasa el
+texto a `--white` (`#0f0f0f`, ≈5.9:1); el gris «no añadido» en negro
+puro usa un gris neutro oscuro (`#2e2e2e`) para distinguirse del fondo
+negro sin perder el icono paper (11.3:1). El **modo claro** fija el
+contador a negro puro en reposo (la tinta clara sobre el ocre da
+4.39:1) y lo devuelve al `paper` en hover; en la **familia oscura** el
+hover del FAB visto usa `--ochre-spine-hover` (la pareja global
+`#8f6522`+`paper` da 4.32:1, justo por debajo de 4.5:1 para texto).
 
 ### 4. Reutilización de flujos existentes (sin lógica duplicada)
 
@@ -219,6 +234,21 @@ de reimplementarlos:
 - **Valorar (ficha)**: el export `promptItemRating(item, pageCtx)` abre
   la ventana de valoración **sin marcar nada** vía
   `maybeQuickItemRating`.
+- **Quitar de añadidos** (`remove`, ficha no visto, iteración 4):
+  `scheduleDeletion(item, uid, kind, pageCtx)` de `js/undo-delete.js`
+  — el MISMO flujo con deshacer (6 s) que tenía el botón «Eliminar»
+  (`confirmDelete` de modal-handlers) — y `goBack()` para salir de la
+  ficha. `confirmDelete`/`onDelete` de películas y series se eliminan
+  junto con el botón del final de la ficha (libros y videojuegos
+  conservan su botón «Eliminar» del modal y su `confirmDelete`).
+- **Quitar última visualización** (`unwatch`, ficha visto, iteración
+  4): los nuevos exports `quickUnwatchMovie(item, ctx)` (quita la
+  ÚLTIMA entrada del `watchLog` con `removeWatch`, recomputa
+  `statusFromWatchLog`, persiste y muta en memoria, sin ventana de
+  valoración) y `quickUnwatchTv(item, ctx)` (desmarca el último
+  episodio visto con `setEpisodeDate(..., null)` +
+  `computeProgress(seasonsMeta, ...)`, persistiendo `watched`/`status`/
+  `nextEpisode`/fechas — mismo payload que `quickMarkTvComplete`).
 
 `js/search.js` no requiere cambios: `handleAddSeen` solo toca
 `btn.disabled`/`btn.textContent` sobre el target y `restoreSeenBtn`
@@ -273,10 +303,15 @@ reabrir «Añadir» (fix `20271c1`).
   entra en el **selector agrupado** de negro puro (fondo `--ink-raised`,
   texto `--paper`, borde `--paper-alpha-20`, misma fuente de verdad que
   el resto de superficies) y el hover de la pastilla usa el tinte claro
-  `--paper-alpha-14`; el resto de superficies del FAB (toggle verde/
-  azul/ocre) usan variables de tema ya cubiertas por las familias clara
-  y oscura (ADR-009/ADR-064/ADR-066), con los matices de contraste del
-  punto 3 (negro puro: `--white` en hover teal/ocre; claro: contador a
+  `--paper-alpha-14`; el resto de superficies del FAB (toggle gris/
+  verde/ocre) usan variables de tema: desde la iteración 4 el estado
+  «no añadido» tiene **variables propias por familia**
+  (`--fab-idle`/`--fab-idle-dark` en `:root` y en los bloques
+  negro puro/claro/blanco puro — patrón de selectores agrupados con
+  una sola fuente de verdad por regla), y las familias clara y blanca
+  cambian el icono del toggle base de `paper` a `ink` (ADR-009/
+  ADR-064/ADR-066), con los matices de contraste del punto 3 (negro
+  puro: `--white` en hover del estado añadido; claro: contador a
   negro; oscuro: `--ochre-spine-hover`).
 
 ### Manual y PWA
@@ -284,13 +319,18 @@ reabrir «Añadir» (fix `20271c1`).
 - **Manual de usuario** (regla 3 de AGENTS.md): actualizada la **§12.1
   «El botón flotante de acciones (películas y series)»** — menú en
   abanico alrededor del botón, acciones según el estado (tres en la
-  vista previa, dos en la ficha), «Marcar como vista»/«Valorar» que
-  añaden el título desde la preview, serie completa con confirmación de
-  temporadas no estrenadas, «Añadir otro visionado» en películas ya
-  vistas, **tres estados visuales del botón** (+ verde no añadido, +
-  azul añadido sin ver, ✓ dorado visto con el **número de visionados**
-  cuando una película se ha visto más de una vez), el **sombreado** de
-  las opciones desplegadas y cierre con Esc/clic fuera.
+  vista previa, dos o tres en la ficha con la **opción inversa**):
+  «Quitar de añadidos» / «Quitar última visualización» (iteración 4),
+  «Marcar como vista»/«Valorar» que añaden el título desde la preview,
+  serie completa con confirmación de temporadas no estrenadas, «Añadir
+  otro visionado» en películas ya vistas, **tres estados visuales del
+  botón** (+ **gris del tema** no añadido, + **verde** añadido sin ver,
+  ✓ dorado visto con el **número de visionados** cuando una película se
+  ha visto más de una vez), el **sombreado** de las opciones
+  desplegadas y cierre con Esc/clic fuera. La iteración 4 también
+  adapta **§4.7** y la ficha de película/serie: el **botón «Eliminar»
+  del final de la ficha desaparece** (el borrado vive en el FAB con
+  deshacer, ver §14.3).
 - **Sombreado de las opciones** (iteración 3): las pastillas usan la
   nueva variable `--fab-action-shadow` (doble capa: sombra de contacto +
   difusa, más marcada que `--shadow-pop`) con valores por familia
@@ -299,8 +339,9 @@ reabrir «Añadir» (fix `20271c1`).
   sombras negras no separan, así que el borde que da el selector
   agrupado se refuerza a `--paper-alpha-35` en la pastilla.
 - **PWA**: bump `20261010` → `20261011` (iteración 2) → `20261012`
-  (iteración 3) en la misma tarea (`js/config.js` `APP_VERSION`,
-  `index.html` y `service-worker.js`) para invalidar las cachés del
+  (iteración 3) → `20261013` (iteración 4) en la misma tarea
+  (`js/config.js` `APP_VERSION`, `index.html` y `service-worker.js`,
+  vía `scripts/bump-version.sh`) para invalidar las cachés del
   precache (ADR-019).
 
 ## Alternativas descartadas
@@ -384,12 +425,15 @@ reabrir «Añadir» (fix `20271c1`).
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS`, `isItemSeen` (película con `watchLog` / serie `completado`), `FAB_ARC_ANGLES`/`FAB_ARC_RADIUS` (geometría del abanico, única fuente de verdad), `fabOptions` (devuelve array de opciones; preview → «Añadir»/«Marcar como vista»/«Valorar»; ficha → «Marcar como vista»/«Añadir otro visionado» + «Valorar», oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `openFabMenu`/`closeFabMenu` (clase `is-open`), `renderFab` (toggle con `aria-expanded`, pastillas del abanico con `--fx`/`--fy`/`--i` inline; tres estados: preview `+` verde, ficha no visto clase `.item-fab--added` (azul acero), ficha visto clase `.item-fab--seen` con el `span.item-fab__count` — número de visionados, cap `99+` — en películas vistas más de una vez; `aria-label` del toggle por estado), `runFabAction` (preview: `addFromPreview`/`addSeenFromPreview`/`addAndRateFromPreview`; ficha: `quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating`; repinta con `renderFicha(item, true)` y devuelve el foco al toggle del FAB nuevo), helpers nuevos de preview `addSeenFromPreview` (marcar añade vía `handleAddSeen` con target local) y `addAndRateFromPreview` (valorar añade vía `handleAdd`/`#btn-preview-add` y encadena `promptItemRating`), `refreshAfterAdd()` ahora devuelve el ítem, candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`) y con los flujos nuevos, cierre del menú con Escape (`handleEscape`), clic fuera y `is-open` |
-| `js/quick-actions.js` | **Modificado**: `quickMarkMovie` exportado y con mutación en memoria del ítem (patrón `persist()` del modal, comentario issue #298); nuevo export `quickMarkTvComplete(item, ctx)` (serie completa: guardas de standby/abandonado y sin `nextEpisode`, `markAllSeasonsWatched` + `computeProgress`, confirmación de temporadas no estrenadas excluyendo series manuales, payload con `awaitingRelease: false`, mutación en memoria y deshacer que restaura el progreso previo); nuevo export `promptItemRating(item, ctx)` (valora sin marcar vía `maybeQuickItemRating`) |
-| `css/styles.css` | **Modificado**: sección del FAB reescrita para el abanico circular (y nuevas variables `--steel`/`--steel-dark`/`--ochre-spine-hover`/`--fab-action-shadow` en `:root` y familias clara/blanca): `.item-fab` (fixed, `right: max(1.25rem, calc(50vw - 360px + 1.25rem))` anclado a la columna de 720 px, `z-index: 40`), `.item-fab__toggle` (teal/`--paper`, hover `--teal-reel-dark`, `focus-visible`), `.item-fab--seen .item-fab__toggle` (ocre `--ochre-spine`/`--ink`, hover `--ochre-spine-hover`/`--paper` en la familia oscura; claro/blanco puro `--ochre-spine-dark`; negro puro `--ochre-spine-dark` + `--white`), `.item-fab--added .item-fab__toggle` (azul acero `--steel`/`--ink`, hover `--steel-dark`/`--paper`), `.item-fab__count` (con `[data-theme="light"]` a negro puro y hover a `--paper`), negro puro: hover del toggle teal con `--white` (`:not` excluye `--added`), `.item-fab__menu` (absoluto `inset: 0`, `pointer-events: none` — ya no es superficie visible), `.item-fab__action` (pastillas posicionadas con `--fx`/`--fy` vía `translate`, `width: max-content` para que el shrink-to-fit no las encoja a una letra por línea, `visibility: hidden`/`opacity: 0`/`scale(0.4)` en reposo, despliegue con `.item-fab.is-open` y `transition-delay: calc(var(--i, 0) * 0.06s)`, borde 999px, `overflow-wrap: anywhere`, `max-width: min(11.5rem, calc(100vw - 3.5rem))`, `--paper`/`--ink`, sombra `--fab-action-shadow` — doble capa por familia, iteración 3); negro puro (selector agrupado): `.item-fab__action` con `--ink-raised`/`--paper`/`--paper-alpha-20`, hover con `--paper-alpha-14` y borde reforzado a `--paper-alpha-35` en la pastilla |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` (iteración 2) y `20261012` (iteración 3) |
-| `service-worker.js` | **Modificado**: bump PWA a `20261011`/`20261012` en `STATIC_ASSETS` |
-| `docs/manual-de-usuario.md` | **Modificado**: §12.1 «El botón flotante de acciones (películas y series)» — menú en **abanico** alrededor del botón, tres acciones en la vista previa (la de «Marcar como vista» y «Valorar» añaden el título primero), dos en la ficha («Marcar como vista»/«Añadir otro visionado» + «Valorar»), serie completa con confirmación de no estrenadas, tres estados visuales (+ verde no añadido, + azul añadido sin ver, ✓ dorado visto con número de visionados si >1), sombreado de las opciones y cierre con Esc/clic fuera |
+| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS` (`plus`/`check`/`star` + `trash`/`rotateCcw`, iteración 4), `isItemSeen` (película con `watchLog` / serie `completado`), `FAB_ARC_ANGLES`/`FAB_ARC_RADIUS` (geometría del abanico, única fuente de verdad), `fabOptions` (devuelve array de opciones; preview → «Añadir»/«Marcar como vista»/«Valorar»; ficha → antepone la **opción inversa** — no visto: «Quitar de añadidos» `remove`; visto: «Quitar última visualización» `unwatch` — seguida de «Marcar como vista»/«Añadir otro visionado» + «Valorar», «marcar» oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `openFabMenu`/`closeFabMenu` (clase `is-open`), `renderFab` (toggle con `aria-expanded`, pastillas del abanico con `--fx`/`--fy`/`--i` inline; tres estados: preview `+` gris del tema (iteración 4, antes teal), ficha no visto clase `.item-fab--added` **verde teal** (iteración 4, antes azul acero), ficha visto clase `.item-fab--seen` con el `span.item-fab__count` — número de visionados, cap `99+` — en películas vistas más de una vez; `aria-label` del toggle por estado), `runFabAction` (preview: `addFromPreview`/`addSeenFromPreview`/`addAndRateFromPreview`; ficha: `quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating` + `remove`/`unwatch` — `scheduleDeletion`+`goBack` y `quickUnwatchMovie`/`quickUnwatchTv` (iteración 4); repinta con `renderFicha(item, true)` y devuelve el foco al toggle del FAB nuevo), helpers nuevos de preview `addSeenFromPreview` (marcar añade vía `handleAddSeen` con target local) y `addAndRateFromPreview` (valorar añade vía `handleAdd`/`#btn-preview-add` y encadena `promptItemRating`), `refreshAfterAdd()` ahora devuelve el ítem, candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`) y con los flujos nuevos, cierre del menú con Escape (`handleEscape`), clic fuera y `is-open`; **eliminado** el registro de `setItemPageBackHandler` (hook muerto, iteración 4) |
+| `js/quick-actions.js` | **Modificado**: `quickMarkMovie` exportado y con mutación en memoria del ítem (patrón `persist()` del modal, comentario issue #298); nuevo export `quickMarkTvComplete(item, ctx)` (serie completa: guardas de standby/abandonado y sin `nextEpisode`, `markAllSeasonsWatched` + `computeProgress`, confirmación de temporadas no estrenadas excluyendo series manuales, payload con `awaitingRelease: false`, mutación en memoria y deshacer que restaura el progreso previo); nuevo export `promptItemRating(item, ctx)` (valora sin marcar vía `maybeQuickItemRating`); **iteración 4**: nuevos exports `quickUnwatchMovie(item, ctx)` y `quickUnwatchTv(item, ctx)` (quitan la última visualización — último episodio por fecha, desempate temporada/episodio — con `removeWatch`/`setEpisodeDate(..., null)` + `computeProgress`, persisten y mutan en memoria con toast «última visualización quitada») |
+| `css/styles.css` | **Modificado**: sección del FAB reescrita para el abanico circular (y nuevas variables `--steel`/`--steel-dark`/`--ochre-spine-hover`/`--fab-action-shadow` en `:root` y familias clara/blanca): `.item-fab` (fixed, `right: max(1.25rem, calc(50vw - 360px + 1.25rem))` anclado a la columna de 720 px, `z-index: 40`), `.item-fab__toggle` (base: **gris `--fab-idle`** `#57544d`/hover `#45423c` — iteración 4, antes teal; `focus-visible` con outline paper/ink según familia), `.item-fab--seen .item-fab__toggle` (ocre `--ochre-spine`/`--ink`, hover `--ochre-spine-hover`/`--paper` en la familia oscura; claro/blanco puro `--ochre-spine-dark`; negro puro `--ochre-spine-dark` + `--white`), `.item-fab--added .item-fab__toggle` (**verde teal `--teal-reel`**/`--paper`, hover `--teal-reel-dark` — iteración 4, `--steel`/`--steel-dark` eliminados), `.item-fab__count` (con `[data-theme="light"]` a negro puro y hover a `--paper`), negro puro: hover del toggle teal con `--white` (`:not` excluye `--added`), `.item-fab__menu` (absoluto `inset: 0`, `pointer-events: none` — ya no es superficie visible), `.item-fab__action` (pastillas posicionadas con `--fx`/`--fy` vía `translate`, `width: max-content` para que el shrink-to-fit no las encoja a una letra por línea, `visibility: hidden`/`opacity: 0`/`scale(0.4)` en reposo, despliegue con `.item-fab.is-open` y `transition-delay: calc(var(--i, 0) * 0.06s)`, borde 999px, `overflow-wrap: anywhere`, `max-width: min(11.5rem, calc(100vw - 3.5rem))`, `--paper`/`--ink`, sombra `--fab-action-shadow` — doble capa por familia, iteración 3); negro puro (selector agrupado): `.item-fab__action` con `--ink-raised`/`--paper`/`--paper-alpha-20`, hover con `--paper-alpha-14` y borde reforzado a `--paper-alpha-35` en la pastilla; **iteración 4**: nuevas variables `--fab-idle`/`--fab-idle-dark` en `:root` (dark), `[data-theme="black"]` (`#2e2e2e`/`#222222`), `[data-theme="light"]` (`#d8d3c8`/`#c6c0b2`) y `[data-theme="white"]` (`#e4e0d6`/`#d4cfc2`) — patrón de selectores agrupados, y override del icono base a `--ink` en las familias claras |
+| `js/ui.js` | **Modificado** (iteración 4): eliminados el botón `#btn-delete-item` y su wiring de `openMovieModal` y `openTvModal`, y `onDelete` de la desestructuración de ambos (películas/series); los modales de libro y videojuego conservan su botón «Eliminar» |
+| `js/modal-handlers.js` | **Modificado** (iteración 4): eliminados `onDelete` de los callbacks de `openMovieItem`/`openTvItem` y el hook muerto `setItemPageBackHandler`/`goBackFromItemPage`/`itemPageBackHandler`; `confirmDelete` se conserva para libros/videojuegos |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` (iteración 2), `20261012` (iteración 3) y `20261013` (iteración 4) |
+| `index.html` | **Modificado**: refs `?v=` de `css/styles.css`, `ocio/ocio.css` y `js/app.js` al bump vigente (`20261011`/`20261012`/`20261013`) |
+| `service-worker.js` | **Modificado**: bump PWA a `20261011`/`20261012`/`20261013` en `STATIC_ASSETS` |
+| `docs/manual-de-usuario.md` | **Modificado**: §12.1 «El botón flotante de acciones (películas y series)» — menú en **abanico** alrededor del botón, tres acciones en la vista previa (la de «Marcar como vista» y «Valorar» añaden el título primero), dos o tres en la ficha con la **opción inversa** («Quitar de añadidos» si no está visto, «Quitar última visualización» si lo está — iteración 4), serie completa con confirmación de no estrenadas, tres estados visuales (+ **gris del tema** no añadido, + **verde** añadido sin ver, ✓ dorado visto con número de visionados si >1), sombreado de las opciones y cierre con Esc/clic fuera; **iteración 4**: adaptadas §4.7 (series), la ficha de película/serie y §14.3 (la retirada del botón «Eliminar» del final de la ficha, borrado vía FAB con deshacer), y §12.1-colores |
 | `docs/adr-106-boton-flotante-de-acciones.md` | **Nuevo**: este documento |
 
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298

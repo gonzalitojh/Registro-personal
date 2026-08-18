@@ -303,9 +303,12 @@ En la ficha de una serie terminada puedes desplegar **«Visionados
 anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
 cada vez que la has visto.
 
-### 4.7 Eliminar
+### 4.7 Eliminar una serie
 
-En la ficha, **«Eliminar»** borra la serie. El borrado no es
+El botón flotante de la ficha ofrece **«Quitar de añadidos»** (o
+**«Quitar última visualización»** si la serie ya está completada, que
+desmarca su último episodio visto). «Quitar de añadidos» borra la serie.
+El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
 
@@ -1123,8 +1126,11 @@ tipo, verás:
   deshabilitado).
 - **Tu valoración y tus notas** se gestionan desde el **botón flotante**
   (opción **«Valorar»**; la ventana que se despliega incluye las
-  estrellas y un campo de **notas**). El botón **«Eliminar»** borra el
-  título. En las películas, la lista de **visionados** aparece **oculta
+  estrellas y un campo de **notas**). Con la opción **«Quitar de
+  añadidos»** (o **«Quitar última visualización»** si ya la has visto)
+  puedes borrar el título: el borrado no es inmediato, tienes unos
+  segundos para pulsar **«Deshacer»** (ver [sección 14.3](#143-deshacer-un-borrado)).
+  En las películas, la lista de **visionados** aparece **oculta
   por defecto**: despliega **«Visionados (N)»** para verla y poder
   editar la fecha de cada visionado o quitarlo del historial.
 
@@ -1136,7 +1142,8 @@ estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
 información ampliada, temporadas (series), saga y recomendaciones con
 sus botones **«Añadir»** — con el aviso **«Este título aún no está en tu
 registro»** y el botón **«Añadir»** principal. Tu valoración, tus notas,
-tu progreso y el botón **«Eliminar»** solo aparecen
+tu progreso y las opciones del **botón flotante** (incluida «Quitar de
+añadidos») solo aparecen
 cuando el título ya está en tu registro: al añadirlo, la página pasa a
 la ficha completa al momento.
 
@@ -1180,15 +1187,23 @@ momento:
 El botón flotante **se ve diferente** según el estado, para que sepas
 de un vistazo en qué situación está el título:
 
-- **Icono + con fondo verde**: el título **aún no está en tu registro**
-  (vista previa del catálogo, de una saga o de una recomendación).
-- **Icono + con fondo azul**: el título **ya está añadido pero no lo
+- **Icono + con fondo gris**: el título **aún no está en tu registro**
+  (vista previa del catálogo, de una saga o de una recomendación). El
+  gris se adapta al tema: gris claro en los modos claros y gris oscuro
+  en los oscuros.
+- **Icono + con fondo verde**: el título **ya está añadido pero no lo
   has visto** (ficha). En las series también se usa este estado para
   cualquier serie añadida que aún no esté completada.
 - **Icono ✓ con fondo dorado**: el título **ya está visto** (película
   con al menos un visionado, o serie completada). Si una **película se
   ha visto más de una vez**, en lugar del ✓ aparece el **número de
   veces** que la has visto (2, 3, 4…).
+
+En la ficha, el abanico incluye la **opción inversa** según el estado:
+**«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
+registro, con **«Deshacer»** para cancelar) y **«Quitar última
+visualización»** si ya lo está (en películas, elimina la última vez que
+la viste; en series, desmarca el último episodio visto).
 
 En series ya completadas (o en pausa/abandonadas), la opción «Marcar
 como vista» no aparece, porque no tiene sentido; la ficha ofrece
@@ -1265,8 +1280,9 @@ abras para retomarla.
 
 ### 14.3 Deshacer un borrado
 
-Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
-instante: aparece el aviso ««Título» se eliminará…» con un botón
+Cuando pulsas **«Eliminar»** en cualquier ficha (o **«Quitar de
+añadidos»** en el botón flotante de una película o serie), la web no
+borra al instante: aparece el aviso ««Título» se eliminará…» con un botón
 **«Deshacer»**. Tienes unos segundos para pulsarlo y cancelar. Si no
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
