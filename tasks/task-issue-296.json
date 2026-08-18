@@ -1,7 +1,7 @@
 {
   "title": "Eliminar elementos en películas y series (issue #296)",
   "description": "En la ficha de películas y series se debe eliminar el botón de editar información (✎ Editar información) y la sección/botón de añadir resto de la saga, manteniendo el carrusel de otras películas de la saga.\n\nInstrucción de base (issue #296): la rama base de trabajo es feat/issue-201; crear la rama de trabajo a partir de ahí y hacer la PR también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "validated",
   "acceptance criteria": [
     "El botón «✎ Editar información» desaparece de la ficha de películas y de la ficha de series (tanto en el modal clásico como en la página de detalle).",
     "Libros y videojuegos CONSERVAN el botón «✎ Editar información».",
