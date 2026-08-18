@@ -37,6 +37,13 @@
      paper ≈ 5.8:1 (AA). */
   --steel: #5c7ea6;
   --steel-dark: #3d5c80;
+  /* Hover del FAB visto (issue #298, iteración 3): el ocre oscuro
+     global (#8f6522) con texto paper da 4.32:1, justo por debajo de
+     AA texto 4.5:1 (el contador de visionados es texto). Este ocre
+     más oscuro (#74501d ≈ 6:1 con paper) se usa solo en el hover
+     del botón flotante visto; él resto de la app sigue con
+     --ochre-spine-dark. */
+  --ochre-spine-hover: #74501d;
 
   /* Neutros */
   --white: #ffffff;
@@ -1988,9 +1995,40 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--ochre-spine);
   color: var(--ink);
 }
+/* Hover del FAB visto en la familia oscura (por defecto): paper
+   sobre --ochre-spine-dark #8f6522 se queda en 4.32:1, justo por
+   debajo de AA texto 4.5:1 (el CONTADOR es texto): se usa un ocre
+   más oscuro (--ochre-spine-hover #74501d ≈ 6:1 con paper). Las
+   familias clara y blanco puro restablecen --ochre-spine-dark
+   (#fff → 5.2:1) y el negro puro usa su variante clara con texto
+   --white (7.5:1), ver más abajo. */
 .item-fab--seen .item-fab__toggle:hover {
-  background: var(--ochre-spine-dark);
+  background: var(--ochre-spine-hover);
   color: var(--paper);
+}
+
+/* Hover del FAB visto en la familia clara y blanco puro: el ocre
+   oscuro clásico (#8f6522) + papel (#fff) supera 5:1. */
+[data-theme="light"] .item-fab--seen .item-fab__toggle:hover,
+[data-theme="white"] .item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+}
+
+/* Hover del FAB visto en negro puro: --ochre-spine-dark es la
+   variante CLARA #c99a4e; con texto paper daría 2.13:1 (ni siquiera
+   AA gráficos), así que el texto pasa a --white (#0f0f0f, casi
+   negro): 7.5:1. */
+[data-theme="black"] .item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--white);
+}
+
+/* Hover del toggle base (preview, teal) en negro puro: --teal-reel-
+   dark #4f9c8e con texto paper = 2.7:1 (falla AA gráficos); con
+   --white ≈ 5.9:1. El azul acero (--steel-dark #3d5c80) ya supera
+   5:1 con paper y se excluye con :not para no romperlo. */
+[data-theme="black"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle:hover {
+  color: var(--white);
 }
 
 /* Ítem añadido pero aún NO visto (iteración 3 de la issue #298):
@@ -2012,12 +2050,16 @@ body.is-back-to-top-visible .back-to-top {
 /* Nº de visionados (película vista más de una vez): sustituye al ✓
    dentro del toggle ocre (iteración 3 de la issue #298). Tamaño
    ajustado para que entren hasta dos dígitos en el círculo de
-   3.5rem; por encima de 99 se muestra «99+» (defensa en JS). El
-   dúo ocre/ink de la familia oscura supera 4.5:1 (AA texto).
-   Modo claro: --ink #2c2822 sobre el ocre se queda en 4.39:1, así
-   que el contador (texto) usa negro puro; el blanco puro ya hereda
-   --ink #000. El hover (toggle ocre oscuro + texto paper) supera
-   5:1 en las cuatro familias. */
+   3.5rem; por encima de 99 se muestra «99+» (defensa en JS).
+   Contraste del contador (TEXTO, exige 4.5:1):
+   - oscuro (reposo): ink sobre ocre 5.5:1 ✓; (hover): paper sobre
+     --ochre-spine-hover 6:1 ✓.
+   - negro puro: hereda ink #000 / --white sobre las variantes
+     claras (6.3:1 / 7.5:1) ✓.
+   - claro: --ink #2c2822 sobre ocre = 4.39:1 ✗ → override a negro
+     puro (6.3:1); en hover el contador vuelve al paper del toggle
+     (5.2:1, regla específica al final).
+   - blanco puro: hereda ink #000 (6.3:1) y paper en hover (5.2:1) ✓. */
 .item-fab__count {
   font-family: var(--font-body);
   font-size: 1.15rem;
@@ -2027,6 +2069,13 @@ body.is-back-to-top-visible .back-to-top {
 }
 [data-theme="light"] .item-fab__count {
   color: #000000;
+}
+/* Hover en modo claro: el contador tiene color fijo #000; al pasar
+   el mouse el toggle pasa a ocre oscuro + texto paper, así que el
+   contador también debe volver al paper (5.2:1) para no quedarse
+   en 4.05:1. */
+[data-theme="light"] .item-fab--seen .item-fab__toggle:hover .item-fab__count {
+  color: var(--paper);
 }
 
 .item-fab__menu {
