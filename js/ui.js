@@ -11,6 +11,7 @@ import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
+import { openCastModal } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
 
 function scopeFor(type) {
@@ -95,6 +96,17 @@ export const PLACEHOLDER_COVER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
+  );
+
+// Placeholder de FOTO DE PERSONA del elenco (issue #294): silueta
+// genérica cuando TMDB no tiene profile_path. Colores hardcodeados
+// porque es una imagen data: (no puede usar variables de tema); la
+// silueta sobre gris neutro mantiene contraste suficiente en los
+// cuatro modos (mismo patrón que PLACEHOLDER_COVER).
+export const PERSON_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#8f918e'/><circle cx='100' cy='105' r='45' fill='#d9dad7'/><path d='M30 285c8-65 40-95 70-95s62 30 70 95z' fill='#d9dad7'/></svg>`
   );
 
 /* ---------- Pantallas ---------- */
@@ -256,6 +268,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
   modal.classList.remove("hidden");
   modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 
+  // Carruseles de elenco (issue #294): si el resultado de búsqueda ya
+  // trae cast/crew (p. ej. reapertura con caché), cablear los botones.
+  wireCastCrewClicks(content, item);
+
   if (onEnrich) {
     const previewDetailsEl = content.querySelector("#preview-details");
     const loadingHint = content.querySelector("#preview-loading");
@@ -280,6 +296,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
 
       // Solo se re-renderiza el bloque de detalles, no la estructura
       previewDetailsEl.innerHTML = gamePlatformsHtml(item) + extraInfoHtml(item) + previewPagesHtml(item) + previewSeasonsHtml(item);
+      // Los carruseles de elenco recién llegados (issue #294) se
+      // cablean tras el re-render (los botones del render inicial no
+      // existen ya: #preview-details se sustituyó entero).
+      wireCastCrewClicks(content, item);
 
       // Si llegaron rating de comunidad o tráiler nuevos, refrescar
       // esos bloques (pueden no existir: p. ej. libros)
@@ -722,16 +742,21 @@ function wireStatusActions(content, handleStatusChange) {
   }
 }
 
-// Información ampliada de TMDB (duración, género, director/creadores,
-// reparto, sinopsis) o de la fuente de libros (sinopsis). No todos
-// los campos están siempre disponibles, así que cada línea es opcional.
+// Información ampliada de TMDB (duración, género, sinopsis) o de la
+// fuente de libros (sinopsis). No todos los campos están siempre
+// disponibles, así que cada línea es opcional.
 // Exportado (issue #290): lo reutiliza la preview de la página de ítem.
 // Opciones (issue #292): con skipMetaBits/skipOverview la página de
 // ítem (ficha y preview) mueve duración+géneros y sinopsis al bloque
-// hero (itemHeroHtml) y deja aquí solo director/creadores/reparto;
-// con skipStatusFallback (solo junto a los anteriores) no se duplica
-// la línea de carga/error que ya pinta el hero. Los llamadores
-// clásicos (modales) no pasan opciones: sin cambios.
+// hero (itemHeroHtml); con skipStatusFallback (solo junto a los
+// anteriores) no se duplica la línea de carga/error que ya pinta el
+// hero. Los llamadores clásicos (modales) no pasan opciones: sin
+// cambios.
+// Issue #294: en películas/series las líneas de director/creadores/
+// reparto se SUSTITUYEN por los carruseles de elenco (castCrewHtml);
+// si hay carruseles se devuelven junto al resto de líneas, y el
+// fallback de carga/error solo aplica cuando no hay ni líneas ni
+// carruseles.
 export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false } = {}) {
   const lines = [];
   const metaBits = [];
@@ -741,19 +766,10 @@ export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false
     if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
     if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
   }
-  if (item.director) {
-    lines.push(`<p class="extra-info__line"><strong>Director:</strong> ${escapeHtml(item.director)}</p>`);
-  }
-  if (item.creators && item.creators.length) {
-    lines.push(
-      `<p class="extra-info__line"><strong>Creador${item.creators.length > 1 ? "es" : ""}:</strong> ${escapeHtml(
-        item.creators.join(", ")
-      )}</p>`
-    );
-  }
-  if (item.cast && item.cast.length) {
-    lines.push(`<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`);
-  }
+  // Elenco (issue #294): películas y series muestran los carruseles de
+  // producción y reparto en lugar de las líneas de texto de
+  // director/creadores/reparto (ver castCrewHtml).
+  const carousels = castCrewHtml(item);
   if (item.type === "game") {
     if (item.developers && item.developers.length) {
       lines.push(
@@ -774,8 +790,110 @@ export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false
   }
   const overview = item.overview || item.description;
   if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
-  if (!lines.length) return skipStatusFallback ? "" : detailStatusHtml(item);
-  return `<div class="extra-info">${lines.join("")}</div>`;
+  if (!lines.length) {
+    if (carousels) return carousels;
+    return skipStatusFallback ? "" : detailStatusHtml(item);
+  }
+  return `<div class="extra-info">${lines.join("")}</div>${carousels}`;
+}
+
+// Normaliza el reparto por si llega en la forma vieja (array de
+// strings, datos en memoria previos a la issue #294): sin foto ni
+// personaje. El crew siempre es nuevo (array de objetos).
+function normalizeCastPeople(cast) {
+  if (!Array.isArray(cast)) return [];
+  return cast
+    .map((c) => (typeof c === "string" ? { name: c } : c))
+    .filter((c) => c && c.name);
+}
+
+// Devuelve el HTML de los DOS CARRUSELES de elenco (issue #294):
+// «Producción» (crew: director, guionista, compositor…) y «Reparto»
+// (actores/actrices), cada tarjeta con foto, nombre y personaje/puesto,
+// y cada carrusel con su botón «Ver en más detalle» (data-cast-role)
+// que abre la ventana con TODAS las personas (js/cast-modal.js).
+// Solo aplica a películas/series; libros, videojuegos e ítems sin
+// elenco devuelven cadena vacía. Los botones se cablean con
+// wireCastCrewClicks tras el render.
+export function castCrewHtml(item) {
+  if (item.type !== "movie" && item.type !== "tv") return "";
+  const crew = Array.isArray(item.crew) ? item.crew.filter((c) => c && c.name) : [];
+  const cast = normalizeCastPeople(item.cast);
+  const sections = [];
+
+  if (crew.length) {
+    // La producción se ordena por área (mismo criterio que la ventana
+    // de detalle) y por order dentro de cada área.
+    const DEPT_PRIORITY = [
+      "Creadores", "Dirección", "Guion", "Producción", "Sonido",
+      "Cámara", "Montaje", "Arte", "Vestuario y maquillaje",
+      "Iluminación", "Efectos visuales", "Efectos especiales",
+      "Equipo técnico", "Interpretación",
+    ];
+    const deptRank = (d) => {
+      const idx = DEPT_PRIORITY.indexOf(d);
+      return idx === -1 ? DEPT_PRIORITY.length : idx;
+    };
+    const sortedCrew = [...crew].sort((a, b) => {
+      const ka = deptRank(a.department);
+      const kb = deptRank(b.department);
+      if (ka !== kb) return ka - kb;
+      return (a.order ?? 999) - (b.order ?? 999);
+    });
+    sections.push(castCrewSectionHtml("Producción", sortedCrew, "crew", (p) => p.job || p.department || ""));
+  }
+
+  if (cast.length) {
+    const sortedCast = [...cast].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    sections.push(castCrewSectionHtml("Reparto", sortedCast, "cast", (p) => p.character || ""));
+  }
+
+  return sections.join("");
+}
+
+function castCrewSectionHtml(label, people, role, roleTextOf) {
+  const cards = people
+    .map(
+      (p) => `
+      <div class="cast-card">
+        <img class="cast-card__photo" src="${escapeHtml(p.profileUrl || PERSON_PLACEHOLDER)}" alt="" loading="lazy" />
+        <span class="cast-card__name">${escapeHtml(p.name)}</span>
+        ${roleTextOf(p) ? `<span class="cast-card__role">${escapeHtml(roleTextOf(p))}</span>` : ""}
+      </div>`
+    )
+    .join("");
+  return `
+    <section class="cast-crew" aria-labelledby="cast-crew-title-${role}">
+      <div class="cast-crew__head">
+        <h4 class="cast-crew__title" id="cast-crew-title-${role}">${escapeHtml(label)} <span class="cast-crew__count">(${people.length})</span></h4>
+        <button type="button" class="btn btn--small btn--outline cast-crew__more" data-cast-role="${role}"
+                aria-label="${escapeHtml(label)} en más detalle (${people.length})">
+          Ver en más detalle
+        </button>
+      </div>
+      <div class="cast-crew__scroll">
+        ${cards}
+      </div>
+    </section>`;
+}
+
+// Cablea los botones «Ver en más detalle» de los carruseles de elenco
+// (issue #294) con los datos del ítem en mano. Invocar tras cada
+// render que incluya castCrewHtml (modal clásico, página de ítem,
+// previews y ficha de amigo). Un botón sin cablear no hace nada
+// (degradación silenciosa si un futuro llamador olvida el wiring).
+export function wireCastCrewClicks(root, item) {
+  if (!root) return;
+  root.querySelectorAll("[data-cast-role]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const isCrew = btn.dataset.castRole === "crew";
+      openCastModal({
+        title: item.title || "",
+        subtitle: isCrew ? "Producción" : "Reparto",
+        people: isCrew ? item.crew || [] : item.cast || [],
+      });
+    });
+  });
 }
 
 // Estado de los detalles de ficha bajo demanda (issue #200): si el
@@ -1380,6 +1498,10 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts, { target });
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
+
+  // Carruseles de elenco (issue #294): cablear los botones «Ver en más
+  // detalle» de producción/reparto con los datos de este ítem.
+  wireCastCrewClicks(content, item);
 
   const addSagaBtn = content.querySelector("#btn-add-saga");
   if (addSagaBtn) {
@@ -2410,6 +2532,9 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
 
+  // Carruseles de elenco (issue #294): ver openMovieModal.
+  wireCastCrewClicks(content, item);
+
   wireStatusActions(content, async (newStatusOrNull) => {
     const newProgress = await onSetStatus(newStatusOrNull);
     // El target se propaga en el re-render (issue #285): en modo
@@ -2657,6 +2782,10 @@ export function openReadOnlyModal(item, ownerName) {
     ${progress ? `<p class="extra-info__line">${escapeHtml(progress)}</p>` : ""}
     ${stars ? `<p class="item-card__rating" style="font-size:1rem;">${stars}</p>` : ""}
   `;
+
+  // Carruseles de elenco (issue #294): los botones «Ver en más detalle»
+  // también funcionan en la ficha de solo lectura del amigo.
+  wireCastCrewClicks(content, item);
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;

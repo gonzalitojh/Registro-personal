@@ -18,13 +18,9 @@
 import { trapFocus } from "./focus-utils.js";
 
 const PLACEHOLDER_PERSON_COVER =
-  "data:image/svg+xml;charset=utf-8," +
+  "data:image/svg+xml;utf8," +
   encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 180">' +
-      '<rect width="120" height="180" rx="8" fill="#8a8a8a"/>' +
-      '<circle cx="60" cy="62" r="26" fill="#d8d8d8"/>' +
-      '<path d="M22 168c2-34 18-52 38-52s36 18 38 52" fill="#d8d8d8"/>' +
-      "</svg>"
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="100%" height="100%" fill="#8f918e"/><circle cx="100" cy="105" r="45" fill="#d9dad7"/><path d="M30 285c8-65 40-95 70-95s62 30 70 95z" fill="#d9dad7"/></svg>'
   );
 
 // Estado del modal abierto actualmente (o null). closeCastModal() lo

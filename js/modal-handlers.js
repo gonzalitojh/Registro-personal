@@ -18,6 +18,7 @@ import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
+import { closeCastModal } from "./cast-modal.js";
 import { addItem } from "./db.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
 // navigate (issue #285, iteración): las tarjetas de saga y de
@@ -820,15 +821,23 @@ export function setupModalCloseListeners() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const castModal = document.getElementById("cast-modal");
       const episodeActionsModal = document.getElementById("episode-actions-modal");
       const ratingModal = document.getElementById("rating-modal");
       const modal = document.getElementById("item-modal");
       const notifDropdown = document.getElementById("notif-dropdown");
 
-      // Prioridad: episodio-ya-visto > ventana de valoración > modal
-      // activo > notificaciones. (La búsqueda global ya no es un modal
-      // desde la issue #46: su dropdown de resultados gestiona su propio
-      // Escape con stopPropagation, así que nunca llega hasta aquí.)
+      // Prioridad: elenco > episodio-ya-visto > ventana de valoración >
+      // modal activo > notificaciones. (La búsqueda global ya no es un
+      // modal desde la issue #46: su dropdown de resultados gestiona su
+      // propio Escape con stopPropagation, así que nunca llega hasta
+      // aquí.) La ventana del elenco (issue #294) es la capa superior
+      // cuando está abierta: el Escape la cierra a ella, no a la ficha.
+      if (castModal && !castModal.classList.contains("hidden")) {
+        e.preventDefault();
+        closeCastModal();
+        return;
+      }
       if (episodeActionsModal && !episodeActionsModal.classList.contains("hidden")) {
         e.preventDefault();
         closeEpisodeActionsModal();
