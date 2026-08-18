@@ -380,6 +380,7 @@
 [data-theme="black"] .tab.is-active,
 [data-theme="black"] .modal__card,
 [data-theme="black"] .item-view__card,
+[data-theme="black"] .item-fab__menu,
 [data-theme="black"] .modal__close,
 [data-theme="black"] .toast,
 [data-theme="black"] .notif-dropdown,
@@ -401,6 +402,13 @@
 
 /* Hover del botón primario: tinte claro sobre la superficie oscura */
 [data-theme="black"] .btn--primary:hover {
+  background: var(--paper-alpha-14);
+}
+
+/* Hover de las acciones del botón flotante (issue #298): la
+   superficie del menú ya es oscura en negro puro (selector agrupado);
+   el hover usa el mismo tinte claro que el resto de superficies. */
+[data-theme="black"] .item-fab__action:hover {
   background: var(--paper-alpha-14);
 }
 
@@ -1881,6 +1889,114 @@ body.is-back-to-top-visible .back-to-top {
    al desplazar (auto-hide-nav no trata esta vista). */
 .item-view .back-to-top {
   display: none;
+}
+
+/* =========================================================
+   Botón flotante de acciones de la ficha/preview (issue #298)
+   Abajo a la derecha (anclado a la columna de contenido, máx.
+   720px) con un menú de acciones: «Añadir» (solo si el ítem aún
+   no está en el registro), «Marcar como vista» y «Valorar». El
+   botón se ve DISTINTO si el ítem ya está visto (película con
+   visionados / serie completada): icono ✓ y fondo ocre frente al
+   icono + verde de «no visto». z-index 40: sobre el contenido,
+   por debajo de la cabecera (46), de las pestañas (45) y de los
+   modales (≥50) para que nunca tape las ventanas.
+   ========================================================= */
+.item-fab {
+  position: fixed;
+  /* En pantallas anchas se ancla al borde derecho de la columna
+     (50vw - 360px = mitad del hueco de 720px centrada) en lugar
+     de al borde del viewport, para no quedar lejos del contenido. */
+  right: max(1.25rem, calc(50vw - 360px + 1.25rem));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.item-fab__toggle {
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--teal-reel);
+  color: var(--paper);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.item-fab__toggle:hover {
+  background: var(--teal-reel-dark);
+}
+.item-fab__toggle:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+.item-fab__toggle svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* Ítem ya visto: ocre + check (mismo dúo que .btn--accent-books,
+   contraste AA sobre el fondo de la página en los 4 temas) */
+.item-fab--seen .item-fab__toggle {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+.item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--paper);
+}
+
+.item-fab__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 13.5rem;
+  max-width: min(calc(100vw - 2.5rem), 16rem);
+  padding: 0.35rem;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+}
+
+.item-fab__action {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  /* Textos largos (títulos, acciones) se ajustan al contenedor:
+     nunca fuera de pantalla (AGENTS.md). */
+  overflow-wrap: anywhere;
+}
+.item-fab__action:hover {
+  background: var(--ink-alpha-10);
+}
+.item-fab__action:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: -2px;
+}
+.item-fab__action svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  color: var(--ink-soft);
 }
 
 /* Swap ☰/⚙ → atrás en la cabecera (issue #285): la página de ítem

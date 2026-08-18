@@ -51,6 +51,7 @@ import { handleAdd } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
+import { quickMarkMovie, quickMarkTvComplete, promptItemRating } from "./quick-actions.js";
 
 let pageCtx = null;
 let ensureGroup = null;
@@ -101,6 +102,7 @@ function groupFor(kind) {
 
 function renderLoading() {
   currentMode = "mensaje";
+  removeFab();
   contentEl().innerHTML = `
     <div class="item-view__card" aria-live="polite">
       <div class="panel-loading" role="status" aria-live="polite">
@@ -114,6 +116,7 @@ function renderLoading() {
 // registro) con botón atrás propio además del de la cabecera.
 function renderMessage(title, text) {
   currentMode = "mensaje";
+  removeFab();
   contentEl().innerHTML = `
     <div class="item-view__card" role="alert">
       <h3 class="modal-detail__title" tabindex="-1">${escapeHtml(title)}</h3>
@@ -136,20 +139,174 @@ function renderItemContent() {
   return contentEl();
 }
 
+/* ---------- Botón flotante de acciones (issue #298) ---------- */
+
+// Botón flotante abajo a la derecha, visible SOLO en la ficha y en la
+// vista previa de películas/series. Al pulsarlo despliega un menú con
+// acciones según el contexto:
+//   - ficha (ítem en el registro): «Marcar como vista» (oculto en
+//     series ya completadas / en pausa / abandonadas) y «Valorar».
+//   - preview (ítem aún no añadido): «Añadir».
+// El botón se ve DISTINTO si el ítem ya está visto (película con al
+// menos un visionado o serie completada): icono ✓ y color ocre frente
+// al icono + verde de «no visto».
+const FAB_ID = "item-fab";
+
+const FAB_ICONS = {
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+};
+
+function fabEl() {
+  return document.getElementById(FAB_ID);
+}
+
+// ¿El ítem está visto? Película: al menos un visionado. Serie:
+// completada (todos los episodios de todas las temporadas).
+function isItemSeen(item) {
+  if (item.type === "tv") return item.status === "completado";
+  return Boolean(item.watchLog && item.watchLog.length);
+}
+
+function removeFab() {
+  fabEl()?.remove();
+}
+
+function closeFabMenu() {
+  const fab = fabEl();
+  if (!fab) return;
+  const menu = fab.querySelector(".item-fab__menu");
+  const toggle = fab.querySelector(".item-fab__toggle");
+  menu?.classList.add("hidden");
+  toggle?.setAttribute("aria-expanded", "false");
+}
+
+function openFabMenu() {
+  const fab = fabEl();
+  if (!fab) return;
+  const menu = fab.querySelector(".item-fab__menu");
+  const toggle = fab.querySelector(".item-fab__toggle");
+  if (!menu || !toggle) return;
+  menu.classList.remove("hidden");
+  toggle.setAttribute("aria-expanded", "true");
+  const firstAction = menu.querySelector(".item-fab__action");
+  firstAction?.focus();
+}
+
+// Opciones del menú según el contexto (ver cabecera de la sección).
+function fabOptionsHtml(item, mode) {
+  if (mode === "preview") {
+    const label = item.type === "tv" ? "Añadir serie" : "Añadir película";
+    return `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="add">${FAB_ICONS.plus}<span>${label}</span></button>`;
+  }
+  const isTv = item.type === "tv";
+  const seen = isItemSeen(item);
+  const markable =
+    !isTv || !["completado", "standby", "abandonado"].includes(item.status);
+  const actions = [];
+  if (markable) {
+    // Película ya vista: «Marcar como vista» añade otro visionado
+    // (mismo comportamiento que el botón Vista de la lista).
+    const label = !isTv && seen ? "Añadir otro visionado" : "Marcar como vista";
+    actions.push(
+      `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="mark">${FAB_ICONS.check}<span>${label}</span></button>`
+    );
+  }
+  actions.push(
+    `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="rate">${FAB_ICONS.star}<span>Valorar</span></button>`
+  );
+  return actions.join("");
+}
+
+// Pinta (o repinta) el botón flotante dentro de #item-view. mode:
+// "ficha" (ítem en el registro) o "preview" (aún no añadido).
+function renderFab(item, mode) {
+  removeFab();
+  const seen = mode === "ficha" && isItemSeen(item);
+  const fab = document.createElement("div");
+  fab.id = FAB_ID;
+  fab.className = "item-fab" + (seen ? " item-fab--seen" : "");
+  fab.innerHTML = `
+    <div class="item-fab__menu hidden" role="menu" aria-label="Acciones rápidas">
+      ${fabOptionsHtml(item, mode)}
+    </div>
+    <button type="button" class="item-fab__toggle" aria-label="Acciones rápidas (${seen ? "visto" : "pendiente"})" aria-haspopup="true" aria-expanded="false">
+      ${seen ? FAB_ICONS.check : FAB_ICONS.plus}
+    </button>`;
+  viewEl().appendChild(fab);
+
+  const toggle = fab.querySelector(".item-fab__toggle");
+  toggle.addEventListener("click", () => {
+    const menu = fab.querySelector(".item-fab__menu");
+    menu.classList.contains("hidden") ? openFabMenu() : closeFabMenu();
+  });
+
+  fab.querySelectorAll(".item-fab__action").forEach((btn) => {
+    btn.addEventListener("click", () => runFabAction(item, btn.dataset.fabAction));
+  });
+}
+
+// Ejecuta la acción del botón flotante. Tras marcar o valorar se
+// repinta la ficha (isRerender=true, mismo patrón que el reopen del
+// modal: sin re-pedir detalles) para reflejar el nuevo estado.
+async function runFabAction(item, action) {
+  closeFabMenu();
+  try {
+    if (action === "add") {
+      await addFromPreview(item, { disabled: false, textContent: "" });
+      return;
+    }
+    if (action === "mark") {
+      if (item.type === "tv") await quickMarkTvComplete(item, pageCtx);
+      else await quickMarkMovie(item, pageCtx);
+    } else if (action === "rate") {
+      await promptItemRating(item, pageCtx);
+    }
+    if (isCurrent(currentToken)) renderFicha(item, true);
+  } catch (err) {
+    ui.showToast("No se pudo actualizar: " + (err && err.message ? err.message : err));
+  }
+}
+
+// Alta desde la vista previa (botón «Añadir» o botón flotante):
+// handleAdd da de alta en el registro y refreshAfterAdd pasa a la
+// ficha completa leyendo el ítem recién creado.
+async function addFromPreview(item, btn) {
+  btn.disabled = true;
+  btn.textContent = "Añadiendo…";
+  try {
+    const ok = await handleAdd(item, btn, pageCtx);
+    if (ok) {
+      refreshAfterAdd();
+    } else {
+      btn.disabled = false;
+      btn.textContent = "Añadir";
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Añadir";
+    ui.showToast("No se pudo añadir: " + (err && err.message ? err.message : err));
+  }
+}
+
 /* ---------- Ficha completa (ítem en el registro) ---------- */
 
-function renderFicha(item) {
+function renderFicha(item, isRerender = false) {
   currentMode = "ficha";
   const target = renderItemContent();
   const kind = item.type === "tv" ? "tv" : "movie";
   // Modo página: target = contenedor del contenido; los re-renders
   // (reopen) propagan el target y repintan en la página. El foco al
-  // título lo gestiona ui.js en el modo página.
+  // título lo gestiona ui.js en el modo página. isRerender=true evita
+  // re-pedir los detalles de ficha (issue #298: repintado tras una
+  // acción del botón flotante, mismo patrón que el reopen del modal).
   if (kind === "tv") {
-    openTvItem(item, pageCtx, false, target);
+    openTvItem(item, pageCtx, isRerender, target);
   } else {
-    openMovieItem(item, pageCtx, false, target);
+    openMovieItem(item, pageCtx, isRerender, target);
   }
+  renderFab(item, "ficha");
 }
 
 /* ---------- Vista previa (ítem del catálogo, aún no añadido) ---------- */
@@ -360,26 +517,7 @@ function paintPreview(
   }
 
   const addBtn = target.querySelector("#btn-preview-add");
-  addBtn.addEventListener("click", async () => {
-    addBtn.disabled = true;
-    addBtn.textContent = "Añadiendo…";
-    try {
-      const ok = await handleAdd(item, addBtn, pageCtx);
-      if (ok) {
-        // Alta completada: pasar a la ficha completa leyendo el ítem
-        // recién creado (lectura directa de Firestore: el snapshot
-        // del grupo puede no haber llegado aún).
-        refreshAfterAdd();
-      } else {
-        addBtn.disabled = false;
-        addBtn.textContent = "Añadir";
-      }
-    } catch (err) {
-      addBtn.disabled = false;
-      addBtn.textContent = "Añadir";
-      ui.showToast("No se pudo añadir: " + (err && err.message ? err.message : err));
-    }
-  });
+  addBtn.addEventListener("click", () => addFromPreview(item, addBtn));
 
   requestAnimationFrame(() => {
     const title = target.querySelector(".item-hero__title");
@@ -388,6 +526,10 @@ function paintPreview(
       title.focus({ preventScroll: true });
     }
   });
+
+  // Botón flotante de la vista previa: solo con la acción «Añadir»
+  // (el ítem aún no está en el registro; issue #298).
+  renderFab(item, "preview");
 }
 
 // Vista previa: pinta al momento con el resultado de búsqueda si lo
@@ -398,6 +540,7 @@ function paintPreview(
 // dónde verla, info ampliada, temporadas, saga y recomendaciones).
 async function renderPreview(optimisticItem = null) {
   currentMode = "preview";
+  removeFab(); // el FAB se pinta cuando llega la preview final (paintPreview)
   const token = currentToken;
   if (!token) return;
 
@@ -565,6 +708,7 @@ function closePage() {
   visible = false;
   currentToken = null;
   currentMode = null;
+  removeFab();
   document.body.classList.remove("is-item-page");
   const view = viewEl();
   if (view) view.classList.add("hidden");
@@ -637,6 +781,16 @@ function handleEscape(e) {
   ) {
     return;
   }
+  // Menú del botón flotante abierto (issue #298): Escape lo cierra
+  // sin navegar atrás; el foco vuelve al botón flotante.
+  const fab = fabEl();
+  const fabMenu = fab?.querySelector(".item-fab__menu");
+  if (fabMenu && !fabMenu.classList.contains("hidden")) {
+    e.preventDefault();
+    closeFabMenu();
+    fab.querySelector(".item-fab__toggle")?.focus();
+    return;
+  }
   e.preventDefault();
   e.stopPropagation();
   goBack();
@@ -659,6 +813,12 @@ export function setupItemPage(ctx, opts = {}) {
 
   document.getElementById("btn-item-back")?.addEventListener("click", goBack);
   document.addEventListener("keydown", handleEscape, true);
+  // Clic fuera del botón flotante (issue #298): cierra su menú.
+  document.addEventListener("click", (e) => {
+    const fab = fabEl();
+    if (!fab || e.target.closest?.("#" + FAB_ID)) return;
+    closeFabMenu();
+  });
 
   return {
     openPage,
