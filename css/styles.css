@@ -380,7 +380,7 @@
 [data-theme="black"] .tab.is-active,
 [data-theme="black"] .modal__card,
 [data-theme="black"] .item-view__card,
-[data-theme="black"] .item-fab__menu,
+[data-theme="black"] .item-fab__action,
 [data-theme="black"] .modal__close,
 [data-theme="black"] .toast,
 [data-theme="black"] .notif-dropdown,
@@ -405,8 +405,8 @@
   background: var(--paper-alpha-14);
 }
 
-/* Hover de las acciones del botón flotante (issue #298): la
-   superficie del menú ya es oscura en negro puro (selector agrupado);
+/* Hover de las acciones del botón flotante (issue #298): las
+   pastillas ya son oscuras en negro puro (selector agrupado);
    el hover usa el mismo tinte claro que el resto de superficies. */
 [data-theme="black"] .item-fab__action:hover {
   background: var(--paper-alpha-14);
@@ -1894,13 +1894,21 @@ body.is-back-to-top-visible .back-to-top {
 /* =========================================================
    Botón flotante de acciones de la ficha/preview (issue #298)
    Abajo a la derecha (anclado a la columna de contenido, máx.
-   720px) con un menú de acciones: «Añadir» (solo si el ítem aún
-   no está en el registro), «Marcar como vista» y «Valorar». El
-   botón se ve DISTINTO si el ítem ya está visto (película con
-   visionados / serie completada): icono ✓ y fondo ocre frente al
-   icono + verde de «no visto». z-index 40: sobre el contenido,
-   por debajo de la cabecera (46), de las pestañas (45) y de los
-   modales (≥50) para que nunca tape las ventanas.
+   720px). Al pulsarlo despliega las acciones A SU ALREDEDOR en
+   forma de abanico circular (iteración issue #298), con una
+   animación escalonada que las hace salir «desde el botón».
+   Acciones según el contexto: ficha → «Marcar como vista» +
+   «Valorar»; preview → «Añadir» + «Marcar como vista» +
+   «Valorar». El botón se ve DISTINTO si el ítem ya está visto
+   (película con visionados / serie completada): icono ✓ y fondo
+   ocre frente al icono + verde de «no visto». z-index 40: sobre
+   el contenido, por debajo de la cabecera (46), de las pestañas
+   (45) y de los modales (≥50) para que nunca tape las ventanas.
+   Nota de animación: el menú usa la clase .is-open en .item-fab
+   (no .hidden) para que las transiciones de apertura/cierre
+   funcionen; con prefers-reduced-motion las transiciones se
+   anulan en bloque (regla global) y el abanico aparece/desaparece
+   al instante.
    ========================================================= */
 .item-fab {
   position: fixed;
@@ -1910,10 +1918,8 @@ body.is-back-to-top-visible .back-to-top {
   right: max(1.25rem, calc(50vw - 360px + 1.25rem));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
   z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.6rem;
+  width: 3.5rem;
+  height: 3.5rem;
 }
 
 .item-fab__toggle {
@@ -1954,43 +1960,70 @@ body.is-back-to-top-visible .back-to-top {
 }
 
 .item-fab__menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 13.5rem;
-  max-width: min(calc(100vw - 2.5rem), 16rem);
-  padding: 0.35rem;
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-pop);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
+/* Cada acción se posiciona desde el CENTRO del botón (el menú
+   ocupa exactamente la caja de 3.5rem del FAB): left/top 50% la
+   coloca con su esquina en el centro y translate(-50%, -50%)
+   centra la pastilla; --fx/--fy (rem, calculados en JS con
+   fabArcPoint) la desplazan al punto del abanico. En reposo
+   (sin .is-open) las acciones quedan ocultas, colapsadas en el
+   centro y sin interacción (ni foco de teclado). Al abrir,
+   salen escalonadas (--i) hacia su ángulo con un rebote sutil. */
 .item-fab__action {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  border: none;
-  background: transparent;
+  gap: 0.55rem;
+  max-width: min(11.5rem, calc(100vw - 3.5rem));
+  overflow-wrap: anywhere;
+  white-space: normal;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--paper);
   color: var(--ink);
+  box-shadow: var(--shadow-pop);
   font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
   text-align: left;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius);
+  padding: 0.6rem 0.95rem;
   cursor: pointer;
-  /* Textos largos (títulos, acciones) se ajustan al contenedor:
-     nunca fuera de pantalla (AGENTS.md). */
-  overflow-wrap: anywhere;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(calc(var(--fx, 0rem) - 50%), calc(var(--fy, 0rem) - 50%)) scale(0.4);
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.25),
+    opacity 0.2s ease,
+    visibility 0.2s;
+  transition-delay: 0s;
+}
+.item-fab.is-open .item-fab__action {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(calc(var(--fx, 0rem) - 50%), calc(var(--fy, 0rem) - 50%)) scale(1);
+  pointer-events: auto;
+  /* Escalonado de salida desde el centro: cada opción arranca
+     un poco después que la anterior (--i = índice en JS). La
+     visibilidad salta al INSTANTE (sin delay): es la que permite
+     enfocar la primera acción con teclado al abrir. */
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.25),
+    opacity 0.2s ease,
+    visibility 0s;
+  transition-delay: calc(var(--i, 0) * 0.06s), calc(var(--i, 0) * 0.06s), 0s;
 }
 .item-fab__action:hover {
   background: var(--ink-alpha-10);
 }
 .item-fab__action:focus-visible {
   outline: 2px solid var(--teal-reel);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 .item-fab__action svg {
   width: 1.1rem;

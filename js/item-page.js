@@ -47,7 +47,7 @@ import {
   renderRecommendations,
   wireCastCrewClicks,
 } from "./ui.js";
-import { handleAdd } from "./search.js";
+import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
@@ -142,11 +142,15 @@ function renderItemContent() {
 /* ---------- Botón flotante de acciones (issue #298) ---------- */
 
 // Botón flotante abajo a la derecha, visible SOLO en la ficha y en la
-// vista previa de películas/series. Al pulsarlo despliega un menú con
-// acciones según el contexto:
+// vista previa de películas/series. Al pulsarlo despliega las acciones
+// alrededor del botón en forma de abanico circular (no lista vertical,
+// iteración de la issue #298), con una animación escalonada que las
+// hace salir «desde el botón». Acciones según el contexto:
 //   - ficha (ítem en el registro): «Marcar como vista» (oculto en
 //     series ya completadas / en pausa / abandonadas) y «Valorar».
-//   - preview (ítem aún no añadido): «Añadir».
+//   - preview (ítem aún no añadido): «Añadir», «Marcar como vista»
+//     (añade y marca como vista) y «Valorar» (añade y abre la
+//     valoración).
 // El botón se ve DISTINTO si el ítem ya está visto (película con al
 // menos un visionado o serie completada): icono ✓ y color ocre frente
 // al icono + verde de «no visto».
@@ -157,6 +161,33 @@ const FAB_ICONS = {
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
 };
+
+// Ángulos (grados) de las opciones alrededor del botón, medidos desde
+// el centro del FAB: 0° = arriba, 90° = izquierda (los ángulos
+// negativos giran hacia la derecha). El abanico vive en el cuadrante
+// superior-izquierdo: es el espacio libre para un botón anclado abajo
+// a la derecha (la parte derecha del círculo no cabe en pantallas
+// estrechas). Los ángulos están espaciados para que las pastillas
+// (max. 11.5rem) no se solapen: la separación vertical entre puntos
+// consecutivos del arco es >= la altura de una pastilla (~2.8rem),
+// y todos los puntos quedan en el rango [-90°, 0°] para que ninguna
+// opción baje del centro del botón (se saldría por el borde inferior).
+const FAB_ARC_ANGLES = {
+  1: [-70], // una sola opción (p. ej. serie completada: solo «Valorar»)
+  2: [-30, -85], // ficha: «Marcar como vista» + «Valorar»
+  3: [-20, -55, -88], // preview: «Añadir» + «Marcar como vista» + «Valorar»
+};
+const FAB_ARC_RADIUS = 9; // rem, distancia del centro del FAB a las opciones
+
+// Punto (fx, fy en rem) de una opción del abanico, relativo al centro
+// del botón flotante (fx positivo = derecha, fy positivo = abajo).
+function fabArcPoint(angleDeg) {
+  const rad = (angleDeg * Math.PI) / 180;
+  return {
+    fx: FAB_ARC_RADIUS * Math.sin(rad),
+    fy: -FAB_ARC_RADIUS * Math.cos(rad),
+  };
+}
 
 function fabEl() {
   return document.getElementById(FAB_ID);
@@ -176,9 +207,8 @@ function removeFab() {
 function closeFabMenu() {
   const fab = fabEl();
   if (!fab) return;
-  const menu = fab.querySelector(".item-fab__menu");
   const toggle = fab.querySelector(".item-fab__toggle");
-  menu?.classList.add("hidden");
+  fab.classList.remove("is-open");
   toggle?.setAttribute("aria-expanded", "false");
 }
 
@@ -188,17 +218,23 @@ function openFabMenu() {
   const menu = fab.querySelector(".item-fab__menu");
   const toggle = fab.querySelector(".item-fab__toggle");
   if (!menu || !toggle) return;
-  menu.classList.remove("hidden");
+  fab.classList.add("is-open");
   toggle.setAttribute("aria-expanded", "true");
   const firstAction = menu.querySelector(".item-fab__action");
   firstAction?.focus();
 }
 
 // Opciones del menú según el contexto (ver cabecera de la sección).
-function fabOptionsHtml(item, mode) {
+// Devuelve [{ action, icon, label }]: la posición circular la calcula
+// renderFab (ángulos de FAB_ARC_ANGLES según el número de opciones).
+function fabOptions(item, mode) {
   if (mode === "preview") {
     const label = item.type === "tv" ? "Añadir serie" : "Añadir película";
-    return `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="add">${FAB_ICONS.plus}<span>${label}</span></button>`;
+    return [
+      { action: "add", icon: FAB_ICONS.plus, label },
+      { action: "mark", icon: FAB_ICONS.check, label: "Marcar como vista" },
+      { action: "rate", icon: FAB_ICONS.star, label: "Valorar" },
+    ];
   }
   const isTv = item.type === "tv";
   const seen = isItemSeen(item);
@@ -213,14 +249,10 @@ function fabOptionsHtml(item, mode) {
     // Película ya vista: «Marcar como vista» añade otro visionado
     // (mismo comportamiento que el botón Vista de la lista).
     const label = !isTv && seen ? "Añadir otro visionado" : "Marcar como vista";
-    actions.push(
-      `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="mark">${FAB_ICONS.check}<span>${label}</span></button>`
-    );
+    actions.push({ action: "mark", icon: FAB_ICONS.check, label });
   }
-  actions.push(
-    `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="rate">${FAB_ICONS.star}<span>Valorar</span></button>`
-  );
-  return actions.join("");
+  actions.push({ action: "rate", icon: FAB_ICONS.star, label: "Valorar" });
+  return actions;
 }
 
 // Pinta (o repinta) el botón flotante dentro de #item-view. mode:
@@ -231,9 +263,17 @@ function renderFab(item, mode) {
   const fab = document.createElement("div");
   fab.id = FAB_ID;
   fab.className = "item-fab" + (seen ? " item-fab--seen" : "");
+  const options = fabOptions(item, mode);
+  const angles = FAB_ARC_ANGLES[options.length] || FAB_ARC_ANGLES[2];
+  const actionsHtml = options
+    .map((opt, i) => {
+      const { fx, fy } = fabArcPoint(angles[i]);
+      return `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="${opt.action}" style="--fx:${fx.toFixed(2)}rem; --fy:${fy.toFixed(2)}rem; --i:${i}">${opt.icon}<span>${opt.label}</span></button>`;
+    })
+    .join("");
   fab.innerHTML = `
-    <div class="item-fab__menu hidden" role="menu" aria-label="Acciones rápidas">
-      ${fabOptionsHtml(item, mode)}
+    <div class="item-fab__menu" role="menu" aria-label="Acciones rápidas">
+      ${actionsHtml}
     </div>
     <button type="button" class="item-fab__toggle" aria-label="Acciones rápidas (${seen ? "visto" : "pendiente"})" aria-haspopup="true" aria-expanded="false">
       ${seen ? FAB_ICONS.check : FAB_ICONS.plus}
@@ -242,8 +282,7 @@ function renderFab(item, mode) {
 
   const toggle = fab.querySelector(".item-fab__toggle");
   toggle.addEventListener("click", () => {
-    const menu = fab.querySelector(".item-fab__menu");
-    menu.classList.contains("hidden") ? openFabMenu() : closeFabMenu();
+    fab.classList.contains("is-open") ? closeFabMenu() : openFabMenu();
   });
 
   fab.querySelectorAll(".item-fab__action").forEach((btn) => {
@@ -254,11 +293,19 @@ function renderFab(item, mode) {
 // Ejecuta la acción del botón flotante. Tras marcar o valorar se
 // repinta la ficha (isRerender=true, mismo patrón que el reopen del
 // modal: sin re-pedir detalles) para reflejar el nuevo estado.
+// En la vista previa (ítem aún no añadido) «Marcar como vista» y
+// «Valorar» primero dan de ALTA el ítem y luego actúan sobre él
+// (issue #298: el usuario no distingue añadir+accionar).
 async function runFabAction(item, action) {
   closeFabMenu();
   try {
     if (action === "add") {
       await addFromPreview(item);
+      return;
+    }
+    if (currentMode === "preview") {
+      if (action === "mark") await addSeenFromPreview(item);
+      else if (action === "rate") await addAndRateFromPreview(item);
       return;
     }
     if (action === "mark") {
@@ -301,6 +348,69 @@ async function addFromPreview(item, btn) {
     } else {
       target.disabled = false;
       target.textContent = "Añadir";
+    }
+  } catch (err) {
+    target.disabled = false;
+    target.textContent = "Añadir";
+    ui.showToast("No se pudo añadir: " + (err && err.message ? err.message : err));
+  } finally {
+    previewAddInFlight = false;
+  }
+}
+
+// Alta como vista desde la preview (issue #298): el flotante de la
+// preview «Marcar como vista» da de alta DIRECTAMENTE como visto
+// (handleAddSeen: en series marca TODOS los episodios de TODAS las
+// temporadas — mismo GATE de temporadas y confirmaciones que el
+// catálogo) y pasa a la ficha. Comparte el candado previewAddInFlight
+// con el alta normal: no puede haber dos altas concurrentes (botón
+// real + flotante).
+async function addSeenFromPreview(item) {
+  if (previewAddInFlight) return;
+  previewAddInFlight = true;
+  // Sin botón real: el flotante ya cerró su menú. handleAddSeen
+  // espera un btn para deshabilitarlo/restaurarlo durante el flujo.
+  const target = { disabled: false, textContent: "" };
+  try {
+    const ok = await handleAddSeen(item, target, pageCtx);
+    if (ok && isCurrent(currentToken)) {
+      await refreshAfterAdd();
+    }
+    // ok=false: abortado o deshecho (el ítem no queda en el
+    // registro); la vista previa sigue igual.
+  } catch (err) {
+    ui.showToast("No se pudo actualizar: " + (err && err.message ? err.message : err));
+  } finally {
+    previewAddInFlight = false;
+  }
+}
+
+// Preview · «Valorar» (issue #298): añade el ítem al registro (con
+// el flujo normal, sin marcar nada) y, nada más pasar a la ficha,
+// abre la valoración del ítem recién creado. El candado anti doble
+// alta cubre todo el flujo (alta + modal de valoración).
+async function addAndRateFromPreview(item) {
+  if (previewAddInFlight) return;
+  previewAddInFlight = true;
+  // handleAdd espera un btn para deshabilitarlo/restaurarlo; si
+  // existe el botón real de la preview se usa (como en addFromPreview).
+  const realBtn = document.getElementById("btn-preview-add");
+  const target = realBtn || { disabled: false, textContent: "" };
+  target.disabled = true;
+  target.textContent = "Añadiendo…";
+  try {
+    const ok = await handleAdd(item, target, pageCtx);
+    if (!ok) {
+      target.disabled = false;
+      target.textContent = "Añadir";
+      return;
+    }
+    const registered = await refreshAfterAdd();
+    // La valoración se abre sobre el ítem recién creado (tiene id de
+    // registro; promptItemRating lo necesita para persistir).
+    if (registered && isCurrent(currentToken)) {
+      await promptItemRating(registered, pageCtx);
+      renderFicha(registered, true);
     }
   } catch (err) {
     target.disabled = false;
@@ -671,20 +781,23 @@ async function resolve(optimisticItem = null) {
 
 // Tras añadir desde la preview: lectura directa de Firestore (el
 // snapshot puede no haber llegado) y paso a la ficha completa.
+// Devuelve el ítem ya en el registro (o null si no se encontró),
+// para poder seguir encadenando acciones (p. ej. valorar).
 async function refreshAfterAdd() {
   const token = currentToken;
-  if (!token || !pageCtx.getCurrentUser()) return;
+  if (!token || !pageCtx.getCurrentUser()) return null;
   try {
     const items = await pageCtx.getItemsOnce(pageCtx.getCurrentUser().uid, token.kind);
     const found = (items || []).find((i) => String(i.externalId) === token.externalId);
     if (isCurrent(token) && found) {
       renderFicha(found);
-      return;
+      return found;
     }
   } catch (err) {
     // fallback: re-resolver desde el estado en memoria
   }
   if (isCurrent(token)) await resolve();
+  return null;
 }
 
 /* ---------- API pública ---------- */
@@ -805,8 +918,7 @@ function handleEscape(e) {
   // Menú del botón flotante abierto (issue #298): Escape lo cierra
   // sin navegar atrás; el foco vuelve al botón flotante.
   const fab = fabEl();
-  const fabMenu = fab?.querySelector(".item-fab__menu");
-  if (fabMenu && !fabMenu.classList.contains("hidden")) {
+  if (fab?.classList.contains("is-open")) {
     e.preventDefault();
     closeFabMenu();
     fab.querySelector(".item-fab__toggle")?.focus();

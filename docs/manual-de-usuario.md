@@ -1147,8 +1147,10 @@ juego** (más en [sección 7.4](#74-historial-de-sesiones)).
 ### 12.1 El botón flotante de acciones (películas y series)
 
 En la página de una película o de una serie hay un **botón flotante**
-abajo a la derecha con las acciones rápidas. Al pulsarlo se despliega un
-menú con lo que puedas hacer en ese momento:
+abajo a la derecha con las acciones rápidas. Al pulsarlo, las acciones
+**se despliegan alrededor del botón en abanico**, saliendo una a una
+con una pequeña animación, y se muestran las que puedas hacer en ese
+momento:
 
 - **«Añadir película» / «Añadir serie»**: solo aparece cuando el título
   **aún no está en tu registro** (es decir, en la vista previa de un
@@ -1159,9 +1161,14 @@ menú con lo que puedas hacer en ese momento:
   En una **serie**, marcar como vista **completa la serie entera**:
   deja vistos todos los episodios de todas las temporadas (si alguna
   aún no está estrenada, la web te pregunta antes). En una película ya
-  vista, la opción cambia a **«Añadir otro visionado»**.
+  vista, la opción cambia a **«Añadir otro visionado»**. Cuando el
+  título aún no está en tu registro (vista previa), **marcar como vista
+  lo añade a la vez**, en un solo paso, y después abre la valoración.
 - **«Valorar»**: abre la ventana de valoración **sin marcar nada**,
-  para poner o cambiar tus estrellas cuando quieras.
+  para poner o cambiar tus estrellas cuando quieras. En la vista previa
+  de un título aún no añadido, **«Valorar» lo añade al registro primero**
+  y abre la valoración después (así puedes dejarle las estrellas desde
+  el primer momento).
 
 El botón flotante **se ve diferente** según el estado: con el icono **✓
 y fondo dorado** si el título ya está visto (película con al menos un
@@ -1169,8 +1176,8 @@ visionado, o serie completada); con el icono **+ y fondo verde** si aún
 no lo está. En series ya completadas (o en pausa/abandonadas), la
 opción «Marcar como vista» no aparece, porque no tiene sentido; la
 ficha ofrece «Volver a verla desde el principio» para un nuevo
-visionado. El menú se cierra pulsando fuera, con **Esc** o volviendo a
-pulsar el botón.
+visionado. El abanico se cierra pulsando fuera, con **Esc** o volviendo
+a pulsar el botón.
 
 ## 13. Valoraciones con estrellas
 

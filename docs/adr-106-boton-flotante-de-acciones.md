@@ -43,6 +43,15 @@ candado cubre también el paso a ficha tras añadir). El manual de usuario
 se actualizó en la misma tarea (`docs/manual-de-usuario.md` §12.1, regla
 3 de AGENTS.md).
 
+**Iteración 2 (comentario de revisión de la PR #299)**: en la **vista
+previa** el FAB debe ofrecer también **«Marcar como vista»** y
+**«Valorar»** (solo tenía «Añadir»), y el menú pasa de un listado
+vertical a un **abanico circular animado** alrededor del botón. Las
+acciones nuevas de preview **añaden el título al registro primero**
+(`handleAddSeen`/`handleAdd`) y encadenan valoración, manteniendo el
+candado anti doble alta; el menú se gestiona con la clase `is-open`
+(visibilidad/animación CSS) en lugar del atributo `hidden`.
+
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
 
 ## Decisión
@@ -71,13 +80,16 @@ La decisión se organiza en siete puntos.
   `"preview"`); `removeFab()` lo retira al salir de la página o al
   cambiar de modo.
 
-### 2. Menú contextual según el modo
+### 2. Menú en abanico circular según el modo
 
-`fabOptionsHtml(item, mode)` genera las acciones del menú con
-`role="menu"` / `role="menuitem"` (`data-fab-action` por acción):
+`fabOptionsHtml(item, mode)` genera las acciones (`data-fab-action` por
+acción) dentro de `.item-fab__menu` (`role="menu"`, `pointer-events:
+none`; las acciones individuales llevan `role="menuitem"`):
 
-- **Preview** (modo `"preview"`): una sola acción, **«Añadir película» /
-  «Añadir serie»** (`data-fab-action="add"`).
+- **Preview** (modo `"preview"`): tres acciones en abanico —
+  **«Añadir película» / «Añadir serie»** (`add`), **«Marcar como
+  vista»** (`mark`) y **«Valorar»** (`rate`). «Marcar como vista» y
+  «Valorar» **añaden el título al registro primero** (ver punto 4).
 - **Ficha** (modo `"ficha"`):
   - **«Marcar como vista»** (`data-fab-action="mark"`), **oculto cuando
     no hay nada que marcar**: no se ofrece en series con estado
@@ -87,6 +99,30 @@ La decisión se organiza en siete puntos.
   - **«Añadir otro visionado»** en una **película ya vista** (mismo
     comportamiento que el botón «Vista» de la lista).
   - **«Valorar»** (`data-fab-action="rate"`), siempre presente.
+  - La ficha no ofrece «Añadir»: el ítem ya está en el registro.
+
+### 2-bis. Abanico circular (animación y geometría)
+
+- El menú es un **abanico circular** alrededor del toggle: cada acción
+  es una **pastilla** con `position: absolute` centrada en el botón y
+  desplazada con variables CSS `--fx`/`--fy` (offsets en `rem`,
+  `translate(calc(var(--fx) - 50%), calc(var(--fy) - 50%))`). Los
+  ángulos y el radio son una única fuente de verdad en JS:
+  `FAB_ARC_ANGLES = {1: [-70], 2: [-30, -85], 3: [-20, -55, -88]}`
+  (grados sobre el eje X, negativo = hacia arriba/izquierda) y
+  `FAB_ARC_RADIUS = 9` (`rem`).
+- El despliegue usa la clase `is-open` en `.item-fab` (CSS, sin
+  atributos `hidden`): en reposo las pastillas están `visibility:
+  hidden` + `opacity: 0` + `scale(0.4)`; con `is-open` salen con
+  `scale(1)` y un **retardo escalonado** `transition-delay: calc(var(--i,
+  0) * 0.06s)` (cada acción con su `--i`), y `visibility` sin retardo en
+  la apertura para que el teclado encuentre el foco al instante.
+  `openFabMenu`/`closeFabMenu` alternan la clase; el listener global
+  cierra con clic fuera y `handleEscape` con Esc (devolviendo el foco al
+  toggle).
+- **Reduced motion**: el bloque global `@media (prefers-reduced-motion:
+  reduce)` de `css/styles.css` anula las transiciones, por lo que el
+  abanico aparece/desaparece al instante (regla AGENTS.md).
 
 ### 3. Estado visual del botón
 
@@ -109,7 +145,13 @@ de reimplementarlos:
   (`#btn-preview-add`, que lo deshabilita durante el alta; el objeto
   local es solo el fallback para el FAB) — y `refreshAfterAdd()` pasa a
   la ficha completa leyendo el ítem recién creado.
-- **Marcar**: `quickMarkMovie(item, pageCtx)` (`js/quick-actions.js`,
+- **Marcar (preview)**: `addSeenFromPreview(item)` usa `handleAddSeen`
+  de `js/search.js` (marcado + ventana de valoración con deshacer,
+  issue #136) con un target local `{disabled: false, textContent: ""}`
+  en lugar del botón de la lista, y después `refreshAfterAdd()`: en la
+  vista previa, **marcar como vista añade el título a la vez** — un solo
+  paso en lugar de añadir y luego marcar.
+- **Marcar (ficha)**: `quickMarkMovie(item, pageCtx)` (`js/quick-actions.js`,
   ahora exportado) para películas, y el **nuevo `quickMarkTvComplete`**
   (exportado) para series: marca completa TODA la serie — todos los
   episodios de todas las temporadas con `markAllSeasonsWatched` +
@@ -119,8 +161,26 @@ de reimplementarlos:
   y **ventana de valoración con deshacer** (issue #136) que restaura el
   progreso previo (watched, status literal, nextEpisode, fechas y
   `awaitingRelease`).
-- **Valorar**: el nuevo export `promptItemRating(item, pageCtx)` abre la
-  ventana de valoración **sin marcar nada** vía `maybeQuickItemRating`.
+- **Valorar (preview)**: `addAndRateFromPreview(item)` usa `handleAdd`
+  (o el botón real `#btn-preview-add` si está presente en el DOM, para
+  respetar su deshabilitado) + `refreshAfterAdd()` y encadena
+  `promptItemRating(registered, pageCtx)` sobre el ítem recién
+  registrado: **valorar desde la preview añade el título primero y abre
+  la valoración después**.
+- **Valorar (ficha)**: el export `promptItemRating(item, pageCtx)` abre
+  la ventana de valoración **sin marcar nada** vía
+  `maybeQuickItemRating`.
+
+`js/search.js` no requiere cambios: `handleAddSeen` solo toca
+`btn.disabled`/`btn.textContent` sobre el target y `restoreSeenBtn`
+protege con `if (!btn) return`, por lo que acepta el objeto local
+`{disabled: false, textContent: ""}` sin tocar el DOM.
+
+Los dos flujos nuevos de preview (`addSeenFromPreview`,
+`addAndRateFromPreview`) comparten el candado global `previewAddInFlight`
+y `refreshAfterAdd()` **devuelve el ítem** encontrado (o `null`) para
+poder encadenar la acción posterior (valoración) sobre el objeto
+registrado.
 
 ### 5. Repintado tras la acción sin re-pedir detalles
 
@@ -153,24 +213,31 @@ reabrir «Añadir» (fix `20271c1`).
   al primer menuitem al abrir, cierre con **Escape** (el `handleEscape`
   de la página cierra el menú y devuelve el foco al toggle sin navegar
   atrás) y con **clic fuera** (listener de `document`), y
-  `overflow-wrap: anywhere` en las acciones para que ningún texto largo
-  se salga de pantalla (regla 2 de AGENTS.md).
-- **Cuatro modos de tema** (regla 4 de AGENTS.md): `.item-fab__menu`
+  `overflow-wrap: anywhere` + `max-width: min(11.5rem, calc(100vw -
+  3.5rem))` en las pastillas para que ningún texto largo se salga de
+  pantalla (regla 2 de AGENTS.md). El estado oculto usa `visibility:
+  hidden`, que retira las acciones del orden de tabulación y de los
+  lectores de pantalla; en la apertura, `visibility` transiciona sin
+  retardo para que el foco programado llegue al primer menuitem.
+- **Cuatro modos de tema** (regla 4 de AGENTS.md): `.item-fab__action`
   entra en el **selector agrupado** de negro puro (fondo `--ink-raised`,
   texto `--paper`, borde `--paper-alpha-20`, misma fuente de verdad que
-  el resto de superficies) y el hover de `.item-fab__action` usa el
-  tinte claro `--paper-alpha-14`; el resto de superficies del FAB
-  (toggle verde/ocre y menú) usan variables de tema ya cubiertas por las
-  familias clara y oscura (ADR-009/ADR-064/ADR-066).
+  el resto de superficies) y el hover de la pastilla usa el tinte claro
+  `--paper-alpha-14`; el resto de superficies del FAB (toggle verde/ocre)
+  usan variables de tema ya cubiertas por las familias clara y oscura
+  (ADR-009/ADR-064/ADR-066).
 
 ### Manual y PWA
 
-- **Manual de usuario** (regla 3 de AGENTS.md): nueva **§12.1 «El botón
-  flotante de acciones (películas y series)»** — acciones según el
-  estado, serie completa con confirmación de temporadas no estrenadas,
-  «Añadir otro visionado» en películas ya vistas, estados visuales del
-  botón (✓ dorado / + verde) y cierre con Esc/clic fuera.
-- **PWA**: bump `20261009` → `20261010` en la misma tarea
+- **Manual de usuario** (regla 3 de AGENTS.md): actualizada la **§12.1
+  «El botón flotante de acciones (películas y series)»** — menú en
+  abanico alrededor del botón, acciones según el estado (tres en la
+  vista previa, dos en la ficha), «Marcar como vista»/«Valorar» que
+  añaden el título desde la preview, serie completa con confirmación de
+  temporadas no estrenadas, «Añadir otro visionado» en películas ya
+  vistas, estados visuales del botón (✓ dorado / + verde) y cierre con
+  Esc/clic fuera.
+- **PWA**: bump `20261010` → `20261011` en la misma tarea
   (`js/config.js` `APP_VERSION`, `index.html` y `service-worker.js`)
   para invalidar las cachés del precache (ADR-019).
 
@@ -182,9 +249,15 @@ reabrir «Añadir» (fix `20271c1`).
   exactamente lo que resuelve el FAB inferior.
 - **Un solo botón que ejecuta la acción principal sin menú**: no cubre
   la valoración sin marcar ni el caso preview/ficha con acciones
-  distintas; el menú contextual (`role="menu"`) es la única forma de
+  distintas; el menú en abanico (`role="menu"`) es la única forma de
   ofrecer «Añadir», «Marcar como vista»/«Añadir otro visionado» y
   «Valorar» sin ocupar espacio en la ficha.
+- **Menú desplegable vertical clásico**: en la iteración 1 el menú
+  abría un listado vertical sobre el FAB; la revisión de la PR pidió el
+  **abanico circular** alrededor del botón (todas las opciones visibles
+  de un vistazo, sin superficie que tape la esquina de la ficha). La
+  geometría se parametriza en JS (`FAB_ARC_ANGLES`/`FAB_ARC_RADIUS`)
+  para poder ajustarla sin tocar CSS por acción.
 - **Duplicar la lógica de marcar completo en `item-page.js`** en lugar
   de exportar `quickMarkTvComplete` desde `quick-actions.js`: rompería
   la única fuente de verdad de las acciones rápidas y el deshacer
@@ -201,17 +274,24 @@ reabrir «Añadir» (fix `20271c1`).
 - **Acciones de registro en una sola pulsación**, en móvil y escritorio:
   marcar como vista, valorar o añadir desde el catálogo sin buscar el
   botón entre las secciones de la ficha; en móvil el pulgar llega al
-  FAB sin desplazamiento.
+  FAB sin desplazamiento. En la **vista previa**, marcar o valorar
+  **añaden el título automáticamente**, con lo que registrar y puntuar
+  un título del catálogo son dos pasos en total, no cuatro.
 - **Sin lógica duplicada**: el FAB delega íntegramente en `handleAdd`,
-  `quickMarkMovie`, `quickMarkTvComplete` y `promptItemRating`; el
-  deshacer de la valoración (issue #136) y la confirmación de temporadas
-  no estrenadas se heredan de los flujos existentes.
+  `handleAddSeen`, `quickMarkMovie`, `quickMarkTvComplete` y
+  `promptItemRating`; el deshacer de la valoración (issue #136) y la
+  confirmación de temporadas no estrenadas se heredan de los flujos
+  existentes.
 - **Estado siempre coherente**: la mutación en memoria + repintado con
   `isRerender` (patrón de ADR-100/issue #285) deja el FAB y la ficha
   reflejando el nuevo estado al momento, sin llamadas extra a TMDB.
 - **Candado anti doble alta efectivo**: `previewAddInFlight` cubre
   también el paso a ficha tras añadir, cerrando la ventana de doble alta
-  entre el botón real y el FAB.
+  entre el botón real, el FAB y los flujos nuevos de preview (marcar y
+  valorar comparten el candado).
+- **Abanico parametrizado**: ángulos y radio viven en una única fuente
+  (JS); el despliegue escalonado con `--i` y la anulación con
+  `prefers-reduced-motion` mantienen la animación ligera y accesible.
 - El manual de usuario queda alineado con el comportamiento real (regla
   3 de AGENTS.md) y los cuatro modos de tema quedan cubiertos con el
   patrón de selectores agrupados (regla 4 de AGENTS.md).
@@ -229,20 +309,24 @@ reabrir «Añadir» (fix `20271c1`).
   la marca rápida porque `quickMarkTvComplete` acaba de obtener la meta
   de temporadas con éxito, y en el resto de acciones el ítem ya está
   materializado en memoria.
-- **PWA bump a `20261010`**: un precache/recarga adicional para los
+- **Las acciones de preview «Marcar como vista»/«Valorar» añaden el
+  título sin pasar por la ficha**: el usuario ve el alta y la
+  valoración encadenadas; es el comportamiento pedido en la revisión,
+  y el deshacer de la ventana de valoración (issue #136) cubre el caso
+  de arrepentimiento.
+- **PWA bump a `20261011`**: un precache/recarga adicional para los
   usuarios al desplegar (mismo coste asumido en cada bump, ADR-019).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS`, `isItemSeen` (película con `watchLog` / serie `completado`), `fabOptionsHtml` (preview → «Añadir»; ficha → «Marcar como vista»/«Añadir otro visionado» + «Valorar», oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `renderFab` (toggle con `aria-expanded`, menú `role="menu"`, clase `.item-fab--seen`), `runFabAction` (delega en `addFromPreview`/`quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating` y repinta con `renderFicha(item, true)`), candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`), cierre del menú con Escape (`handleEscape`) y clic fuera; `renderFicha(item, isRerender = false)` repinta tras la acción sin re-pedir detalles (comentario issue #298) |
+| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS`, `isItemSeen` (película con `watchLog` / serie `completado`), `FAB_ARC_ANGLES`/`FAB_ARC_RADIUS` (geometría del abanico, única fuente de verdad), `fabOptionsHtml` (preview → «Añadir»/«Marcar como vista»/«Valorar»; ficha → «Marcar como vista»/«Añadir otro visionado» + «Valorar», oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `openFabMenu`/`closeFabMenu` (clase `is-open`), `renderFab` (toggle con `aria-expanded`, pastillas del abanico con `--fx`/`--fy`/`--i` inline, clase `.item-fab--seen`), `runFabAction` (preview: `addFromPreview`/`addSeenFromPreview`/`addAndRateFromPreview`; ficha: `quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating`; repinta con `renderFicha(item, true)`), helpers nuevos de preview `addSeenFromPreview` (marcar añade vía `handleAddSeen` con target local) y `addAndRateFromPreview` (valorar añade vía `handleAdd`/`#btn-preview-add` y encadena `promptItemRating`), `refreshAfterAdd()` ahora devuelve el ítem, candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`) y con los flujos nuevos, cierre del menú con Escape (`handleEscape`), clic fuera y `is-open` |
 | `js/quick-actions.js` | **Modificado**: `quickMarkMovie` exportado y con mutación en memoria del ítem (patrón `persist()` del modal, comentario issue #298); nuevo export `quickMarkTvComplete(item, ctx)` (serie completa: guardas de standby/abandonado y sin `nextEpisode`, `markAllSeasonsWatched` + `computeProgress`, confirmación de temporadas no estrenadas excluyendo series manuales, payload con `awaitingRelease: false`, mutación en memoria y deshacer que restaura el progreso previo); nuevo export `promptItemRating(item, ctx)` (valora sin marcar vía `maybeQuickItemRating`) |
-| `css/styles.css` | **Modificado**: nueva sección del FAB: `.item-fab` (fixed, `right: max(1.25rem, calc(50vw - 360px + 1.25rem))` anclado a la columna de 720 px, `z-index: 40`), `.item-fab__toggle` (teal/`--paper`, hover `--teal-reel-dark`, `focus-visible`), `.item-fab--seen .item-fab__toggle` (ocre `--ochre-spine`/`--ink`, hover `--ochre-spine-dark`/`--paper`), `.item-fab__menu` (`--paper`/`--ink`, `--shadow-pop`), `.item-fab__action` (hover `--ink-alpha-10`, `overflow-wrap: anywhere`); negro puro (selector agrupado): `.item-fab__menu` con `--ink-raised`/`--paper`/`--paper-alpha-20` y hover `.item-fab__action` con `--paper-alpha-14` |
-| `index.html` | **Modificado**: bump PWA a `20261010` en las URLs versionadas de estilos y `js/app.js` |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261010` |
-| `service-worker.js` | **Modificado**: bump PWA a `20261010` en `STATIC_ASSETS` |
-| `docs/manual-de-usuario.md` | **Modificado**: nueva §12.1 «El botón flotante de acciones (películas y series)» — acciones según el estado («Añadir» solo en preview, «Marcar como vista» con serie completa y confirmación de no estrenadas, «Añadir otro visionado» en película ya vista, «Valorar» sin marcar), estados visuales del botón (✓ dorado / + verde) y cierre con Esc/clic fuera |
+| `css/styles.css` | **Modificado**: sección del FAB reescrita para el abanico circular: `.item-fab` (fixed, `right: max(1.25rem, calc(50vw - 360px + 1.25rem))` anclado a la columna de 720 px, `z-index: 40`), `.item-fab__toggle` (teal/`--paper`, hover `--teal-reel-dark`, `focus-visible`), `.item-fab--seen .item-fab__toggle` (ocre `--ochre-spine`/`--ink`, hover `--ochre-spine-dark`/`--paper`), `.item-fab__menu` (absoluto `inset: 0`, `pointer-events: none` — ya no es superficie visible), `.item-fab__action` (pastillas posicionadas con `--fx`/`--fy` vía `translate`, `visibility: hidden`/`opacity: 0`/`scale(0.4)` en reposo, despliegue con `.item-fab.is-open` y `transition-delay: calc(var(--i, 0) * 0.06s)`, borde 999px, `overflow-wrap: anywhere`, `max-width: min(11.5rem, calc(100vw - 3.5rem))`, `--paper`/`--ink`/`--shadow-pop`); negro puro (selector agrupado): `.item-fab__action` con `--ink-raised`/`--paper`/`--paper-alpha-20` y hover con `--paper-alpha-14` |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` |
+| `service-worker.js` | **Modificado**: bump PWA a `20261011` en `STATIC_ASSETS` |
+| `docs/manual-de-usuario.md` | **Modificado**: §12.1 «El botón flotante de acciones (películas y series)» — menú en **abanico** alrededor del botón, tres acciones en la vista previa (la de «Marcar como vista» y «Valorar» añaden el título primero), dos en la ficha («Marcar como vista»/«Añadir otro visionado» + «Valorar»), serie completa con confirmación de no estrenadas, estados visuales (✓ dorado / + verde) y cierre con Esc/clic fuera |
 | `docs/adr-106-boton-flotante-de-acciones.md` | **Nuevo**: este documento |
 
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
