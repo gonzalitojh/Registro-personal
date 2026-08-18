@@ -189,8 +189,8 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
   }
 
   // --- Cargar películas de la saga (issue #280) ---
-  // Si falla la consulta no bloqueamos la ficha: la sección se oculta
-  // (degradación elegante) y el banner de saga sigue visible.
+  // Si falla la consulta no bloqueamos la ficha: el carrusel «Otras
+  // películas de la saga» simplemente no se renderiza (degradación elegante).
   let sagaParts = null;
   if (item.collectionId) {
     try {

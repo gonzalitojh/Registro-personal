@@ -1411,8 +1411,8 @@ export function renderRecommendations(items, existingIds, group, interactive, on
  * @param {boolean} interactive - true si se muestran botones "Añadir"
  * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
  *                               un botón pulsable que llama onOpen(movie)
- *                               para abrir la vista previa de esa
- *                               película antes de añadirla (issue #280)
+ *                               para abrir la página de detalle de esa
+ *                               película (issue #285)
  * @returns {string} HTML de la sección, o cadena vacía
  */
 export function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
