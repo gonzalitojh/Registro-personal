@@ -228,7 +228,6 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
     onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
     onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
-    onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
     // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
@@ -393,62 +392,6 @@ export async function addFromRecommendation(item, btn, ctx) {
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
-  }
-}
-
-// Exportado (issue #290): la preview de la página de ítem lo reutiliza
-// para el botón «Añadir resto de la saga» del banner de saga.
-export async function openSagaSelector(item, ctx) {
-  if (!item.collectionId) return;
-  try {
-    const collection = await getCollectionDetails(item.collectionId);
-    if (!collection || !collection.parts.length) {
-      ui.showToast("No se pudo obtener la información de la saga.");
-      return;
-    }
-
-    const existingIds = new Set(
-      (await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId)
-    );
-
-    const missingMovies = collection.parts.filter(
-      (p) => !existingIds.has(p.externalId)
-    );
-
-    if (!missingMovies.length) {
-      ui.showToast("Ya tienes todas las películas de esta saga.");
-      return;
-    }
-
-    ui.closeModal();
-
-    ui.openSagaSelectionModal(collection.name, missingMovies, {
-      onConfirm: async (selectedMovies) => {
-        ui.closeModal();
-        let added = 0;
-        let failed = 0;
-
-        for (const movie of selectedMovies) {
-          try {
-            await addSagaMovie(movie, ctx);
-            added++;
-          } catch (err) {
-            console.error("Error al añadir", movie.title, err);
-            failed++;
-          }
-        }
-
-        if (added > 0) {
-          ui.showToast(`${added} película${added !== 1 ? "s" : ""} añadida${added !== 1 ? "s" : ""} de ${collection.name}.`);
-        }
-        if (failed > 0) {
-          ui.showToast(`${failed} película${failed !== 1 ? "s" : ""} no pudieron añadirse.`);
-        }
-      },
-      onCancel: () => ui.closeModal(),
-    });
-  } catch (err) {
-    ui.showToast("Error al consultar la saga: " + err.message);
   }
 }
 
