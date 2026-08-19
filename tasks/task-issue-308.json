@@ -1,7 +1,7 @@
 {
   "title": "Lista completa de reparto y producción",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nNo se está mostrando la lista completa de reparto y producción, al menos en las series, se muestra una versión reducida.",
-  "status": "documented",
+  "status": "review",
   "acceptance criteria": [
     "Se muestra la lista completa de reparto y producción en las fichas/series (no una versión reducida).",
     "El cambio se realiza sobre una rama nueva creada desde `feat/issue-201`.",
@@ -50,5 +50,13 @@
     "adr": "docs/adr-110-elenco-completo-series.md",
     "related_issue": "#308",
     "manual_usuario": "§12 bullet «Información ampliada»: elenco completo en series (todas las temporadas), personajes múltiples y puestos múltiples unidos"
+  },
+  "pr": {
+    "number": 309,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/309",
+    "title": "Lista completa de reparto y producción en series (aggregate_credits de TMDB, issue #308)",
+    "branch": "feat/issue-308-lista-completa-reparto",
+    "commit": "7f0c1b1",
+    "closes": "#308"
   }
 }
