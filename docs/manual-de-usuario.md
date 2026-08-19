@@ -283,7 +283,9 @@ falta. En tu lista verás siempre qué toca ver ahora (por ejemplo,
 
 ### 4.4 Pausar, abandonar y retomar
 
-Dentro de la ficha de la serie tienes tres botones según el momento:
+Estas acciones viven en el **botón flotante** de la ficha de la serie
+(más en la [sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)),
+dependiendo del momento:
 
 - **«En pausa»**: detienes el seguimiento sin perder lo visto.
 - **«Abandonar»**: dejas la serie (la web te pregunta antes; no se pierde
@@ -1205,6 +1207,13 @@ momento:
   de un título aún no añadido, **«Valorar» lo añade al registro primero**
   y abre la valoración después (así puedes dejarle las estrellas y las
   notas desde el primer momento).
+- **«En pausa»**, **«Abandonar»** y **«Retomar»**: solo aparecen en la
+  ficha de una **serie** (no completada). «En pausa» detiene el
+  seguimiento sin perder lo visto; «Abandonar» deja la serie (la web te
+  pregunta antes; no se pierde el progreso); «Retomar» vuelve a una
+  serie que tenías en pausa o abandonada. Antes estos botones estaban
+  al final de la ficha de la serie; ahora viven aquí, en el botón
+  flotante (sección [4.4](#44-pausar-abandonar-y-retomar)).
 
 El botón flotante **se ve diferente** según el estado, para que sepas
 de un vistazo en qué situación está el título:
@@ -1214,12 +1223,22 @@ de un vistazo en qué situación está el título:
   gris se adapta al tema: gris claro en los modos claros y gris oscuro
   en los oscuros.
 - **Icono + con fondo verde**: el título **ya está añadido pero no lo
-  has visto** (ficha). En las series también se usa este estado para
-  cualquier serie añadida que aún no esté completada.
+  has visto** (ficha).
 - **Icono ✓ con fondo dorado**: el título **ya está visto** (película
   con al menos un visionado, o serie completada). Si una **película se
   ha visto más de una vez**, en lugar del ✓ aparece el **número de
   veces** que la has visto (2, 3, 4…).
+
+En las **series**, además de los estados anteriores, el botón flotante
+tiene dos estados y un icono propios:
+
+- **Icono de reproducir ▶ con fondo verde**: la serie se está
+  **viendo** (tiene episodios vistos pero aún no está completa).
+- **Icono de pausa ⏸ con fondo gris**: la serie está **en pausa**
+  (standby). El gris es el mismo color del estado de la serie en tu
+  lista.
+- **Icono tachado 🚫 con fondo rojo**: la serie está **abandonada**. El
+  rojo es el mismo color del estado de la serie en tu lista.
 
 En la ficha, el abanico incluye la **opción inversa** según el estado:
 **«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
@@ -1228,8 +1247,10 @@ visualización»** si ya lo está (en películas, elimina la última vez que
 la viste; en series, desmarca el último episodio visto).
 
 En series ya completadas (o en pausa/abandonadas), la opción «Marcar
-como vista» no aparece, porque no tiene sentido; la ficha ofrece
-«Volver a verla desde el principio» para un nuevo visionado. Las
+como vista» no aparece, porque no tiene sentido; en su lugar, en una
+serie en pausa o abandonada aparece **«Retomar»** en el botón flotante,
+y la ficha ofrece «Volver a verla desde el principio» para un nuevo
+visionado en las completadas. Las
 opciones que se despliegan del botón **salen con un sombreado** para
 que se distingan del fondo y del contenido de la página. El abanico se
 despliega **sin que las opciones se tapen unas a otras**, y se cierra

@@ -689,13 +689,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       ui.showToast("Nuevo visionado empezado. ¡A por ello!");
     },
 
-    onSetStatus: async (newStatusOrNull) => {
-      const status = newStatusOrNull || computeProgress(seasonsMeta, item.watched).status;
-      await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { status });
-      item.status = status;
-      return progressWithStatus(seasonsMeta, item);
-    },
-
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
