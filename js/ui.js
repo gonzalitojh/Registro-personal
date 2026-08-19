@@ -1322,12 +1322,22 @@ export function watchProvidersHtml(item) {
 /* ---------- Premios de películas/series (issue #302) ---------- */
 
 // Sección «Premios» de la ficha de películas y series (issue #302,
-// iteración): lista de SOLO LECTURA con los premios del título,
-// extraídos automáticamente de Wikidata (getItemAwards, api-movies.js
-// — TMDB no expone premios en su API pública). Cada entrada es
-// { name, year?, detail? }: nombre del premio (p. ej. «Óscar a la
-// mejor fotografía»), año de la ceremonia y, en su caso, el trabajo
-// por el que se concedió (p. ej. el episodio premiado de una serie).
+// iteración): lista de SOLO LECTURA con los premios y nominaciones
+// del título, extraídos automáticamente de Wikidata (getItemAwards,
+// api-movies.js — TMDB no expone premios en su API pública). Cada
+// grupo ({ group, entries }) es una familia de premios (Óscar,
+// Globos de Oro, Emmy…) y sus entradas son { kind, name, year?,
+// detail?, people }:
+//   - kind: "award" (premio ganado, P166) o "nom" (nominación,
+//     P1411), diferenciados con una etiqueta.
+//   - name: nombre del premio (p. ej. «Óscar al mejor actor de
+//     reparto»), year: año de la ceremonia, detail: en su caso el
+//     trabajo por el que se concedió (p. ej. el episodio premiado
+//     de una serie) y people: los implicados (ganador P1346 o
+//     nominados P2453, p. ej. el actor de un premio de reparto).
+// Cada familia se pinta como un <details> abierto por defecto que
+// el usuario puede minimizar (mismo patrón nativo, sin JS, que
+// .watch-log-details/.rewatch-history).
 //
 // La sección solo se pinta cuando el ítem tiene premios (la ausencia
 // de datos no ocupa espacio en la ficha, mismo criterio que el bloque
@@ -1336,17 +1346,23 @@ export function watchProvidersHtml(item) {
 // tipos (libros/videojuegos).
 export function awardsHtml(item) {
   if (item.type !== "movie" && item.type !== "tv") return "";
-  const awards = Array.isArray(item.awards) ? item.awards : [];
-  if (!awards.length) return "";
+  const groups = Array.isArray(item.awards) ? item.awards : [];
+  if (!groups.length) return "";
 
-  const rows = awards
+  const total = groups.reduce((n, g) => n + g.entries.length, 0);
+
+  const groupsHtml = groups
     .map(
-      (a, i) => `
-      <li class="awards__row">
-        <span class="awards__name">${escapeHtml(a.name || "")}</span>
-        ${a.year ? `<span class="awards__year">${escapeHtml(a.year)}</span>` : ""}
-        ${a.detail ? `<span class="awards__detail">${escapeHtml(a.detail)}</span>` : ""}
-      </li>`
+      (g) => `
+      <details class="awards__group" open>
+        <summary class="awards__group-head">
+          <span class="awards__group-name">${escapeHtml(g.group || "")}</span>
+          <span class="awards__group-count">(${g.entries.length})</span>
+        </summary>
+        <ul class="awards__list">
+          ${g.entries.map(awardRowHtml).join("")}
+        </ul>
+      </details>`
     )
     .join("");
 
@@ -1354,10 +1370,36 @@ export function awardsHtml(item) {
     <section class="awards" aria-label="Premios">
       <div class="awards__head">
         <span class="awards__title">Premios</span>
-        <span class="awards__count">(${awards.length})</span>
+        <span class="awards__count">(${total})</span>
       </div>
-      <ul class="awards__list">${rows}</ul>
+      <div class="awards__groups">${groupsHtml}</div>
     </section>`;
+}
+
+// Fila de un premio o nominación: etiqueta distintiva («Premio» /
+// «Nominación»), nombre, año, trabajo (detalle) e implicados
+// (ganador o nominados). Todo el contenido se escapa con escapeHtml.
+function awardRowHtml(e) {
+  const badge =
+    e.kind === "award"
+      ? `<span class="awards__badge awards__badge--award">Premio</span>`
+      : `<span class="awards__badge awards__badge--nom">Nominación</span>`;
+  const people =
+    e.people && e.people.length
+      ? `<span class="awards__people">${
+          e.kind === "award" ? "Ganador" : "Nominado"
+        }${e.people.length > 1 ? "s" : ""}: ${e.people
+          .map(escapeHtml)
+          .join(", ")}</span>`
+      : "";
+  return `
+      <li class="awards__row">
+        ${badge}
+        <span class="awards__name">${escapeHtml(e.name || "")}</span>
+        ${e.year ? `<span class="awards__year">${escapeHtml(e.year)}</span>` : ""}
+        ${e.detail ? `<span class="awards__detail">Por: ${escapeHtml(e.detail)}</span>` : ""}
+        ${people}
+      </li>`;
 }
 
 // Chips con las plataformas jugables de un videojuego (IGDB), para

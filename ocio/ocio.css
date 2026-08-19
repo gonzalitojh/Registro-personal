@@ -2197,8 +2197,10 @@ button, a, input, select, textarea { touch-action: manipulation; }
    la ficha de películas/series, bajo las plataformas y encima
    de la producción. Mismo patrón de sección que .cast-crew:
    línea de separación superior con --paper-line. Lista de
-   premios del título extraídos de Wikidata (TMDB no expone
-   premios en su API pública); sin formulario ni botones.
+   premios y nominaciones del título extraídos de Wikidata
+   (TMDB no expone premios en su API pública), agrupados por
+   familia (Óscar, Globos de Oro…) en <details> minimizables;
+   sin formulario ni botones.
    ========================================================= */
 
 .awards {
@@ -2234,7 +2236,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
    clara del modal; los demás temas cumplen con --ink-soft. */
 [data-theme="dark"] .modal__card .awards__title,
 [data-theme="dark"] .modal__card .awards__year,
-[data-theme="dark"] .modal__card .awards__detail {
+[data-theme="dark"] .modal__card .awards__detail,
+[data-theme="dark"] .modal__card .awards__people,
+[data-theme="dark"] .modal__card .awards__badge--nom {
   color: #5f5849;
 }
 
@@ -2243,9 +2247,72 @@ button, a, input, select, textarea { touch-action: manipulation; }
   letter-spacing: 0;
 }
 
+.awards__groups {
+  margin: 0;
+}
+
+/* Cada familia de premios es un <details> abierto por defecto que el
+   usuario puede minimizar. Borde y radio como los chips de la ficha
+   (mismo patrón que .watch-provider/.game-platform). */
+.awards__group {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  margin: 0 0 0.55rem;
+  padding: 0 0.6rem;
+  min-width: 0;
+}
+
+.awards__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  /* Hereda el color del contenedor: mismo caso que .awards__name
+     (la página de ítem y el modal clásico tienen superficies y
+     textos opuestos según la familia). */
+  color: inherit;
+  min-width: 0;
+  /* Quitar el marcador nativo del <summary> (Firefox) y sustituirlo
+     por un chevron propio que rota al abrir (WebKit). */
+  list-style: none;
+}
+.awards__group-head::-webkit-details-marker {
+  display: none;
+}
+.awards__group-head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards__group[open] .awards__group-head::before {
+  transform: rotate(90deg);
+}
+
+.awards__group-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__group-count {
+  font-weight: 400;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
 .awards__list {
   list-style: none;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.55rem;
   padding: 0;
 }
 
@@ -2283,6 +2350,46 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 .awards__detail {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Etiqueta que diferencia premios (P166) de nominaciones (P1411).
+   «Premio»: píldora ocre rellena (mismo dúo que .recipe-card__badge,
+   patrón aprobado en los cuatro temas); «Nominación»: píldora con
+   borde y texto suaves, con el override del modal clásico arriba. */
+.awards__badge {
+  align-self: center;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
+.awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--white);
+}
+[data-theme="black"] .awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+
+.awards__badge--nom {
+  color: var(--ink-soft);
+  border: 1px solid currentColor;
+}
+
+/* Implicados en el premio/nominación (ganador P1346 o nominados
+   P2453), p. ej. el actor de un premio de interpretación. */
+.awards__people {
   flex-basis: 100%;
   font-size: 0.8rem;
   color: var(--ink-soft);
