@@ -1125,6 +1125,20 @@ tipo, verás:
   declaraciones propias en Wikidata, habitual en algunas series
   modernas) pueden mostrar pocos premios o ninguno hasta que Wikidata
   los registre (nunca se muestra la lista como si fuera un premio).
+  El contador de la sección cuenta **las entradas que Wikidata tiene
+  declaradas** para el título, que pueden **no coincidir con los de la
+  web de TMDB**: TMDB muestra su propia base de datos editorial (más
+  amplia y a otra granularidad, p. ej. cuenta cada nominación por
+  persona y por entrega), y su API pública no expone premios. Ejemplo
+  verificado: **Juego de Tronos** — la web de TMDB muestra 81
+  nominaciones y 28 victorias, mientras que Wikidata solo tiene 13
+  premios declarados en el ítem de la serie (y ninguna nominación),
+  así que la sección muestra «13 premios»; los Globos de Oro de la
+  serie figuran en los ítems de los actores premiados, no en el de la
+  serie, y por eso no aparecen. La app muestra siempre **todo lo que
+  Wikidata tiene**; si falta algún premio, es que Wikidata aún no lo
+  ha registrado (es un proyecto abierto: cualquiera puede añadirlo y
+  la app lo mostrará automáticamente).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
