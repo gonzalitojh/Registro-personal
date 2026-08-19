@@ -13,6 +13,7 @@ import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+import { getItemAwards } from "./api-movies.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : type === "game" ? "game" : "media";
@@ -744,7 +745,7 @@ function wireStatusActions(content, handleStatusChange) {
 // si hay carruseles se devuelven junto al resto de líneas, y el
 // fallback de carga/error solo aplica cuando no hay ni líneas ni
 // carruseles.
-export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false } = {}) {
+export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false, skipCarousels = false } = {}) {
   const lines = [];
   const metaBits = [];
   if (!skipMetaBits) {
@@ -778,10 +779,14 @@ export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false
   const overview = item.overview || item.description;
   if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
   if (!lines.length) {
-    if (carousels) return carousels;
+    // skipCarousels (issue #302, iteración): los carruseles de
+    // producción/reparto se renderizan APARTE (tras las plataformas y
+    // los premios), así que aquí no se devuelven.
+    if (!skipCarousels && carousels) return carousels;
     return skipStatusFallback ? "" : detailStatusHtml(item);
   }
-  return `<div class="extra-info">${lines.join("")}</div>${carousels}`;
+  const info = `<div class="extra-info">${lines.join("")}</div>`;
+  return skipCarousels ? info : `${info}${carousels}`;
 }
 
 // Normaliza el reparto por si llega en la forma vieja (array de
@@ -1314,6 +1319,108 @@ export function watchProvidersHtml(item) {
     </div>`;
 }
 
+/* ---------- Premios de películas/series (issue #302) ---------- */
+
+// Sección «Premios» de la ficha de películas y series (issue #302,
+// iteración): lista de SOLO LECTURA con los premios y nominaciones
+// del título, extraídos automáticamente de Wikidata (getItemAwards,
+// api-movies.js — TMDB no expone premios en su API pública). Cada
+// grupo ({ group, entries }) es una familia de premios (Óscar,
+// Globos de Oro, Emmy…) y sus entradas son { kind, name, year?,
+// detail?, people }:
+//   - kind: "award" (premio ganado, P166) o "nom" (nominación,
+//     P1411), diferenciados con una etiqueta.
+//   - name: nombre del premio (p. ej. «Óscar al mejor actor de
+//     reparto»), year: año de la ceremonia, detail: en su caso el
+//     trabajo por el que se concedió (p. ej. el episodio premiado
+//     de una serie) y people: los implicados (ganador P1346 o
+//     nominados P2453, p. ej. el actor de un premio de reparto).
+// Cada familia se pinta como un <details> minimizable que arranca
+// CERRADO (sin atributo open), y la sección entera es también un
+// <details> cuya cabecera «Premios (N)» permite minimizarla toda de
+// una vez (issue #302, iteración 3: «Por defecto, cada premio debe
+// estar minimizado y la sección entera de Premios también»). Mismo
+// patrón nativo sin JS que .watch-log-details/.rewatch-history.
+//
+// La sección solo se pinta cuando el ítem tiene premios (la ausencia
+// de datos no ocupa espacio en la ficha, mismo criterio que el bloque
+// «Dónde verla»). No hay formulario ni botones: es información de la
+// API, no un dato del usuario. Devuelve cadena vacía para los otros
+// tipos (libros/videojuegos).
+export function awardsHtml(item) {
+  if (item.type !== "movie" && item.type !== "tv") return "";
+  const groups = Array.isArray(item.awards) ? item.awards : [];
+  if (!groups.length) return "";
+
+  const allEntries = groups.flatMap((g) => g.entries);
+
+  const groupsHtml = groups
+    .map(
+      (g) => `
+      <details class="awards__group">
+        <summary class="awards__group-head">
+          <span class="awards__group-name">${escapeHtml(g.group || "")}</span>
+          <span class="awards__group-count">${awardsCountText(g.entries)}</span>
+        </summary>
+        <ul class="awards__list">
+          ${g.entries.map(awardRowHtml).join("")}
+        </ul>
+      </details>`
+    )
+    .join("");
+
+  return `
+    <details class="awards">
+      <summary class="awards__head">
+        <span class="awards__title">Premios</span>
+        <span class="awards__count">${awardsCountText(allEntries)}</span>
+      </summary>
+      <div class="awards__groups">${groupsHtml}</div>
+    </details>`;
+}
+
+// Contador de una lista de entradas separando premios (P166) de
+// nominaciones (P1411), en lugar del total único combinado (issue
+// #302, iteración 4: «Debería separar premios de nominaciones»).
+// Se omite el cero inútil («0 nominaciones») y se usa el singular o
+// plural correcto: «1 premio», «2 premios», «1 nominación», «3
+// nominaciones». Devuelve "" solo si la lista no trae entradas (no
+// llegaría a pintarse: la sección no se muestra sin premios).
+function awardsCountText(entries) {
+  const awards = entries.filter((e) => e.kind === "award").length;
+  const noms = entries.length - awards;
+  const parts = [];
+  if (awards) parts.push(`${awards} ${awards === 1 ? "premio" : "premios"}`);
+  if (noms) parts.push(`${noms} ${noms === 1 ? "nominación" : "nominaciones"}`);
+  return parts.length ? `(${parts.join(", ")})` : "";
+}
+
+// Fila de un premio o nominación: etiqueta distintiva («Premio» /
+// «Nominación»), nombre, año, trabajo (detalle) e implicados. La
+// etiqueta ya distingue premios de nominaciones, por eso los
+// implicados se muestran SOLO con sus nombres, sin el prefijo
+// «Ganador:»/«Nominado(s):» (issue #302, iteración 4: «eliminar
+// ganador/es y nominado/s y dejar simplemente el nombre de las
+// personas»). Todo el contenido se escapa con escapeHtml.
+function awardRowHtml(e) {
+  const badge =
+    e.kind === "award"
+      ? `<span class="awards__badge awards__badge--award">Premio</span>`
+      : `<span class="awards__badge awards__badge--nom">Nominación</span>`;
+  const people =
+    e.people && e.people.length
+      ? `<span class="awards__people">${e.people.map(escapeHtml).join(", ")}</span>`
+      : "";
+  return `
+      <li class="awards__row">
+        ${badge}
+        <span class="awards__name">${escapeHtml(e.name || "")}</span>
+        ${e.year ? `<span class="awards__year">${escapeHtml(e.year)}</span>` : ""}
+        ${e.detail ? `<span class="awards__detail">Por: ${escapeHtml(e.detail)}</span>` : ""}
+        ${people}
+      </li>`;
+}
+
 // Chips con las plataformas jugables de un videojuego (IGDB), para
 // que se vean como etiquetas y no como texto plano. Devuelve cadena
 // vacía si no hay plataformas (no ocupa espacio en el modal).
@@ -1514,16 +1621,23 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
-    : extraInfoHtml(item);
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
 
+  // Orden de secciones (issue #302, iteración): las plataformas
+  // vuelven a estar bajo la sinopsis y encima de la producción (su
+  // posición original), y la sección de premios queda justo debajo de
+  // las plataformas. Los carruseles de producción/reparto (issue
+  // #294) van después, como cierre del bloque de información.
   content.innerHTML = `
     ${headerHtml}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
-    ${watchProvidersHtml(item)}
     ${infoHtml}
+    ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     ${item.collectionId ? renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie) : ""}
 
@@ -2109,16 +2223,21 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
-    : extraInfoHtml(item);
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
 
+  // Orden de secciones (issue #302, iteración): mismo criterio que la
+  // ficha de película — plataformas bajo la sinopsis y encima de la
+  // producción, y la sección de premios justo debajo de las plataformas.
   content.innerHTML = `
     ${headerHtml}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
-    ${watchProvidersHtml(item)}
     ${infoHtml}
+    ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation, onOpenRecommendation)}
 
@@ -2709,8 +2828,10 @@ export function openReadOnlyModal(item, ownerName) {
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
     ${gamePlatformsHtml(item)}
+    ${extraInfoHtml(item, { skipCarousels: true })}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     <div class="field-group">
       <span class="item-card__stamp item-card__stamp--${item.status}" style="position:static;transform:none;display:inline-block;">
@@ -2725,6 +2846,21 @@ export function openReadOnlyModal(item, ownerName) {
   // Carruseles de elenco (issue #294): los botones «Ver en más detalle»
   // también funcionan en la ficha de solo lectura del amigo.
   wireCastCrewClicks(content, item);
+
+  // Premios (issue #302, iteración): la ficha del amigo también
+  // muestra los premios del título extraídos de la API (Wikidata),
+  // consultados con la clave del LECTOR (como los detalles; nunca se
+  // escribe en Firestore). Mismo patrón que loadItemDetails: se
+  // re-renderiza si la ficha sigue abierta cuando llegan.
+  if ((item.type === "movie" || item.type === "tv") && item.externalId && !item._awardsFetched) {
+    item._awardsFetched = true;
+    getItemAwards(item.type, item.externalId).then((awards) => {
+      item.awards = awards;
+      if (!document.getElementById("item-modal")?.classList.contains("hidden")) {
+        openReadOnlyModal(item, ownerName);
+      }
+    });
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;

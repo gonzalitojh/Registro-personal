@@ -386,6 +386,235 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 }
 
 // =============================================================
+// Premios de películas/series (issue #302, iteración). TMDB NO
+// expone premios en su API pública (solo en su web), así que se
+// consultan en Wikidata: primero se obtiene el identificador de
+// Wikidata del título con /external_ids de TMDB (que también lo
+// publica) y después se consultan las declaraciones P166
+// («award received») y P1411 («nominated for») del ítem en el
+// endpoint SPARQL de Wikidata (público, sin clave y con CORS
+// abierto). Cada premio se muestra con su nombre, la familia a
+// la que pertenece (Óscar, Globos de Oro…, para agruparlos), el
+// año de la ceremonia (cualificador P585), en su caso el trabajo
+// por el que se concedió (cualificador P1686, p. ej. el episodio
+// de una serie) y los implicados (ganador P1346 o nominados
+// P2453, p. ej. el actor de un premio de interpretación).
+// Los resultados de ÉXITO se cachean en memoria 24 h (misma
+// caché compartida que los watch providers y los detalles); un
+// fallo de red se reconsulta en la siguiente apertura (mismo
+// comportamiento que los watch providers).
+// =============================================================
+
+const WDQS_URL = "https://query.wikidata.org/sparql";
+
+// Consulta SPARQL de los premios y nominaciones de un ítem de
+// Wikidata (iteración 2026-08-19, comentario de la issue #302):
+// - PREMIOS: declaraciones P166 («award received»).
+// - NOMINACIONES: declaraciones P1411 («nominated for»), marcadas
+//   con ?kind ("nom") para diferenciarlas de los premios.
+// - IMPLICADOS: cualificador P1346 («winner») en premios y P2453
+//   («nominee») en nominaciones (COALESCE a ?person): p. ej. el
+//   actor de un «Óscar al mejor actor de reparto».
+// - AGRUPACIÓN por tipo (Óscar, Globos de Oro, Emmy…): se resuelve
+//   la familia del premio con dos rutas — la ceremonia del año
+//   (P805 → P179/P361 del ítem de la ceremonia, p. ej. «Premios
+//   Óscar de 2008» → «Premios Óscar») o, en su defecto, el propio
+//   ítem del premio (P361/P179); si ninguna existe, el grupo es el
+//   nombre del premio (COALESCE a ?group).
+// - Fecha de la ceremonia (P585), obra por la que se concedió
+//   (P1686, omitida cuando es el propio ítem).
+// Las etiquetas se resuelven en español y, si no existe, en inglés.
+function wikidataAwardsQuery(wikidataId) {
+  return `
+SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
+  {
+    wd:${wikidataId} p:P166 ?st.
+    ?st ps:P166 ?award.
+    BIND("award" AS ?kind)
+  } UNION {
+    wd:${wikidataId} p:P1411 ?st.
+    ?st ps:P1411 ?award.
+    BIND("nom" AS ?kind)
+  }
+  OPTIONAL { ?st pq:P585 ?date. }
+  OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != wd:${wikidataId}) }
+  OPTIONAL { ?st pq:P1346 ?winner. }
+  OPTIONAL { ?st pq:P2453 ?nominee. }
+  BIND(COALESCE(?winner, ?nominee) AS ?person)
+  OPTIONAL { ?st pq:P805 ?ceremony. ?ceremony wdt:P179|wdt:P361 ?groupOfCeremony. }
+  OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
+  BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
+  BIND(YEAR(?date) as ?year)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
+} ORDER BY DESC(?year)`;
+}
+
+// Variante sin identificador de Wikidata conocido: busca el ítem
+// por el id de TMDB de una serie (P4983) o por el id de IMDb de
+// una película (P345), cuando /external_ids no trae wikidata_id.
+// Misma consulta que wikidataAwardsQuery, con ?item en lugar de
+// un QID fijo (la obra P1686 se omite cuando es el propio ítem).
+function wikidataAwardsByExternalIdQuery(type, externalId) {
+  const prop = type === "tv" ? "P4983" : "P345";
+  return `
+SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
+  ?item wdt:${prop} "${externalId}".
+  {
+    ?item p:P166 ?st.
+    ?st ps:P166 ?award.
+    BIND("award" AS ?kind)
+  } UNION {
+    ?item p:P1411 ?st.
+    ?st ps:P1411 ?award.
+    BIND("nom" AS ?kind)
+  }
+  OPTIONAL { ?st pq:P585 ?date. }
+  OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != ?item) }
+  OPTIONAL { ?st pq:P1346 ?winner. }
+  OPTIONAL { ?st pq:P2453 ?nominee. }
+  BIND(COALESCE(?winner, ?nominee) AS ?person)
+  OPTIONAL { ?st pq:P805 ?ceremony. ?ceremony wdt:P179|wdt:P361 ?groupOfCeremony. }
+  OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
+  BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
+  BIND(YEAR(?date) as ?year)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
+} ORDER BY DESC(?year)`;
+}
+
+// Limpia las etiquetas de Wikidata: muchas páginas de premios
+// españolas son anexos y su etiqueta empieza por «Anexo:»
+// (p. ej. «Anexo:Oscar al mejor actor de reparto»).
+function cleanAwardLabel(label) {
+  return (label || "").replace(/^Anexo:\s*/i, "").trim();
+}
+
+// Normaliza las filas de la respuesta SPARQL a los grupos de la
+// sección «Premios» del render: [{ group, entries: [...] }].
+// Entrada por fila: { kind, awardLabel, groupLabel, year,
+// workLabel, personLabel }. Pasos:
+// 1. Limpieza de etiquetas (prefijo «Anexo:») y salto de filas sin
+//    nombre de premio.
+// 2. Deduplicación por premio+año+obra+tipo (un mismo premio puede
+//    repetirse con varios cualificadores y varias declaraciones);
+//    los implicados (P1346/P2453) de filas del mismo premio se
+//    fusionan en la lista people (p. ej. los 4 nominados a efectos
+//    visuales en una sola entrada).
+// 3. Agrupación por familia (Premios Óscar, Globos de Oro…): los
+//    grupos se ordenan por el año más reciente de sus entradas y
+//    cada uno ordena sus entradas por año desc., premio antes que
+//    nominación y nombre. Devuelve [] si no hay premios.
+function mapAwardsBindings(bindings) {
+  const byKey = new Map();
+  for (const b of bindings || []) {
+    const name = cleanAwardLabel(b.awardLabel && b.awardLabel.value);
+    if (!name) continue;
+    const kind = b.kind && b.kind.value === "award" ? "award" : "nom";
+    const year = b.year ? String(b.year.value) : "";
+    const detail =
+      b.workLabel && b.workLabel.value ? String(b.workLabel.value) : "";
+    const person =
+      b.personLabel && b.personLabel.value ? String(b.personLabel.value) : "";
+    const key = `${kind}|${name}|${year}|${detail}`;
+    let entry = byKey.get(key);
+    if (!entry) {
+      entry = {
+        kind,
+        name,
+        year,
+        detail,
+        group: cleanAwardLabel(b.groupLabel && b.groupLabel.value),
+        people: [],
+      };
+      byKey.set(key, entry);
+    }
+    if (person && !entry.people.includes(person)) entry.people.push(person);
+  }
+
+  const byGroup = new Map();
+  for (const entry of byKey.values()) {
+    const gname = entry.group || "Otros";
+    let group = byGroup.get(gname);
+    if (!group) {
+      group = { group: gname, entries: [] };
+      byGroup.set(gname, group);
+    }
+    group.entries.push(entry);
+  }
+
+  const latestYear = (group) =>
+    group.entries.reduce(
+      (max, e) => Math.max(max, Number(e.year) || 0),
+      0
+    );
+  const groups = [...byGroup.values()].sort(
+    (a, b) =>
+      latestYear(b) - latestYear(a) ||
+      (a.group < b.group ? -1 : a.group > b.group ? 1 : 0)
+  );
+  for (const group of groups) {
+    group.entries.sort(
+      (a, b) =>
+        (Number(b.year) || 0) - (Number(a.year) || 0) ||
+        (a.kind === b.kind ? 0 : a.kind === "award" ? -1 : 1) ||
+        (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    );
+  }
+  return groups;
+}
+
+/**
+ * Premios y nominaciones de una película o serie desde Wikidata
+ * (issue #302, iteración): la API pública de TMDB no expone
+ * premios, solo su web; Wikidata los publica como declaraciones
+ * P166 («award received») y P1411 («nominated for») del ítem del
+ * título. No es crítico: cualquier fallo (red, sin ítem en
+ * Wikidata, sin premios) devuelve null y la sección no se pinta.
+ * @param {'movie'|'tv'} type - Tipo de contenido
+ * @param {string|number} externalId - ID externo de TMDB
+ * @returns {Promise<Array<{group: string, entries: Array<{kind: 'award'|'nom', name: string, year?: string, detail?: string, people: string[]}>}>|null>}
+ */
+export async function getItemAwards(type, externalId) {
+  if (type !== "movie" && type !== "tv") return null;
+  const id = String(externalId);
+  const cacheKey = `awards_${type}_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  let awards = null;
+  try {
+    const ext = await fetchJson(
+      `${BASE_URL}/${type}/${id}/external_ids?api_key=${TMDB_API_KEY}`,
+      { retries: 1 }
+    ).catch(() => null);
+    // Defensa en profundidad (QA seguridad #302): los identificadores
+    // se interpolan en la query SPARQL, así que se valida el formato
+    // esperado antes de construirla (las fuentes son TMDB, pero un
+    // formato inesperado no debe llegar a Wikidata).
+    let query = null;
+    if (ext && /^Q\d+$/.test(ext.wikidata_id || "")) {
+      query = wikidataAwardsQuery(ext.wikidata_id);
+    } else if (type === "tv" && /^\d+$/.test(id)) {
+      // Sin wikidata_id (raro): la serie se busca por su id de TMDB.
+      query = wikidataAwardsByExternalIdQuery("tv", id);
+    } else if (ext && /^tt\d+$/.test(ext.imdb_id || "")) {
+      // Sin wikidata_id: la película se busca por su id de IMDb.
+      query = wikidataAwardsByExternalIdQuery("movie", ext.imdb_id);
+    }
+    if (query) {
+      const url = `${WDQS_URL}?format=json&query=${encodeURIComponent(query)}`;
+      // Accept explícito: Wikidata sirve HTML (su web) si no se pide
+      // JSON, incluso con format=json en la URL.
+      const data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+      awards = data ? mapAwardsBindings(data.results && data.results.bindings) : null;
+    }
+  } catch {
+    awards = null;
+  }
+  setCache(cacheKey, awards);
+  return awards;
+}
+
+// =============================================================
 // Recomendaciones (contenido similar) desde TMDB. Devuelve
 // listas de películas o series similares usando el endpoint
 // /similar de TMDB. Los resultados tienen la misma forma que

@@ -1060,10 +1060,6 @@ tipo, verás:
   tiene; en los videojuegos, solo cuando IGDB dispone de uno). En
   películas y series, el botón está en la cabecera, junto a la
   valoración.
-- **Dónde verla**: plataformas de streaming disponibles (agrupadas en
-  **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
-  aviso «Sin info. de streaming para este país». Si hay plataformas, se
-  incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: en películas y series, dos carruseles
   deslizables en horizontal: **«Producción»** (director, guionista,
   compositor...) y **«Reparto»** (los actores y actrices, en el orden
@@ -1091,6 +1087,31 @@ tipo, verás:
   muestran arriba, en la cabecera. Cada sección de la ficha va
   separada por una **línea horizontal**. En los videojuegos:
   desarrolladores, editores y clasificación por edades (ESRB).
+- **Dónde verla**: plataformas de streaming disponibles (agrupadas en
+  **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
+  aviso «Sin info. de streaming para este país». Si hay plataformas, se
+  incluye también el enlace «Ver opciones en TMDB». En la ficha aparece
+  justo después de la sinopsis y antes de los premios, la producción y
+  el reparto.
+- **Premios**: bajo el «Dónde verla» aparece la sección **Premios**, en
+  **solo lectura**, con los premios **y las nominaciones** de los que
+  dispone el título. Están **agrupados por tipo** (Óscar, Globos de Oro,
+  Emmy…). **La sección entera aparece minimizada** y también **cada
+  grupo**: se **despliegan o minimizan** pulsando su cabecera («Premios
+  (3 premios, 2 nominaciones)» para toda la sección, el nombre de la
+  familia con su contador para cada grupo: el número de **premios** y de
+  **nominaciones** se muestra **por separado**). Las cabeceras están
+  **alineadas a la izquierda**: el nombre de la sección o de cada familia
+  queda siempre en la misma posición, con el contador a la derecha. Cada
+  premio muestra el **nombre** (p. ej. «Óscar al mejor actor de
+  reparto»), el **año** de la ceremonia, una **etiqueta** que lo
+  distingue (**«Premio»** o **«Nominación»**), los **implicados** (solo
+  sus **nombres**, p. ej. el actor premiado o los nominados, sin rótulos
+  añadidos) y, en su caso, el **trabajo** por el que se concedió (p. ej.
+  el episodio premiado de una serie). Los datos se extraen
+  automáticamente de **Wikidata** (la API de TMDB no expone premios), así
+  que no hay que anotar nada; si el título no tiene premios registrados,
+  la sección no aparece. Válido para películas y series.
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se

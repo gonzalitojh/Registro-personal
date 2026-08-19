@@ -2193,6 +2193,277 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* =========================================================
+   Premios (issue #302, iteración): sección de SOLO LECTURA de
+   la ficha de películas/series, bajo las plataformas y encima
+   de la producción. Mismo patrón de sección que .cast-crew:
+   línea de separación superior con --paper-line. Lista de
+   premios y nominaciones del título extraídos de Wikidata
+   (TMDB no expone premios en su API pública), agrupados por
+   familia (Óscar, Globos de Oro…) en <details> minimizables;
+   la sección entera y cada grupo arrancan minimizados
+   (iteración 3) y se despliegan pulsando su cabecera. Sin
+   formulario ni botones.
+   ========================================================= */
+
+.awards {
+  margin: 1.2rem 0 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
+}
+
+/* La sección entera es un <details> que arranca minimizado (issue
+   #302, iteración 3): la cabecera actúa de <summary>. Marcador
+   nativo oculto y chevron propio, mismo patrón que .awards__group-head.
+   SIN justify-content: space-between (issue #302, iteración 5): con
+   tres ítems (chevron, título y contador) el espacio libre se
+   repartía entre el título y el contador y el título quedaba
+   centrado en el hueco, desplazándose según la longitud del texto
+   de la derecha. El título va siempre anclado a la izquierda y el
+   contador se empuja al borde derecho con margin-left: auto. */
+.awards__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  cursor: pointer;
+  list-style: none;
+}
+.awards__head::-webkit-details-marker {
+  display: none;
+}
+.awards__head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards[open] .awards__head::before {
+  transform: rotate(90deg);
+}
+.awards[open] .awards__head {
+  margin: 0 0 0.6rem;
+}
+
+.awards__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Contraste AA en el modal clásico con la familia oscura por defecto
+   (mismo caso documentado que .cast-crew__title, QA #294): --ink-soft
+   (#948a76) sobre --paper (#f1ead9) = 2.84:1, insuficiente; #5f5849
+   ≈ 5.9:1. En la página de ítem el fondo es --ink y --ink-soft sí
+   cumple (≈5.5:1), por eso el override se limita a la superficie
+   clara del modal; los demás temas cumplen con --ink-soft. */
+[data-theme="dark"] .modal__card .awards__title,
+[data-theme="dark"] .modal__card .awards__year,
+[data-theme="dark"] .modal__card .awards__detail,
+[data-theme="dark"] .modal__card .awards__people,
+[data-theme="dark"] .modal__card .awards__badge--nom {
+  color: #5f5849;
+}
+
+/* Contador separado de premios y nominaciones (issue #302, iteración
+   4: «(3 premios, 2 nominaciones)»). Puede crecer, así que se permite
+   que se encoja y ajuste (min-width: 0 + overflow-wrap) junto al
+   título, sin generar scroll horizontal en móvil (regla 2 de
+   AGENTS.md). margin-left: auto lo empuja al borde derecho (issue
+   #302, iteración 5) para que el título «Premios» quede siempre en
+   la misma posición izquierda, sin depender de la longitud del
+   contador. */
+.awards__count {
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.awards__groups {
+  margin: 0;
+}
+
+/* Estado cerrado explícito de los <details> de premios: la UA ya oculta
+   los hijos no-<summary> de un <details> sin [open], pero se explicita
+   por robustez (hay entornos donde la regla UA no se aplica) y deja el
+   contrato «minimizado por defecto» (issue #302, iteración 3) en nuestro
+   propio CSS, sin depender de la UA. Cuando falta [open], el contenido
+   no existe visualmente (ni ocupa espacio); con [open], display normal. */
+.awards:not([open]) > .awards__groups,
+.awards__group:not([open]) > .awards__list {
+  display: none;
+}
+
+/* Cada familia de premios es un <details> que arranca MINIMIZADO
+   (sin `open`, issue #302 iteración 3) y el usuario puede desplegar.
+   Borde y radio como los chips de la ficha (mismo patrón que
+   .watch-provider/.game-platform). */
+.awards__group {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  margin: 0 0 0.55rem;
+  padding: 0 0.6rem;
+  min-width: 0;
+}
+
+.awards__group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  /* Hereda el color del contenedor: mismo caso que .awards__name
+     (la página de ítem y el modal clásico tienen superficies y
+     textos opuestos según la familia). */
+  color: inherit;
+  min-width: 0;
+  /* Quitar el marcador nativo del <summary> (Firefox) y sustituirlo
+     por un chevron propio que rota al abrir (WebKit). */
+  list-style: none;
+}
+.awards__group-head::-webkit-details-marker {
+  display: none;
+}
+.awards__group-head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards__group[open] .awards__group-head::before {
+  transform: rotate(90deg);
+}
+
+.awards__group-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__group-count {
+  font-weight: 400;
+  opacity: 0.75;
+  /* margin-left: auto empuja el contador al borde derecho (issue
+     #302, iteración 5): el nombre de la familia queda anclado a la
+     izquierda, siempre en la misma posición, sin depender de la
+     longitud del contador. Sin flex-shrink: 0 desde la iteración 4:
+     el contador separado de premios y nominaciones puede crecer y
+     debe poder encogerse/ajustarse junto al nombre de la familia sin
+     desbordar en móvil. */
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.awards__list {
+  list-style: none;
+  margin: 0 0 0.55rem;
+  padding: 0;
+}
+
+.awards__row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--paper-line);
+  min-width: 0;
+}
+
+.awards__row:last-child {
+  border-bottom: none;
+}
+
+.awards__name {
+  font-weight: 600;
+  /* Hereda el color del contenedor: en la página de ítem el fondo es
+     --ink y el texto --paper (familia oscura) o --ink (familia clara);
+     en el modal clásico el fondo es --paper y el texto --ink (o la
+     superficie oscura del negro puro con texto --paper). No hay color
+     único que cumpla AA en ambos contextos, por eso inherit. */
+  color: inherit;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__year {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.awards__detail {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Etiqueta que diferencia premios (P166) de nominaciones (P1411).
+   «Premio»: píldora ocre rellena (mismo dúo que .recipe-card__badge,
+   patrón aprobado en los cuatro temas); «Nominación»: píldora con
+   borde y texto suaves, con el override del modal clásico arriba. */
+.awards__badge {
+  align-self: center;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
+.awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--white);
+}
+[data-theme="black"] .awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+
+.awards__badge--nom {
+  color: var(--ink-soft);
+  border: 1px solid currentColor;
+}
+
+/* Implicados en el premio/nominación (ganador P1346 o nominados
+   P2453), p. ej. el actor de un premio de interpretación. */
+.awards__people {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
    Ventana de detalle del elenco (issue #294): #cast-modal.
    Lista completa del reparto o de la producción; la producción
    se agrupa por áreas (departamentos). Reutiliza el armazón

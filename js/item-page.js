@@ -35,6 +35,7 @@ import {
   getSimilarTv,
   getCollectionDetails,
   getUserCountry,
+  getItemAwards,
 } from "./api-movies.js";
 import {
   upcomingBadge,
@@ -45,6 +46,7 @@ import {
   renderSagaMovies,
   renderRecommendations,
   wireCastCrewClicks,
+  awardsHtml,
 } from "./ui.js";
 import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
@@ -612,22 +614,25 @@ async function buildPreviewItem(kind, externalId) {
 }
 
 // Carga en paralelo los bloques NO críticos de la ficha (issue #290):
-// dónde verla (watch providers), recomendaciones, ids ya añadidos y
-// películas de la saga. Promise.allSettled: un fallo de red degrada el
-// bloque correspondiente sin romper la preview (misma política de
-// degradación elegante que la ficha). Nunca lanza.
+// dónde verla (watch providers), premios (issue #302, iteración),
+// recomendaciones, ids ya añadidos y películas de la saga.
+// Promise.allSettled: un fallo de red degrada el bloque correspondiente
+// sin romper la preview (misma política de degradación elegante que la
+// ficha). Nunca lanza.
 async function loadPreviewExtras(token, item) {
   const group = groupFor(token.kind);
   const similar = token.kind === "tv" ? getSimilarTv : getSimilarMovies;
   const results = await Promise.allSettled([
     getWatchProviders(token.externalId, token.kind, getUserCountry()),
+    getItemAwards(token.kind, token.externalId),
     similar(token.externalId),
     pageCtx.getGroupItemsResolved(group),
     item.collectionId ? getCollectionDetails(item.collectionId) : Promise.resolve(null),
   ]);
-  const [providers, recs, ids, saga] = results;
+  const [providers, awards, recs, ids, saga] = results;
   return {
     watchProviders: providers.status === "fulfilled" ? providers.value : null,
+    awards: awards.status === "fulfilled" ? awards.value : null,
     recommendations: (recs.status === "fulfilled" ? recs.value : []).slice(0, 10),
     existingIds: new Set(
       (ids.status === "fulfilled" ? ids.value : []).map((i) => i.externalId)
@@ -674,6 +679,7 @@ function paintPreview(
     <p class="item-preview__hint">Este título aún no está en tu registro.</p>
     ${unreleasedBadge}
     ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
     <div class="field-group" id="preview-details">
       ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })}
       ${previewSeasonsHtml(item)}

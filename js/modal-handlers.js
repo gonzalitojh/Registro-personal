@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry, getItemAwards } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
@@ -170,6 +170,18 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     item.watchLog = newLog;
     item.status = status;
     item.awaitingRelease = false;
+  }
+
+  // Premios (issue #302, iteración): se muestran los premios del
+  // título extraídos de la API (Wikidata; TMDB no los expone). No es
+  // crítico: si falla la consulta, item.awards queda null y la
+  // sección no se pinta (misma degradación que los watch providers).
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("movie", item.externalId);
+    } catch {
+      item.awards = null;
+    }
   }
 
   // Obtener watch providers (no crítico, si falla se muestra sin providers)
@@ -503,6 +515,16 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
   }
 
   const progress = progressWithStatus(seasonsMeta, item);
+
+  // Premios (issue #302, iteración): misma consulta de API que en
+  // películas (ver openMovieItem); no crítico.
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("tv", item.externalId);
+    } catch {
+      item.awards = null;
+    }
+  }
 
   // Obtener watch providers
   if (item.externalId) {
