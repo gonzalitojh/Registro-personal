@@ -391,11 +391,14 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 // consultan en Wikidata: primero se obtiene el identificador de
 // Wikidata del título con /external_ids de TMDB (que también lo
 // publica) y después se consultan las declaraciones P166
-// («award received») del ítem en el endpoint SPARQL de Wikidata
-// (público, sin clave y con CORS abierto). Cada premio se
-// muestra con su nombre, el año de la ceremonia (cualificador
-// P585) y, en su caso, el trabajo por el que se concedió
-// (cualificador P1686, p. ej. el episodio de una serie).
+// («award received») y P1411 («nominated for») del ítem en el
+// endpoint SPARQL de Wikidata (público, sin clave y con CORS
+// abierto). Cada premio se muestra con su nombre, la familia a
+// la que pertenece (Óscar, Globos de Oro…, para agruparlos), el
+// año de la ceremonia (cualificador P585), en su caso el trabajo
+// por el que se concedió (cualificador P1686, p. ej. el episodio
+// de una serie) y los implicados (ganador P1346 o nominados
+// P2453, p. ej. el actor de un premio de interpretación).
 // Los resultados de ÉXITO se cachean en memoria 24 h (misma
 // caché compartida que los watch providers y los detalles); un
 // fallo de red se reconsulta en la siguiente apertura (mismo
@@ -404,18 +407,43 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 
 const WDQS_URL = "https://query.wikidata.org/sparql";
 
-// Consulta SPARQL de los premios de un ítem de Wikidata: todas
-// las declaraciones P166 con su fecha (P585) y su obra (P1686).
-// La obra se omite cuando es el propio ítem (el premio a la
-// película/serie entera no añade información repetida). La
-// etiqueta se resuelve en español y, si no existe, en inglés.
+// Consulta SPARQL de los premios y nominaciones de un ítem de
+// Wikidata (iteración 2026-08-19, comentario de la issue #302):
+// - PREMIOS: declaraciones P166 («award received»).
+// - NOMINACIONES: declaraciones P1411 («nominated for»), marcadas
+//   con ?kind ("nom") para diferenciarlas de los premios.
+// - IMPLICADOS: cualificador P1346 («winner») en premios y P2453
+//   («nominee») en nominaciones (COALESCE a ?person): p. ej. el
+//   actor de un «Óscar al mejor actor de reparto».
+// - AGRUPACIÓN por tipo (Óscar, Globos de Oro, Emmy…): se resuelve
+//   la familia del premio con dos rutas — la ceremonia del año
+//   (P805 → P179/P361 del ítem de la ceremonia, p. ej. «Premios
+//   Óscar de 2008» → «Premios Óscar») o, en su defecto, el propio
+//   ítem del premio (P361/P179); si ninguna existe, el grupo es el
+//   nombre del premio (COALESCE a ?group).
+// - Fecha de la ceremonia (P585), obra por la que se concedió
+//   (P1686, omitida cuando es el propio ítem).
+// Las etiquetas se resuelven en español y, si no existe, en inglés.
 function wikidataAwardsQuery(wikidataId) {
   return `
-SELECT ?awardLabel ?year ?workLabel WHERE {
-  wd:${wikidataId} p:P166 ?st.
-  ?st ps:P166 ?award.
+SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
+  {
+    wd:${wikidataId} p:P166 ?st.
+    ?st ps:P166 ?award.
+    BIND("award" AS ?kind)
+  } UNION {
+    wd:${wikidataId} p:P1411 ?st.
+    ?st ps:P1411 ?award.
+    BIND("nom" AS ?kind)
+  }
   OPTIONAL { ?st pq:P585 ?date. }
   OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != wd:${wikidataId}) }
+  OPTIONAL { ?st pq:P1346 ?winner. }
+  OPTIONAL { ?st pq:P2453 ?nominee. }
+  BIND(COALESCE(?winner, ?nominee) AS ?person)
+  OPTIONAL { ?st pq:P805 ?ceremony. ?ceremony wdt:P179|wdt:P361 ?groupOfCeremony. }
+  OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
+  BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
   BIND(YEAR(?date) as ?year)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
 } ORDER BY DESC(?year)`;
@@ -424,57 +452,126 @@ SELECT ?awardLabel ?year ?workLabel WHERE {
 // Variante sin identificador de Wikidata conocido: busca el ítem
 // por el id de TMDB de una serie (P4983) o por el id de IMDb de
 // una película (P345), cuando /external_ids no trae wikidata_id.
+// Misma consulta que wikidataAwardsQuery, con ?item en lugar de
+// un QID fijo (la obra P1686 se omite cuando es el propio ítem).
 function wikidataAwardsByExternalIdQuery(type, externalId) {
   const prop = type === "tv" ? "P4983" : "P345";
   return `
-SELECT ?awardLabel ?year ?workLabel WHERE {
+SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
   ?item wdt:${prop} "${externalId}".
-  ?item p:P166 ?st.
-  ?st ps:P166 ?award.
+  {
+    ?item p:P166 ?st.
+    ?st ps:P166 ?award.
+    BIND("award" AS ?kind)
+  } UNION {
+    ?item p:P1411 ?st.
+    ?st ps:P1411 ?award.
+    BIND("nom" AS ?kind)
+  }
   OPTIONAL { ?st pq:P585 ?date. }
   OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != ?item) }
+  OPTIONAL { ?st pq:P1346 ?winner. }
+  OPTIONAL { ?st pq:P2453 ?nominee. }
+  BIND(COALESCE(?winner, ?nominee) AS ?person)
+  OPTIONAL { ?st pq:P805 ?ceremony. ?ceremony wdt:P179|wdt:P361 ?groupOfCeremony. }
+  OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
+  BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
   BIND(YEAR(?date) as ?year)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
 } ORDER BY DESC(?year)`;
 }
 
-// Normaliza las filas de la respuesta SPARQL a la lista de
-// premios { name, year?, detail? } del render: se quedan con la
-// primera etiqueta (español si existe), se deduplican (un mismo
-// premio puede repetirse con varios cualificadores) y se ordenan
-// por año descendente. Devuelve [] si no hay premios.
+// Limpia las etiquetas de Wikidata: muchas páginas de premios
+// españolas son anexos y su etiqueta empieza por «Anexo:»
+// (p. ej. «Anexo:Oscar al mejor actor de reparto»).
+function cleanAwardLabel(label) {
+  return (label || "").replace(/^Anexo:\s*/i, "").trim();
+}
+
+// Normaliza las filas de la respuesta SPARQL a los grupos de la
+// sección «Premios» del render: [{ group, entries: [...] }].
+// Entrada por fila: { kind, awardLabel, groupLabel, year,
+// workLabel, personLabel }. Pasos:
+// 1. Limpieza de etiquetas (prefijo «Anexo:») y salto de filas sin
+//    nombre de premio.
+// 2. Deduplicación por premio+año+obra+tipo (un mismo premio puede
+//    repetirse con varios cualificadores y varias declaraciones);
+//    los implicados (P1346/P2453) de filas del mismo premio se
+//    fusionan en la lista people (p. ej. los 4 nominados a efectos
+//    visuales en una sola entrada).
+// 3. Agrupación por familia (Premios Óscar, Globos de Oro…): los
+//    grupos se ordenan por el año más reciente de sus entradas y
+//    cada uno ordena sus entradas por año desc., premio antes que
+//    nominación y nombre. Devuelve [] si no hay premios.
 function mapAwardsBindings(bindings) {
-  const seen = new Set();
-  const awards = [];
+  const byKey = new Map();
   for (const b of bindings || []) {
-    const name = (b.awardLabel && b.awardLabel.value || "").trim();
+    const name = cleanAwardLabel(b.awardLabel && b.awardLabel.value);
     if (!name) continue;
+    const kind = b.kind && b.kind.value === "award" ? "award" : "nom";
     const year = b.year ? String(b.year.value) : "";
     const detail =
       b.workLabel && b.workLabel.value ? String(b.workLabel.value) : "";
-    const key = `${name}|${year}|${detail}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const award = { name };
-    if (year) award.year = year;
-    if (detail) award.detail = detail;
-    awards.push(award);
+    const person =
+      b.personLabel && b.personLabel.value ? String(b.personLabel.value) : "";
+    const key = `${kind}|${name}|${year}|${detail}`;
+    let entry = byKey.get(key);
+    if (!entry) {
+      entry = {
+        kind,
+        name,
+        year,
+        detail,
+        group: cleanAwardLabel(b.groupLabel && b.groupLabel.value),
+        people: [],
+      };
+      byKey.set(key, entry);
+    }
+    if (person && !entry.people.includes(person)) entry.people.push(person);
   }
-  awards.sort(
-    (a, b) => (b.year || "0").localeCompare(a.year || "0") || a.name.localeCompare(b.name)
+
+  const byGroup = new Map();
+  for (const entry of byKey.values()) {
+    const gname = entry.group || "Otros";
+    let group = byGroup.get(gname);
+    if (!group) {
+      group = { group: gname, entries: [] };
+      byGroup.set(gname, group);
+    }
+    group.entries.push(entry);
+  }
+
+  const latestYear = (group) =>
+    group.entries.reduce(
+      (max, e) => Math.max(max, Number(e.year) || 0),
+      0
+    );
+  const groups = [...byGroup.values()].sort(
+    (a, b) =>
+      latestYear(b) - latestYear(a) ||
+      (a.group < b.group ? -1 : a.group > b.group ? 1 : 0)
   );
-  return awards;
+  for (const group of groups) {
+    group.entries.sort(
+      (a, b) =>
+        (Number(b.year) || 0) - (Number(a.year) || 0) ||
+        (a.kind === b.kind ? 0 : a.kind === "award" ? -1 : 1) ||
+        (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    );
+  }
+  return groups;
 }
 
 /**
- * Premios de una película o serie desde Wikidata (issue #302,
- * iteración): la API pública de TMDB no expone premios, solo su
- * web; Wikidata los publica como declaraciones P166 del ítem del
+ * Premios y nominaciones de una película o serie desde Wikidata
+ * (issue #302, iteración): la API pública de TMDB no expone
+ * premios, solo su web; Wikidata los publica como declaraciones
+ * P166 («award received») y P1411 («nominated for») del ítem del
  * título. No es crítico: cualquier fallo (red, sin ítem en
  * Wikidata, sin premios) devuelve null y la sección no se pinta.
  * @param {'movie'|'tv'} type - Tipo de contenido
  * @param {string|number} externalId - ID externo de TMDB
- * @returns {Promise<Array<{name:string, year?:string, detail?:string}>|null>}
+ * @returns {Promise<Array<{group: string, entries: Array<{kind: 'award'|'nom', name: string, year?: string, detail?: string, people: string[]}>}>|null>}
  */
 export async function getItemAwards(type, externalId) {
   if (type !== "movie" && type !== "tv") return null;
