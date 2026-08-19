@@ -2213,11 +2213,16 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 /* La sección entera es un <details> que arranca minimizado (issue
    #302, iteración 3): la cabecera actúa de <summary>. Marcador
-   nativo oculto y chevron propio, mismo patrón que .awards__group-head. */
+   nativo oculto y chevron propio, mismo patrón que .awards__group-head.
+   SIN justify-content: space-between (issue #302, iteración 5): con
+   tres ítems (chevron, título y contador) el espacio libre se
+   repartía entre el título y el contador y el título quedaba
+   centrado en el hueco, desplazándose según la longitud del texto
+   de la derecha. El título va siempre anclado a la izquierda y el
+   contador se empuja al borde derecho con margin-left: auto. */
 .awards__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
   margin: 0;
   cursor: pointer;
@@ -2274,10 +2279,14 @@ button, a, input, select, textarea { touch-action: manipulation; }
    4: «(3 premios, 2 nominaciones)»). Puede crecer, así que se permite
    que se encoja y ajuste (min-width: 0 + overflow-wrap) junto al
    título, sin generar scroll horizontal en móvil (regla 2 de
-   AGENTS.md). */
+   AGENTS.md). margin-left: auto lo empuja al borde derecho (issue
+   #302, iteración 5) para que el título «Premios» quede siempre en
+   la misma posición izquierda, sin depender de la longitud del
+   contador. */
 .awards__count {
   font-weight: 400;
   letter-spacing: 0;
+  margin-left: auto;
   min-width: 0;
   text-align: right;
   overflow-wrap: anywhere;
@@ -2313,7 +2322,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .awards__group-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
   cursor: pointer;
   padding: 0.5rem 0;
@@ -2355,9 +2363,14 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .awards__group-count {
   font-weight: 400;
   opacity: 0.75;
-  /* Sin flex-shrink: 0 desde la iteración 4: el contador separado de
-     premios y nominaciones puede crecer y debe poder encogerse/ajustarse
-     junto al nombre de la familia sin desbordar en móvil. */
+  /* margin-left: auto empuja el contador al borde derecho (issue
+     #302, iteración 5): el nombre de la familia queda anclado a la
+     izquierda, siempre en la misma posición, sin depender de la
+     longitud del contador. Sin flex-shrink: 0 desde la iteración 4:
+     el contador separado de premios y nominaciones puede crecer y
+     debe poder encogerse/ajustarse junto al nombre de la familia sin
+     desbordar en móvil. */
+  margin-left: auto;
   min-width: 0;
   text-align: right;
   overflow-wrap: anywhere;
