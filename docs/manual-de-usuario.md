@@ -265,14 +265,22 @@ Para cada episodio puedes:
   **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Volver a ver un episodio**: si el episodio ya está marcado como visto
   y pulsas su casilla, la web te preguntará si **lo has visto de nuevo** o
-  si quieres **desmarcarlo**. Si eliges «Lo he visto de nuevo», la fecha de
-  última visualización pasa a hoy y el contador del episodio suma uno.
+  si quieres **quitarle la última visualización**. Si eliges «Lo he visto
+  de nuevo», la fecha de última visualización pasa a hoy y el contador del
+  episodio suma uno.
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
+  La opción de descontar se llama **«Quitar última visualización»** cuando
+  el episodio se ha visto varias veces (quita solo la visión más reciente:
+  el episodio sigue marcado y el contador baja una vez) y **«Desmarcar»**
+  cuando solo se ha visto una vez (el episodio queda sin marcar).
 - **Ver las fechas de tus visionados**: bajo cada episodio visto hay un
-  enlace **«Visionados anteriores»**; al pulsarlo se despliegan las
+  botón **«Visionados anteriores (nº de veces)»**, con la misma flecha que
+  los apartados desplegables de la serie; al pulsarlo se despliegan las
   fechas de todas las veces que lo has visto (ocultas por defecto, tanto
-  si es una como si son varias).
+  si es una como si son varias). Si alguna visualización antigua no tiene
+  fecha registrada, aparece una línea que indica cuántas visiones quedan
+  sin fecha, para que el número concuerde con el contador del episodio.
 - **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
@@ -316,7 +324,9 @@ cada vez que la has visto.
 
 El botón flotante de la ficha ofrece **«Quitar de añadidos»** (o
 **«Quitar última visualización»** si la serie ya está completada, que
-desmarca su último episodio visto). «Quitar de añadidos» borra la serie.
+desmarca su último episodio visto; si ese episodio se había visto
+varias veces, solo le quita la visión más reciente y sigue marcado).
+«Quitar de añadidos» borra la serie.
 El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
@@ -1259,7 +1269,8 @@ En la ficha, el abanico incluye la **opción inversa** según el estado:
 **«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
 registro, con **«Deshacer»** para cancelar) y **«Quitar última
 visualización»** si ya lo está (en películas, elimina la última vez que
-la viste; en series, desmarca el último episodio visto).
+la viste; en series, desmarca el último episodio visto, o le quita solo
+su visión más reciente si ese episodio se había visto varias veces).
 
 En series ya completadas (o en pausa/abandonadas), la opción «Marcar
 como vista» no aparece, porque no tiene sentido; en su lugar, en una
@@ -1629,8 +1640,9 @@ conexión a internet y **recarga la página**.
 **He marcado algo por error**
 Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
 valoración que se abre al marcar y todo vuelve a estar como antes.
-También puedes desmarcar episodios, quitar visionados del historial y
-«Deshacer» cualquier borrado en los segundos posteriores.
+También puedes desmarcar episodios (o quitarles la última
+visualización si se habían visto varias veces), quitar visionados del
+historial y «Deshacer» cualquier borrado en los segundos posteriores.
 
 **No veo a un amigo nuevo**
 La lista de amigos es la de todos los usuarios registrados. Si la persona
