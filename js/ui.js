@@ -1352,7 +1352,7 @@ export function awardsHtml(item) {
   const groups = Array.isArray(item.awards) ? item.awards : [];
   if (!groups.length) return "";
 
-  const total = groups.reduce((n, g) => n + g.entries.length, 0);
+  const allEntries = groups.flatMap((g) => g.entries);
 
   const groupsHtml = groups
     .map(
@@ -1360,7 +1360,7 @@ export function awardsHtml(item) {
       <details class="awards__group">
         <summary class="awards__group-head">
           <span class="awards__group-name">${escapeHtml(g.group || "")}</span>
-          <span class="awards__group-count">(${g.entries.length})</span>
+          <span class="awards__group-count">${awardsCountText(g.entries)}</span>
         </summary>
         <ul class="awards__list">
           ${g.entries.map(awardRowHtml).join("")}
@@ -1373,30 +1373,43 @@ export function awardsHtml(item) {
     <details class="awards">
       <summary class="awards__head">
         <span class="awards__title">Premios</span>
-        <span class="awards__count">(${total})</span>
+        <span class="awards__count">${awardsCountText(allEntries)}</span>
       </summary>
       <div class="awards__groups">${groupsHtml}</div>
     </details>`;
 }
 
+// Contador de una lista de entradas separando premios (P166) de
+// nominaciones (P1411), en lugar del total único combinado (issue
+// #302, iteración 4: «Debería separar premios de nominaciones»).
+// Se omite el cero inútil («0 nominaciones») y se usa el singular o
+// plural correcto: «1 premio», «2 premios», «1 nominación», «3
+// nominaciones». Devuelve "" solo si la lista no trae entradas (no
+// llegaría a pintarse: la sección no se muestra sin premios).
+function awardsCountText(entries) {
+  const awards = entries.filter((e) => e.kind === "award").length;
+  const noms = entries.length - awards;
+  const parts = [];
+  if (awards) parts.push(`${awards} ${awards === 1 ? "premio" : "premios"}`);
+  if (noms) parts.push(`${noms} ${noms === 1 ? "nominación" : "nominaciones"}`);
+  return parts.length ? `(${parts.join(", ")})` : "";
+}
+
 // Fila de un premio o nominación: etiqueta distintiva («Premio» /
-// «Nominación»), nombre, año, trabajo (detalle) e implicados
-// (ganador o nominados). Todo el contenido se escapa con escapeHtml.
+// «Nominación»), nombre, año, trabajo (detalle) e implicados. La
+// etiqueta ya distingue premios de nominaciones, por eso los
+// implicados se muestran SOLO con sus nombres, sin el prefijo
+// «Ganador:»/«Nominado(s):» (issue #302, iteración 4: «eliminar
+// ganador/es y nominado/s y dejar simplemente el nombre de las
+// personas»). Todo el contenido se escapa con escapeHtml.
 function awardRowHtml(e) {
   const badge =
     e.kind === "award"
       ? `<span class="awards__badge awards__badge--award">Premio</span>`
       : `<span class="awards__badge awards__badge--nom">Nominación</span>`;
-  // Plural correcto en español: «Ganador»/«Ganadores» (P1346) y
-  // «Nominado»/«Nominados» (P2453). Un «Ganador» + «s» genérico
-  // produciría «Ganadors» (issue #302, iteración 3).
   const people =
     e.people && e.people.length
-      ? `<span class="awards__people">${
-          e.kind === "award"
-            ? e.people.length > 1 ? "Ganadores" : "Ganador"
-            : e.people.length > 1 ? "Nominados" : "Nominado"
-        }: ${e.people.map(escapeHtml).join(", ")}</span>`
+      ? `<span class="awards__people">${e.people.map(escapeHtml).join(", ")}</span>`
       : "";
   return `
       <li class="awards__row">

@@ -2270,9 +2270,17 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: #5f5849;
 }
 
+/* Contador separado de premios y nominaciones (issue #302, iteración
+   4: «(3 premios, 2 nominaciones)»). Puede crecer, así que se permite
+   que se encoja y ajuste (min-width: 0 + overflow-wrap) junto al
+   título, sin generar scroll horizontal en móvil (regla 2 de
+   AGENTS.md). */
 .awards__count {
   font-weight: 400;
   letter-spacing: 0;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .awards__groups {
@@ -2347,7 +2355,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .awards__group-count {
   font-weight: 400;
   opacity: 0.75;
-  flex-shrink: 0;
+  /* Sin flex-shrink: 0 desde la iteración 4: el contador separado de
+     premios y nominaciones puede crecer y debe poder encogerse/ajustarse
+     junto al nombre de la familia sin desbordar en móvil. */
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .awards__list {
