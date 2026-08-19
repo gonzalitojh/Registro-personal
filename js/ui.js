@@ -2839,8 +2839,9 @@ export function openReadOnlyModal(item, ownerName) {
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
     ${gamePlatformsHtml(item)}
-    ${watchProvidersHtml(item)}
     ${extraInfoHtml(item)}
+    ${awardsHtml(item)}
+    ${watchProvidersHtml(item)}
 
     <div class="field-group">
       <span class="item-card__stamp item-card__stamp--${item.status}" style="position:static;transform:none;display:inline-block;">
