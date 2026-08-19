@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado (iteración: premios desde la API y plataformas en su sitio)
+Aceptado (iteración: premios desde la API y plataformas en su sitio; iteración 2: agrupación por tipo, nominaciones e implicados)
 
 ## Fecha
 
@@ -21,6 +21,17 @@ correcciones sobre la primera implementación:
 2. **Los premios deben extraerse de la API** (no ser un dato que el
    usuario introduce): una sección que muestre los premios de los que
    dispone el ítem, bajo la sección de plataformas.
+
+Un segundo comentario del mismo día (2026-08-19, tercera iteración)
+pide tres mejoras sobre la sección de premios:
+
+1. **Agrupación por tipo**: los premios deben agruparse por familia
+   (Óscar, Globos de Oro, etc.) y cada grupo debe poder **minimizarse**.
+2. **Nominaciones**: deben aparecer también las nominaciones, con una
+   **etiqueta** que diferencie premios de nominaciones.
+3. **Implicados**: deben mostrarse las personas implicadas en el
+   premio — p. ej. si es el premio al mejor actor de reparto, debe
+   aparecer el nombre del actor.
 
 La issue indica además que el trabajo parte de la rama `feat/issue-201`
 y que la PR irá a **esa misma rama** (no a `dev`), igual que las
@@ -61,31 +72,50 @@ devolver las plataformas a su posición original (bajo la sinopsis,
 encima de la producción), colocando los premios justo debajo de las
 plataformas. La decisión se organiza en seis puntos.
 
-### 1. Datos: premios extraídos de Wikidata (P166), no del usuario
+### 1. Datos: premios extraídos de Wikidata (P166/P1411), no del usuario
 
 Nueva función `getItemAwards(type, externalId)` en `js/api-movies.js`
-que devuelve `Array<{ name, year?, detail? }>` o `null`:
+que devuelve `Array<{ group, entries }>` o `null`, donde cada `group`
+es una **familia de premios** (Óscar, Globos de Oro, Emmy…) y sus
+`entries` son `{ kind, name, year?, detail?, people }`:
 
 1. Consulta `/external_ids` de TMDB (cacheado 24 h, misma caché
    compartida de `api-movies.js`) para obtener `wikidata_id`.
 2. Consulta el **endpoint SPARQL de Wikidata** (`query.wikidata.org`,
    público, sin clave, CORS abierto) con las declaraciones **P166**
-   («award received») del ítem:
+   («award received», premios) **y P1411** («nominated for»,
+   nominaciones, marcadas con `?kind = "nom"` en un UNION):
    - `name`: etiqueta del premio en español (o inglés si no hay
-     traducción), resuelta con `wikibase:label`.
+     traducción), resuelta con `wikibase:label`; se limpia el prefijo
+     «Anexo:» que llevan muchas páginas de premios españolas.
    - `year`: año de la ceremonia (cualificador P585, `YEAR(?date)`).
    - `detail`: obra por la que se concedió (cualificador P1686; se omite
      cuando la obra es el propio ítem, p. ej. el premio a la película
      entera — sí se muestra cuando es distinta, p. ej. el episodio
      premiado de una serie).
+   - `people`: **implicados** — ganador (cualificador **P1346**) en
+     premios o nominados (cualificador **P2453**) en nominaciones
+     (`COALESCE` a `?person`); p. ej. el actor de un «Óscar al mejor
+     actor de reparto». Varios implicados de la misma declaración (p.
+     ej. los cuatro nominados a efectos visuales) se fusionan en una
+     sola entrada.
+   - `group`: **familia del premio**, resuelta con dos rutas en
+     `COALESCE`: la ceremonia del año (`P805` → `P179`/`P361` del ítem
+     de la ceremonia, p. ej. «Premios Óscar de 2008» → «Premios
+     Óscar») o el propio ítem del premio (`P361`/`P179`); si ninguna
+     existe, el grupo es el nombre del premio. (Las dos rutas van en un
+     mismo bloque `OPTIONAL` para no multiplicar filas.)
 3. Fallbacks si `wikidata_id` no viene: la serie se busca por su id de
    TMDB (`wdt:P4983`) y la película por su IMDb id (`wdt:P345`, de
    `/external_ids`).
-4. Normalización: deduplicación (mismo premio+año+obra puede repetirse
-   con varios cualificadores), orden por año descendente y nombre. Los
-   fallos de red, la ausencia de ítem en Wikidata o la ausencia de
-   premios devuelven `null`/`[]` y la sección no se pinta (degradación
-   elegante, misma política que los watch providers).
+4. Normalización: deduplicación (mismo premio+año+obra+tipo puede
+   repetirse con varios cualificadores y declaraciones; los implicados
+   de filas del mismo premio se fusionan), agrupación por familia,
+   orden de grupos por su año más reciente (desc.) y de entradas por
+   año (desc.), premios antes que nominaciones y nombre. Los fallos de
+   red, la ausencia de ítem en Wikidata o la ausencia de premios
+   devuelven `null`/`[]` y la sección no se pinta (degradación elegante,
+   misma política que los watch providers).
 
 No se persiste nada en Firestore: los premios son información pública de
 la API, idéntica para todos los usuarios (a diferencia de la primera
@@ -99,11 +129,17 @@ de la API.
 `awardsHtml(item)` (nueva firma, sin callbacks) pinta la sección
 **solo si `item.awards` trae elementos** (la ausencia de premios no
 ocupa espacio, mismo criterio que «Dónde verla»): cabecera «Premios»
-con contador `(N)`, y una fila por premio con nombre, año (monoespaciada)
-y detalle. Sin formulario, sin botones y sin pista de vacío: no hay nada
-que el usuario pueda añadir. Todo el contenido se escapa con
-`escapeHtml`. Se elimina `wireAwards` (y sus llamadas), ya que no queda
-interacción que cablear.
+con contador `(N)` (total de premios + nominaciones), y por cada
+familia un `<details class="awards__group" open>` — **abierto por
+defecto y minimizable** por el usuario, mismo patrón nativo sin JS que
+`.watch-log-details`/`.rewatch-history` — con cabecera `<summary>`
+(nombre de la familia + contador) y una fila por premio/nominación:
+etiqueta distintiva **«Premio»** (rellena) o **«Nominación»** (borde),
+nombre, año (monoespaciada), detalle («Por: …») y, cuando hay,
+**implicados** («Ganador: …» o «Nominado(s): …»). Sin formulario, sin
+botones y sin pista de vacío: no hay nada que el usuario pueda añadir.
+Todo el contenido se escapa con `escapeHtml`. Se elimina `wireAwards`
+(y sus llamadas), ya que no queda interacción que cablear.
 
 ### 3. Orden de secciones: sinopsis → plataformas → premios → producción → reparto
 
@@ -142,13 +178,23 @@ mismo orden (ADR-102: misma información y misma disposición).
 
 Bloque `.awards*` en `ocio/ocio.css` (podado de la primera iteración: se
 eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
-`.awards__input*`, que ya no existen):
+`.awards__input*`, que ya no existen; la iteración 2 añade
+`.awards__group*`, `.awards__badge*` y `.awards__people`):
 
-- Título/contador/año/detalle con `--ink-soft` y el override documentado
+- Título/contador/año/detalle/implicados/etiqueta de nominación con
+  `--ink-soft` y el override documentado
   `[data-theme="dark"] .modal__card … { color: #5f5849 }` (mismo caso de
   contraste AA que `.cast-crew__title`, QA #294); el nombre del premio
-  usa `color: inherit` porque el fondo difiere entre la página de ítem
-  (`--ink` en familia oscura) y el modal clásico (`--paper`).
+  y la cabecera de grupo usan `color: inherit` porque el fondo difiere
+  entre la página de ítem (`--ink` en familia oscura) y el modal
+  clásico (`--paper`).
+- Grupos como `<details>` con borde `--paper-line`, radio de ficha y
+  chevron propio (`::before` + rotación con `[open]`, marcador nativo
+  oculto para Firefox/WebKit) — sin JS y accesible por defecto.
+- Etiqueta «Premio»: píldora ocre rellena (mismo dúo que
+  `.recipe-card__badge`, patrón ya aprobado en los cuatro temas, con el
+  override `[data-theme="black"]` de texto `--ink`); «Nominación»:
+  píldora con borde `currentColor` y texto suave.
 - Responsivo sin scroll horizontal: filas con `flex-wrap`, `min-width: 0`
   y `overflow-wrap: anywhere` en los textos; el año tiene
   `flex-shrink: 0` pero está acotado (mismo patrón que la primera
@@ -157,7 +203,7 @@ eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
 ### 6. Bump PWA
 
 Cambian assets estáticos (CSS y JS): bump de la versión de despliegue a
-`20260819` con `scripts/bump-version.sh` (ADR-019), coherente en
+`20260820` con `scripts/bump-version.sh` (ADR-019), coherente en
 `js/config.js`, `index.html` y `service-worker.js`.
 
 Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/302
@@ -186,6 +232,17 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
   los watch providers, la consulta se hace antes del render (ficha) o en
   paralelo (preview/amigo) y la sección aparece cuando los datos llegan;
   un esqueleto de carga no aporta nada con la caché de 24 h.
+- **Agrupar por ceremonia anual (P805) en lugar de por familia**:
+  descartada — «Premios Óscar de 2008» sería un grupo por año y el
+  comentario pide agrupación por tipo (Óscar, Globos de Oro…); la
+  ceremonia se usa solo como ruta hacia la familia (P179/P361).
+- **Resolver la familia en JS con una consulta por premio**: descartada
+  — N consultas SPARQL por ficha; la familia se resuelve en la misma
+  consulta con `COALESCE` (ceremonia → premio → nombre del premio).
+- **Etiquetar solo con color (sin texto)**: descartada — el comentario
+  pide una etiqueta que diferencie premios y nominaciones; además del
+  color, «Premio»/«Nominación» son legibles sin depender del contraste
+  cromático (WCAG 1.4.1).
 
 ## Consecuencias
 
@@ -194,6 +251,10 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
 - La ficha muestra los premios reales del título **sin ningún esfuerzo
   del usuario** y sin depender de una clave nueva: Wikidata (P166) cubre
   películas y series con etiquetas en español.
+- Premios **y nominaciones** diferenciados con etiqueta, **agrupados por
+  familia** (Óscar, Globos de Oro, Emmy…) en grupos **minimizables**, y
+  con los **implicados** (ganadores/nominados) visibles: exactamente el
+  segundo comentario de la issue.
 - Las plataformas vuelven a su posición original y los premios quedan
   justo debajo (`sinopsis → plataformas → premios → producción →
   reparto`), exactamente como pide el comentario de la issue.
@@ -211,25 +272,26 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
   Wikidata, la sección simplemente no aparece (degradación elegante). La
   cobertura de premios en Wikidata no es exhaustiva (sobre todo en
   títulos poco conocidos).
+- **La consulta SPARQL es algo más pesada** (UNION de P166/P1411,
+  cualificadores y resolución de familia): las primeras aperturas pueden
+  tardar un poco más; las siguientes van de caché (24 h en memoria por
+  sesión).
 - **Solo lectura**: el usuario ya no puede anotar premios manualmente (era
   la naturaleza de la primera iteración); es el comportamiento pedido.
 - **Los ítems legacy** con un campo `awards` guardado (de la primera
   iteración de esta rama, nunca fusionada) lo ven ignorado en favor de
   los datos de la API.
-- **Consultas SPARQL**: la primera apertura de una ficha puede tardar
-  algo más (Wikidata responde normalmente en <1-2 s); las siguientes van
-  de caché (24 h en memoria por sesión).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/api-movies.js` | **Modificado**: nueva `getItemAwards(type, externalId)` (external_ids de TMDB → SPARQL P166 de Wikidata, con fallbacks P4983/P345, normalización, dedupe, orden y caché 24 h; nunca lanza) |
-| `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
+| `js/api-movies.js` | **Modificado**: `getItemAwards(type, externalId)` ampliada en la iteración 2 — consultas SPARQL P166 **y P1411** (premios y nominaciones), cualificadores P1346 (ganador) / P2453 (nominado) para los implicados, resolución de la **familia** del premio (P805→P179/P361 de la ceremonia, P361/P179 del premio, fallback al nombre), `?kind` por fila; `mapAwardsBindings` agrupa por familia con dedupe por premio+año+obra+tipo, fusión de implicados, limpieza del prefijo «Anexo:» y orden (grupos por año más reciente; entradas por año desc., premio antes que nominación, nombre); caché 24 h intacta y nunca lanza |
+| `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); en la iteración 2 pinta **grupos por familia** como `<details open>` minimizables con cabecera y contador, y por cada premio/nominación la etiqueta **«Premio»/«Nominación»**, nombre, año, detalle «Por: …» e **implicados** «Ganador/Nominado(s): …» (nueva `awardRowHtml`); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
 | `js/modal-handlers.js` | **Modificado**: eliminados `saveAwards`/`onAddAward`/`onRemoveAward`; `openMovieItem`/`openTvItem` consultan `getItemAwards` (no crítico, try/catch) antes del render |
 | `js/item-page.js` | **Modificado**: `loadPreviewExtras` consulta también `getItemAwards` (allSettled); `paintPreview` reordenada (plataformas y premios antes del bloque de producción/reparto) |
-| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); mantiene título/contador/lista/filas con el override documentado `[data-theme="dark"] .modal__card .awards__title/year/detail { color: #5f5849 }` y `.awards__name` con `color: inherit` |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260819` (ADR-019) |
-| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios extraídos de Wikidata: nombre, año y trabajo; si no hay premios la sección no aparece) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto) |
+| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); la iteración 2 añade `.awards__group*` (borde, radio, chevron propio rotado con `[open]`, marcador nativo oculto), `.awards__badge--award` (píldora ocre, dúo de `.recipe-card__badge`) y `.awards__badge--nom`/`.awards__people`, todo con el override documentado `[data-theme="dark"] .modal__card … { color: #5f5849 }` y `.awards__name`/`.awards__group-head` con `color: inherit` |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260820` (ADR-019) |
+| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios **y nominaciones** extraídos de Wikidata: agrupados por tipo con grupos minimizables, etiqueta Premio/Nominación, implicados, año y trabajo; si no hay premios la sección no aparece) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto) |
 | `tasks/task-issue-302.json` | **Modificado**: estado y criterios tras la iteración |
 | `docs/adr-108-seccion-premios-fichas.md` | **Modificado**: este documento (iteración del ADR de la PR #303) |

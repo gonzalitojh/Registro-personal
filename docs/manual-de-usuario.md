@@ -1094,14 +1094,18 @@ tipo, verás:
   justo después de la sinopsis y antes de los premios, la producción y
   el reparto.
 - **Premios**: bajo el «Dónde verla» aparece la sección **Premios**, en
-  **solo lectura**, con los premios de los que dispone el título (por
-  ejemplo «Óscar a la mejor fotografía»): el **nombre** del premio, el
-  **año** de la ceremonia y, en su caso, el **trabajo** por el que se
-  concedió (p. ej. el episodio premiado de una serie). Los premios se
-  extraen automáticamente de **Wikidata** (la API de TMDB no expone
-  premios), así que no hay que anotar nada; si el título no tiene
-  premios registrados, la sección no aparece. Válido para películas y
-  series.
+  **solo lectura**, con los premios **y las nominaciones** de los que
+  dispone el título. Están **agrupados por tipo** (Óscar, Globos de Oro,
+  Emmy…): cada grupo se puede **minimizar o desplegar** pulsando su
+  cabecera. Cada premio muestra el **nombre** (p. ej. «Óscar al mejor
+  actor de reparto»), el **año** de la ceremonia, una **etiqueta** que lo
+  distingue (**«Premio»** o **«Nominación»**), los **implicados**
+  (p. ej. el nombre del actor premiado o los nominados) y, en su caso,
+  el **trabajo** por el que se concedió (p. ej. el episodio premiado de
+  una serie). Los datos se extraen automáticamente de **Wikidata** (la
+  API de TMDB no expone premios), así que no hay que anotar nada; si el
+  título no tiene premios registrados, la sección no aparece. Válido
+  para películas y series.
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
