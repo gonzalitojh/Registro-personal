@@ -2193,12 +2193,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* =========================================================
-   Premios (issue #302): sección editable de la ficha de
-   películas/series, entre la producción y las plataformas.
-   Mismo patrón de sección que .cast-crew: línea de separación
-   superior con --paper-line. Lista de premios anotados por el
-   usuario (TMDB no expone premios en su API pública) con su
-   botón «Quitar», y formulario para añadir.
+   Premios (issue #302, iteración): sección de SOLO LECTURA de
+   la ficha de películas/series, bajo las plataformas y encima
+   de la producción. Mismo patrón de sección que .cast-crew:
+   línea de separación superior con --paper-line. Lista de
+   premios del título extraídos de Wikidata (TMDB no expone
+   premios en su API pública); sin formulario ni botones.
    ========================================================= */
 
 .awards {
@@ -2234,8 +2234,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
    clara del modal; los demás temas cumplen con --ink-soft. */
 [data-theme="dark"] .modal__card .awards__title,
 [data-theme="dark"] .modal__card .awards__year,
-[data-theme="dark"] .modal__card .awards__detail,
-[data-theme="dark"] .modal__card .awards__hint {
+[data-theme="dark"] .modal__card .awards__detail {
   color: #5f5849;
 }
 
@@ -2289,60 +2288,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: var(--ink-soft);
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.awards__hint {
-  font-style: italic;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-  margin: 0 0 0.6rem;
-}
-
-.awards__remove {
-  flex-shrink: 0;
-}
-
-.awards__form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.awards__input {
-  flex: 1 1 9rem;
-  min-width: 0;
-  background: var(--white);
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  color: var(--ink);
-  padding: 0.4rem 0.55rem;
-  font-size: 16px; /* zoom iOS (ADR-042) */
-}
-
-.awards__year-input {
-  flex: 0 1 4.6rem;
-  flex-shrink: 0;
-}
-
-.awards__detail-input {
-  flex-basis: 100%;
-}
-
-.awards__input::placeholder {
-  color: var(--ink-soft);
-}
-
-.awards__input:focus-visible {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 1px;
-}
-
-/* Negro puro: --white pasó a #0f0f0f y --ink a #000000 (fondo), el
-   texto del input sería invisible (1:1). Mismo override que el bloque
-   de entradas de formulario de la familia oscura (ver .field-group). */
-[data-theme="black"] .awards__input {
-  color: var(--paper);
 }
 
 /* =========================================================
