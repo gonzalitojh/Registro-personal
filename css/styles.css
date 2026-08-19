@@ -53,10 +53,12 @@
      .item-fab__action::before) que sobresale 0.75rem de cada
      pastilla del abanico, en el tono del fondo de cada familia
      (oscuro: velo oscuro como --backdrop; claro: velo de tinta
-     suave). Al ser el anillo estrecho, el tinte de las familias
-     oscuras se suaviza (0.35/0.4 frente al 0.5/0.55 del halo de 26
-     rem de la iteración 5) para que el difuminado siga siendo
-     «leve» como pide el usuario. */
+     suave). El tinte se aplica como BORDE de 12px del pseudo (el
+     interior queda transparente para no velar la pastilla; ver la
+     regla .item-fab__action::before). Al ser el anillo estrecho, el
+     tinte de las familias oscuras se suaviza (0.35/0.4 frente al
+     0.5/0.55 del halo de 26 rem de la iteración 5) para que el
+     difuminado siga siendo «leve» como pide el usuario. */
   --fab-halo: rgba(10, 9, 7, 0.35);
 
   /* Neutros */
@@ -2017,18 +2019,20 @@ body.is-back-to-top-visible .back-to-top {
 /* Difuminado por opción (issue #298, iteración 6): en lugar del halo
    circular fijo de 26 rem detrás de todo el abanico (iteración 5,
    «demasiado amplio, sobre todo en móvil»), cada pastilla trae su
-   propio anillo de desenfoque con backdrop-filter (blur 4px + tinte
-   --fab-halo por familia): el ::before de la acción sobresale
-   0.75 rem (≤ 1 rem pedido) por cada lado de la pastilla siguiendo
-   su silueta (border-radius: inherit), de modo que el difuminado
-   del fondo nace «a partir de cada opción» y es de poca anchura.
-   El desenfoque cubre también el interior de la pastilla, pero su
-   fondo es opaco (--paper o --ink-raised), así que el centro no
-   cambia y solo se ve el anillo exterior (el borde del blur se
-   funde con el borde de la pastilla). El tinte (--fab-halo) hace
-   visible el anillo también en fondos claros (donde el blur solo
-   no se percibe). z-index: -1 lo pinta bajo el contenido de la
-   pastilla pero sobre su fondo/sombra (la acción tiene transform,
+   propio anillo de desenfoque con backdrop-filter (blur 4px): el
+   ::before de la acción sobresale 0.75 rem (≤ 1 rem pedido) por cada
+   lado de la pastilla siguiendo su silueta (border-radius: inherit;
+   borde de 12 px con el tinte --fab-halo por familia), de modo que
+   el difuminado del fondo nace «a partir de cada opción» y es de
+   poca anchura. El tinte vive SOLO en el borde (el interior del
+   pseudo es transparente): el interior de la pastilla no se vela
+   (el backdrop-filter del área central desenfoca su fondo opaco
+   uniforme → sin cambio visible), así que el contraste del icono y
+   del texto no se degrada; solo se ve el anillo exterior fundido
+   con el borde de la pastilla. El tinte (--fab-halo) hace visible
+   el anillo también en fondos claros (donde el blur solo no se
+   percibe). z-index: -1 lo pinta bajo el contenido de la pastilla y
+   su outline, pero sobre su fondo/sombra (la acción tiene transform,
    así que su contexto de apilamiento lo contiene); pointer-events:
    none para no interceptar clics ni el hover. Solo con .is-open
    (opacity transicionada; la visibilidad la hereda de la acción). */
@@ -2037,7 +2041,7 @@ body.is-back-to-top-visible .back-to-top {
   position: absolute;
   inset: -0.75rem;
   border-radius: inherit;
-  background: var(--fab-halo);
+  border: 12px solid var(--fab-halo);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: -1;
