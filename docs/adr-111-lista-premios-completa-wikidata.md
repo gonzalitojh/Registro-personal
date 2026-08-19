@@ -49,11 +49,11 @@ real `query.wikidata.org`):
    la consulta fallaba (WDQS responde 504 con frecuencia). Un fallo
    transitorio dejaba la sección «sin premios» durante todo el día.
 
-**Verificación del caso Juego de Tronos (comentario 2026-08-19 de la
-issue #311**: «Tengo comparando Juego de Tronos con la página de esta
-serie en la propia TMDB y aparecen 81 nominaciones y 28 victorias,
-mientras que en mi web solo aparecen 13 victorias… los premios Golden
-Globe no aparecen»):
+**Verificación del caso Juego de Tronos** (comentario 2026-08-19 de
+la issue #311: «yo estoy comparando Juego de Tronos con la página de
+esta serie en la propia TMDB y aparecen 81 nominaciones y 28
+victorias, mientras que en mi web solo aparecen 13 victorias… los
+premios Golden Globe no aparecen»):
 
 - El ítem de la serie (Q23572, `P4983` = TMDB `1399`) tiene **13
   declaraciones P166 y 0 P1411**: la app muestra exactamente «13
