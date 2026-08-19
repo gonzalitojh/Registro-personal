@@ -91,6 +91,55 @@ function mapCrewPerson(c) {
   };
 }
 
+// ---------- aggregate_credits de series (issue #308) ----------
+// `/tv/{id}/credits` de TMDB solo devuelve el reparto principal de la
+// temporada más reciente (versión reducida); el elenco COMPLETO de la
+// serie —todas las personas de todos los episodios/temporadas— está en
+// `/tv/{id}/aggregate_credits` (consultado con append_to_response desde
+// getTvExtraDetails). Su formato difiere del de credits: el cast lleva
+// `roles: [{character, …}]` (una persona puede interpretar VARIOS
+// personajes a lo largo de la serie) y el crew `jobs: [{job, …}]`
+// (varias funciones por persona), sin campos planos `character`/`job`.
+// Estas funciones aplanan ese formato al MISMO contrato de salida que
+// mapCastPerson/mapCrewPerson ({id, name, character|job, department,
+// profileUrl, order}), de modo que ui.js y cast-modal.js consumen el
+// elenco completo exactamente igual que el de películas.
+
+// Une los valores de un array con ", " (sin repetidos ni vacíos):
+// personajes de roles[] o puestos de jobs[].
+function joinUnique(values) {
+  return [...new Set((values || []).filter(Boolean))].join(", ");
+}
+
+function mapAggregateCastPerson(c) {
+  return {
+    id: c.id,
+    name: c.name || "",
+    // Todos los personajes de la persona en la serie, unidos («Ned
+    // Stark», «Gregor Clegane, Dongo»…): un actor puede interpretar
+    // varios personajes y la UI ya sabe envolver textos largos.
+    character: joinUnique((c.roles || []).map((r) => r.character)),
+    profileUrl: c.profile_path ? `${IMG_PERSON}${c.profile_path}` : null,
+    order: c.order ?? 999,
+  };
+}
+
+function mapAggregateCrewPerson(c) {
+  return {
+    id: c.id,
+    name: c.name || "",
+    // Todos los puestos de la persona, unidos («Director, Guionista»):
+    // mismo criterio de fusión que la ventana de detalle (que los une
+    // con ", " dentro de cada área, groupCrewByDepartment).
+    job: joinUnique((c.jobs || []).map((j) => j.job)),
+    department: c.department || "Otros",
+    profileUrl: c.profile_path ? `${IMG_PERSON}${c.profile_path}` : null,
+    // aggregate_credits no siempre trae order en el crew: mismo
+    // fallback ?? 999 que el resto de mapeos y que la propia UI.
+    order: c.order ?? 999,
+  };
+}
+
 // Fusiona los creadores de una serie (data.created_by) en la lista de
 // crew, cuando no estén ya presentes por id: los creadores se muestran
 // en el carrusel de producción junto al resto del equipo (issue #294).
@@ -263,19 +312,26 @@ export async function getCollectionDetails(collectionId) {
 }
 
 // Datos ampliados de una serie: duración de episodio, sinopsis,
-// género, creadores, ELENCO COMPLETO (issue #294): reparto (cast) con
-// personaje y foto, y equipo técnico (crew) con puesto y área (con los
-// creadores fusionados al principio), estado de emisión, próximo
-// episodio a emitir (si lo hay) y tráiler. Con el almacenamiento
-// mínimo (issue #200) se piden bajo demanda al abrir la ficha (y de
-// paso al alta para conocer estrenos/fechas de temporada), con caché
-// en memoria de 24 h (misma caché compartida que los watch providers).
+// género, creadores, ELENCO COMPLETO (issue #294 y #308): reparto
+// (cast) con personaje y foto, y equipo técnico (crew) con puesto y
+// área (con los creadores fusionados al principio), estado de emisión,
+// próximo episodio a emitir (si lo hay) y tráiler. Con el
+// almacenamiento mínimo (issue #200) se piden bajo demanda al abrir la
+// ficha (y de paso al alta para conocer estrenos/fechas de temporada),
+// con caché en memoria de 24 h (misma caché compartida que los watch
+// providers).
+//
+// El elenco se consulta con `append_to_response=aggregate_credits`
+// (issue #308), NO con `credits`: `/tv/{id}/credits` solo devuelve el
+// reparto principal de la temporada más reciente (versión reducida),
+// mientras que aggregate_credits devuelve la lista COMPLETA de todas
+// las personas de todos los episodios/temporadas.
 export async function getTvExtraDetails(id) {
   const cacheKey = `details_tv_${id}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=credits,videos`;
+  const url = `${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=aggregate_credits,videos`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return {};
   const result = {
@@ -286,12 +342,15 @@ export async function getTvExtraDetails(id) {
     episodeRuntime: (data.episode_run_time && data.episode_run_time[0]) || null,
     overview: data.overview || "",
     genres: (data.genres || []).map((g) => g.name),
-    // Elenco completo (issue #294): antes solo 5 nombres. Los
-    // creadores se añaden al crew como área "Creadores" (sin duplicar
-    // por id), además de conservarse en el campo creators (compat).
-    cast: ((data.credits && data.credits.cast) || []).map(mapCastPerson),
+    // Elenco COMPLETO (issue #294/#308): el cast de aggregate_credits
+    // trae roles[] (varios personajes por persona, unidos en
+    // mapAggregateCastPerson) y el crew jobs[] (varias funciones por
+    // persona). Los creadores se añaden al crew como área "Creadores"
+    // (sin duplicar por id), además de conservarse en el campo
+    // creators (compat).
+    cast: ((data.aggregate_credits && data.aggregate_credits.cast) || []).map(mapAggregateCastPerson),
     crew: mergeCreatorsIntoCrew(
-      ((data.credits && data.credits.crew) || []).map(mapCrewPerson),
+      ((data.aggregate_credits && data.aggregate_credits.crew) || []).map(mapAggregateCrewPerson),
       data.created_by
     ),
     creators: (data.created_by || []).map((c) => c.name),
