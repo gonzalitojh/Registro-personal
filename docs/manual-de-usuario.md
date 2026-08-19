@@ -266,8 +266,11 @@ Para cada episodio puedes:
 - **Volver a ver un episodio**: si el episodio ya está marcado como visto
   y pulsas su casilla, la web te preguntará si **lo has visto de nuevo** o
   si quieres **quitarle la última visualización**. Si eliges «Lo he visto
-  de nuevo», la fecha de última visualización pasa a hoy y el contador del
-  episodio suma uno.
+  de nuevo», la web guarda el nuevo visionado (la fecha de hoy, y el
+  contador del episodio suma uno) y te abre la ventana de valoración con
+  **la valoración que le diste la vez anterior ya puesta**: puedes
+  dejarla igual o cambiarla. Si pulsas **«Deshacer»**, el visionado recién
+  añadido se quita y el episodio queda como estaba.
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
   La opción de descontar se llama **«Quitar última visualización»** cuando
@@ -285,8 +288,17 @@ Para cada episodio puedes:
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
-**«Desmarcar todo»**. Si hay episodios aún sin estrenar, la web te pedirá
-confirmación antes de marcarlos todos.
+**«Desmarcar todo»**, que actúan sobre cada episodio como si lo pulsaras
+individualmente. «Marcar todo» **añade una visualización a cada
+episodio**: los que ya habías visto suman una vez más a su contador (con
+la fecha de hoy) y los que aún no estaban vistos quedan marcados por
+primera vez. «Desmarcar todo» **quita la última visualización de cada
+episodio**: los vistos una sola vez se desmarcan, pero los vistos varias
+veces siguen marcados, con el contador reducido en una; si todos los
+episodios de la temporada tienen más de una visualización, tendrás que
+pulsar «Desmarcar todo» varias veces para desmarcarlos del todo. Si hay
+episodios aún sin estrenar, la web te pedirá confirmación antes de
+marcarlos todos.
 
 La serie se considera **«Vista»** cuando marcas el último episodio que
 falta. En tu lista verás siempre qué toca ver ahora (por ejemplo,
@@ -310,9 +322,14 @@ principio»**. La web guarda el visionado anterior en tu historial y te
 propone empezar de nuevo: **conserva los episodios vistos** y el aviso
 cambia para indicar que estás volviendo a ver la serie. Mientras tanto,
 cada episodio que vuelvas a ver (con su casilla, eligiendo «Lo he visto
-de nuevo») suma una vez más a su contador y añade la fecha al listado de
-**«Visionados anteriores»** del episodio. Verás el aviso
-«Has terminado esta serie (visionado nº X)» cuando la vuelvas a completar.
+de nuevo») suma una vez más a su contador, añade la fecha al listado de
+**«Visionados anteriores»** del episodio y abre la ventana de valoración
+con **la valoración anterior ya puesta** (puedes dejarla o cambiarla).
+La visualización se da por terminada cuando has vuelto a ver
+**todos los episodios** de la serie: las visualizaciones antiguas (las
+de antes de empezar a volver a verla) no cuentan para terminarla. Verás
+el aviso
+«Has terminado esta serie (visionado nº X)» cuando la completes.
 
 ### 4.6 Historial de visionados
 
