@@ -1096,9 +1096,11 @@ tipo, verás:
 - **Premios**: bajo el «Dónde verla» aparece la sección **Premios**, en
   **solo lectura**, con los premios **y las nominaciones** de los que
   dispone el título. Están **agrupados por tipo** (Óscar, Globos de Oro,
-  Emmy…): cada grupo se puede **minimizar o desplegar** pulsando su
-  cabecera. Cada premio muestra el **nombre** (p. ej. «Óscar al mejor
-  actor de reparto»), el **año** de la ceremonia, una **etiqueta** que lo
+  Emmy…). **La sección entera aparece minimizada** y también **cada
+  grupo**: se **despliegan o minimizan** pulsando su cabecera («Premios
+  (N)» para toda la sección, el nombre de la familia para cada grupo).
+  Cada premio muestra el **nombre** (p. ej. «Óscar al mejor actor de
+  reparto»), el **año** de la ceremonia, una **etiqueta** que lo
   distingue (**«Premio»** o **«Nominación»**), los **implicados**
   (p. ej. el nombre del actor premiado o los nominados) y, en su caso,
   el **trabajo** por el que se concedió (p. ej. el episodio premiado de

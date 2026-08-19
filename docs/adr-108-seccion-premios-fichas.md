@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado (iteración: premios desde la API y plataformas en su sitio; iteración 2: agrupación por tipo, nominaciones e implicados)
+Aceptado (iteración: premios desde la API y plataformas en su sitio; iteración 2: agrupación por tipo, nominaciones e implicados; iteración 3: minimizado por defecto y plural correcto)
 
 ## Fecha
 
@@ -22,7 +22,7 @@ correcciones sobre la primera implementación:
    usuario introduce): una sección que muestre los premios de los que
    dispone el ítem, bajo la sección de plataformas.
 
-Un segundo comentario del mismo día (2026-08-19, tercera iteración)
+Un segundo comentario del mismo día (2026-08-19, segunda iteración)
 pide tres mejoras sobre la sección de premios:
 
 1. **Agrupación por tipo**: los premios deben agruparse por familia
@@ -32,6 +32,13 @@ pide tres mejoras sobre la sección de premios:
 3. **Implicados**: deben mostrarse las personas implicadas en el
    premio — p. ej. si es el premio al mejor actor de reparto, debe
    aparecer el nombre del actor.
+
+Un tercer comentario (2026-08-19T09:27:31Z, tercera iteración) añade:
+
+1. **Plural correcto**: cuando un premio tiene varios ganadores, la
+   ficha muestra «Ganadors» en lugar de «Ganadores».
+2. **Minimizado por defecto**: cada premio (grupo) debe estar
+   minimizado por defecto, y **la sección entera de Premios también**.
 
 La issue indica además que el trabajo parte de la rama `feat/issue-201`
 y que la PR irá a **esa misma rama** (no a `dev`), igual que las
@@ -128,18 +135,22 @@ de la API.
 
 `awardsHtml(item)` (nueva firma, sin callbacks) pinta la sección
 **solo si `item.awards` trae elementos** (la ausencia de premios no
-ocupa espacio, mismo criterio que «Dónde verla»): cabecera «Premios»
-con contador `(N)` (total de premios + nominaciones), y por cada
-familia un `<details class="awards__group" open>` — **abierto por
-defecto y minimizable** por el usuario, mismo patrón nativo sin JS que
-`.watch-log-details`/`.rewatch-history` — con cabecera `<summary>`
-(nombre de la familia + contador) y una fila por premio/nominación:
-etiqueta distintiva **«Premio»** (rellena) o **«Nominación»** (borde),
-nombre, año (monoespaciada), detalle («Por: …») y, cuando hay,
-**implicados** («Ganador: …» o «Nominado(s): …»). Sin formulario, sin
-botones y sin pista de vacío: no hay nada que el usuario pueda añadir.
-Todo el contenido se escapa con `escapeHtml`. Se elimina `wireAwards`
-(y sus llamadas), ya que no queda interacción que cablear.
+ocupa espacio, mismo criterio que «Dónde verla»). Toda la sección es
+un `<details class="awards">` — **minimizada por defecto** (sin
+`open`, iteración 3 del comentario de la issue) — cuyo `<summary>`
+es la cabecera «Premios» con contador `(N)` (total de premios +
+nominaciones). Dentro, por cada familia un
+`<details class="awards__group">` — también **minimizado por
+defecto** — con cabecera `<summary>` (nombre de la familia +
+contador) y una fila por premio/nominación: etiqueta distintiva
+**«Premio»** (rellena) o **«Nominación»** (borde), nombre, año
+(monoespaciada), detalle («Por: …») y, cuando hay, **implicados**
+(«Ganador»/«Ganadores» o «Nominado»/«Nominados», plural correcto en
+español desde la iteración 3: «Ganador» + «s» genérico producía
+«Ganadors»). Sin formulario, sin botones y sin pista de vacío: no hay
+nada que el usuario pueda añadir. Todo el contenido se escapa con
+`escapeHtml`. Se elimina `wireAwards` (y sus llamadas), ya que no
+queda interacción que cablear.
 
 ### 3. Orden de secciones: sinopsis → plataformas → premios → producción → reparto
 
@@ -188,9 +199,13 @@ eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
   y la cabecera de grupo usan `color: inherit` porque el fondo difiere
   entre la página de ítem (`--ink` en familia oscura) y el modal
   clásico (`--paper`).
-- Grupos como `<details>` con borde `--paper-line`, radio de ficha y
-  chevron propio (`::before` + rotación con `[open]`, marcador nativo
-  oculto para Firefox/WebKit) — sin JS y accesible por defecto.
+- Grupos y sección como `<details>` (la sección con el mismo
+  `padding-top`/`border-top` de sección que antes, para no perder la
+  línea separadora cuando está desplegada) con borde `--paper-line`,
+  radio de ficha y chevron propio (`::before` + rotación con `[open]`,
+  marcador nativo oculto para Firefox/WebKit) — sin JS y accesible por
+  defecto; `[open]` también devuelve el `margin-bottom` a la cabecera
+  de sección.
 - Etiqueta «Premio»: píldora ocre rellena (mismo dúo que
   `.recipe-card__badge`, patrón ya aprobado en los cuatro temas, con el
   override `[data-theme="black"]` de texto `--ink`); «Nominación»:
@@ -203,8 +218,9 @@ eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
 ### 6. Bump PWA
 
 Cambian assets estáticos (CSS y JS): bump de la versión de despliegue a
-`20260820` con `scripts/bump-version.sh` (ADR-019), coherente en
-`js/config.js`, `index.html` y `service-worker.js`.
+`20260821` (iteración 3; la iteración 2 usó `20260820`) con
+`scripts/bump-version.sh` (ADR-019), coherente en `js/config.js`,
+`index.html` y `service-worker.js`.
 
 Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/302
 
@@ -254,7 +270,10 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
 - Premios **y nominaciones** diferenciados con etiqueta, **agrupados por
   familia** (Óscar, Globos de Oro, Emmy…) en grupos **minimizables**, y
   con los **implicados** (ganadores/nominados) visibles: exactamente el
-  segundo comentario de la issue.
+  segundo comentario de la issue. Desde la iteración 3, **la sección
+  entera y cada grupo arrancan minimizados** (como pide el tercer
+  comentario) y el plural de implicados es correcto («Ganadores», no
+  «Ganadors»).
 - Las plataformas vuelven a su posición original y los premios quedan
   justo debajo (`sinopsis → plataformas → premios → producción →
   reparto`), exactamente como pide el comentario de la issue.
@@ -287,11 +306,11 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
 | Archivo | Cambio |
 |---------|--------|
 | `js/api-movies.js` | **Modificado**: `getItemAwards(type, externalId)` ampliada en la iteración 2 — consultas SPARQL P166 **y P1411** (premios y nominaciones), cualificadores P1346 (ganador) / P2453 (nominado) para los implicados, resolución de la **familia** del premio (P805→P179/P361 de la ceremonia, P361/P179 del premio, fallback al nombre), `?kind` por fila; `mapAwardsBindings` agrupa por familia con dedupe por premio+año+obra+tipo, fusión de implicados, limpieza del prefijo «Anexo:» y orden (grupos por año más reciente; entradas por año desc., premio antes que nominación, nombre); caché 24 h intacta y nunca lanza |
-| `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); en la iteración 2 pinta **grupos por familia** como `<details open>` minimizables con cabecera y contador, y por cada premio/nominación la etiqueta **«Premio»/«Nominación»**, nombre, año, detalle «Por: …» e **implicados** «Ganador/Nominado(s): …» (nueva `awardRowHtml`); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
+| `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); en la iteración 2 pinta **grupos por familia** como `<details>` minimizables con cabecera y contador, y por cada premio/nominación la etiqueta **«Premio»/«Nominación»**, nombre, año, detalle «Por: …» e **implicados** «Ganador/Nominado(s): …» (nueva `awardRowHtml`); la iteración 3 convierte **la sección entera en un `<details>`** con `<summary>` «Premios (N)», quita el `open` por defecto de la sección y de los grupos (**todo minimizado por defecto**) y corrige el plural de los implicados (Ganador/Ganadores, Nominado/Nominados); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
 | `js/modal-handlers.js` | **Modificado**: eliminados `saveAwards`/`onAddAward`/`onRemoveAward`; `openMovieItem`/`openTvItem` consultan `getItemAwards` (no crítico, try/catch) antes del render |
 | `js/item-page.js` | **Modificado**: `loadPreviewExtras` consulta también `getItemAwards` (allSettled); `paintPreview` reordenada (plataformas y premios antes del bloque de producción/reparto) |
-| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); la iteración 2 añade `.awards__group*` (borde, radio, chevron propio rotado con `[open]`, marcador nativo oculto), `.awards__badge--award` (píldora ocre, dúo de `.recipe-card__badge`) y `.awards__badge--nom`/`.awards__people`, todo con el override documentado `[data-theme="dark"] .modal__card … { color: #5f5849 }` y `.awards__name`/`.awards__group-head` con `color: inherit` |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260820` (ADR-019) |
+| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); la iteración 2 añade `.awards__group*` (borde, radio, chevron propio rotado con `[open]`, marcador nativo oculto), `.awards__badge--award` (píldora ocre, dúo de `.recipe-card__badge`) y `.awards__badge--nom`/`.awards__people`, todo con el override documentado `[data-theme="dark"] .modal__card … { color: #5f5849 }` y `.awards__name`/`.awards__group-head` con `color: inherit`; la iteración 3 convierte `.awards__head` en `<summary>` (cursor, marcador oculto, chevron con rotación `[open]`, `margin-bottom` solo desplegada) para la sección minimizable |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260821` (ADR-019) |
 | `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios **y nominaciones** extraídos de Wikidata: agrupados por tipo con grupos minimizables, etiqueta Premio/Nominación, implicados, año y trabajo; si no hay premios la sección no aparece) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto) |
 | `tasks/task-issue-302.json` | **Modificado**: estado y criterios tras la iteración |
 | `docs/adr-108-seccion-premios-fichas.md` | **Modificado**: este documento (iteración del ADR de la PR #303) |
