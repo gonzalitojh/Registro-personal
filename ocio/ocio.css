@@ -798,12 +798,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
   flex-shrink: 0;
   text-align: left;
 }
-.episode-rewatches:hover,
-.episode-rewatches:focus-visible {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
+/* Sin subrayado en hover ni al pulsar (feedback #310, iteración 2: el
+   usuario pidió que el botón «Visionados anteriores» no se subraye al
+   pulsarse — en táctil el tap aplica hover y el subrayado se quedaba
+   pegado, como texto seleccionado). El foco de teclado se indica con
+   el outline (anillo), igual que el summary de la serie y el cabecero
+   de temporada, que tampoco subrayan. */
 .episode-rewatches:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;

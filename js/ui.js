@@ -2252,7 +2252,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const {
     onExpandSeason,
     onSetEpisodeDate,
-    onSetEpisodeSeenAgain,
+    onEpisodeSeenAgain,
     onRemoveLastViewing,
     onSetEpisodeRating,
     onToggleSeason,
@@ -2436,7 +2436,11 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             });
             let newProgress = null;
             if (choice === "seen_again") {
-              newProgress = await onSetEpisodeSeenAgain(seasonNumber, episodeNumber);
+              // Feedback #310 (iteración 2): «volver a ver» persiste el
+              // +1 y abre la ventana de valoración con la valoración
+              // previa por defecto (bloquea hasta cerrar, igual que el
+              // marcado de un episodio nuevo; «Deshacer» revierte el +1).
+              newProgress = await onEpisodeSeenAgain(seasonNumber, episodeNumber);
             } else if (choice === "unmarked") {
               // Feedback issue #310: desmarcar con más de una
               // visualización elimina solo la ÚLTIMA (decrementa times y
@@ -2646,7 +2650,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       btn.disabled = true;
       try {
         const newProgress = await onToggleSeason(seasonNumber, shouldMarkAll);
-        updateSeasonCount(seasonNumber, shouldMarkAll ? episodeCount : 0, episodeCount);
+        // Conteo DERIVADO de item.watched (feedback #310, iteración 2):
+        // «Desmarcar todo» quita solo la última visualización de cada
+        // episodio, así que los episodios con varias visiones siguen
+        // marcados y el contador/etiqueta del botón deben reflejar el
+        // estado real (no 0 ni episodeCount a ciegas).
+        const toggledSeason = (item.watched || {})[String(seasonNumber)] || {};
+        const watchedCount = Object.values(toggledSeason).filter((e) => normalizeEntry(e)?.date)
+          .length;
+        updateSeasonCount(seasonNumber, watchedCount, episodeCount);
         updateBanner(newProgress);
 
         const episodesBlock = content.querySelector(
