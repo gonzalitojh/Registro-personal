@@ -2193,6 +2193,159 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* =========================================================
+   Premios (issue #302): sección editable de la ficha de
+   películas/series, entre la producción y las plataformas.
+   Mismo patrón de sección que .cast-crew: línea de separación
+   superior con --paper-line. Lista de premios anotados por el
+   usuario (TMDB no expone premios en su API pública) con su
+   botón «Quitar», y formulario para añadir.
+   ========================================================= */
+
+.awards {
+  margin: 1.2rem 0 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
+}
+
+.awards__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.awards__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Contraste AA en el modal clásico con la familia oscura por defecto
+   (mismo caso documentado que .cast-crew__title, QA #294): --ink-soft
+   (#948a76) sobre --paper (#f1ead9) = 2.84:1, insuficiente; #5f5849
+   ≈ 5.9:1. En la página de ítem el fondo es --ink y --ink-soft sí
+   cumple (≈5.5:1), por eso el override se limita a la superficie
+   clara del modal; los demás temas cumplen con --ink-soft. */
+[data-theme="dark"] .modal__card .awards__title,
+[data-theme="dark"] .modal__card .awards__year,
+[data-theme="dark"] .modal__card .awards__detail,
+[data-theme="dark"] .modal__card .awards__hint {
+  color: #5f5849;
+}
+
+.awards__count {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.awards__list {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+
+.awards__row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--paper-line);
+  min-width: 0;
+}
+
+.awards__row:last-child {
+  border-bottom: none;
+}
+
+.awards__name {
+  font-weight: 600;
+  /* Hereda el color del contenedor: en la página de ítem el fondo es
+     --ink y el texto --paper (familia oscura) o --ink (familia clara);
+     en el modal clásico el fondo es --paper y el texto --ink (o la
+     superficie oscura del negro puro con texto --paper). No hay color
+     único que cumpla AA en ambos contextos, por eso inherit. */
+  color: inherit;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__year {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.awards__detail {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__hint {
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.6rem;
+}
+
+.awards__remove {
+  flex-shrink: 0;
+}
+
+.awards__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.awards__input {
+  flex: 1 1 9rem;
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  padding: 0.4rem 0.55rem;
+  font-size: 16px; /* zoom iOS (ADR-042) */
+}
+
+.awards__year-input {
+  flex: 0 1 4.6rem;
+  flex-shrink: 0;
+}
+
+.awards__detail-input {
+  flex-basis: 100%;
+}
+
+.awards__input::placeholder {
+  color: var(--ink-soft);
+}
+
+.awards__input:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+/* Negro puro: --white pasó a #0f0f0f y --ink a #000000 (fondo), el
+   texto del input sería invisible (1:1). Mismo override que el bloque
+   de entradas de formulario de la familia oscura (ver .field-group). */
+[data-theme="black"] .awards__input {
+  color: var(--paper);
+}
+
+/* =========================================================
    Ventana de detalle del elenco (issue #294): #cast-modal.
    Lista completa del reparto o de la producción; la producción
    se agrupa por áreas (departamentos). Reutiliza el armazón
