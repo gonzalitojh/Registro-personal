@@ -25,5 +25,13 @@
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/310",
     "title": "Revisualización temporadas y episodios"
   },
-  "plan": "Fase 1 tv-progress (dates+rewatch) → Fase 2 modal-handlers+quick-actions → Fase 3 ui.js → Fase 4 CSS → Fase 5 docs/ADR/bump → Fase 6 QA"
+  "plan": "Fase 1 tv-progress (dates+rewatch) → Fase 2 modal-handlers+quick-actions → Fase 3 ui.js → Fase 4 CSS → Fase 5 docs/ADR/bump → Fase 6 QA",
+  "pr": {
+    "number": 313,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/313",
+    "base": "feat/issue-201",
+    "head": "style/issue-310-revisualizacion",
+    "title": "[style] Revisualización de temporadas y episodios",
+    "createdAt": "2026-08-19"
+  }
 }
