@@ -272,23 +272,70 @@ teclado) y el scroll inercial es una mejora progresiva que no interfiere
 con táctil. La versión PWA sube a `20261008` para invalidar las cachés
 del precache.
 
+## Iteración 3 (2026-08-19): rueda del ratón proporcionada en PC (issue #305)
+
+El usuario reporta que en PC «al mover ligeramente la rueda del ratón [el
+carrusel] desplaza media lista de un golpe» (móvil/tablet siguen
+perfectos con la inercia nativa del navegador). La causa: la iteración 2
+amplificaba **todos** los deltas de rueda ×1.7 y arrancaba el bucle de
+inercia rAF (fricción ×0.93/frame). Para una muesca típica de
+Windows/Chrome (deltaY ≈ 100 px, deltaMode 0) esto suponía:
+
+1. Avance inmediato = 100 × 1.7 = **170 px**.
+2. Inercia posterior ≈ 170 × 0.55 / (1 − 0.93) ≈ **1335 px** (la
+   velocidad inicial se mezcla al 55 % y el bucle la añade cada frame
+   con fricción 0.93).
+3. Total ≈ **1500 px ≈ media lista** del modal ancho en un solo toque.
+
+Solución — dos regímenes según el emisor del gesto, sin tocar el CSS:
+
+1. **Muesca de ratón** (deltaMode 1 (líneas) o 2 (páginas), o deltaMode 0
+   con magnitud ≥ 40 px): avance **proporcionado y sin inercia**. El
+   delta se aplica 1:1 acotado a `NOTCH_MAX = 120 px` (≈ 1 tarjeta de
+   96 px + gap 0.6rem) y **antes** se ejecuta `stop()` para cortar
+   cualquier inercia previa de trackpad (la muesca aterriza en una
+   posición limpia). En modo página (deltaMode 2) avanza un
+   `clientWidth` completo, como haría el navegador. `velocity` no se
+   toca y el rAF no arranca: cada toque de rueda mueve ~1 tarjeta y se
+   detiene.
+2. **Trackpad** (deltaMode 0 con deltas pequeños y continuos < 40 px):
+   comportamiento idéntico a la iteración 2 — impulso amplificado ×1.7,
+   mezcla de velocidades y bucle rAF con fricción — para conservar el
+   deslizamiento suave con frenado progresivo que pedía la propia issue
+   #294.
+
+El resto del manejo no cambia: la selección de eje dominante
+(|deltaX| > |deltaY|), el cortocircuito `|raw| < 0.5`, el retorno si el
+carrusel no tiene recorrido (`max <= 0`) y la no-consumición del gesto en
+un borde (la página hace su scroll vertical) se mantienen en ambos
+regímenes. Accesibilidad intacta: `overflow-x: auto` sigue dejando el
+carrusel navegable por teclado, y el táctil no pasa por este manejador
+(`wheel` es de ratón/trackpad), por lo que C2 queda garantizada sin
+tocar CSS. En macOS, una ráfaga de momentum del trackpad con deltas ≥
+40 px se trata como muesca (corta el glide): aceptado; si resultara
+brusco en una prueba real, el ajuste es de una constante
+(`NOTCH_MIN` → 60). La versión PWA sube a `20260825` para invalidar las
+cachés del precache (20260824 lo usa la rama de la issue #304).
+
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
 | `js/cast-modal.js` | **Nuevo**: ventana «Ver en más detalle» de producción/reparto (`.modal--top` + `.modal__card--wide`, patrón ADR-022): focus trap, cierre ✕/backdrop/Escape con restauración de foco; reparto en lista (foto, nombre, personaje); producción agrupada por áreas (departamentos traducidos al español, `DEPARTMENT_ORDER` estable, puestos fusionados «Director, Guionista»); `safePhotoUrl` (solo `https:`/`data:image/*`) y silueta SVG de fallback; `openCastModal`/`closeCastModal`. **Iteración**: buscador con lupa (`filterPeopleByQuery` por nombre + personaje/función/departamento, re-render local del listado, Esc limpia el filtro) |
 | `js/api-movies.js` | **Modificado**: `mapCastPerson`/`mapCrewPerson` (`{id, name, character\|job, department, profileUrl, order}`) y `mergeCreatorsIntoCrew` (creadores de series como área «Creadores», `order: -1`, sin duplicar); `getMovieDetails`/`getTvExtraDetails` mapean **cast y crew completos** en vez de 5 strings; `IMG_PERSON` (w185) — sin llamadas API nuevas, caché de 24 h intacta |
-| `js/ui.js` | **Modificado**: `castCrewHtml`/`castCrewSectionHtml` (carruseles «Producción» y «Reparto» con tarjeta `.cast-card`: foto, nombre, personaje/puesto; botón `.cast-crew__more` «Ver en más detalle»), normalización del cast legacy (strings), `wireCastCrewClicks` (cableado de los botones a `openCastModal`) y render en modal clásico, página de ítem, preview de búsqueda y ficha de amigo. **Iteración 2**: `wireCastCrewInertialScroll` (inercia para la rueda: delta normalizado a px y amplificado ×1.7, bucle rAF con fricción ×0.93/frame, consumo del gesto solo si el carrusel tiene recorrido) cableado desde `wireCastCrewClicks` |
+| `js/ui.js` | **Modificado**: `castCrewHtml`/`castCrewSectionHtml` (carruseles «Producción» y «Reparto» con tarjeta `.cast-card`: foto, nombre, personaje/puesto; botón `.cast-crew__more` «Ver en más detalle»), normalización del cast legacy (strings), `wireCastCrewClicks` (cableado de los botones a `openCastModal`) y render en modal clásico, página de ítem, preview de búsqueda y ficha de amigo. **Iteración 2**: `wireCastCrewInertialScroll` (inercia para la rueda: delta normalizado a px y amplificado ×1.7, bucle rAF con fricción ×0.93/frame, consumo del gesto solo si el carrusel tiene recorrido) cableado desde `wireCastCrewClicks`. **Iteración 3**: dos regímenes en `wireCastCrewInertialScroll` — muesca de ratón (deltaMode ≠ 0 o magnitud ≥ 40 px): avance 1:1 acotado a 120 px (~1 tarjeta) con `stop()` previo y sin inercia; trackpad (deltas < 40 px): amplificación ×1.7 + inercia como antes |
 | `js/item-page.js` | **Modificado**: `crew` en `buildPreviewItem` y `wireCastCrewClicks` en `paintPreview` (carruseles en la preview de la página de ítem, render inicial y tras enrich) |
 | `js/modal-handlers.js` | **Modificado**: cierre de la ventana de elenco integrado en `setupModalCloseListeners` (✕, backdrop y Escape, patrón `closeActiveModal` del ADR-096) |
 | `js/constants.js` | **Modificado**: `"crew"` añadido a `ON_DEMAND_DETAIL_FIELDS` (la migración existente lo poda de documentos viejos) |
-| `index.html` | **Modificado**: marcado de la ventana `#cast-modal` y bump PWA a `20261006` (iteración: `20261007`; iteración 2: `20261008`) |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261006` (iteración: `20261007`; iteración 2: `20261008`) |
-| `service-worker.js` | **Modificado**: `js/cast-modal.js` en `STATIC_ASSETS` y bump PWA a `20261006` (iteración: `20261007`; iteración 2: `20261008`) |
+| `index.html` | **Modificado**: marcado de la ventana `#cast-modal` y bump PWA a `20261006` (iteración: `20261007`; iteración 2: `20261008`). **Iteración 3**: bump PWA a `20260825` |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261006` (iteración: `20261007`; iteración 2: `20261008`). **Iteración 3**: `APP_VERSION` a `20260825` |
+| `service-worker.js` | **Modificado**: `js/cast-modal.js` en `STATIC_ASSETS` y bump PWA a `20261006` (iteración: `20261007`; iteración 2: `20261008`). **Iteración 3**: bump PWA a `20260825` |
 | `css/styles.css` | **Modificado**: `.cast-card` incluida en el override oscuro de `--ink` de `.item-view` |
 | `ocio/ocio.css` | **Modificado**: carruseles `.cast-crew`/`.cast-card` (tarjetas flex 96 px, 84 px ≤400 px, scroll horizontal solo en `.cast-crew__scroll`, `overflow-wrap`), ventana `.cast-modal`, hint/personaje con contraste AA (base `#5f5849` en familia oscura, `--ink-soft` restaurado en negro puro/claro/blanco puro con selectores agrupados). **Iteración**: `scroll-snap-type: x proximity` + `overscroll-behavior-x: contain` en `.cast-crew__scroll` (scroll suave y rápido) y buscador `.cast-modal__search` (lupa SVG + input, patrón `.global-search__input`, con override de tinta `--ink` para la familia clara). **Iteración 2**: sin `scroll-snap-type` ni `scroll-snap-align` (desplazamiento inercial, nada de encaje) manteniendo `-webkit-overflow-scrolling: touch` y `overscroll-behavior-x: contain` |
-| `docs/manual-de-usuario.md` | **Modificado**: sección 12, bullet «Información ampliada» con los carruseles y la ventana de detalle; términos «director/reparto» adecuados en los bullets «Sagas», «Recomendaciones» y en la vista previa del catálogo (sección 10). **Iteración**: scroll suave y buscador (lupa) de la ventana de detalle. **Iteración 2**: el bullet describe el desplazamiento inercial de los carruseles (continúan deslizándose y frenan poco a poco, sin encaje en tarjetas) |
+| `docs/manual-de-usuario.md` | **Modificado**: sección 12, bullet «Información ampliada» con los carruseles y la ventana de detalle; términos «director/reparto» adecuados en los bullets «Sagas», «Recomendaciones» y en la vista previa del catálogo (sección 10). **Iteración**: scroll suave y buscador (lupa) de la ventana de detalle. **Iteración 2**: el bullet describe el desplazamiento inercial de los carruseles (continúan deslizándose y frenan poco a poco, sin encaje en tarjetas). **Iteración 3**: el bullet diferencia el gesto — dedo (inercia nativa), trackpad (frenado suave) y rueda del ratón en PC (una tarjeta o menos por toque, sin saltarse medio listado) |
 | `docs/adr-104-carruseles-elenco.md` | **Nuevo**: este documento |
 | `tasks/task-issue-294.json` | Task file de la tarea |
+| `tasks/task-issue-305.json` | Task file de la iteración 3 |
 
 Related issue: #294 — https://github.com/gonzalitojh/Registro-personal/issues/294
+Related issue (iteración 3): #305 — https://github.com/gonzalitojh/Registro-personal/issues/305

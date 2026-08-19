@@ -1066,11 +1066,12 @@ tipo, verás:
   deslizables en horizontal: **«Producción»** (director, guionista,
   compositor...) y **«Reparto»** (los actores y actrices, en el orden
   del cartel). Cada persona tiene su tarjeta con **foto**, **nombre**
-  y su **personaje** (actores) o su **puesto** (producción). Los
-  carruseles se deslizan con **desplazamiento inercial**: arrastra con
-  el dedo o gira la rueda del ratón y el carrusel continúa
-  deslizándose solo, frenando poco a poco hasta pararse (sin encajarse
-  en las tarjetas). Cada
+  y su **personaje** (actores) o su **puesto** (producción). Estos
+  carruseles: **arrastra con el dedo** (móvil o tablet) y el carrusel se
+  desliza con inercia nativa; con el **trackpad** se desliza con un
+  frenado suave y progresivo; con la **rueda del ratón en PC**, cada toque
+  de rueda avanza **una tarjeta (o menos)** y se detiene, para no
+  saltarse medio listado (sin encajarse en las tarjetas). Cada
   carrusel tiene el botón **«Ver en más detalle»**, que abre una
   ventana con la **lista completa** de ese carrusel: el reparto con
   foto, nombre y personaje; la producción **agrupada por áreas de
