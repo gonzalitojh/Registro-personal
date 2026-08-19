@@ -1,0 +1,33 @@
+{
+  "title": "Lista de premios reducida (issue #311)",
+  "description": "La lista de premios de la ficha de películas/series no se muestra completa, sino una versión reducida (a veces una sola entrada basura o nada). Investigación exhaustiva realizada: el pipeline app (SPARQL Wikidata P166/P1411 + mapAwardsBindings + awardsHtml + CSS) está VERIFICADO como completo —para todo título muestra exactamente las declaraciones que Wikidata tiene—. Los fallos quedan en Wikidata: muchos títulos modernos tienen cobertura mínima (Better Call Saul: 1 nominación de 60+ reales; Vikings: 1; Sherlock: 4; The Walking Dead: 11) y Stranger Things tiene UNA ÚNICA declaración cuyo valor es el ítem-artículo 'List of awards and nominations received by Stranger Things' (P31=Q13406463 'Wikimedia list article'): la app lo pinta como un 'premio' basura. Además, un fallo transitorio de WDQS (504, frecuente) se cachea como null durante 24 h y la sección desaparece completamente ese día. Rama base: feat/issue-201 (la PR también va a esa rama, no a dev).\n\nITERACIÓN 2026-08-19 (comentario de la issue #311): el autor compara Juego de Tronos con la web de TMDB (81 nominaciones / 28 victorias vs 13 en la app; los Golden Globe no aparecen) y pide corregirlo o explicar el motivo. Verificado contra el endpoint real de Wikidata: el ítem de la serie (Q23572, P4983=TMDB 1399) tiene 13 declaraciones P166 y 0 P1411 — la app muestra exactamente eso (100 % de la fuente); el ítem-lista Q6606634 está vacío (sin nada que desreferenciar); los Globos de Oro están en los ítems del reparto (p. ej. Peter Dinklage), no en el de la serie; TMDB no expone premios en su API pública (base editorial propia, a otra granularidad). Conclusión: NO es un fallo de la app — divergencia de fuentes; la mejora pasa por añadir declaraciones a Wikidata (proyecto abierto; caché 24 h). Cambios: solo documentación (manual §Premios + ADR-111 con el caso GoT como ejemplo verificado); QA aprobado, seguridad sin hallazgos; PR #312 actualizada (body + comentario) y comentario de explicación en la issue.",
+  "status": "review",
+  "acceptance criteria": [
+    "Las declaraciones P166/P1411 cuyo valor es un ítem de 'artículo de lista de Wikimedia' (P31=Q13406463, p. ej. 'List of awards and nominations received by X') NO se muestran nunca como premio.",
+    "Cuando la única información de premios del título son punteros a ítems de lista, la app consulta las declaraciones P166/P1411 del propio ítem de lista (desreferencia) y las muestra si existen.",
+    "Los fallos transitorios de Wikidata (red, 504) NO se cachean como 'sin premios': solo se cachea el resultado real de la consulta (lista o vacía); un fallo permite reintentar en la siguiente apertura.",
+    "Los títulos con cobertura real de Wikidata siguen mostrando exactamente la misma lista completa (regresión cero: Titanic 49, Breaking Bad 144, etc.).",
+    "No se rompe la visualización en los cuatro temas ni la responsividad (sin scroll horizontal).",
+    "Manual de usuario y ADR actualizados con la limitación de cobertura de Wikidata y el nuevo comportamiento."
+  ],
+  "definition of done": [
+    "Plan aceptado",
+    "Implementación en js/api-movies.js (queries + mapa + getItemAwards) con micro-commits",
+    "Validación QA: tests de completitud reales contra Wikidata (antes/después) y contra los casos basura",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR-111 + manual actualizados",
+    "PR contra feat/issue-201 SIN keyword de cierre; task file subido (status review) y label status: needs-review",
+    "Issue #311 con label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 311,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/311",
+    "title": "Lista de premios reducida"
+  },
+  "pr": {
+    "number": 312,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/312",
+    "base": "feat/issue-201",
+    "title": "[fix] Lista de premios completa: sin punteros basura a artículos de lista"
+  }
+}
