@@ -1087,19 +1087,21 @@ tipo, verás:
   muestran arriba, en la cabecera. Cada sección de la ficha va
   separada por una **línea horizontal**. En los videojuegos:
   desarrolladores, editores y clasificación por edades (ESRB).
-- **Premios**: entre la producción y el «Dónde verla» aparece la
-  sección **Premios**, donde puedes anotar los premios del título
-  (es un dato personal tuyo, no viene de TMDB). Con el botón
-  **«Añadir premio»** introduces el **nombre** del premio
-  (obligatorio; por ejemplo «Óscar»), el **año** (opcional) y un
-  **detalle** opcional (por ejemplo «Mejor actriz»). Cada premio
-  anotado se muestra en su propia línea con su botón **«Quitar»**.
-  Válido para películas y series.
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
   **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
   incluye también el enlace «Ver opciones en TMDB». En la ficha aparece
-  justo después de los premios, tras la producción y el reparto.
+  justo después de la sinopsis y antes de los premios, la producción y
+  el reparto.
+- **Premios**: bajo el «Dónde verla» aparece la sección **Premios**, en
+  **solo lectura**, con los premios de los que dispone el título (por
+  ejemplo «Óscar a la mejor fotografía»): el **nombre** del premio, el
+  **año** de la ceremonia y, en su caso, el **trabajo** por el que se
+  concedió (p. ej. el episodio premiado de una serie). Los premios se
+  extraen automáticamente de **Wikidata** (la API de TMDB no expone
+  premios), así que no hay que anotar nada; si el título no tiene
+  premios registrados, la sección no aparece. Válido para películas y
+  series.
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se

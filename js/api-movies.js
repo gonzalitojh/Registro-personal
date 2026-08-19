@@ -396,8 +396,10 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 // muestra con su nombre, el año de la ceremonia (cualificador
 // P585) y, en su caso, el trabajo por el que se concedió
 // (cualificador P1686, p. ej. el episodio de una serie).
-// Los resultados se cachean en memoria 24 h (misma caché
-// compartida que los watch providers y los detalles).
+// Los resultados de ÉXITO se cachean en memoria 24 h (misma
+// caché compartida que los watch providers y los detalles); un
+// fallo de red se reconsulta en la siguiente apertura (mismo
+// comportamiento que los watch providers).
 // =============================================================
 
 const WDQS_URL = "https://query.wikidata.org/sparql";

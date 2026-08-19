@@ -1,8 +1,8 @@
-# ADR-108: Sección de premios editable en las fichas de películas y series (issue #302)
+# ADR-108: Sección de premios en las fichas de películas y series (issue #302)
 
 ## Estado
 
-Aceptado
+Aceptado (iteración: premios desde la API y plataformas en su sitio)
 
 ## Fecha
 
@@ -11,207 +11,225 @@ Aceptado
 ## Contexto
 
 La issue #302 pide una **nueva sección «Premios»** en la ficha de
-películas y series, ubicada **entre la producción y las plataformas** en
-las que está disponible el ítem (las dos secciones que ya existen en la
-ficha: los carruseles de elenco «Producción»/«Reparto» de la issue #294 y
-el bloque «Dónde verla» de watch providers). La issue indica además que
-el trabajo parte de la rama `feat/issue-201` y que la PR irá a **esa
-misma rama** (no a `dev`), igual que las issues #290-#298/#300.
+películas y series, y añade (comentario del 2026-08-19) dos
+correcciones sobre la primera implementación:
 
-Estado actual del código antes del cambio:
+1. **La sección de plataformas debe volver a su sitio**: estaba
+   encima de la producción y bajo la sinopsis, y la primera
+   implementación la dejó bajo el reparto. El orden correcto es
+   `sinopsis → plataformas → premios → producción → reparto`.
+2. **Los premios deben extraerse de la API** (no ser un dato que el
+   usuario introduce): una sección que muestre los premios de los que
+   dispone el ítem, bajo la sección de plataformas.
+
+La issue indica además que el trabajo parte de la rama `feat/issue-201`
+y que la PR irá a **esa misma rama** (no a `dev`), igual que las
+issues #290-#298/#300.
+
+Estado del código antes de esta iteración:
 
 - La ficha de película/serie se renderiza en
   `openMovieModal`/`openTvModal` de `js/ui.js` (ADR-100/ADR-102/ADR-103),
   llamados desde `openMovieItem`/`openTvItem` de `js/modal-handlers.js`
-  (con `isRerender` para no re-pedir detalles en los re-renders). El
-  orden de bloques era: cabecera `hero` → badge → valoraciones →
-  **`watchProvidersHtml`** («Dónde verla») → **`extraInfoHtml`** (con los
-  carruseles «Producción» y «Reparto» de `castCrewHtml`, issue #294) →
-  saga → recomendaciones → visionados/temporadas. La vista previa de la
-  página de ítem (`paintPreview` de `js/item-page.js`) seguía el mismo
-  orden (ADR-102: la preview muestra la misma información del título que
-  la ficha).
+  (con `isRerender` para no re-pedir detalles en los re-renders). La
+  primera iteración de esta issue (PR #303) dejó el orden: cabecera
+  `hero` → badge → valoraciones → `extraInfoHtml` (sinopsis / carruseles
+  «Producción» y «Reparto» de `castCrewHtml`, issue #294) → premios
+  editables (`awardsHtml` con formulario) → «Dónde verla»
+  (`watchProvidersHtml`) → saga → recomendaciones → resto.
 - **TMDB no expone premios en su API pública** (los premios existen solo
   en su web; el equipo de TMDB confirma que el endpoint de premios no
-  tiene fecha de salida). Otras fuentes (OMDb) requieren una clave API
-  nueva y no están disponibles en este proyecto (js/config.js solo tiene
-  claves de Firebase, TMDB, Google Books e IGDB vía proxy).
-- La app es un **registro personal**: el usuario persiste sus propios
-  datos (historial de visionados, valoración, notas, estados) en su
-  documento de Firestore, con `ctx.updateItem` (`updateDoc` parcial,
-  `js/db.js`) y reglas `firestore.rules` que permiten escribir solo al
-  dueño sin validar campos concretos.
+  tiene fecha de salida). Sin embargo, el endpoint `/external_ids` de
+  TMDB sí publica el **identificador de Wikidata** del título
+  (`wikidata_id`), y Wikidata (abierto, sin clave y con CORS habilitado
+  en `query.wikidata.org/sparql`) modela los premios como declaraciones
+  **P166 «award received»** con cualificadores P585 (fecha/ceremonia) y
+  P1686 (obra por la que se concedió).
+- La app es un registro personal con degradación elegante: los bloques
+  no críticos de la ficha (watch providers, recomendaciones, saga) se
+  cargan en paralelo y un fallo de red solo oculta su bloque.
 - La ficha de solo lectura de un amigo (`openReadOnlyModal`, `js/ui.js`)
-  muestra también la ficha con el orden de secciones clásico.
-- La versión PWA era `20261016` (último bump de la issue #298).
+  y la vista previa de la página de ítem (`paintPreview`, `js/item-page.js`)
+  muestran la misma información del título que la ficha (ADR-102).
+- La versión PWA en la rama era `20261017`.
 
 ## Decisión
 
-Añadir la sección **«Premios»** como **dato editable por el usuario**
-(campo `awards` en el documento del ítem de película/serie), colocada
-**entre la producción y las plataformas** reordenando los bloques de la
-ficha. La decisión se organiza en seis puntos.
+Sustituir la sección de premios **editable** de la primera iteración por
+una sección de **solo lectura alimentada por la API de Wikidata**, y
+devolver las plataformas a su posición original (bajo la sinopsis,
+encima de la producción), colocando los premios justo debajo de las
+plataformas. La decisión se organiza en seis puntos.
 
-### 1. Datos: campo `awards` por ítem, editado por el usuario
+### 1. Datos: premios extraídos de Wikidata (P166), no del usuario
 
-Cada ítem de película o serie puede llevar un array `awards` con
-entradas `{ name, year?, detail? }`:
+Nueva función `getItemAwards(type, externalId)` en `js/api-movies.js`
+que devuelve `Array<{ name, year?, detail? }>` o `null`:
 
-- `name` (obligatorio, hasta 120 caracteres): nombre del premio
-  (p. ej. «Óscar»).
-- `year` (opcional, hasta 4 caracteres): año del premio.
-- `detail` (opcional, hasta 240 caracteres): p. ej. «Mejor actriz».
+1. Consulta `/external_ids` de TMDB (cacheado 24 h, misma caché
+   compartida de `api-movies.js`) para obtener `wikidata_id`.
+2. Consulta el **endpoint SPARQL de Wikidata** (`query.wikidata.org`,
+   público, sin clave, CORS abierto) con las declaraciones **P166**
+   («award received») del ítem:
+   - `name`: etiqueta del premio en español (o inglés si no hay
+     traducción), resuelta con `wikibase:label`.
+   - `year`: año de la ceremonia (cualificador P585, `YEAR(?date)`).
+   - `detail`: obra por la que se concedió (cualificador P1686; se omite
+     cuando la obra es el propio ítem, p. ej. el premio a la película
+     entera — sí se muestra cuando es distinta, p. ej. el episodio
+     premiado de una serie).
+3. Fallbacks si `wikidata_id` no viene: la serie se busca por su id de
+   TMDB (`wdt:P4983`) y la película por su IMDb id (`wdt:P345`, de
+   `/external_ids`).
+4. Normalización: deduplicación (mismo premio+año+obra puede repetirse
+   con varios cualificadores), orden por año descendente y nombre. Los
+   fallos de red, la ausencia de ítem en Wikidata o la ausencia de
+   premios devuelven `null`/`[]` y la sección no se pinta (degradación
+   elegante, misma política que los watch providers).
 
-Se persiste con `ctx.updateItem(uid, "movie"|"tv", item.id, { awards })`
-(escritura parcial; las reglas de Firestore no cambian: solo el dueño
-escribe). En memoria, `item.awards` se muta **solo tras persistir**
-(patrón `onRewatch`). Los ítems legacy sin el campo se tratan como lista
-vacía (`Array.isArray` guard). Las claves vacías se omiten al guardar
-(Firestore no admite `undefined`).
+No se persiste nada en Firestore: los premios son información pública de
+la API, idéntica para todos los usuarios (a diferencia de la primera
+iteración, que guardaba un campo `awards` editable por usuario en el
+documento del ítem). El campo `awards` del documento (si algún ítem de
+la rama lo llegó a guardar) se ignora: la ficha siempre pinta los datos
+de la API.
 
-### 2. Render: `awardsHtml` en `js/ui.js`, con dos modos
+### 2. Render: `awardsHtml` de solo lectura en `js/ui.js`
 
-Nueva función exportada `awardsHtml(item, { onAddAward, onRemoveAward }
-= {})`:
+`awardsHtml(item)` (nueva firma, sin callbacks) pinta la sección
+**solo si `item.awards` trae elementos** (la ausencia de premios no
+ocupa espacio, mismo criterio que «Dónde verla»): cabecera «Premios»
+con contador `(N)`, y una fila por premio con nombre, año (monoespaciada)
+y detalle. Sin formulario, sin botones y sin pista de vacío: no hay nada
+que el usuario pueda añadir. Todo el contenido se escapa con
+`escapeHtml`. Se elimina `wireAwards` (y sus llamadas), ya que no queda
+interacción que cablear.
 
-- **Ficha (con callbacks)**: la sección se muestra **siempre** — título
-  «Premios», contador, lista de premios con su botón **«Quitar»**, pista
-  «Aún no has anotado premios…» cuando está vacía, y formulario para
-  añadir (nombre obligatorio + año/detalle opcionales, botón «Añadir
-  premio»). Todo el contenido de usuario se escapa con `escapeHtml`.
-- **Vista previa y ficha de amigo (sin callbacks)**: render **solo
-  lectura** y únicamente si `item.awards` tiene elementos (los títulos
-  del catálogo nunca traen premios, así que no ocupa espacio).
+### 3. Orden de secciones: sinopsis → plataformas → premios → producción → reparto
 
-El cableado (`wireAwards`) gestiona el submit del formulario (trim,
-validación nativa de `required`, deshabilitar el botón mientras
-persiste) y los botones «Quitar» por índice, delegando la persistencia
-y el re-render a los callbacks.
+Reorden en `openMovieModal`, `openTvModal`, `paintPreview` y
+`openReadOnlyModal`:
 
-### 3. Orden de secciones: producción → premios → plataformas
+`hero → badge → valoraciones → infoHtml (meta + sinopsis; vacío en modo
+página, la sinopsis vive en el hero) → Dónde verla (watch providers) →
+Premios → carruseles Producción/Reparto (castCrewHtml) → saga →
+recomendaciones → resto`
 
-En `openMovieModal`, `openTvModal` y `paintPreview` (y en
-`openReadOnlyModal` por consistencia, manteniendo las plataformas de
-videojuego en su sitio) se reordena el template:
+Para separar los carruseles del resto de la información ampliada se
+añade la opción `skipCarousels` a `extraInfoHtml`: la función devuelve
+solo el bloque `.extra-info` (meta + sinopsis) y los carruseles se
+renderizan aparte, `castCrewHtml(item)`, tras los premios. En modo
+página `infoHtml` sigue vacío (hero + `skipCarousels` → "") y el orden
+visual es: hero (con sinopsis) → plataformas → premios → producción →
+reparto, exactamente el pedido. La preview (`paintPreview`) aplica el
+mismo orden (ADR-102: misma información y misma disposición).
 
-`hero → badge → valoraciones → infoHtml (carruseles Producción/Reparto)
-→ Premios → Dónde verla (watch providers) → saga → recomendaciones →
-resto`
+### 4. Carga: bloque no crítico en la ficha, preview y ficha de amigo
 
-Interpretación literal de la petición «entre la producción y las
-plataformas»: el usuario menciona primero la producción, así que el
-orden final deja producción → premios → plataformas. La preview de la
-página de ítem aplica el mismo orden (ADR-102: misma información y misma
-disposición).
-
-### 4. Persistencia: callbacks `onAddAward`/`onRemoveAward`
-
-En `js/modal-handlers.js`, tanto `openMovieItem` como `openTvItem`
-definen `saveAwards(awards)` y pasan a la UI:
-
-- `onAddAward(award, btn)`: persiste `[...(item.awards ?? []), award]`,
-  muta en memoria y hace `reopen()` (re-render con `isRerender`, sin
-  re-pedir detalles).
-- `onRemoveAward(index)`: persiste la lista sin ese índice y hace
-  `reopen()`.
-- En fallo: toast de error, botón restaurado y **sin** mutación en
-  memoria. No hay confirmación de borrado (dato pequeño y recuperable,
-  mismo patrón que quitar un visionado).
+- `openMovieItem`/`openTvItem` (`js/modal-handlers.js`): consulta
+  `getItemAwards` con try/catch antes del render (igual que los watch
+  providers); `item.awards` queda con la lista o `null`. Se eliminan
+  `saveAwards`, `onAddAward` y `onRemoveAward`.
+- `loadPreviewExtras` (`js/item-page.js`): la consulta de premios se
+  suma al `Promise.allSettled` de los bloques no críticos (dónde verla,
+  recomendaciones, saga); un fallo degrada solo la sección.
+- `openReadOnlyModal` (`js/ui.js`, ficha del amigo): consulta los
+  premios con la clave del LECTOR (mismo patrón que `loadItemDetails`:
+  se re-renderiza si la ficha sigue abierta cuando llegan; guardia
+  `_awardsFetched` para no repetir la consulta).
 
 ### 5. Estilos: cuatro temas y responsividad (reglas 2 y 4 de AGENTS.md)
 
-Bloque `.awards*` en `ocio/ocio.css` siguiendo el patrón de sección de
-`.cast-crew` (línea de separación con `--paper-line`):
+Bloque `.awards*` en `ocio/ocio.css` (podado de la primera iteración: se
+eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
+`.awards__input*`, que ya no existen):
 
-- Título/cuentas con `--ink-soft` y el override documentado
-  `[data-theme="dark"] .modal__card … { color: #5f5849 }` (mismo caso
-  de contraste AA que `.cast-crew__title`, QA #294); el nombre del
-  premio usa `color: inherit` porque el fondo difiere entre la página de
-  ítem (`--ink` en familia oscura) y el modal clásico (`--paper`).
-- Inputs con `font-size: 16px` (ADR-042), fondo `--white`, override
-  `[data-theme="black"] .awards__input { color: var(--paper) }` (patrón
-  `.field-group`).
-- Responsivo sin scroll horizontal: filas y formulario con `flex-wrap`,
-  `min-width: 0` y `overflow-wrap: anywhere` en los textos; el año tiene
-  `flex-shrink: 0` pero está acotado.
+- Título/contador/año/detalle con `--ink-soft` y el override documentado
+  `[data-theme="dark"] .modal__card … { color: #5f5849 }` (mismo caso de
+  contraste AA que `.cast-crew__title`, QA #294); el nombre del premio
+  usa `color: inherit` porque el fondo difiere entre la página de ítem
+  (`--ink` en familia oscura) y el modal clásico (`--paper`).
+- Responsivo sin scroll horizontal: filas con `flex-wrap`, `min-width: 0`
+  y `overflow-wrap: anywhere` en los textos; el año tiene
+  `flex-shrink: 0` pero está acotado (mismo patrón que la primera
+  iteración, que ya pasó QA en los cuatro temas).
 
 ### 6. Bump PWA
 
 Cambian assets estáticos (CSS y JS): bump de la versión de despliegue a
-`20261017` con `scripts/bump-version.sh` (ADR-019), coherente en
+`20260819` con `scripts/bump-version.sh` (ADR-019), coherente en
 `js/config.js`, `index.html` y `service-worker.js`.
 
 Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/302
 
 ## Alternativas consideradas
 
-- **Premios automáticos desde TMDB**: descartada — TMDB no expone
-  premios en su API pública (solo en su web, sin endpoint planificado).
-  Añadir la sección dependiendo de un endpoint inexistente habría dejado
-  la sección siempre vacía.
+- **Mantener los premios editables por el usuario (primera iteración)**:
+  descartada — el comentario de la issue pide explícitamente extraer los
+  premios **de la API**, no un formulario.
+- **Premios desde TMDB**: descartada — TMDB no expone premios en su API
+  pública (solo en su web, sin endpoint planificado), pero su endpoint
+  `/external_ids` sí publica el `wikidata_id` del título, que es la llave
+  para Wikidata.
 - **OMDb u otra API de premios**: descartada — requiere una clave API
-  nueva (no disponible en el proyecto), cobertura desigual (OMDb solo
+  nueva (no disponible en el proyecto) y cobertura desigual (OMDb solo
   tiene un resumen de texto de premios para películas, prácticamente
-  nada para series) y un servicio externo más que mantener.
-- **Scraping de Wikipedia/Wikidata**: descartado — frágil (cambios de
-  estructura, bloqueos, CORS), fuera del modelo de la app y con
-  resultados no fiables para series.
-- **Sección de solo lectura sin edición**: descartada — sin fuente de
-  datos no habría nada que mostrar; el modelo de registro personal
-  (como notas o historial) encaja con que el usuario anote sus premios.
-- **No reordenar la ficha** (insertar premios después de plataformas):
-  descartada — la issue pide explícitamente la posición «entre la
-  producción y las plataformas», que con el reorden queda producción →
-  premios → plataformas.
+  nada para series). Wikidata es pública, gratuita, sin clave, con CORS
+  abierto y con cobertura de premios para películas **y** series.
+- **Scraping de la web de TMDB**: descartado — frágil (cambios de
+  estructura, bloqueos, CORS), fuera del modelo de la app.
+- **Carruseles de producción/reparto antes de las plataformas (orden de
+  la primera iteración)**: descartada — el comentario pide devolver las
+  plataformas a su posición original (bajo la sinopsis, encima de la
+  producción) y colocar los premios bajo ellas.
+- **Sección de premios con estado de carga propio**: descartada — como
+  los watch providers, la consulta se hace antes del render (ficha) o en
+  paralelo (preview/amigo) y la sección aparece cuando los datos llegan;
+  un esqueleto de carga no aporta nada con la caché de 24 h.
 
 ## Consecuencias
 
 **Positivas:**
 
-- La ficha de película/serie adquiere la sección pedida, **sin depender
-  de ninguna API nueva**: los premios son un dato del registro personal
-  (mismo modelo que notas/visionados) y la sección siempre tiene
-  contenido editable.
-- Orden de secciones más «de ficha de cine» (producción → premios →
-  dónde verla), alineado con la dirección IMDB-like de la rama
-  `feat/issue-201` (issue #201).
-- Un solo punto de render (`awardsHtml`) para ficha en página, modal
-  clásico, preview y ficha de amigo; persistencia única por tipo
-  (`saveAwards` + dos callbacks) con re-render sin re-pedir detalles.
-- Todos los textos de usuario se escapan (`escapeHtml`), los cuatro
-  modos de tema quedan cubiertos con el patrón de overrides agrupados y
-  la responsividad sigue las reglas 2 y 4 de AGENTS.md.
-- El manual de usuario queda alineado con el comportamiento real
-  (regla 3 de AGENTS.md).
+- La ficha muestra los premios reales del título **sin ningún esfuerzo
+  del usuario** y sin depender de una clave nueva: Wikidata (P166) cubre
+  películas y series con etiquetas en español.
+- Las plataformas vuelven a su posición original y los premios quedan
+  justo debajo (`sinopsis → plataformas → premios → producción →
+  reparto`), exactamente como pide el comentario de la issue.
+- Bloque no crítico con degradación elegante (fallo de red → la sección
+  no se pinta), caché en memoria de 24 h compartida, y cero escrituras
+  nuevas en Firestore (sin cambios en `firestore.rules`).
+- La ficha, la preview y la ficha del amigo comparten `awardsHtml` y la
+  misma consulta (`getItemAwards`), con el orden de secciones idéntico
+  (ADR-102).
 
 **Negativas / neutras:**
 
-- **El mantenimiento es manual**: los premios no llegan solos de TMDB;
-  el usuario debe anotarlos (es la naturaleza de un registro personal).
-- **Reorden de la ficha**: «Dónde verla» baja de posición (pasa a
-  aparecer tras producción/reparto y premios). Es el orden pedido por la
-  issue, pero cambia la disposición que el usuario conocía.
-- **Los ítems legacy** no tienen `awards`: la ficha los muestra con la
-  sección vacía y el formulario (sin errores ni migración necesaria).
-- **Sin validación de forma en Firestore**: el campo `awards` se escribe
-  sin validación en las reglas, igual que el resto de campos del
-  documento (watchLog, notas…); la UI construye siempre la forma
-  esperada y sin claves controladas por el usuario (sin vector de
-  prototype pollution).
-- **La ficha de solo lectura del amigo muestra los premios del amigo**:
-  coherente con el modelo de amistad del repo (la ficha del amigo ya
-  muestra valoraciones, progreso e historial; cualquier usuario
-  autorizado puede leer los documentos).
+- **Dependencia externa nueva**: la sección requiere `query.wikidata.org`
+  (SPARQL); si Wikidata no está disponible o el título no tiene ítem en
+  Wikidata, la sección simplemente no aparece (degradación elegante). La
+  cobertura de premios en Wikidata no es exhaustiva (sobre todo en
+  títulos poco conocidos).
+- **Solo lectura**: el usuario ya no puede anotar premios manualmente (era
+  la naturaleza de la primera iteración); es el comportamiento pedido.
+- **Los ítems legacy** con un campo `awards` guardado (de la primera
+  iteración de esta rama, nunca fusionada) lo ven ignorado en favor de
+  los datos de la API.
+- **Consultas SPARQL**: la primera apertura de una ficha puede tardar
+  algo más (Wikidata responde normalmente en <1-2 s); las siguientes van
+  de caché (24 h en memoria por sesión).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/ui.js` | **Modificado**: nuevo `awardsHtml(item, { onAddAward, onRemoveAward })` (sección «Premios»: cabecera con contador, lista con «Quitar», hint de vacío, formulario añadir con `escapeHtml` en todas las salidas; solo lectura y solo si hay premios sin callbacks) y `wireAwards(root, callbacks)` (submit con trim/validación/disable, botones Quitar por índice); reorden de `openMovieModal`/`openTvModal` a `infoHtml → awardsHtml → watchProvidersHtml` (desestructuración de `onAddAward`/`onRemoveAward`) y de `openReadOnlyModal` (premios solo lectura, plataformas tras la información ampliada, `gamePlatformsHtml` conservado antes de la info) |
-| `js/modal-handlers.js` | **Modificado**: `saveAwards(awards)` en `openMovieItem` y `openTvItem` (persiste `{ awards }` y muta en memoria tras el await) + callbacks `onAddAward` (appenda y `reopen()`) y `onRemoveAward` (filtra por índice y `reopen()`), con toast de error y botón restaurado en fallo |
-| `js/item-page.js` | **Modificado**: `paintPreview` con el mismo orden (watch providers después del bloque de detalles) y `awardsHtml(item)` solo lectura entre la información ampliada y «Dónde verla»; import de `awardsHtml` |
-| `ocio/ocio.css` | **Modificado**: bloque `.awards` (título/contador/lista/filas/hint/formulario/inputs 16px con focus-visible); overrides documentados: `[data-theme="dark"] .modal__card .awards__title/year/detail/hint { color: #5f5849 }` (contraste AA, patrón QA #294) y `[data-theme="black"] .awards__input { color: var(--paper) }` (patrón `.field-group`); `.awards__name` con `color: inherit` documentado |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20261017` vía `scripts/bump-version.sh` (ADR-019) |
-| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» nuevo entre «Información ampliada» y «Dónde verla» (anotación personal, campos opcionales, botón Quitar; válido para películas y series) y «Dónde verla» actualizado con su nueva posición |
-| `tasks/task-issue-302.json` | **Nuevo**: task file de la issue #302 |
-| `docs/adr-108-seccion-premios-fichas.md` | **Nuevo**: este documento |
+| `js/api-movies.js` | **Modificado**: nueva `getItemAwards(type, externalId)` (external_ids de TMDB → SPARQL P166 de Wikidata, con fallbacks P4983/P345, normalización, dedupe, orden y caché 24 h; nunca lanza) |
+| `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
+| `js/modal-handlers.js` | **Modificado**: eliminados `saveAwards`/`onAddAward`/`onRemoveAward`; `openMovieItem`/`openTvItem` consultan `getItemAwards` (no crítico, try/catch) antes del render |
+| `js/item-page.js` | **Modificado**: `loadPreviewExtras` consulta también `getItemAwards` (allSettled); `paintPreview` reordenada (plataformas y premios antes del bloque de producción/reparto) |
+| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); mantiene título/contador/lista/filas con el override documentado `[data-theme="dark"] .modal__card .awards__title/year/detail { color: #5f5849 }` y `.awards__name` con `color: inherit` |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260819` (ADR-019) |
+| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios extraídos de Wikidata: nombre, año y trabajo; si no hay premios la sección no aparece) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto) |
+| `tasks/task-issue-302.json` | **Modificado**: estado y criterios tras la iteración |
+| `docs/adr-108-seccion-premios-fichas.md` | **Modificado**: este documento (iteración del ADR de la PR #303) |
