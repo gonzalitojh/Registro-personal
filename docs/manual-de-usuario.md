@@ -1065,8 +1065,13 @@ tipo, verás:
 - **Información ampliada**: en películas y series, dos carruseles
   deslizables en horizontal: **«Producción»** (director, guionista,
   compositor...) y **«Reparto»** (los actores y actrices, en el orden
-  del cartel). Cada persona tiene su tarjeta con **foto**, **nombre**
-  y su **personaje** (actores) o su **puesto** (producción). Estos
+  del cartel; en las series, TODOS los actores de todas las
+  temporadas y episodios, no solo los principales; si una persona
+  interpreta varios personajes, se muestran juntos, p. ej. «Gregor
+  Clegane, Dongo»). Cada persona tiene su tarjeta con **foto**,
+  **nombre** y su **personaje** (actores) o su **puesto** (producción;
+  en las series, si una persona tiene varios puestos también se
+  muestran juntos, p. ej. «Director, Guionista»). Estos
   carruseles: **arrastra con el dedo** (móvil o tablet) y el carrusel se
   desliza con inercia nativa; con el **trackpad** se desliza con un
   frenado suave y progresivo; con la **rueda del ratón en PC**, cada toque
