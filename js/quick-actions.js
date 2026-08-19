@@ -6,7 +6,7 @@
 import { addWatch, removeWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
-import { setEpisodeDate, setEpisodeRating, computeProgress, progressWithRewatch, normalizeEntry, markAllSeasonsWatched, markEpisodeSeenAgain } from "./tv-progress.js";
+import { setEpisodeDate, setEpisodeRating, computeProgress, progressWithRewatch, normalizeEntry, markAllSeasonsWatched, markEpisodeSeenAgain, removeLastEpisodeViewing } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
 import { unreleasedConfirmMessage, episodeUnreleasedMessage, isUnreleasedDate } from "./release.js";
 import { getNextEpisodeAirInfo } from "./sorting.js";
@@ -144,7 +144,10 @@ export async function quickUnwatchTv(item, ctx) {
   }
   if (!lastKey) return;
   const [season, episode] = lastKey.split("|").map(Number);
-  const newWatched = setEpisodeDate(watched, season, episode, null);
+  // Feedback issue #310: «quitar última visualización» elimina solo la
+  // ÚLTIMA visión del episodio más reciente (decrementa times y quita
+  // la fecha más reciente); si solo se había visto una vez, lo desmarca.
+  const newWatched = removeLastEpisodeViewing(watched, season, episode);
   const seasonsMeta = await getSeasonsMetaFor(item, ctx);
   // Rewatch (issue #310): el progreso se computa con el flag para que
   // el desmarcado no escriba estados contradictorios con un rewatch en

@@ -7,7 +7,7 @@
 import { removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
-import { computeProgress, progressWithRewatch, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
+import { computeProgress, progressWithRewatch, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain, removeLastEpisodeViewing } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
@@ -679,6 +679,12 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     // de visualizaciones y pone la fecha en hoy, conservando la valoración.
     onSetEpisodeSeenAgain: (seasonNumber, episodeNumber) =>
       persistWatched(markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())),
+
+    // Desmarcar con varias visualizaciones (feedback issue #310):
+    // elimina solo la ÚLTIMA visión (decrementa times y quita la fecha
+    // más reciente); con una sola visión, desmarca por completo.
+    onRemoveLastViewing: (seasonNumber, episodeNumber) =>
+      persistWatched(removeLastEpisodeViewing(item.watched, seasonNumber, episodeNumber)),
 
     onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);

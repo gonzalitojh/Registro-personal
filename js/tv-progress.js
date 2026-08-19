@@ -121,6 +121,37 @@ export function setEpisodeDate(watched, seasonNumber, episodeNumber, dateOrNull)
   return { ...(watched || {}), [key]: seasonMap };
 }
 
+// Elimina la ÚLTIMA visualización de un episodio (feedback issue #310):
+// - si se ha visto más de una vez, el episodio SIGUE marcado: se
+//   descuenta el contador y se quita la fecha más reciente de `dates`
+//   (conservando valoración y visiones previas);
+// - si solo se había visto una vez, la entrada se elimina por completo
+//   (desmarcar, comportamiento previo).
+// Las entradas legacy (antes de #310 solo tenían `date` + `times`) no
+// tienen fechas recuperables más allá de la última: si `dates` tiene
+// una sola fecha, se conserva como representativa de la visión restante.
+export function removeLastEpisodeViewing(watched, seasonNumber, episodeNumber) {
+  const key = String(seasonNumber);
+  const seasonMap = { ...((watched && watched[key]) || {}) };
+  const epKey = String(episodeNumber);
+  const existing = normalizeEntry(seasonMap[epKey]);
+  if (!existing || !existing.date) return { ...(watched || {}), [key]: seasonMap };
+  const times = existing.times || 1;
+  if (times <= 1) {
+    delete seasonMap[epKey];
+    return { ...(watched || {}), [key]: seasonMap };
+  }
+  const dates = entryDates(existing);
+  const newDates = dates.length > 1 ? dates.slice(0, -1) : dates;
+  seasonMap[epKey] = {
+    date: newDates[newDates.length - 1] ?? existing.date,
+    rating: existing.rating ?? null,
+    times: times - 1,
+    dates: newDates,
+  };
+  return { ...(watched || {}), [key]: seasonMap };
+}
+
 // Marca un episodio YA visto como visto de nuevo: conserva la valoración,
 // suma 1 al contador de visualizaciones y registra la nueva fecha en el
 // histórico de fechas del episodio (issue #133/#310).

@@ -2112,6 +2112,10 @@ function applyEpisodeRowState(row, entry) {
   if (rewatchBtn) {
     rewatchBtn.hidden = !checked;
     rewatchBtn.setAttribute("aria-expanded", "false");
+    // El contador del botón se sincroniza con `times`, igual que el
+    // summary «Visionados anteriores (N)» de la serie (feedback #310).
+    const label = rewatchBtn.querySelector(".episode-rewatches__label");
+    if (label) label.textContent = `Visionados anteriores (${times})`;
   }
   if (datesBlock) {
     datesBlock.innerHTML = checked ? rewatchesListHtml(entry) : "";
@@ -2158,14 +2162,23 @@ function renderSeasonBlock(s, watched) {
 // Lista de fechas de visionado de un episodio (issue #310): una línea
 // por visión ("Visto el DD/MM/AAAA"), tanto si es 1 como si son más.
 // Vacía si la entrada no existe (episodio sin ver).
+// Legacy (feedback #310): los datos previos a #310 solo guardaban la
+// última fecha + el contador; si `times` es mayor que las fechas
+// conocidas, se muestra una línea indicando las visiones restantes sin
+// fecha registrada para que el desplegable sea coherente con el
+// contador de la casilla (p. ej. serie vista dos veces completa).
 function rewatchesListHtml(entry) {
   const dates = entry ? entry.dates || [entry.date] : [];
-  if (!dates.length) return "";
-  return `<ul class="episode-rewatches__list">
-    ${dates
-      .map((d) => `<li class="episode-rewatches__date">${formatDateEs(d)}</li>`)
-      .join("")}
-  </ul>`;
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  if (!times) return "";
+  const known = dates
+    .map((d) => `<li class="episode-rewatches__date">${formatDateEs(d)}</li>`)
+    .join("");
+  const missing = Math.max(0, times - dates.length);
+  const missingLine = missing
+    ? `<li class="episode-rewatches__unknown">${missing} ${missing === 1 ? "visión más" : "visiones más"} sin fecha registrada</li>`
+    : "";
+  return `<ul class="episode-rewatches__list">${known}${missingLine}</ul>`;
 }
 
 // manual=true (series manuales): no se marcan episodios como "sin
@@ -2193,7 +2206,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
             <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""}
                    aria-label="${
                      checked
-                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o desmarcarlo`
+                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o quitar la última visualización`
                        : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
                    }" />
             <span class="episode-checkbox-visual" aria-hidden="true"
@@ -2225,7 +2238,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
               .join("")}
           </div>
           <button type="button" class="episode-rewatches" ${checked ? "" : "hidden"}
-                  aria-expanded="false">Visionados anteriores</button>
+                  aria-expanded="false"><span class="episode-rewatches__chevron" aria-hidden="true">▸</span> <span class="episode-rewatches__label">Visionados anteriores (${times})</span></button>
         </div>
         <div class="episode-rewatches__dates" hidden>
           ${rewatchesListHtml(entry)}
@@ -2240,6 +2253,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onExpandSeason,
     onSetEpisodeDate,
     onSetEpisodeSeenAgain,
+    onRemoveLastViewing,
     onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
@@ -2424,7 +2438,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             if (choice === "seen_again") {
               newProgress = await onSetEpisodeSeenAgain(seasonNumber, episodeNumber);
             } else if (choice === "unmarked") {
-              newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, null);
+              // Feedback issue #310: desmarcar con más de una
+              // visualización elimina solo la ÚLTIMA (decrementa times y
+              // quita la fecha más reciente); con una sola, desmarca.
+              newProgress = await onRemoveLastViewing(seasonNumber, episodeNumber);
             }
             // Repintado SIEMPRE derivado de item.watched (patrón issue #136):
             // en el caso «cancelar» la fila vuelve a su estado real (inofensivo)

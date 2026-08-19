@@ -61,6 +61,10 @@ export function openEpisodeActionsModal({ title, subtitle, times }) {
     const content = document.getElementById("episode-actions-modal-content");
 
     const timesLabel = `${times} ${times === 1 ? "vez" : "veces"}`;
+    // Feedback issue #310: con más de una visualización, «desmarcar»
+    // elimina solo la ÚLTIMA visión (el episodio sigue marcado); la
+    // etiqueta lo anticipa para que la acción no sorprenda.
+    const unmarkLabel = times > 1 ? "Quitar última visualización" : "Desmarcar";
     content.innerHTML = `
       <div class="rating-modal__header">
         <div class="rating-modal__info">
@@ -73,7 +77,7 @@ export function openEpisodeActionsModal({ title, subtitle, times }) {
       </div>
       <div class="rating-modal__actions">
         <button type="button" class="btn btn--primary" id="eam-seen-again">Lo he visto de nuevo</button>
-        <button type="button" class="btn btn--outline" id="eam-unmark">Desmarcar</button>
+        <button type="button" class="btn btn--outline" id="eam-unmark">${unmarkLabel}</button>
         <button type="button" class="btn btn--outline" id="eam-cancel">Ahora no</button>
       </div>
     `;
