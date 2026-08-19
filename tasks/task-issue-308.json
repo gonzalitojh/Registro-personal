@@ -1,0 +1,36 @@
+{
+  "title": "Lista completa de reparto y producción",
+  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nNo se está mostrando la lista completa de reparto y producción, al menos en las series, se muestra una versión reducida.",
+  "status": "implemented",
+  "acceptance criteria": [
+    "Se muestra la lista completa de reparto y producción en las fichas/series (no una versión reducida).",
+    "El cambio se realiza sobre una rama nueva creada desde `feat/issue-201`.",
+    "La PR se crea contra la rama `feat/issue-201` (no contra `dev`)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #308'.",
+    "PR creada contra `feat/issue-201` sin keyword de cierre.",
+    "Issue #308 label actualizada a su estado final.",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 308,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/308",
+    "title": "Lista completa de reparto y producción"
+  },
+  "implemented_files": [
+    "js/api-movies.js",
+    "js/config.js",
+    "index.html",
+    "service-worker.js",
+    "docs/manual-de-usuario.md",
+    "docs/adr-110-elenco-completo-series.md"
+  ],
+  "validation": {
+    "preliminary": "node --check OK (api-movies, ui, cast-modal, item-page, modal-handlers); validación en vivo TMDB: GoT 587 cast/348 crew, Mandalorian 159 cast/169 crew (antes version reducida), multi-personaje OK, crew sin order → 999, created_by intacto, película Matrix 37 cast sin regresión"
+  }
+}
