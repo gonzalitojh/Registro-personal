@@ -869,19 +869,24 @@ function castCrewSectionHtml(label, people, role, roleTextOf) {
     </section>`;
 }
 
-// Desplazamiento INERCIAL de los carruseles de elenco (issue #294,
-// iteración 2): el snap CSS (`x mandatory` y luego `x proximity`) seguía
-// «atascando» el carrusel al encajar tarjetas al terminar cada gesto, y
-// con la rueda del ratón el scroll nativo avanza a saltos sin inercia.
-// Solución: sin snap CSS (en táctil el impulso nativo del navegador
-// desliza y frena solo) y, para la rueda, inercia propia: el delta se
-// normaliza a píxeles y se amplifica (un gesto recorre varias tarjetas),
-// y un bucle rAF continúa el deslizamiento con fricción al soltar la
-// rueda, frenando poco a poco. Si el carrusel ya está en un borde y no
-// puede avanzar en esa dirección, el gesto NO se consume y el scroll
-// pasa a la página (comportamiento natural).
+// Desplazamiento de los carruseles de elenco. Sin snap CSS (issue #294,
+// iteración 2): en táctil el impulso nativo del navegador desliza y frena
+// solo. Para la rueda del ratón y el trackpad hay DOS regímenes (issue
+// #305): la amplificación fija ×1.7 + el bucle de inercia hacían que en
+// PC una muesca de rueda desplazara «media lista» de un golpe.
+//  - MUESCA de ratón (delta grande o en líneas/páginas): avance
+//    proporcionado SIN amplificar y SIN inercia: cada toque de rueda
+//    mueve ~1 tarjeta y se detiene; en modo página, una pasada completa.
+//  - TRACKPAD (deltas pequeños y continuos): amplificación ×1.7 e
+//    inercia propia: el bucle rAF continúa el deslizamiento con fricción
+//    al soltar, frenando poco a poco.
+// Si el carrusel ya está en un borde y no puede avanzar en esa
+// dirección, el gesto NO se consume y el scroll pasa a la página
+// (comportamiento natural).
 export function wireCastCrewInertialScroll(scrollEl) {
-  const GAIN = 1.7; // amplificación del delta de la rueda
+  const GAIN = 1.7; // amplificación del delta SOLO en el régimen trackpad
+  const NOTCH_MIN = 40; // px: delta igual o mayor = muesca discreta de ratón
+  const NOTCH_MAX = 120; // px por muesca (~1 tarjeta de 96px + gap 0.6rem)
   const FRICTION = 0.93; // deceleración por frame (~60 fps)
   const MIN_STOP = 0.05; // px/frame bajo el que la inercia se detiene
   const MIX = 0.45; // peso del impulso anterior al mezclar velocidades
@@ -914,7 +919,7 @@ export function wireCastCrewInertialScroll(scrollEl) {
     rafId = requestAnimationFrame(step);
   };
 
-  scrollEl.addEventListener(
+scrollEl.addEventListener(
     "wheel",
     (e) => {
       // Dirección efectiva del gesto y normalización a píxeles
@@ -929,11 +934,31 @@ export function wireCastCrewInertialScroll(scrollEl) {
       const canScroll = raw > 0 ? scrollEl.scrollLeft < max : scrollEl.scrollLeft > 0;
       if (!canScroll) return;
       e.preventDefault();
-      // Impulso inmediato amplificado (avance rápido) + velocidad para
-      // la inercia posterior, mezclada con la previa para suavizar las
-      // ráfagas rápidas del trackpad.
-      scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + raw * GAIN));
-      velocity = velocity * MIX + raw * GAIN * (1 - MIX);
+
+      const magnitude = Math.abs(raw);
+      const notch = e.deltaMode !== 0 || magnitude >= NOTCH_MIN;
+      if (notch) {
+        // MUESCA de ratón (issue #305): avance proporcionado, sin
+        // amplificar y sin inercia. Un toque de rueda mueve ~1 tarjeta y
+        // se detiene; en modo página (deltaMode 2), una pasada completa
+        // del carrusel. stop() primero: si venía una inercia de trackpad,
+        // la corta y la muesca aterriza en una posición limpia y estable.
+        stop();
+        const delta =
+          e.deltaMode === 2
+            ? Math.sign(raw) * scrollEl.clientWidth
+            : Math.sign(raw) * Math.min(magnitude, NOTCH_MAX);
+        scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + delta));
+        return;
+      }
+
+      // TRACKPAD (deltas pequeños y continuos): impulso inmediato
+      // amplificado (avance rápido) + velocidad para la inercia
+      // posterior, mezclada con la previa para suavizar las ráfagas
+      // rápidas del trackpad.
+      const delta = raw * GAIN;
+      scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + delta));
+      velocity = velocity * MIX + delta * (1 - MIX);
       if (rafId === null) rafId = requestAnimationFrame(step);
     },
     { passive: false }
