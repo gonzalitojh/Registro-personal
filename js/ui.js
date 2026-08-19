@@ -629,15 +629,23 @@ export function ratingPickerHtml(rating, idPrefix = "field-rating", extraHtml = 
     </div>`;
 }
 
-// Media de valoración de los episodios valorados de la serie (issue #80).
-// Sin media: span oculto (placeholder que updateEpisodeAverage actualiza).
-function episodeAverageHtml(watched, idPrefix) {
+// Media de valoración de los episodios valorados de la serie (issue
+// #80): desde la issue #310 vive en la parte superior de la ficha,
+// junto a la valoración de TMDB y la propia, como un chip con borde
+// (estilo ligeramente diferente para distinguirla, como pide la
+// issue). Sin media: span oculto (placeholder que updateEpisodeAverage
+// activa). El id es fijo (#item-episode-average): el hero (modo
+// página) y la fila de valoraciones (modal clásico) lo usan, pero
+// nunca se renderizan ambos a la vez.
+function episodeAverageBadgeHtml(watched) {
   const avg = computeEpisodeAverageRating(watched);
   if (!avg) {
-    return `<span class="episode-average" id="${idPrefix}-episode-average" hidden></span>`;
+    return `<span class="item-episode-average" id="item-episode-average" hidden></span>`;
   }
   const ratedLabel = avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
-  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${ratedLabel}">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
+  return `<span class="item-episode-average" id="item-episode-average" title="Media de ${ratedLabel}"><span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+    .toFixed(1)
+    .replace(".", ",")}</strong></span>`;
 }
 
 function notesFieldHtml(notes) {
@@ -1109,6 +1117,7 @@ export function itemHeroHtml(item, { showUserRating = true, seasonsMeta = null }
         <div class="item-hero__ratings">
           ${communityRatingDisplay(item)}
           ${ownRatingHtml}
+          ${item.type === "tv" && showUserRating ? episodeAverageBadgeHtml(item.watched) : ""}
           ${trailerButtonHtml(item)}
         </div>
       </div>
@@ -2084,20 +2093,30 @@ export function openGameModal(item, callbacks) {
 
 // Sincroniza el estado VISUAL de una fila de episodio con su entrada
 // real (normalizada o null) en item.watched: checkbox, clase is-watched,
-// fecha, fila 2 (meta), contador y estrellas (issue #133/#136).
+// botón de visionados anteriores (con sus fechas), fila 2 (meta),
+// contador y estrellas (issue #133/#136/#310). El desplegable de
+// fechas se REPLIEGA en cada repintado derivado de dato (patrón
+// #136): el estado visual siempre deriva de item.watched.
 function applyEpisodeRowState(row, entry) {
   const checked = Boolean(entry && entry.date);
   const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
   const checkbox = row.querySelector(".episode-checkbox");
   const visual = row.querySelector(".episode-checkbox-visual");
-  const dateInput = row.querySelector(".episode-date");
   const meta = row.querySelector(".episode-row__meta");
   const ratingWrap = row.querySelector(".episode-rating");
+  const rewatchBtn = row.querySelector(".episode-rewatches");
+  const datesBlock = row.querySelector(".episode-rewatches__dates");
   checkbox.checked = checked;
   row.classList.toggle("is-watched", checked);
-  dateInput.disabled = !checked;
-  dateInput.value = checked ? entry.date : "";
   meta.classList.toggle("hidden", !checked);
+  if (rewatchBtn) {
+    rewatchBtn.hidden = !checked;
+    rewatchBtn.setAttribute("aria-expanded", "false");
+  }
+  if (datesBlock) {
+    datesBlock.innerHTML = checked ? rewatchesListHtml(entry) : "";
+    datesBlock.hidden = true;
+  }
   if (times > 1) visual.setAttribute("data-count", String(times));
   else visual.removeAttribute("data-count");
   ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => {
@@ -2134,6 +2153,19 @@ function renderSeasonBlock(s, watched) {
       </div>
       <div class="season-episodes hidden" data-season-episodes="${s.seasonNumber}"></div>
     </div>`;
+}
+
+// Lista de fechas de visionado de un episodio (issue #310): una línea
+// por visión ("Visto el DD/MM/AAAA"), tanto si es 1 como si son más.
+// Vacía si la entrada no existe (episodio sin ver).
+function rewatchesListHtml(entry) {
+  const dates = entry ? entry.dates || [entry.date] : [];
+  if (!dates.length) return "";
+  return `<ul class="episode-rewatches__list">
+    ${dates
+      .map((d) => `<li class="episode-rewatches__date">${formatDateEs(d)}</li>`)
+      .join("")}
+  </ul>`;
 }
 
 // manual=true (series manuales): no se marcan episodios como "sin
@@ -2192,7 +2224,11 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
               })
               .join("")}
           </div>
-          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+          <button type="button" class="episode-rewatches" ${checked ? "" : "hidden"}
+                  aria-expanded="false">Visionados anteriores</button>
+        </div>
+        <div class="episode-rewatches__dates" hidden>
+          ${rewatchesListHtml(entry)}
         </div>
       </div>`;
     })
@@ -2241,8 +2277,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       </div>
     </div>`;
   // En modo página la valoración de la comunidad y el tráiler ya viven
-  // en el hero; en el modal clásico se muestran como bloques propios.
+  // en el hero; en el modal clásico se muestran como bloques propios,
+  // con la media de episodios (issue #310) junto a la de TMDB.
   const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${episodeAverageBadgeHtml(item.watched)}
     ${trailerButtonHtml(item)}`;
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
@@ -2308,13 +2346,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     <div class="seasons-list">
       ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
     </div>
-
-    ${
-      // Media de episodios (issue #80) como línea informativa: la
-      // valoración general se hace con el botón flotante (issue
-      // #298/#300) y el picker ya no vive en la ficha.
-      episodeAverageHtml(item.watched, "field-rating")
-    }
   `;
 
   function updateBanner(newProgress) {
@@ -2341,14 +2372,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   function updateEpisodeAverage() {
     const avg = computeEpisodeAverageRating(item.watched);
-    const el = content.querySelector("#field-rating-episode-average");
+    const el = content.querySelector("#item-episode-average");
     if (!el) return;
     el.hidden = !avg;
     if (avg) {
       const ratedLabel =
         avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
       el.title = `Media de ${ratedLabel}`;
-      el.innerHTML = `Media episodios: <strong>${avg.average.toFixed(1)}</strong>`;
+      el.innerHTML = `<span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+        .toFixed(1)
+        .replace(".", ",")}</strong>`;
     } else {
       // Sin episodios valorados: ocultar y vaciar (evita texto obsoleto
       // si el CSS por cualquier motivo dejara de respetar el [hidden]).
@@ -2361,7 +2394,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     block.querySelectorAll(".episode-row").forEach((row) => {
       const episodeNumber = Number(row.dataset.episode);
       const checkbox = row.querySelector(".episode-checkbox");
-      const dateInput = row.querySelector(".episode-date");
       const ratingWrap = row.querySelector(".episode-rating");
       const airDate = row.dataset.airDate;
 
@@ -2444,16 +2476,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         }
       });
 
-      dateInput.addEventListener("change", async () => {
-        if (!dateInput.value) return;
-        dateInput.disabled = true;
-        try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, dateInput.value);
-          updateBanner(newProgress);
-        } finally {
-          dateInput.disabled = false;
-        }
-      });
+      // Desplegable «Visionados anteriores» (issue #310): muestra las
+      // fechas de todos los visionados del episodio, oculto por
+      // defecto. Simple toggle local (sin repintado derivado).
+      const rewatchBtn = row.querySelector(".episode-rewatches");
+      if (rewatchBtn) {
+        rewatchBtn.addEventListener("click", () => {
+          const datesBlock = row.querySelector(".episode-rewatches__dates");
+          if (!datesBlock) return;
+          datesBlock.hidden = !datesBlock.hidden;
+          rewatchBtn.setAttribute("aria-expanded", String(!datesBlock.hidden));
+        });
+      }
 
       const starButtons = ratingWrap.querySelectorAll(".episode-rating__star");
       starButtons.forEach((btn) => {

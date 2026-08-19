@@ -408,22 +408,32 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: var(--ink);
 }
 
-/* Media de valoración de episodios (issue #80): desde la issue #300 es
-   una línea informativa junto a las temporadas (la valoración general
-   se hace con el botón flotante y el picker ya no está en la ficha) */
-.episode-average {
-  display: block;
-  margin: 0.6rem 0 1rem;
+/* Media de valoración de episodios (issue #80): desde la issue #310
+   vive en la parte superior de la ficha de la serie, junto a la
+   valoración de TMDB y la propia, como un chip con borde (estilo
+   deliberadamente distinto del resto de valoraciones para
+   diferenciarlo). */
+.item-episode-average {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--ink-soft);
+  border: 1px solid var(--paper-line);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
 }
-/* Sin episodios valorados la media no se muestra: display:block del
-   elemento vencería al [hidden] del navegador, así que se fuerza. */
-.episode-average[hidden] {
+/* Sin episodios valorados la media no se muestra: display block/inline
+   del elemento vencería al [hidden] del navegador, así que se fuerza. */
+.item-episode-average[hidden] {
   display: none;
 }
-.episode-average strong { color: var(--ink); }
+.item-episode-average__label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.item-episode-average strong { color: var(--ink); }
 
 .modal-actions {
   display: flex;
@@ -762,24 +772,71 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 
 /* =========================================================
-   Fecha por episodio
+   Visionados anteriores por episodio (issue #310)
    ========================================================= */
 
-.episode-row input.episode-date {
+/* Botón que sustituye al antiguo input de fecha: mismo lugar (segunda
+   fila del episodio, junto a las estrellas) pero como enlace discreto;
+   al pulsarlo despliega las fechas de TODOS los visionados. Área táctil
+   mínima de 32px y [hidden] explícito (es un botón, sin estilo nativo
+   que vencer al atributo). */
+.episode-rewatches {
   margin-left: auto;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  background: var(--white);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  padding: 0.15rem 0.3rem;
-  width: min(150px, 100%);
-}
-.episode-row input.episode-date:disabled {
-  opacity: 0.35;
   background: transparent;
-  border-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  padding: 0.25rem 0.4rem;
+  min-height: 32px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+.episode-rewatches:hover,
+.episode-rewatches:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.episode-rewatches[hidden] {
+  display: none;
+}
+
+/* Lista de fechas, oculta por defecto y alineada con la meta del
+   episodio (mismo sangrado que .episode-row__meta) */
+.episode-rewatches__dates {
+  margin: 0.15rem 0 0.25rem 30px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.episode-rewatches__dates[hidden] {
+  display: none;
+}
+.episode-rewatches__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* Botón y lista de fechas sobre las superficies de PAPEL de la familia
+   oscura (dark): --ink-soft base (#948a76) va pensado para superficies
+   oscuras; sobre papel claro usa la tinta suave de la familia clara
+   (#6b6355, ≈4.9:1 AA sobre --paper). En negro puro las superficies
+   son oscuras y el bloque de tema de abajo completa el ajuste. */
+[data-theme="dark"] .episode-rewatches,
+[data-theme="dark"] .episode-rewatches__dates {
+  color: #6b6355;
+}
+/* Igual para el label del chip de media de episodios cuando vive en el
+   modal clásico (superficie papel); en el hero (modo página) el fondo
+   es oscuro y el --ink-soft base cumple AA. */
+[data-theme="dark"] .modal__card .item-episode-average {
+  color: #6b6355;
 }
 
 
@@ -1181,9 +1238,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   flex-wrap: wrap;
   padding-left: 30px;
 }
-.episode-row__meta .episode-date {
-  flex-shrink: 0;
-}
 
 .episode-rating {
   display: flex;
@@ -1512,7 +1566,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .manual-form input,
   .log-row input[type="date"],
   .log-add-row input[type="date"],
-  .episode-row input.episode-date,
   .sort-select {
     font-size: 16px;
   }
@@ -1976,7 +2029,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
 /* Texto que usaba tinta sobre superficies ahora oscuras */
 [data-theme="black"] .list-row__open,
 [data-theme="black"] .season-toggle,
-[data-theme="black"] .episode-average strong,
+[data-theme="black"] .episode-rewatches:hover,
+[data-theme="black"] .episode-rewatches:focus-visible,
+[data-theme="black"] .item-episode-average strong,
 [data-theme="black"] .rewatch-history summary,
 [data-theme="black"] .watch-log-details summary,
 [data-theme="black"] .desc-picker__text,
@@ -1997,7 +2052,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .log-add-row input[type="text"],
 [data-theme="black"] .log-row input[type="date"],
 [data-theme="black"] .log-row input[type="number"],
-[data-theme="black"] .episode-row input.episode-date,
 [data-theme="black"] .manual-form .field-group input {
   color: var(--paper);
 }
