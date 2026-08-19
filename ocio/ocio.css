@@ -2117,11 +2117,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
   gap: 0.6rem;
   overflow-x: auto;
   padding-bottom: 0.4rem;
-  /* Desplazamiento INERCIAL (iteración 2, issue #294): sin scroll-snap
-     (encajaba las tarjetas al terminar el gesto y el avance se sentía
-     «atascado»). Con la rueda del ratón, js/ui.js aplica inercia propia
-     (delta amplificado + fricción vía rAF); en táctil, el impulso
-     nativo del navegador desliza y frena solo. */
+  /* Sin scroll-snap (iteración 2, issue #294: encajaba las tarjetas al
+     terminar el gesto y el avance se sentía «atascado»). El manejo de la
+     rueda/trackpad vive en js/ui.js wireCastCrewInertialScroll (issue
+     #305): la muesca de ratón avanza ~1 tarjeta sin inercia; el trackpad
+     amplifica el delta y frena con fricción vía rAF; en táctil, el
+     impulso nativo del navegador desliza y frena solo. */
   -webkit-overflow-scrolling: touch;
   /* El rebote del gesto no debe arrastrar la página entera: el scroll
      horizontal se queda dentro del contenedor del carrusel. */
