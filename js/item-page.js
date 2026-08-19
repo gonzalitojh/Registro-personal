@@ -184,16 +184,21 @@ const FAB_ICONS = {
 // superior-izquierdo: es el espacio libre para un botón anclado abajo
 // a la derecha (la parte derecha del círculo no cabe en pantallas
 // estrechas). Los ángulos están espaciados para que las pastillas
-// (max. 11.5rem) no se solapen: la separación vertical entre puntos
-// consecutivos del arco es >= la altura de una pastilla (~2.8rem),
-// y todos los puntos quedan en el rango [-90°, 0°] para que ninguna
-// opción baje del centro del botón (se saldría por el borde inferior).
+// NO se solapen (iteración 5 de la issue #298): con la fuente real
+// (IBM Plex Sans) las etiquetas largas envuelven a 2 líneas y las
+// pastillas miden ~59 px de alto (184 × 59 px a max-width 11.5rem),
+// así que la separación vertical entre puntos consecutivos del arco
+// (R·(cos aᵢ − cos aᵢ₊₁)) debe ser >= ~4.2rem (67 px): con R = 9.5 y
+// los ángulos de 3 opciones [-22, -62, -90] quedan 69.6 px y 71.4 px
+// (holgura >= 10 px sobre pastillas de 59 px). El ángulo inferior se
+// queda en -90° (nunca baja del centro del botón: en -90° la pastilla
+// queda a la altura del FAB, sin salirse por el borde inferior).
 const FAB_ARC_ANGLES = {
   1: [-70], // una sola opción (p. ej. serie completada: solo «Valorar»)
   2: [-30, -85], // ficha: «Marcar como vista» + «Valorar»
-  3: [-20, -55, -88], // preview: «Añadir» + «Marcar como vista» + «Valorar»
+  3: [-22, -62, -90], // preview: «Añadir» + «Marcar como vista» + «Valorar»
 };
-const FAB_ARC_RADIUS = 9; // rem, distancia del centro del FAB a las opciones
+const FAB_ARC_RADIUS = 9.5; // rem, distancia del centro del FAB a las opciones
 
 // Punto (fx, fy en rem) de una opción del abanico, relativo al centro
 // del botón flotante (fx positivo = derecha, fy positivo = abajo).

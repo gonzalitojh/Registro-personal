@@ -48,6 +48,13 @@
      del botón flotante visto; el resto de la app sigue con
      --ochre-spine-dark. */
   --ochre-spine-hover: #74501d;
+  /* Tinte del halo de difuminado del FAB (issue #298, iteración 5):
+     círculo translúcido con backdrop-filter detrás del abanico, en
+     el tono del fondo de cada familia (oscuro: velo oscuro como
+     --backdrop; claro: velo de tinta suave). El desenfoque (blur
+     4px, fijo en .item-fab::before) es uniforme; el degradado
+     radial solo suaviza el borde del tinte. */
+  --fab-halo: rgba(10, 9, 7, 0.5);
 
   /* Neutros */
   --white: #ffffff;
@@ -160,6 +167,9 @@
      contraste AA (11.3:1 / hover 13.3:1). */
   --fab-idle: #2e2e2e;
   --fab-idle-dark: #222222;
+  /* Halo del FAB en negro puro: velo casi negro (los tintes oscuros
+     no se ven sobre #000; el desenfoque sigue diferenciando) */
+  --fab-halo: rgba(0, 0, 0, 0.55);
 }
 
 /* =========================================================
@@ -195,6 +205,10 @@
      .item-fab): base #d8d3c8 ≈ 9.8:1 e hover #c6c0b2 ≈ 8.1:1. */
   --fab-idle: #d8d3c8;
   --fab-idle-dark: #c6c0b2;
+  /* Halo del FAB en la familia clara: velo de tinta suave (los
+     velos oscuros fuertes ensucian el fondo claro; 0.14 de tinta +
+     blur es la versión «difuminada» de la sombra) */
+  --fab-halo: rgba(44, 40, 34, 0.14);
 
   --white: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.25);
@@ -264,6 +278,8 @@
      15.9:1 con el texto negro (hover #d4cfc2 ≈ 13.5:1). */
   --fab-idle: #e4e0d6;
   --fab-idle-dark: #d4cfc2;
+  /* Halo del FAB en blanco puro: velo de tinta suave (0.16) */
+  --fab-halo: rgba(0, 0, 0, 0.16);
 
   --backdrop: rgba(0, 0, 0, 0.25);
 
@@ -1987,6 +2003,53 @@ body.is-back-to-top-visible .back-to-top {
   z-index: 40;
   width: 3.5rem;
   height: 3.5rem;
+}
+
+/* Halo de difuminado detrás del abanico (issue #298, iteración 5):
+   al abrir el menú, un círculo translúcido con backdrop-filter
+   desenfoca (blur 4px) el contenido de la página que queda detrás
+   de las opciones, para que las pastillas se diferencien del fondo
+   (petición explícita del usuario: «añadir un poco de difuminado
+   para diferenciar el fondo»). El tinte (--fab-halo) acompaña a
+   cada familia de tema; el desenfoque es uniforme en el círculo y
+   el degradado radial solo suaviza el borde del tinte. El centro
+   del halo es el centroide del abanico (≈ 7.15rem a la izquierda
+   y 4.4rem por encima del centro del FAB, con los ángulos y el
+   radio de FAB_ARC_ANGLES/FAB_ARC_RADIUS en js/item-page.js); el
+   diámetro (26rem) cubre la pastilla más alejada con su borde
+   suavizado. Aparece solo con .is-open (pointer-events: none para
+   no interceptar clics) y, al ser el primer hijo (::before), pinta
+   por debajo de las pastillas del menú (mismo contexto de
+   apilamiento: el orden de DOM decide). */
+.item-fab::before {
+  content: "";
+  position: absolute;
+  /* Centro del halo: centro de la caja del FAB (1.75rem) menos el
+     centroide del abanico (7.15rem, 4.4rem) */
+  left: -5.4rem;
+  top: -2.65rem;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--fab-halo) 0%, transparent 70%);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s;
+}
+.item-fab.is-open::before {
+  visibility: visible;
+  opacity: 1;
+  /* La visibilidad salta al instante al abrir (mismo patrón que las
+     pastillas) y espera al cierre para que el halo se desvanezca. */
+  transition:
+    opacity 0.2s ease,
+    visibility 0s;
 }
 
 .item-fab__toggle {
