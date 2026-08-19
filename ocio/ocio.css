@@ -2200,7 +2200,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
    premios y nominaciones del título extraídos de Wikidata
    (TMDB no expone premios en su API pública), agrupados por
    familia (Óscar, Globos de Oro…) en <details> minimizables;
-   sin formulario ni botones.
+   la sección entera y cada grupo arrancan minimizados
+   (iteración 3) y se despliegan pulsando su cabecera. Sin
+   formulario ni botones.
    ========================================================= */
 
 .awards {
@@ -2209,11 +2211,37 @@ button, a, input, select, textarea { touch-action: manipulation; }
   border-top: 1px solid var(--paper-line);
 }
 
+/* La sección entera es un <details> que arranca minimizado (issue
+   #302, iteración 3): la cabecera actúa de <summary>. Marcador
+   nativo oculto y chevron propio, mismo patrón que .awards__group-head. */
 .awards__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  margin: 0;
+  cursor: pointer;
+  list-style: none;
+}
+.awards__head::-webkit-details-marker {
+  display: none;
+}
+.awards__head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards[open] .awards__head::before {
+  transform: rotate(90deg);
+}
+.awards[open] .awards__head {
   margin: 0 0 0.6rem;
 }
 
@@ -2251,9 +2279,21 @@ button, a, input, select, textarea { touch-action: manipulation; }
   margin: 0;
 }
 
-/* Cada familia de premios es un <details> abierto por defecto que el
-   usuario puede minimizar. Borde y radio como los chips de la ficha
-   (mismo patrón que .watch-provider/.game-platform). */
+/* Estado cerrado explícito de los <details> de premios: la UA ya oculta
+   los hijos no-<summary> de un <details> sin [open], pero se explicita
+   por robustez (hay entornos donde la regla UA no se aplica) y deja el
+   contrato «minimizado por defecto» (issue #302, iteración 3) en nuestro
+   propio CSS, sin depender de la UA. Cuando falta [open], el contenido
+   no existe visualmente (ni ocupa espacio); con [open], display normal. */
+.awards:not([open]) > .awards__groups,
+.awards__group:not([open]) > .awards__list {
+  display: none;
+}
+
+/* Cada familia de premios es un <details> que arranca MINIMIZADO
+   (sin `open`, issue #302 iteración 3) y el usuario puede desplegar.
+   Borde y radio como los chips de la ficha (mismo patrón que
+   .watch-provider/.game-platform). */
 .awards__group {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius);

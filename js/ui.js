@@ -1335,9 +1335,12 @@ export function watchProvidersHtml(item) {
 //     trabajo por el que se concedió (p. ej. el episodio premiado
 //     de una serie) y people: los implicados (ganador P1346 o
 //     nominados P2453, p. ej. el actor de un premio de reparto).
-// Cada familia se pinta como un <details> abierto por defecto que
-// el usuario puede minimizar (mismo patrón nativo, sin JS, que
-// .watch-log-details/.rewatch-history).
+// Cada familia se pinta como un <details> minimizable que arranca
+// CERRADO (sin atributo open), y la sección entera es también un
+// <details> cuya cabecera «Premios (N)» permite minimizarla toda de
+// una vez (issue #302, iteración 3: «Por defecto, cada premio debe
+// estar minimizado y la sección entera de Premios también»). Mismo
+// patrón nativo sin JS que .watch-log-details/.rewatch-history.
 //
 // La sección solo se pinta cuando el ítem tiene premios (la ausencia
 // de datos no ocupa espacio en la ficha, mismo criterio que el bloque
@@ -1354,7 +1357,7 @@ export function awardsHtml(item) {
   const groupsHtml = groups
     .map(
       (g) => `
-      <details class="awards__group" open>
+      <details class="awards__group">
         <summary class="awards__group-head">
           <span class="awards__group-name">${escapeHtml(g.group || "")}</span>
           <span class="awards__group-count">(${g.entries.length})</span>
@@ -1367,13 +1370,13 @@ export function awardsHtml(item) {
     .join("");
 
   return `
-    <section class="awards" aria-label="Premios">
-      <div class="awards__head">
+    <details class="awards">
+      <summary class="awards__head">
         <span class="awards__title">Premios</span>
         <span class="awards__count">(${total})</span>
-      </div>
+      </summary>
       <div class="awards__groups">${groupsHtml}</div>
-    </section>`;
+    </details>`;
 }
 
 // Fila de un premio o nominación: etiqueta distintiva («Premio» /
@@ -1384,13 +1387,16 @@ function awardRowHtml(e) {
     e.kind === "award"
       ? `<span class="awards__badge awards__badge--award">Premio</span>`
       : `<span class="awards__badge awards__badge--nom">Nominación</span>`;
+  // Plural correcto en español: «Ganador»/«Ganadores» (P1346) y
+  // «Nominado»/«Nominados» (P2453). Un «Ganador» + «s» genérico
+  // produciría «Ganadors» (issue #302, iteración 3).
   const people =
     e.people && e.people.length
       ? `<span class="awards__people">${
-          e.kind === "award" ? "Ganador" : "Nominado"
-        }${e.people.length > 1 ? "s" : ""}: ${e.people
-          .map(escapeHtml)
-          .join(", ")}</span>`
+          e.kind === "award"
+            ? e.people.length > 1 ? "Ganadores" : "Ganador"
+            : e.people.length > 1 ? "Nominados" : "Nominado"
+        }: ${e.people.map(escapeHtml).join(", ")}</span>`
       : "";
   return `
       <li class="awards__row">
