@@ -386,6 +386,132 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 }
 
 // =============================================================
+// Premios de películas/series (issue #302, iteración). TMDB NO
+// expone premios en su API pública (solo en su web), así que se
+// consultan en Wikidata: primero se obtiene el identificador de
+// Wikidata del título con /external_ids de TMDB (que también lo
+// publica) y después se consultan las declaraciones P166
+// («award received») del ítem en el endpoint SPARQL de Wikidata
+// (público, sin clave y con CORS abierto). Cada premio se
+// muestra con su nombre, el año de la ceremonia (cualificador
+// P585) y, en su caso, el trabajo por el que se concedió
+// (cualificador P1686, p. ej. el episodio de una serie).
+// Los resultados se cachean en memoria 24 h (misma caché
+// compartida que los watch providers y los detalles).
+// =============================================================
+
+const WDQS_URL = "https://query.wikidata.org/sparql";
+
+// Consulta SPARQL de los premios de un ítem de Wikidata: todas
+// las declaraciones P166 con su fecha (P585) y su obra (P1686).
+// La obra se omite cuando es el propio ítem (el premio a la
+// película/serie entera no añade información repetida). La
+// etiqueta se resuelve en español y, si no existe, en inglés.
+function wikidataAwardsQuery(wikidataId) {
+  return `
+SELECT ?awardLabel ?year ?workLabel WHERE {
+  wd:${wikidataId} p:P166 ?st.
+  ?st ps:P166 ?award.
+  OPTIONAL { ?st pq:P585 ?date. }
+  OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != wd:${wikidataId}) }
+  BIND(YEAR(?date) as ?year)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
+} ORDER BY DESC(?year)`;
+}
+
+// Variante sin identificador de Wikidata conocido: busca el ítem
+// por el id de TMDB de una serie (P4983) o por el id de IMDb de
+// una película (P345), cuando /external_ids no trae wikidata_id.
+function wikidataAwardsByExternalIdQuery(type, externalId) {
+  const prop = type === "tv" ? "P4983" : "P345";
+  return `
+SELECT ?awardLabel ?year ?workLabel WHERE {
+  ?item wdt:${prop} "${externalId}".
+  ?item p:P166 ?st.
+  ?st ps:P166 ?award.
+  OPTIONAL { ?st pq:P585 ?date. }
+  OPTIONAL { ?st pq:P1686 ?work. FILTER(?work != ?item) }
+  BIND(YEAR(?date) as ?year)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
+} ORDER BY DESC(?year)`;
+}
+
+// Normaliza las filas de la respuesta SPARQL a la lista de
+// premios { name, year?, detail? } del render: se quedan con la
+// primera etiqueta (español si existe), se deduplican (un mismo
+// premio puede repetirse con varios cualificadores) y se ordenan
+// por año descendente. Devuelve [] si no hay premios.
+function mapAwardsBindings(bindings) {
+  const seen = new Set();
+  const awards = [];
+  for (const b of bindings || []) {
+    const name = (b.awardLabel && b.awardLabel.value || "").trim();
+    if (!name) continue;
+    const year = b.year ? String(b.year.value) : "";
+    const detail =
+      b.workLabel && b.workLabel.value ? String(b.workLabel.value) : "";
+    const key = `${name}|${year}|${detail}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const award = { name };
+    if (year) award.year = year;
+    if (detail) award.detail = detail;
+    awards.push(award);
+  }
+  awards.sort(
+    (a, b) => (b.year || "0").localeCompare(a.year || "0") || a.name.localeCompare(b.name)
+  );
+  return awards;
+}
+
+/**
+ * Premios de una película o serie desde Wikidata (issue #302,
+ * iteración): la API pública de TMDB no expone premios, solo su
+ * web; Wikidata los publica como declaraciones P166 del ítem del
+ * título. No es crítico: cualquier fallo (red, sin ítem en
+ * Wikidata, sin premios) devuelve null y la sección no se pinta.
+ * @param {'movie'|'tv'} type - Tipo de contenido
+ * @param {string|number} externalId - ID externo de TMDB
+ * @returns {Promise<Array<{name:string, year?:string, detail?:string}>|null>}
+ */
+export async function getItemAwards(type, externalId) {
+  if (type !== "movie" && type !== "tv") return null;
+  const id = String(externalId);
+  const cacheKey = `awards_${type}_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  let awards = null;
+  try {
+    const ext = await fetchJson(
+      `${BASE_URL}/${type}/${id}/external_ids?api_key=${TMDB_API_KEY}`,
+      { retries: 1 }
+    ).catch(() => null);
+    let query = null;
+    if (ext && ext.wikidata_id) {
+      query = wikidataAwardsQuery(ext.wikidata_id);
+    } else if (type === "tv") {
+      // Sin wikidata_id (raro): la serie se busca por su id de TMDB.
+      query = wikidataAwardsByExternalIdQuery("tv", id);
+    } else if (ext && ext.imdb_id) {
+      // Sin wikidata_id: la película se busca por su id de IMDb.
+      query = wikidataAwardsByExternalIdQuery("movie", ext.imdb_id);
+    }
+    if (query) {
+      const url = `${WDQS_URL}?format=json&query=${encodeURIComponent(query)}`;
+      // Accept explícito: Wikidata sirve HTML (su web) si no se pide
+      // JSON, incluso con format=json en la URL.
+      const data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+      awards = data ? mapAwardsBindings(data.results && data.results.bindings) : null;
+    }
+  } catch {
+    awards = null;
+  }
+  setCache(cacheKey, awards);
+  return awards;
+}
+
+// =============================================================
 // Recomendaciones (contenido similar) desde TMDB. Devuelve
 // listas de películas o series similares usando el endpoint
 // /similar de TMDB. Los resultados tienen la misma forma que

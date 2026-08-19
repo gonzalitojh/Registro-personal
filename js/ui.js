@@ -13,6 +13,7 @@ import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+import { getItemAwards } from "./api-movies.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : type === "game" ? "game" : "media";
@@ -744,7 +745,7 @@ function wireStatusActions(content, handleStatusChange) {
 // si hay carruseles se devuelven junto al resto de líneas, y el
 // fallback de carga/error solo aplica cuando no hay ni líneas ni
 // carruseles.
-export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false } = {}) {
+export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false, skipCarousels = false } = {}) {
   const lines = [];
   const metaBits = [];
   if (!skipMetaBits) {
@@ -778,10 +779,14 @@ export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false
   const overview = item.overview || item.description;
   if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
   if (!lines.length) {
-    if (carousels) return carousels;
+    // skipCarousels (issue #302, iteración): los carruseles de
+    // producción/reparto se renderizan APARTE (tras las plataformas y
+    // los premios), así que aquí no se devuelven.
+    if (!skipCarousels && carousels) return carousels;
     return skipStatusFallback ? "" : detailStatusHtml(item);
   }
-  return `<div class="extra-info">${lines.join("")}</div>${carousels}`;
+  const info = `<div class="extra-info">${lines.join("")}</div>`;
+  return skipCarousels ? info : `${info}${carousels}`;
 }
 
 // Normaliza el reparto por si llega en la forma vieja (array de
@@ -1316,27 +1321,23 @@ export function watchProvidersHtml(item) {
 
 /* ---------- Premios de películas/series (issue #302) ---------- */
 
-// Sección «Premios» de la ficha de películas y series (issue #302):
-// lista de premios del título anotada por el usuario — TMDB no expone
-// premios en su API pública (solo en su web), así que es un dato del
-// registro personal, como las notas o el historial. El campo `awards`
-// es un array de { name, year?, detail? } persistido en el documento
-// del ítem; los ítems legacy sin el campo se tratan como lista vacía.
+// Sección «Premios» de la ficha de películas y series (issue #302,
+// iteración): lista de SOLO LECTURA con los premios del título,
+// extraídos automáticamente de Wikidata (getItemAwards, api-movies.js
+// — TMDB no expone premios en su API pública). Cada entrada es
+// { name, year?, detail? }: nombre del premio (p. ej. «Óscar a la
+// mejor fotografía»), año de la ceremonia y, en su caso, el trabajo
+// por el que se concedió (p. ej. el episodio premiado de una serie).
 //
-// Dos modos:
-//   - Ficha (con `onAddAward`/`onRemoveAward`): la sección se muestra
-//     SIEMPRE, con la lista (o la pista de vacío) y el formulario para
-//     añadir; cada premio tiene su botón «Quitar».
-//   - Vista previa (sin callbacks): SOLO lectura y únicamente si el
-//     ítem ya trae premios (los títulos del catálogo nunca los traen,
-//     así que no ocupa espacio en la preview).
-// Devuelve cadena vacía para los otros tipos (libros/videojuegos).
-export function awardsHtml(item, { onAddAward, onRemoveAward } = {}) {
+// La sección solo se pinta cuando el ítem tiene premios (la ausencia
+// de datos no ocupa espacio en la ficha, mismo criterio que el bloque
+// «Dónde verla»). No hay formulario ni botones: es información de la
+// API, no un dato del usuario. Devuelve cadena vacía para los otros
+// tipos (libros/videojuegos).
+export function awardsHtml(item) {
   if (item.type !== "movie" && item.type !== "tv") return "";
   const awards = Array.isArray(item.awards) ? item.awards : [];
-  const interactive =
-    typeof onAddAward === "function" && typeof onRemoveAward === "function";
-  if (!interactive && !awards.length) return "";
+  if (!awards.length) return "";
 
   const rows = awards
     .map(
@@ -1345,93 +1346,18 @@ export function awardsHtml(item, { onAddAward, onRemoveAward } = {}) {
         <span class="awards__name">${escapeHtml(a.name || "")}</span>
         ${a.year ? `<span class="awards__year">${escapeHtml(a.year)}</span>` : ""}
         ${a.detail ? `<span class="awards__detail">${escapeHtml(a.detail)}</span>` : ""}
-        ${
-          interactive
-            ? `<button type="button" class="btn btn--small btn--danger awards__remove" data-index="${i}" aria-label="Quitar premio ${escapeHtml(a.name || "")}">Quitar</button>`
-            : ""
-        }
       </li>`
     )
     .join("");
-
-  const list = rows
-    ? `<ul class="awards__list">${rows}</ul>`
-    : interactive
-      ? `<p class="awards__hint">Aún no has anotado premios para este título.</p>`
-      : "";
-
-  const form = interactive
-    ? `<form class="awards__form" id="awards-form">
-        <label class="visually-hidden" for="awards-name">Premio</label>
-        <input class="awards__input awards__name-input" id="awards-name" type="text" maxlength="120" placeholder="Premio (p. ej. Óscar)" required autocomplete="off" />
-        <label class="visually-hidden" for="awards-year">Año</label>
-        <input class="awards__input awards__year-input" id="awards-year" type="text" inputmode="numeric" maxlength="4" placeholder="Año" autocomplete="off" />
-        <label class="visually-hidden" for="awards-detail">Detalle</label>
-        <input class="awards__input awards__detail-input" id="awards-detail" type="text" maxlength="240" placeholder="Detalle (p. ej. Mejor actriz)" autocomplete="off" />
-        <button type="submit" class="btn btn--small btn--accent-media">Añadir premio</button>
-      </form>`
-    : "";
 
   return `
     <section class="awards" aria-label="Premios">
       <div class="awards__head">
         <span class="awards__title">Premios</span>
-        ${awards.length ? `<span class="awards__count">${awards.length}</span>` : ""}
+        <span class="awards__count">(${awards.length})</span>
       </div>
-      ${list}
-      ${form}
+      <ul class="awards__list">${rows}</ul>
     </section>`;
-}
-
-// Cablea el formulario y los botones «Quitar» de la sección Premios
-// (issue #302), tras cada render que incluya awardsHtml interactivo
-// (ficha en página y modal clásico). La vista previa no trae
-// formulario ni botones (render solo lectura), así que aquí no hay
-// nada que cablear. Cada render crea nodos nuevos: los listeners
-// nunca se duplican.
-export function wireAwards(root, callbacks = {}) {
-  if (!root) return;
-  const { onAddAward, onRemoveAward } = callbacks;
-  if (typeof onAddAward !== "function" && typeof onRemoveAward !== "function") return;
-  const form = root.querySelector("#awards-form");
-  if (form && typeof onAddAward === "function") {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const nameInput = form.querySelector("#awards-name");
-      const yearInput = form.querySelector("#awards-year");
-      const detailInput = form.querySelector("#awards-detail");
-      const name = (nameInput && nameInput.value || "").trim();
-      if (!name) {
-        nameInput && nameInput.focus();
-        return;
-      }
-      // Se omiten las claves vacías: Firestore no admite undefined y
-      // el render no pinta campos vacíos (mismo patrón que el guardado
-      // de fechas de temporada).
-      const award = { name };
-      const year = (yearInput && yearInput.value || "").trim();
-      if (year) award.year = year;
-      const detail = (detailInput && detailInput.value || "").trim();
-      if (detail) award.detail = detail;
-      const btn = form.querySelector("button[type=submit]");
-      if (btn) btn.disabled = true;
-      try {
-        await onAddAward(award, btn);
-      } catch (err) {
-        if (btn) btn.disabled = false;
-        // El llamador (modal-handlers) ya muestra el toast del error;
-        // este catch es defensivo por si un futuro llamador no gestiona
-        // el rechazo.
-      }
-    });
-  }
-  if (typeof onRemoveAward === "function") {
-    root.querySelectorAll(".awards__remove").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        onRemoveAward(Number(btn.dataset.index));
-      });
-    });
-  }
 }
 
 // Chips con las plataformas jugables de un videojuego (IGDB), para
@@ -1605,7 +1531,7 @@ function renderWatchLogRows(watchLog) {
 }
 
 export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
-  const { onUpdateWatch, onRemoveWatch, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation, onAddAward, onRemoveAward } = callbacks;
+  const { onUpdateWatch, onRemoveWatch, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
   // Modo página (issue #285): con target (contenedor de #item-view) la
   // ficha se renderiza en la página y no se abre el modal ni su focus
@@ -1634,17 +1560,23 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
-    : extraInfoHtml(item);
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
 
+  // Orden de secciones (issue #302, iteración): las plataformas
+  // vuelven a estar bajo la sinopsis y encima de la producción (su
+  // posición original), y la sección de premios queda justo debajo de
+  // las plataformas. Los carruseles de producción/reparto (issue
+  // #294) van después, como cierre del bloque de información.
   content.innerHTML = `
     ${headerHtml}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
     ${infoHtml}
-    ${awardsHtml(item, { onAddAward, onRemoveAward })}
     ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     ${item.collectionId ? renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie) : ""}
 
@@ -1674,9 +1606,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
   // Carruseles de elenco (issue #294): cablear los botones «Ver en más
   // detalle» de producción/reparto con los datos de este ítem.
   wireCastCrewClicks(content, item);
-
-  // Premios (issue #302): formulario y botones «Quitar» de la sección.
-  wireAwards(content, { onAddAward, onRemoveAward });
 
   // Wire recommendation "Añadir" buttons
   if (onAddRecommendation) {
@@ -2196,8 +2125,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
-    onAddAward,
-    onRemoveAward,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
@@ -2235,17 +2162,21 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
   const infoHtml = target
-    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })
-    : extraInfoHtml(item);
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
 
+  // Orden de secciones (issue #302, iteración): mismo criterio que la
+  // ficha de película — plataformas bajo la sinopsis y encima de la
+  // producción, y la sección de premios justo debajo de las plataformas.
   content.innerHTML = `
     ${headerHtml}
 
     ${upcomingBadge(item)}
     ${ratingsHtml}
     ${infoHtml}
-    ${awardsHtml(item, { onAddAward, onRemoveAward })}
     ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation, onOpenRecommendation)}
 
@@ -2614,9 +2545,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   // Carruseles de elenco (issue #294): ver openMovieModal.
   wireCastCrewClicks(content, item);
 
-  // Premios (issue #302): formulario y botones «Quitar» de la sección.
-  wireAwards(content, { onAddAward, onRemoveAward });
-
   wireStatusActions(content, async (newStatusOrNull) => {
     const newProgress = await onSetStatus(newStatusOrNull);
     // El target se propaga en el re-render (issue #285): en modo
@@ -2839,9 +2767,10 @@ export function openReadOnlyModal(item, ownerName) {
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
     ${gamePlatformsHtml(item)}
-    ${extraInfoHtml(item)}
-    ${awardsHtml(item)}
+    ${extraInfoHtml(item, { skipCarousels: true })}
     ${watchProvidersHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     <div class="field-group">
       <span class="item-card__stamp item-card__stamp--${item.status}" style="position:static;transform:none;display:inline-block;">
@@ -2856,6 +2785,21 @@ export function openReadOnlyModal(item, ownerName) {
   // Carruseles de elenco (issue #294): los botones «Ver en más detalle»
   // también funcionan en la ficha de solo lectura del amigo.
   wireCastCrewClicks(content, item);
+
+  // Premios (issue #302, iteración): la ficha del amigo también
+  // muestra los premios del título extraídos de la API (Wikidata),
+  // consultados con la clave del LECTOR (como los detalles; nunca se
+  // escribe en Firestore). Mismo patrón que loadItemDetails: se
+  // re-renderiza si la ficha sigue abierta cuando llegan.
+  if ((item.type === "movie" || item.type === "tv") && item.externalId && !item._awardsFetched) {
+    item._awardsFetched = true;
+    getItemAwards(item.type, item.externalId).then((awards) => {
+      item.awards = awards;
+      if (!document.getElementById("item-modal")?.classList.contains("hidden")) {
+        openReadOnlyModal(item, ownerName);
+      }
+    });
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;

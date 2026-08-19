@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry, getItemAwards } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
@@ -172,13 +172,16 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     item.awaitingRelease = false;
   }
 
-  // Premios (issue #302): lista editable { name, year?, detail? } por
-  // ítem (el título puede no estar aún añadido; TMDB no expone premios
-  // en su API pública, así que es un dato del registro personal). Se
-  // muta en memoria SOLO tras persistir (patrón onRewatch).
-  async function saveAwards(awards) {
-    await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { awards });
-    item.awards = awards;
+  // Premios (issue #302, iteración): se muestran los premios del
+  // título extraídos de la API (Wikidata; TMDB no los expone). No es
+  // crítico: si falla la consulta, item.awards queda null y la
+  // sección no se pinta (misma degradación que los watch providers).
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("movie", item.externalId);
+    } catch {
+      item.awards = null;
+    }
   }
 
   // Obtener watch providers (no crítico, si falla se muestra sin providers)
@@ -259,28 +262,6 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     // misma navegación a la página de detalle de la película/serie.
     onOpenRecommendation: (recItem) =>
       navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
-    // Premios (issue #302): añadir o quitar un premio de la lista del
-    // ítem (campo `awards`). Tras persistir se re-renderiza la ficha
-    // (reopen con isRerender: no vuelve a pedir detalles). En modo
-    // página el re-render repinta en #item-view-content; en el modal
-    // clásico, en #modal-content sin cerrarlo.
-    onAddAward: async (award, btn) => {
-      try {
-        await saveAwards([...(item.awards || []), award]);
-        reopen();
-      } catch (err) {
-        if (btn) btn.disabled = false;
-        ui.showToast("No se pudo guardar el premio: " + (err && err.message ? err.message : err));
-      }
-    },
-    onRemoveAward: async (index) => {
-      try {
-        await saveAwards((item.awards || []).filter((_, i) => i !== index));
-        reopen();
-      } catch (err) {
-        ui.showToast("No se pudo quitar el premio: " + (err && err.message ? err.message : err));
-      }
-    },
   }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -535,6 +516,16 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
 
   const progress = progressWithStatus(seasonsMeta, item);
 
+  // Premios (issue #302, iteración): misma consulta de API que en
+  // películas (ver openMovieItem); no crítico.
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("tv", item.externalId);
+    } catch {
+      item.awards = null;
+    }
+  }
+
   // Obtener watch providers
   if (item.externalId) {
     try {
@@ -564,13 +555,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     item.lastWatchedAt = newProgress.lastWatchedAt;
     item.awaitingRelease = false;
     return newProgress;
-  }
-
-  // Premios (issue #302): misma lista editable que en películas (ver
-  // openMovieItem). Se muta en memoria SOLO tras persistir.
-  async function saveAwards(awards) {
-    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awards });
-    item.awards = awards;
   }
 
   // Abre la ventana de valoración de un episodio recién marcado
@@ -724,25 +708,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     // previa con «Añadir».
     onOpenRecommendation: (recItem) =>
       navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
-    // Premios (issue #302): ídem openMovieItem — añadir o quitar un
-    // premio del campo `awards` del ítem y re-renderizar la ficha.
-    onAddAward: async (award, btn) => {
-      try {
-        await saveAwards([...(item.awards || []), award]);
-        reopen();
-      } catch (err) {
-        if (btn) btn.disabled = false;
-        ui.showToast("No se pudo guardar el premio: " + (err && err.message ? err.message : err));
-      }
-    },
-    onRemoveAward: async (index) => {
-      try {
-        await saveAwards((item.awards || []).filter((_, i) => i !== index));
-        reopen();
-      } catch (err) {
-        ui.showToast("No se pudo quitar el premio: " + (err && err.message ? err.message : err));
-      }
-    },
   }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
