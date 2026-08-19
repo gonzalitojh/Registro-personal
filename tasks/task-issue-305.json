@@ -1,7 +1,7 @@
 {
   "title": "Scroll de producción y reparto en PC",
   "description": "Issue #305: El scroll horizontal de las secciones de producción y reparto funciona perfectamente en móvil, pero en PC, al mover ligeramente la rueda del ratón desplaza media lista de un golpe.\n\nLa base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "C1: En PC, mover la rueda del ratón sobre los carruseles de producción/reparto avanza de forma proporcionada: un toque de rueda desplaza aproximadamente una tarjeta (o menos), nunca «media lista» de un golpe.",
     "C2: El desplazamiento táctil (móvil/tablet) sigue funcionando con la inercia nativa del navegador, sin cambios de comportamiento.",
