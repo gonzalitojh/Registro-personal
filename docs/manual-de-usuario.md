@@ -1119,7 +1119,12 @@ tipo, verás:
   el episodio premiado de una serie). Los datos se extraen
   automáticamente de **Wikidata** (la API de TMDB no expone premios), así
   que no hay que anotar nada; si el título no tiene premios registrados,
-  la sección no aparece. Válido para películas y series.
+  la sección no aparece. Válido para películas y series. La lista
+  muestra los premios **registrados en Wikidata**; los títulos cuyos
+  premios solo existen como artículo-lista de Wikipedia (sin
+  declaraciones propias en Wikidata, habitual en algunas series
+  modernas) pueden mostrar pocos premios o ninguno hasta que Wikidata
+  los registre (nunca se muestra la lista como si fuera un premio).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
