@@ -67,6 +67,32 @@ en hover: familia oscura con `--ochre-spine-hover`, negro puro con
 `--white` en teal/ocre, contador claro en hover a paper), más
 `124f3db` (errata de comentario).
 
+**Iteración 5 (2026-08-19, comentarios nuevos de la issue #298)**: dos
+ajustes visuales. (1) **Sin solapes en el abanico**: el usuario reportó
+que las opciones desplegadas «en ocasiones se superponen, una un poco
+por encima de la otra». Reproducido en QA headless con la fuente real
+(IBM Plex Sans): las etiquetas largas de la ficha de película vista
+(«Quitar última visualización», «Añadir otro visionado») envuelven a 2
+líneas (pastillas de 184 × 59 px con `max-width: 11.5rem`), y la
+separación vertical de la geometría anterior (3 opciones en [-20, -55,
+-88] con radio 9 rem) era de solo 52.8 px < 59 px → **solape de 6.4 px**.
+La geometría nueva (`FAB_ARC_ANGLES[3] = [-22, -62, -90]` con
+`FAB_ARC_RADIUS = 9.5 rem`) da separaciones verticales de 69.6 px y
+71.4 px (holgura ≥ 10 px sobre pastillas de 59 px), validada en 3
+anchos × 4 temas × 6 configuraciones sin solapes, sin pastillas fuera
+del viewport y sin scroll horizontal. (2) **Halo de difuminado**
+alrededor del abanico (comentario «añadir un poco de difuminado para
+diferenciar el fondo»): `.item-fab::before` (primer hijo → pinta bajo
+las pastillas) con `backdrop-filter: blur(4px)` como círculo de 26 rem
+centrado en el centroide del abanico (≈ 7.15 rem a la izquierda y 4.4
+rem por encima del centro del FAB, alineado con la nueva geometría),
+tinte radial nueva variable `--fab-halo` por familia (oscuro
+`rgba(10,9,7,.5)` — mismo tono que `--backdrop` —, negro puro
+`rgba(0,0,0,.55)`, claro `rgba(44,40,34,.14)`, blanco puro
+`rgba(0,0,0,.16)`), visible solo con `.is-open` (`visibility`/
+`opacity` transicionadas, `pointer-events: none`). Implementado en el
+commit `9314604`.
+
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
 
 ## Decisión
@@ -133,9 +159,15 @@ none`; las acciones individuales llevan `role="menuitem"`):
   desplazada con variables CSS `--fx`/`--fy` (offsets en `rem`,
   `translate(calc(var(--fx) - 50%), calc(var(--fy) - 50%))`). Los
   ángulos y el radio son una única fuente de verdad en JS:
-  `FAB_ARC_ANGLES = {1: [-70], 2: [-30, -85], 3: [-20, -55, -88]}`
+  `FAB_ARC_ANGLES = {1: [-70], 2: [-30, -85], 3: [-22, -62, -90]}`
   (grados sobre el eje X, negativo = hacia arriba/izquierda) y
-  `FAB_ARC_RADIUS = 9` (`rem`).
+  `FAB_ARC_RADIUS = 9.5` (`rem`). La **separación vertical entre
+  pastillas** de un arco es `R·(cos aᵢ − cos aᵢ₊₁)`: con la fuente
+  real las etiquetas largas de la ficha envuelven a 2 líneas (pastillas
+  de 184 × 59 px) y los ángulos de 3 opciones dan 69.6 px y 71.4 px
+  (≥ 10 px de holgura; iteración 5, antes 52.8 px → solape de 6.4 px).
+  El ángulo inferior queda en -90° (la pastilla nunca baja del centro
+  del botón, no se sale por el borde inferior en móvil).
 - El despliegue usa la clase `is-open` en `.item-fab` (CSS, sin
   atributos `hidden`): en reposo las pastillas están `visibility:
   hidden` + `opacity: 0` + `scale(0.4)`; con `is-open` salen con
@@ -330,7 +362,9 @@ reabrir «Añadir» (fix `20271c1`).
   desplegadas y cierre con Esc/clic fuera. La iteración 4 también
   adapta **§4.7** y la ficha de película/serie: el **botón «Eliminar»
   del final de la ficha desaparece** (el borrado vive en el FAB con
-  deshacer, ver §14.3).
+  deshacer, ver §14.3). **Iteración 5**: §12.1 menciona el **halo de
+  difuminado** detrás del abanico y que las opciones se despliegan sin
+  solaparse (sin detalle de geometría, es interno).
 - **Sombreado de las opciones** (iteración 3): las pastillas usan la
   nueva variable `--fab-action-shadow` (doble capa: sombra de contacto +
   difusa, más marcada que `--shadow-pop`) con valores por familia
@@ -338,8 +372,27 @@ reabrir «Añadir» (fix `20271c1`).
   tintes de tinta al 0.18/0.22 y 0.22/0.28). En **negro puro** las
   sombras negras no separan, así que el borde que da el selector
   agrupado se refuerza a `--paper-alpha-35` en la pastilla.
+- **Halo de difuminado** (iteración 5): además de la sombra, el
+  usuario pidió «un poco de difuminado para diferenciar el fondo».
+  `.item-fab::before` añade un **círculo de 26 rem** centrado en el
+  **centroide del abanico** (≈ 7.15 rem a la izquierda y 4.4 rem por
+  encima del centro del FAB; `left: -5.4rem; top: -2.65rem` +
+  `translate(-50%, -50%)`) con `backdrop-filter: blur(4px)` (prefijo
+  `-webkit-` para Safari): desenfoca el contenido de la página que
+  queda detrás de las opciones. El **tinte** es la nueva variable
+  `--fab-halo` por familia (oscuro `rgba(10,9,7,.5)`, negro puro
+  `rgba(0,0,0,.55)` — los velos oscuros no se ven sobre #000 y el
+  desenfoque es la separación real —, claro `rgba(44,40,34,.14)` y
+  blanco puro `rgba(0,0,0,.16)` — la versión suave de la sombra en
+  fondos claros —) con degradado radial que se funde a transparente
+  al 70%. Aparece solo con `.is-open` (mismo patrón `visibility`/
+  `opacity` que las pastillas, `pointer-events: none`) y, como primer
+  hijo del FAB, pinta por debajo de las pastillas (mismo contexto de
+  apilamiento, decide el orden de DOM). Es un elemento `position:
+  fixed`-contenido: no añade scroll horizontal (regla 2 de AGENTS.md).
 - **PWA**: bump `20261010` → `20261011` (iteración 2) → `20261012`
-  (iteración 3) → `20261013` (iteración 4) en la misma tarea
+  (iteración 3) → `20261013` (iteración 4) → `20261014` (iteración 5)
+  en la misma tarea
   (`js/config.js` `APP_VERSION`, `index.html` y `service-worker.js`,
   vía `scripts/bump-version.sh`) para invalidar las cachés del
   precache (ADR-019).
@@ -425,15 +478,15 @@ reabrir «Añadir» (fix `20271c1`).
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS` (`plus`/`check`/`star` + `trash`/`rotateCcw`, iteración 4), `isItemSeen` (película con `watchLog` / serie `completado`), `FAB_ARC_ANGLES`/`FAB_ARC_RADIUS` (geometría del abanico, única fuente de verdad), `fabOptions` (devuelve array de opciones; preview → «Añadir»/«Marcar como vista»/«Valorar»; ficha → antepone la **opción inversa** — no visto: «Quitar de añadidos» `remove`; visto: «Quitar última visualización» `unwatch` — seguida de «Marcar como vista»/«Añadir otro visionado» + «Valorar», «marcar» oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `openFabMenu`/`closeFabMenu` (clase `is-open`), `renderFab` (toggle con `aria-expanded`, pastillas del abanico con `--fx`/`--fy`/`--i` inline; tres estados: preview `+` gris del tema (iteración 4, antes teal), ficha no visto clase `.item-fab--added` **verde teal** (iteración 4, antes azul acero), ficha visto clase `.item-fab--seen` con el `span.item-fab__count` — número de visionados, cap `99+` — en películas vistas más de una vez; `aria-label` del toggle por estado), `runFabAction` (preview: `addFromPreview`/`addSeenFromPreview`/`addAndRateFromPreview`; ficha: `quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating` + `remove`/`unwatch` — `scheduleDeletion`+`goBack` y `quickUnwatchMovie`/`quickUnwatchTv` (iteración 4); repinta con `renderFicha(item, true)` y devuelve el foco al toggle del FAB nuevo), helpers nuevos de preview `addSeenFromPreview` (marcar añade vía `handleAddSeen` con target local) y `addAndRateFromPreview` (valorar añade vía `handleAdd`/`#btn-preview-add` y encadena `promptItemRating`), `refreshAfterAdd()` ahora devuelve el ítem, candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`) y con los flujos nuevos, cierre del menú con Escape (`handleEscape`), clic fuera y `is-open`; **eliminado** el registro de `setItemPageBackHandler` (hook muerto, iteración 4) |
+| `js/item-page.js` | **Modificado**: nueva sección «Botón flotante de acciones (issue #298)»: `FAB_ID`, `FAB_ICONS` (`plus`/`check`/`star` + `trash`/`rotateCcw`, iteración 4), `isItemSeen` (película con `watchLog` / serie `completado`), `FAB_ARC_ANGLES`/`FAB_ARC_RADIUS` (geometría del abanico, única fuente de verdad; **iteración 5**: `3: [-22, -62, -90]` y radio 9.5 rem — separación vertical ≥ 69.6 px para pastillas de 2 líneas (~59 px) con la fuente real → sin solapes), `fabOptions` (devuelve array de opciones; preview → «Añadir»/«Marcar como vista»/«Valorar»; ficha → antepone la **opción inversa** — no visto: «Quitar de añadidos» `remove`; visto: «Quitar última visualización» `unwatch` — seguida de «Marcar como vista»/«Añadir otro visionado» + «Valorar», «marcar» oculto en series completadas/en pausa/abandonadas o sin `nextEpisode`), `openFabMenu`/`closeFabMenu` (clase `is-open`), `renderFab` (toggle con `aria-expanded`, pastillas del abanico con `--fx`/`--fy`/`--i` inline; tres estados: preview `+` gris del tema (iteración 4, antes teal), ficha no visto clase `.item-fab--added` **verde teal** (iteración 4, antes azul acero), ficha visto clase `.item-fab--seen` con el `span.item-fab__count` — número de visionados, cap `99+` — en películas vistas más de una vez; `aria-label` del toggle por estado), `runFabAction` (preview: `addFromPreview`/`addSeenFromPreview`/`addAndRateFromPreview`; ficha: `quickMarkMovie`/`quickMarkTvComplete`/`promptItemRating` + `remove`/`unwatch` — `scheduleDeletion`+`goBack` y `quickUnwatchMovie`/`quickUnwatchTv` (iteración 4); repinta con `renderFicha(item, true)` y devuelve el foco al toggle del FAB nuevo), helpers nuevos de preview `addSeenFromPreview` (marcar añade vía `handleAddSeen` con target local) y `addAndRateFromPreview` (valorar añade vía `handleAdd`/`#btn-preview-add` y encadena `promptItemRating`), `refreshAfterAdd()` ahora devuelve el ítem, candado `previewAddInFlight` compartido con `#btn-preview-add` (mantenido hasta `refreshAfterAdd`) y con los flujos nuevos, cierre del menú con Escape (`handleEscape`), clic fuera y `is-open`; **eliminado** el registro de `setItemPageBackHandler` (hook muerto, iteración 4) |
 | `js/quick-actions.js` | **Modificado**: `quickMarkMovie` exportado y con mutación en memoria del ítem (patrón `persist()` del modal, comentario issue #298); nuevo export `quickMarkTvComplete(item, ctx)` (serie completa: guardas de standby/abandonado y sin `nextEpisode`, `markAllSeasonsWatched` + `computeProgress`, confirmación de temporadas no estrenadas excluyendo series manuales, payload con `awaitingRelease: false`, mutación en memoria y deshacer que restaura el progreso previo); nuevo export `promptItemRating(item, ctx)` (valora sin marcar vía `maybeQuickItemRating`); **iteración 4**: nuevos exports `quickUnwatchMovie(item, ctx)` y `quickUnwatchTv(item, ctx)` (quitan la última visualización — último episodio por fecha, desempate temporada/episodio — con `removeWatch`/`setEpisodeDate(..., null)` + `computeProgress`, persisten y mutan en memoria con toast «última visualización quitada») |
 | `css/styles.css` | **Modificado**: sección del FAB reescrita para el abanico circular (y nuevas variables `--steel`/`--steel-dark`/`--ochre-spine-hover`/`--fab-action-shadow` en `:root` y familias clara/blanca): `.item-fab` (fixed, `right: max(1.25rem, calc(50vw - 360px + 1.25rem))` anclado a la columna de 720 px, `z-index: 40`), `.item-fab__toggle` (base: **gris `--fab-idle`** `#57544d`/hover `#45423c` — iteración 4, antes teal; `focus-visible` con outline paper/ink según familia), `.item-fab--seen .item-fab__toggle` (ocre `--ochre-spine`/`--ink`, hover `--ochre-spine-hover`/`--paper` en la familia oscura; claro/blanco puro `--ochre-spine-dark`; negro puro `--ochre-spine-dark` + `--white`), `.item-fab--added .item-fab__toggle` (**verde teal `--teal-reel`**/`--paper`, hover `--teal-reel-dark` — iteración 4, `--steel`/`--steel-dark` eliminados), `.item-fab__count` (con `[data-theme="light"]` a negro puro y hover a `--paper`), negro puro: hover del toggle teal con `--white` (`:not` excluye `--added`), `.item-fab__menu` (absoluto `inset: 0`, `pointer-events: none` — ya no es superficie visible), `.item-fab__action` (pastillas posicionadas con `--fx`/`--fy` vía `translate`, `width: max-content` para que el shrink-to-fit no las encoja a una letra por línea, `visibility: hidden`/`opacity: 0`/`scale(0.4)` en reposo, despliegue con `.item-fab.is-open` y `transition-delay: calc(var(--i, 0) * 0.06s)`, borde 999px, `overflow-wrap: anywhere`, `max-width: min(11.5rem, calc(100vw - 3.5rem))`, `--paper`/`--ink`, sombra `--fab-action-shadow` — doble capa por familia, iteración 3); negro puro (selector agrupado): `.item-fab__action` con `--ink-raised`/`--paper`/`--paper-alpha-20`, hover con `--paper-alpha-14` y borde reforzado a `--paper-alpha-35` en la pastilla; **iteración 4**: nuevas variables `--fab-idle`/`--fab-idle-dark` en `:root` (dark), `[data-theme="black"]` (`#2e2e2e`/`#222222`), `[data-theme="light"]` (`#d8d3c8`/`#c6c0b2`) y `[data-theme="white"]` (`#e4e0d6`/`#d4cfc2`) — patrón de selectores agrupados, y override del icono base a `--ink` en las familias claras |
 | `js/ui.js` | **Modificado** (iteración 4): eliminados el botón `#btn-delete-item` y su wiring de `openMovieModal` y `openTvModal`, y `onDelete` de la desestructuración de ambos (películas/series); los modales de libro y videojuego conservan su botón «Eliminar» |
 | `js/modal-handlers.js` | **Modificado** (iteración 4): eliminados `onDelete` de los callbacks de `openMovieItem`/`openTvItem` y el hook muerto `setItemPageBackHandler`/`goBackFromItemPage`/`itemPageBackHandler`; `confirmDelete` se conserva para libros/videojuegos |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` (iteración 2), `20261012` (iteración 3) y `20261013` (iteración 4) |
-| `index.html` | **Modificado**: refs `?v=` de `css/styles.css`, `ocio/ocio.css` y `js/app.js` al bump vigente (`20261011`/`20261012`/`20261013`) |
-| `service-worker.js` | **Modificado**: bump PWA a `20261011`/`20261012`/`20261013` en `STATIC_ASSETS` |
-| `docs/manual-de-usuario.md` | **Modificado**: §12.1 «El botón flotante de acciones (películas y series)» — menú en **abanico** alrededor del botón, tres acciones en la vista previa (la de «Marcar como vista» y «Valorar» añaden el título primero), dos o tres en la ficha con la **opción inversa** («Quitar de añadidos» si no está visto, «Quitar última visualización» si lo está — iteración 4), serie completa con confirmación de no estrenadas, tres estados visuales (+ **gris del tema** no añadido, + **verde** añadido sin ver, ✓ dorado visto con número de visionados si >1), sombreado de las opciones y cierre con Esc/clic fuera; **iteración 4**: adaptadas §4.7 (series), la ficha de película/serie y §14.3 (la retirada del botón «Eliminar» del final de la ficha, borrado vía FAB con deshacer), y §12.1-colores |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` (iteración 2), `20261012` (iteración 3), `20261013` (iteración 4) y `20261014` (iteración 5) |
+| `index.html` | **Modificado**: refs `?v=` de `css/styles.css`, `ocio/ocio.css` y `js/app.js` al bump vigente (`20261011`/`20261012`/`20261013`/`20261014`) |
+| `service-worker.js` | **Modificado**: bump PWA a `20261011`/`20261012`/`20261013`/`20261014` en `STATIC_ASSETS` |
+| `docs/manual-de-usuario.md` | **Modificado**: §12.1 «El botón flotante de acciones (películas y series)» — menú en **abanico** alrededor del botón, tres acciones en la vista previa (la de «Marcar como vista» y «Valorar» añaden el título primero), dos o tres en la ficha con la **opción inversa** («Quitar de añadidos» si no está visto, «Quitar última visualización» si lo está — iteración 4), serie completa con confirmación de no estrenadas, tres estados visuales (+ **gris del tema** no añadido, + **verde** añadido sin ver, ✓ dorado visto con número de visionados si >1), sombreado de las opciones y cierre con Esc/clic fuera; **iteración 4**: adaptadas §4.7 (series), la ficha de película/serie y §14.3 (la retirada del botón «Eliminar» del final de la ficha, borrado vía FAB con deshacer), y §12.1-colores; **iteración 5**: §12.1 con el **halo de difuminado** detrás del abanico |
 | `docs/adr-106-boton-flotante-de-acciones.md` | **Nuevo**: este documento |
 
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
