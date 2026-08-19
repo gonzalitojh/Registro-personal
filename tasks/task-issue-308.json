@@ -1,7 +1,7 @@
 {
   "title": "Lista completa de reparto y producción",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nNo se está mostrando la lista completa de reparto y producción, al menos en las series, se muestra una versión reducida.",
-  "status": "implemented",
+  "status": "validated",
   "acceptance criteria": [
     "Se muestra la lista completa de reparto y producción en las fichas/series (no una versión reducida).",
     "El cambio se realiza sobre una rama nueva creada desde `feat/issue-201`.",
@@ -31,6 +31,13 @@
     "docs/adr-110-elenco-completo-series.md"
   ],
   "validation": {
-    "preliminary": "node --check OK (api-movies, ui, cast-modal, item-page, modal-handlers); validación en vivo TMDB: GoT 587 cast/348 crew, Mandalorian 159 cast/169 crew (antes version reducida), multi-personaje OK, crew sin order → 999, created_by intacto, película Matrix 37 cast sin regresión"
+    "qa": "APROBADO (qa-reviewer): diff solo 7 archivos, contrato {id,name,character|job,department,profileUrl,order} intacto para ui.js/cast-modal.js, edge cases cubiertos (sin name, sin order, roles/jobs vacíos, legacy strings), responsividad OK (overflow-wrap en tarjetas, scroll solo .cast-crew__scroll), PWA 11 refs 20261002 sin colisión, manual coherente, ADR-110 formato OK, escapeHtml sobre datos TMDB",
+    "qa_hallazgos": [
+      "BAJA (corregido): manual §12 matiz «en las series» para puestos múltiples en el carrusel (en películas la misma persona con varios puestos sale en tarjetas separadas)",
+      "Inform.: etiquetas issue (status in-progress → needs-review al publicar; PR contra feat/issue-201 sin keyword)",
+      "Inform.: redacción opcional ADR-110 (cita TMDB parentética)"
+    ],
+    "live_tmdb": "GoT(1399) cast=587 crew=348; Mandalorian(82856) cast=159 crew=169; multi-personaje «Khal Drogo, Karl Drogo»; crew sin order → 999; created_by intacto; Matrix(603) cast=37 sin regresión",
+    "preliminary": "node --check OK (api-movies, ui, cast-modal, item-page, modal-handlers)"
   }
 }

@@ -1070,8 +1070,8 @@ tipo, verás:
   interpreta varios personajes, se muestran juntos, p. ej. «Gregor
   Clegane, Dongo»). Cada persona tiene su tarjeta con **foto**,
   **nombre** y su **personaje** (actores) o su **puesto** (producción;
-  si una persona tiene varios puestos, también se muestran juntos,
-  p. ej. «Director, Guionista»). Estos
+  en las series, si una persona tiene varios puestos también se
+  muestran juntos, p. ej. «Director, Guionista»). Estos
   carruseles: **arrastra con el dedo** (móvil o tablet) y el carrusel se
   desliza con inercia nativa; con el **trackpad** se desliza con un
   frenado suave y progresivo; con la **rueda del ratón en PC**, cada toque
