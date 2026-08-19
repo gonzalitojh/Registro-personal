@@ -12,6 +12,8 @@
 // app.js (para decidir qué guardar).
 // =============================================================
 
+import { todayISO } from "./dates.js";
+
 // Fechas de visionado de una entrada ya normalizada: si la entrada
 // (issue #310) trae el array `dates` se usa tal cual; si no (datos
 // guardados antes de la issue #310), se deriva de la última fecha:
@@ -121,6 +123,27 @@ export function setEpisodeDate(watched, seasonNumber, episodeNumber, dateOrNull)
   return { ...(watched || {}), [key]: seasonMap };
 }
 
+// Quita la ÚLTIMA visualización de una entrada de episodio ya
+// normalizada (feedback #310): si se ha visto más de una vez devuelve
+// la entrada decrementada (times-1, sin la fecha más reciente de
+// `dates`, conservando valoración y visiones previas); si solo se
+// había visto una vez devuelve null (desmarcar). Las entradas legacy
+// (solo `date` + `times`) conservan su fecha representativa.
+// Compartido por removeLastEpisodeViewing (episodio suelto) y
+// setSeasonWatched («Desmarcar todo»: una quita por episodio).
+function lastViewingRemovedEntry(existing) {
+  const times = existing.times || 1;
+  if (times <= 1) return null;
+  const dates = entryDates(existing);
+  const newDates = dates.length > 1 ? dates.slice(0, -1) : dates;
+  return {
+    date: newDates[newDates.length - 1] ?? existing.date,
+    rating: existing.rating ?? null,
+    times: times - 1,
+    dates: newDates,
+  };
+}
+
 // Elimina la ÚLTIMA visualización de un episodio (feedback issue #310):
 // - si se ha visto más de una vez, el episodio SIGUE marcado: se
 //   descuenta el contador y se quita la fecha más reciente de `dates`
@@ -136,19 +159,9 @@ export function removeLastEpisodeViewing(watched, seasonNumber, episodeNumber) {
   const epKey = String(episodeNumber);
   const existing = normalizeEntry(seasonMap[epKey]);
   if (!existing || !existing.date) return { ...(watched || {}), [key]: seasonMap };
-  const times = existing.times || 1;
-  if (times <= 1) {
-    delete seasonMap[epKey];
-    return { ...(watched || {}), [key]: seasonMap };
-  }
-  const dates = entryDates(existing);
-  const newDates = dates.length > 1 ? dates.slice(0, -1) : dates;
-  seasonMap[epKey] = {
-    date: newDates[newDates.length - 1] ?? existing.date,
-    rating: existing.rating ?? null,
-    times: times - 1,
-    dates: newDates,
-  };
+  const next = lastViewingRemovedEntry(existing);
+  if (next) seasonMap[epKey] = next;
+  else delete seasonMap[epKey];
   return { ...(watched || {}), [key]: seasonMap };
 }
 
@@ -187,16 +200,24 @@ export function setEpisodeRating(watched, seasonNumber, episodeNumber, rating) {
   return { ...(watched || {}), [key]: seasonMap };
 }
 
+// «Marcar todo» / «Desmarcar todo» de temporada (feedback #310,
+// iteración 2): la MISMA semántica que el botón de marcar un episodio
+// individual, aplicada a cada episodio de la temporada:
+// - «Marcar todo» AÑADE una visualización a cada episodio: los ya
+//   vistos suman +1 al contador y registran la fecha (equivale a
+//   volver a verlos); los no vistos quedan con times=1.
+// - «Desmarcar todo» QUITA la última visualización de cada episodio
+//   (los vistos una sola vez se desmarcan; los vistos varias veces
+//   siguen marcados con el contador decrementado y la última fecha
+//   eliminada — antes se vaciaba la temporada entera, perdiéndolo
+//   todo).
 export function setSeasonWatched(watched, seasonNumber, episodeCount, allWatched, date) {
   const key = String(seasonNumber);
   const previous = (watched && watched[key]) || {};
   const seasonMap = {};
-  if (allWatched) {
-    for (let ep = 1; ep <= episodeCount; ep++) {
-      const existing = normalizeEntry(previous[String(ep)]);
-      // Episodio ya visto: «Marcar todo» equivale a volver a verlo —
-      // suma +1 al contador y registra la fecha de hoy (issue #310).
-      // Antes solo se movía `date` a hoy sin tocar `times`.
+  for (let ep = 1; ep <= episodeCount; ep++) {
+    const existing = normalizeEntry(previous[String(ep)]);
+    if (allWatched) {
       seasonMap[String(ep)] = existing
         ? {
             date,
@@ -205,6 +226,9 @@ export function setSeasonWatched(watched, seasonNumber, episodeCount, allWatched
             dates: [...entryDates(existing), date],
           }
         : { date, rating: null, times: 1, dates: [date] };
+    } else if (existing && existing.date) {
+      const next = lastViewingRemovedEntry(existing);
+      if (next) seasonMap[String(ep)] = next;
     }
   }
   return { ...(watched || {}), [key]: seasonMap };
@@ -223,30 +247,55 @@ export function markAllSeasonsWatched(watched, seasonsMeta, date) {
 // serie lista para volver a verse desde el principio SIN desmarcar los
 // episodios (issue #310): `watched` se conserva tal cual (fechas,
 // valoraciones y nº de veces por episodio), con el flag `rewatching`
-// marcando el nuevo ciclo. currentTimes = veces que se ha visto la
-// serie hasta ahora (para calcular minTimes en isRewatchComplete).
+// marcando el nuevo ciclo. timesCompleted = veces que se ha visto la
+// serie hasta ahora. Iteración 2 (feedback #310): se persiste también
+// `rewatchStartedAt` (fecha de inicio del ciclo): la completitud del
+// rewatch se decide por fechas de visionado >= rewatchStartedAt, y
+// timesCompleted se eleva al máximo entre el contador acumulado y las
+// veces registradas por episodio para que los datos legacy (serie
+// vista varias veces antes de #310 con times=2 y sin contador) no
+// hagan que un ciclo nuevo se complete sin volver a ver nada.
 export function startRewatch(item) {
   const history = [...(item.history || [])];
   if (item.firstWatchedAt || item.lastWatchedAt) {
     history.push({ startedAt: item.firstWatchedAt, finishedAt: item.lastWatchedAt });
   }
+  let maxEpisodeTimes = 0;
+  for (const seasonMap of Object.values(item.watched || {})) {
+    if (!seasonMap || typeof seasonMap !== "object") continue;
+    for (const raw of Object.values(seasonMap)) {
+      const entry = normalizeEntry(raw);
+      maxEpisodeTimes = Math.max(maxEpisodeTimes, Number(entry?.times) || 1);
+    }
+  }
+  const completedTimes =
+    (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
   return {
     watched: item.watched || {},
     firstWatchedAt: null,
     lastWatchedAt: null,
     status: "pendiente",
     nextEpisode: { season: 1, episode: 1 },
-    timesCompleted: (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0),
+    timesCompleted: Math.max(completedTimes, maxEpisodeTimes),
     history,
     rewatching: true,
+    rewatchStartedAt: todayISO(),
   };
 }
 
-// ¿El rewatch en curso está completo? (issue #310): todos los episodios
-// de seasonsMeta deben estar marcados con times >= minTimes (la 1ª vez
-// que se completa un rewatch, timesCompleted=1 → minTimes=2: todos los
-// episodios vueltos a ver al menos una vez).
-export function isRewatchComplete(seasonsMeta, watched, minTimes) {
+// ¿El rewatch en curso está completo? (issue #310): todos los
+// episodios de seasonsMeta deben estar marcados con times >= minTimes
+// (la 1ª vez que se completa un rewatch, timesCompleted=1 → minTimes=2:
+// todos los episodios vueltos a ver al menos una vez). Desde la
+// iteración 2 (feedback #310) con `startedAt` (rewatchStartedAt) la
+// comprobación es por FECHAS: cada episodio debe tener ALGUNA fecha
+// de visionado >= al inicio del ciclo («cuando se han visto todos los
+// episodios de una serie, se da por terminada esta visualización»),
+// lo que es robusto frente a datos legacy con contadores inflados y a
+// visionados heterogéneos previos al ciclo. Sin startedAt (ciclos en
+// vuelo iniciados por una versión anterior) se cae al criterio por
+// contador con minTimes.
+export function isRewatchComplete(seasonsMeta, watched, startedAt = null, minTimes = 1) {
   let anySeason = false;
   for (const s of seasonsMeta || []) {
     if (!s.episodeCount) continue;
@@ -254,15 +303,20 @@ export function isRewatchComplete(seasonsMeta, watched, minTimes) {
     const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
     for (let ep = 1; ep <= s.episodeCount; ep++) {
       const entry = normalizeEntry(seasonWatched[String(ep)]);
-      if (!entry || !entry.date || (entry.times || 1) < minTimes) return false;
+      if (!entry || !entry.date) return false;
+      if (startedAt) {
+        if (!entryDates(entry).some((d) => d >= startedAt)) return false;
+      } else if ((entry.times || 1) < minTimes) {
+        return false;
+      }
     }
   }
   return anySeason;
 }
 
 // Estado a persistir cuando hay un rewatch en curso (issue #310):
-// - completo (todos los episodios con times >= minTimes): el rewatch
-//   termina → status "completado" y rewatching false.
+// - completo (todos los episodios vistos en el ciclo, iteración 2): el
+//   rewatch termina → status "completado" y rewatching false.
 // - en curso: status "pendiente" y próximo episodio T1E1 aunque el
 //   `watched` conservado esté completo (computeProgress no lo sabría).
 // Sin rewatch: delega en computeProgress (comportamiento previo).
@@ -270,7 +324,14 @@ export function progressWithRewatch(seasonsMeta, item, newWatched = null) {
   const base = computeProgress(seasonsMeta, newWatched ?? item.watched);
   if (!item.rewatching) return base;
   const minTimes = (item.timesCompleted || 0) + 1;
-  if (isRewatchComplete(seasonsMeta, newWatched ?? item.watched, minTimes)) {
+  if (
+    isRewatchComplete(
+      seasonsMeta,
+      newWatched ?? item.watched,
+      item.rewatchStartedAt || null,
+      minTimes
+    )
+  ) {
     return { ...base, status: "completado", rewatching: false };
   }
   return {
