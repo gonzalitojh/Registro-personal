@@ -408,10 +408,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: var(--ink);
 }
 
-/* Media de valoración de episodios junto al picker de la serie (issue #80) */
+/* Media de valoración de episodios (issue #80): desde la issue #300 es
+   una línea informativa junto a las temporadas (la valoración general
+   se hace con el botón flotante y el picker ya no está en la ficha) */
 .episode-average {
   display: block;
-  margin-top: 0.4rem;
+  margin: 0.6rem 0 1rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--ink-soft);
@@ -742,6 +744,20 @@ button, a, input, select, textarea { touch-action: manipulation; }
   margin: 0.4rem 0 0;
   padding-left: 1.1rem;
   font-family: var(--font-mono);
+}
+
+/* Visionados de película ocultos por defecto (issue #300): el
+   historial se despliega desde el summary y ya no hay botón de
+   añadir (marcar/añadir visionado viven en el botón flotante,
+   issue #298). Mismo patrón que .rewatch-history de las series. */
+.watch-log-details {
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.watch-log-details summary {
+  cursor: pointer;
+  color: var(--ink);
 }
 
 
@@ -1389,6 +1405,18 @@ button, a, input, select, textarea { touch-action: manipulation; }
   margin-bottom: 0.95rem;
 }
 
+/* Notas del ítem en la ventana de valoración (issue #300): el campo
+   vive aquí porque la ficha de película/serie ya no tiene sección de
+   notas. Reutiliza .field-group (borde, fondo y 4 temas incluidos);
+   el margen inferior lo pone .rating-modal__actions. */
+.rating-modal__notes {
+  margin-bottom: 0;
+}
+
+.rating-modal__notes textarea {
+  min-height: 56px;
+}
+
 /* Picker compacto para la ventana pequeña */
 .rating-picker--small button {
   width: 30px;
@@ -1950,6 +1978,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .season-toggle,
 [data-theme="black"] .episode-average strong,
 [data-theme="black"] .rewatch-history summary,
+[data-theme="black"] .watch-log-details summary,
 [data-theme="black"] .desc-picker__text,
 [data-theme="black"] .extra-info__line,
 [data-theme="black"] .extra-info__loading,

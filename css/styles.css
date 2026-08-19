@@ -30,6 +30,24 @@
   --stamp-dark: #7e2c22;
   --games: #7a5a9e;
   --games-dark: #5d4780;
+  /* Gris «no añadido» del botón flotante (issue #298, iteración 4):
+     el estado sin registrar es coherente con el tema — gris OSCURO
+     en la familia oscura, gris CLARO en la familia clara — en lugar
+     del anterior + verde (que ahora identifica al estado «añadido»,
+     ver .item-fab--added). Icono paper sobre el gris oscuro de la
+     familia oscura: #57544d ≈ 6.3:1 (AA); hover #45423c ≈ 8.35:1.
+     En la familia clara el icono pasa a ink (overrides al final de
+     la sección .item-fab). El negro puro y el blanco puro usan sus
+     propias variantes (ver bloques de tema). */
+  --fab-idle: #57544d;
+  --fab-idle-dark: #45423c;
+  /* Hover del FAB visto (issue #298, iteración 3): el ocre oscuro
+     global (#8f6522) con texto paper da 4.32:1, justo por debajo de
+     AA texto 4.5:1 (el contador de visionados es texto). Este ocre
+     más oscuro (#74501d ≈ 6:1 con paper) se usa solo en el hover
+     del botón flotante visto; el resto de la app sigue con
+     --ochre-spine-dark. */
+  --ochre-spine-hover: #74501d;
 
   /* Neutros */
   --white: #ffffff;
@@ -76,6 +94,12 @@
   --radius: 3px;
   --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.35);
   --shadow-pop: 0 20px 45px rgba(0, 0, 0, 0.5);
+  /* Sombra de las pastillas del botón flotante (issue #298,
+     iteración 3): doble capa (sombra de contacto + difusa), más
+     marcada que --shadow-pop, para que las opciones desplegadas se
+     distingan del fondo y del contenido de la página. En negro puro
+     la separación la da el borde (las sombras negras no se ven). */
+  --fab-action-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* =========================================================
@@ -129,6 +153,13 @@
   --ochre-spine-dark: #c99a4e;
   --stamp-dark: #cf6655;
   --games-dark: #9a7bc4;
+
+  /* FAB «no añadido» (issue #298, iteración 4): el gris del modo
+     oscuro (#57544d) sobre fondo negro se pierde, así que en negro
+     puro se usa un gris neutro oscuro; el icono paper conserva el
+     contraste AA (11.3:1 / hover 13.3:1). */
+  --fab-idle: #2e2e2e;
+  --fab-idle-dark: #222222;
 }
 
 /* =========================================================
@@ -158,6 +189,12 @@
   --stamp-dark: #8c3025;
   --games: #7a5a9e;
   --games-dark: #5d4780;
+
+  /* FAB «no añadido» (issue #298, iteración 4): gris CLARO en la
+     familia clara, con icono ink (override al final de la sección
+     .item-fab): base #d8d3c8 ≈ 9.8:1 e hover #c6c0b2 ≈ 8.1:1. */
+  --fab-idle: #d8d3c8;
+  --fab-idle-dark: #c6c0b2;
 
   --white: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.25);
@@ -197,6 +234,9 @@
 
   --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.12);
+  /* Pastillas del botón flotante: sombra propia de la familia clara,
+     más marcada que --shadow-pop (los fondos claros no separan) */
+  --fab-action-shadow: 0 2px 8px rgba(44, 40, 34, 0.18), 0 12px 28px rgba(44, 40, 34, 0.22);
 }
 
 /* =========================================================
@@ -218,6 +258,12 @@
   --paper: #ffffff;
   --paper-dim: #ffffff;
   --paper-line: #d9cfc0;
+
+  /* FAB «no añadido» (issue #298, iteración 4): como en claro, gris
+     claro con icono ink; sobre blanco puro el gris base #e4e0d6 da
+     15.9:1 con el texto negro (hover #d4cfc2 ≈ 13.5:1). */
+  --fab-idle: #e4e0d6;
+  --fab-idle-dark: #d4cfc2;
 
   --backdrop: rgba(0, 0, 0, 0.25);
 
@@ -244,6 +290,10 @@
 
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-pop: 0 16px 44px rgba(0, 0, 0, 0.18);
+  /* Pastillas del botón flotante: la sombra es la única separación
+     de las superficies blancas sobre blanco puro (heredan la de la
+     familia clara; aquí se refuerza para que el menú destaque) */
+  --fab-action-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 /* =========================================================
@@ -380,6 +430,7 @@
 [data-theme="black"] .tab.is-active,
 [data-theme="black"] .modal__card,
 [data-theme="black"] .item-view__card,
+[data-theme="black"] .item-fab__action,
 [data-theme="black"] .modal__close,
 [data-theme="black"] .toast,
 [data-theme="black"] .notif-dropdown,
@@ -402,6 +453,22 @@
 /* Hover del botón primario: tinte claro sobre la superficie oscura */
 [data-theme="black"] .btn--primary:hover {
   background: var(--paper-alpha-14);
+}
+
+/* Hover de las acciones del botón flotante (issue #298): las
+   pastillas ya son oscuras en negro puro (selector agrupado);
+   el hover usa el mismo tinte claro que el resto de superficies. */
+[data-theme="black"] .item-fab__action:hover {
+  background: var(--paper-alpha-14);
+}
+
+/* Borde de las pastillas del botón flotante en negro puro
+   (iteración 3 de la issue #298): las sombras negras no separan
+   sobre fondo negro, así que se refuerza el borde que les da el
+   selector agrupado para que las opciones se distingan del fondo
+   y del contenido de la página. */
+[data-theme="black"] .item-fab__action {
+  border-color: var(--paper-alpha-35);
 }
 
 /* Icono de la pestaña activa: seguía a --ink (ahora #000, invisible) */
@@ -1856,7 +1923,8 @@ body.is-back-to-top-visible .back-to-top {
   background: var(--paper-alpha-20);
 }
 [data-theme="dark"] .item-view .episode-average strong,
-[data-theme="dark"] .item-view .rewatch-history summary {
+[data-theme="dark"] .item-view .rewatch-history summary,
+[data-theme="dark"] .item-view .watch-log-details summary {
   color: var(--paper);
 }
 /* Botones transparentes sobre el fondo oscuro de la página (antes
@@ -1881,6 +1949,277 @@ body.is-back-to-top-visible .back-to-top {
    al desplazar (auto-hide-nav no trata esta vista). */
 .item-view .back-to-top {
   display: none;
+}
+
+/* =========================================================
+   Botón flotante de acciones de la ficha/preview (issue #298)
+   Abajo a la derecha (anclado a la columna de contenido, máx.
+   720px). Al pulsarlo despliega las acciones A SU ALREDEDOR en
+   forma de abanico circular (iteración issue #298), con una
+   animación escalonada que las hace salir «desde el botón».
+   Acciones según el contexto: ficha → opción inversa («Quitar de
+   añadidos» o «Quitar última visualización») + «Marcar como vista» +
+   «Valorar»; preview → «Añadir» + «Marcar como vista» +
+   «Valorar». El toggle se ve DISTINTO según el estado (iteraciones
+   3 y 4 de la issue #298), con tres estados diferenciados:
+   preview/no añadido → + gris del tema (--fab-idle, clase base);
+   ficha añadido y no visto → + verde (--teal-reel, clase
+   .item-fab--added); ficha visto → ✓ ocre (clase
+   .item-fab--seen), con el NÚMERO de visionados
+   (.item-fab__count, clase en películas vistas más de una vez)
+   en lugar del ✓. En series solo cuentan estos tres estados
+   (completada = vista). z-index 40: sobre el contenido, por
+   debajo de la cabecera (46), de las pestañas (45) y de los
+   modales (≥50) para que nunca tape las ventanas.
+    Nota de animación: el menú usa la clase .is-open en .item-fab
+    (no .hidden) para que las transiciones de apertura/cierre
+    funcionen; con prefers-reduced-motion las transiciones se
+    anulan en bloque (regla global) y el abanico aparece/desaparece
+    al instante.
+    Difuminado: NINGUNO (iteración 7 de la issue #298): el usuario
+    pidió eliminar el difuminado del fondo («no me gusta, creo que
+    es mejor sin él»); las opciones se distinguen por su sombreado
+    --fab-action-shadow y su superficie --paper/--ink.
+    ========================================================= */
+.item-fab {
+  position: fixed;
+  /* En pantallas anchas se ancla al borde derecho de la columna
+     (50vw - 360px = mitad del hueco de 720px centrada) en lugar
+     de al borde del viewport, para no quedar lejos del contenido. */
+  right: max(1.25rem, calc(50vw - 360px + 1.25rem));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  z-index: 40;
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+/* Difuminado: ELIMINADO (issue #298, iteración 7): el usuario pidió
+   quitar el difuminado del fondo («no me gusta, creo que es mejor sin
+   él»). Se eliminan el halo circular de 26 rem (iteración 5) y el
+   anillo por opción con backdrop-filter blur(4px) + tinte --fab-halo
+   (iteración 6) — regla .item-fab__action::before y sus variables
+   --fab-halo de cada familia. Las opciones siguen diferenciándose del
+   fondo por su sombreado (--fab-action-shadow) y por su superficie
+   --paper/--ink, sin desenfocar el contenido de la página. */
+
+.item-fab__toggle {
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--fab-idle);
+  color: var(--paper);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.item-fab__toggle:hover {
+  background: var(--fab-idle-dark);
+}
+/* Foco del FAB (iteración 4): el outline del toggle usa el dúo
+   icono/fondo del estado base — paper en la familia oscura, ink en
+   la clara — para que el anillo sea visible sobre el gris del botón
+   y sobre el fondo de la página (AA: oscuro/negro ≈ 5:1–17:1;
+   claro/blanco ≈ 4.4:1–15.9:1). */
+.item-fab__toggle:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+[data-theme="light"] .item-fab__toggle:focus-visible,
+[data-theme="white"] .item-fab__toggle:focus-visible {
+  outline-color: var(--ink);
+}
+.item-fab__toggle svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* Ítem ya visto: ocre + check (mismo dúo que .btn--accent-books,
+   contraste AA sobre el fondo de la página en los 4 temas) */
+.item-fab--seen .item-fab__toggle {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+/* Hover del FAB visto en la familia oscura (por defecto): paper
+   sobre --ochre-spine-dark #8f6522 se queda en 4.32:1, justo por
+   debajo de AA texto 4.5:1 (el CONTADOR es texto): se usa un ocre
+   más oscuro (--ochre-spine-hover #74501d ≈ 6:1 con paper). Las
+   familias clara y blanco puro restablecen --ochre-spine-dark
+   (#fff → 5.2:1) y el negro puro usa su variante clara con texto
+   --white (7.5:1), ver más abajo. */
+.item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-hover);
+  color: var(--paper);
+}
+
+/* Hover del FAB visto en la familia clara y blanco puro: el ocre
+   oscuro clásico (#8f6522) + papel (#fff) supera 5:1. */
+[data-theme="light"] .item-fab--seen .item-fab__toggle:hover,
+[data-theme="white"] .item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+}
+
+/* Hover del FAB visto en negro puro: --ochre-spine-dark es la
+   variante CLARA #c99a4e; con texto paper daría 2.13:1 (ni siquiera
+   AA gráficos), así que el texto pasa a --white (#0f0f0f, casi
+   negro): 7.5:1. */
+[data-theme="black"] .item-fab--seen .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--white);
+}
+
+/* Hover del FAB añadido (verde) en negro puro: --teal-reel-dark
+   #4f9c8e con texto paper = 2.7:1 (falla AA gráficos); con --white
+   ≈ 5.9:1. El estado base (gris del tema) ya supera 5:1 con paper
+   (13.3:1) y no necesita override. */
+[data-theme="black"] .item-fab--added .item-fab__toggle:hover {
+  color: var(--white);
+}
+
+/* Familia clara (claro + blanco puro): el estado base del FAB es gris
+   CLARO (--fab-idle #d8d3c8 / #e4e0d6), así que el icono pasa de
+   paper a ink para mantener AA (9.8:1 / 15.9:1; hover 8.1:1 / 13.5:1).
+   Los estados añadido (verde) y visto (ocre) conservan su dúo
+   paper/ink original (sus reglas específicas ganan por especificidad
+   a este selector agrupado). */
+[data-theme="light"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle,
+[data-theme="white"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle {
+  color: var(--ink);
+}
+
+/* Ítem añadido pero aún NO visto (iteración 4 de la issue #298): el
+   + pasa de azul acero a VERDE (--teal-reel, el mismo verde que antes
+   identificaba al estado «no añadido», que ahora es gris del tema).
+   El negro puro hereda estos colores (el toggle conserva su fondo de
+   acento oscuro, el icono paper 5.7:1 en reposo; el hover de la
+   variante clara se resuelve arriba con --white). Contraste: icono
+   paper sobre --teal-reel #2b6459 ≈ 5.7:1 en oscuro / 6.8:1 en claro
+   (AA gráficos); hover --teal-reel-dark #1c4a41 + icono paper
+   ≈ 8.3:1 (AA). */
+.item-fab--added .item-fab__toggle {
+  background: var(--teal-reel);
+  color: var(--paper);
+}
+.item-fab--added .item-fab__toggle:hover {
+  background: var(--teal-reel-dark);
+  color: var(--paper);
+}
+
+/* Nº de visionados (película vista más de una vez): sustituye al ✓
+   dentro del toggle ocre (iteración 3 de la issue #298). Tamaño
+   ajustado para que entren hasta dos dígitos en el círculo de
+   3.5rem; por encima de 99 se muestra «99+» (defensa en JS).
+   Contraste del contador (TEXTO, exige 4.5:1):
+   - oscuro (reposo): ink sobre ocre 5.5:1 ✓; (hover): paper sobre
+     --ochre-spine-hover 6:1 ✓.
+   - negro puro: hereda ink #000 / --white sobre las variantes
+     claras (6.3:1 / 7.5:1) ✓.
+   - claro: --ink #2c2822 sobre ocre = 4.39:1 ✗ → override a negro
+     puro (6.3:1); en hover el contador vuelve al paper del toggle
+     (5.2:1, regla específica al final).
+   - blanco puro: hereda ink #000 (6.3:1) y paper en hover (5.2:1) ✓. */
+.item-fab__count {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+[data-theme="light"] .item-fab__count {
+  color: #000000;
+}
+/* Hover en modo claro: el contador tiene color fijo #000; al pasar
+   el mouse el toggle pasa a ocre oscuro + texto paper, así que el
+   contador también debe volver al paper (5.2:1) para no quedarse
+   en 4.05:1. */
+[data-theme="light"] .item-fab--seen .item-fab__toggle:hover .item-fab__count {
+  color: var(--paper);
+}
+
+.item-fab__menu {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Cada acción se posiciona desde el CENTRO del botón (el menú
+   ocupa exactamente la caja de 3.5rem del FAB): left/top 50% la
+   coloca con su esquina en el centro y translate(-50%, -50%)
+   centra la pastilla; --fx/--fy (rem, calculados en JS con
+   fabArcPoint) la desplazan al punto del abanico. En reposo
+   (sin .is-open) las acciones quedan ocultas, colapsadas en el
+   centro y sin interacción (ni foco de teclado). Al abrir,
+   salen escalonadas (--i) hacia su ángulo con un rebote sutil. */
+.item-fab__action {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* Shrink-to-fit: sin width explícito, un elemento posicionado con
+     left:50% dentro del menú de 3.5rem se encoge al ancho disponible
+     (~28 px) y el texto envuelve a una letra por línea (pastillas
+     verticales con solapes). max-content da el ancho natural de la
+     etiqueta; max-width + overflow-wrap son la red de seguridad para
+     etiquetas largas en móvil (regla 2 de AGENTS.md). */
+  width: max-content;
+  max-width: min(11.5rem, calc(100vw - 3.5rem));
+  overflow-wrap: anywhere;
+  white-space: normal;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  /* Sombra propia (--fab-action-shadow, iteración 3 de la issue
+     #298): doble capa más marcada que --shadow-pop para que las
+     opciones se distingan del fondo y del contenido de la página. */
+  box-shadow: var(--fab-action-shadow);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6rem 0.95rem;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(calc(var(--fx, 0rem) - 50%), calc(var(--fy, 0rem) - 50%)) scale(0.4);
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.25),
+    opacity 0.2s ease,
+    visibility 0.2s;
+  transition-delay: 0s;
+}
+.item-fab.is-open .item-fab__action {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(calc(var(--fx, 0rem) - 50%), calc(var(--fy, 0rem) - 50%)) scale(1);
+  pointer-events: auto;
+  /* Escalonado de salida desde el centro: cada opción arranca
+     un poco después que la anterior (--i = índice en JS). La
+     visibilidad salta al INSTANTE (sin delay): es la que permite
+     enfocar la primera acción con teclado al abrir. */
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.25),
+    opacity 0.2s ease,
+    visibility 0s;
+  transition-delay: calc(var(--i, 0) * 0.06s), calc(var(--i, 0) * 0.06s), 0s;
+}
+.item-fab__action:hover {
+  background: var(--ink-alpha-10);
+}
+.item-fab__action:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+.item-fab__action svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  color: var(--ink-soft);
 }
 
 /* Swap ☰/⚙ → atrás en la cabecera (issue #285): la página de ítem

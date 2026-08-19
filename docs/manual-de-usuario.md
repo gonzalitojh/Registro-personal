@@ -300,11 +300,15 @@ reinicia la serie para que empieces de nuevo. Verás el aviso
 ### 4.6 Historial de visionados
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
-anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
+anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
+cada vez que la has visto.
 
-### 4.7 Eliminar
+### 4.7 Eliminar una serie
 
-En la ficha, **«Eliminar»** borra la serie. El borrado no es
+El botón flotante de la ficha ofrece **«Quitar de añadidos»** (o
+**«Quitar última visualización»** si la serie ya está completada, que
+desmarca su último episodio visto). «Quitar de añadidos» borra la serie.
+El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
 
@@ -346,7 +350,8 @@ Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 ### 5.4 Historial de visionados (revisionados)
 
 La ficha de la película se abre en una **página nueva**; usa el botón
-**←** de arriba para volver a tu lista. Dentro ves la lista de todas
+**←** de arriba para volver a tu lista. Los visionados están **ocultos
+por defecto**: despliega **«Visionados (N)»** y verás la lista de todas
 las veces que la has visto, con sus fechas. Puedes
 **editar la fecha** de cada visionado o
 **«Quitar»** uno del historial. En tu lista, si la has visto más de una vez,
@@ -1119,9 +1124,15 @@ tipo, verás:
   de arriba para volver a la ficha en la que estabas. Los títulos que ya
   tienes en tu registro se muestran con **«Ya añadido»** (botón
   deshabilitado).
-- **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
-  «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
-  **«Eliminar»** para borrar el título.
+- **Tu valoración y tus notas** se gestionan desde el **botón flotante**
+  (opción **«Valorar»**; la ventana que se despliega incluye las
+  estrellas y un campo de **notas**). Con la opción **«Quitar de
+  añadidos»** (o **«Quitar última visualización»** si ya la has visto)
+  puedes borrar el título: el borrado no es inmediato, tienes unos
+  segundos para pulsar **«Deshacer»** (ver [sección 14.3](#143-deshacer-un-borrado)).
+  En las películas, la lista de **visionados** aparece **oculta
+  por defecto**: despliega **«Visionados (N)»** para verla y poder
+  editar la fecha de cada visionado o quitarlo del historial.
 
 Si el título **aún no está en tu registro** (por ejemplo, lo abriste
 desde la búsqueda del catálogo, desde una tarjeta de saga o de
@@ -1131,18 +1142,76 @@ estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
 información ampliada, temporadas (series), saga y recomendaciones con
 sus botones **«Añadir»** — con el aviso **«Este título aún no está en tu
 registro»** y el botón **«Añadir»** principal. Tu valoración, tus notas,
-tu progreso y los botones **«Guardar»** y **«Eliminar»** solo aparecen
+tu progreso y las opciones del **botón flotante** (incluida «Quitar de
+añadidos») solo aparecen
 cuando el título ya está en tu registro: al añadirlo, la página pasa a
 la ficha completa al momento.
 
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
-En las series, junto a tu valoración general verás también la **media de
+En las series, junto a las temporadas verás también la **media de
 tus notas de episodios** (ver sección 13).
 
 En los videojuegos, la ficha incluye además el **historial de sesiones de
 juego** (más en [sección 7.4](#74-historial-de-sesiones)).
+
+### 12.1 El botón flotante de acciones (películas y series)
+
+En la página de una película o de una serie hay un **botón flotante**
+abajo a la derecha con las acciones rápidas. Al pulsarlo, las acciones
+**se despliegan alrededor del botón en abanico**, saliendo una a una
+con una pequeña animación, y se muestran las que puedas hacer en ese
+momento:
+
+- **«Añadir película» / «Añadir serie»**: solo aparece cuando el título
+  **aún no está en tu registro** (es decir, en la vista previa de un
+  título del catálogo, de una saga o de una recomendación). Al pulsarlo
+  el título se añade y la página pasa a la ficha completa al momento.
+- **«Marcar como vista»**: registra el visionado con la fecha de hoy y
+  abre la ventana de valoración (con **«Deshacer»** si te arrepientes).
+  En una **serie**, marcar como vista **completa la serie entera**:
+  deja vistos todos los episodios de todas las temporadas (si alguna
+  aún no está estrenada, la web te pregunta antes). En una película ya
+  vista, la opción cambia a **«Añadir otro visionado»**. Cuando el
+  título aún no está en tu registro (vista previa), **marcar como vista
+  lo añade a la vez**, en un solo paso, y después abre la valoración.
+- **«Valorar»**: abre la ventana de valoración **sin marcar nada**,
+  para poner o cambiar tus estrellas cuando quieras. La ventana incluye
+  además un campo de **notas** (tus impresiones sobre el título), que
+  se guarda junto a la valoración. En la vista previa
+  de un título aún no añadido, **«Valorar» lo añade al registro primero**
+  y abre la valoración después (así puedes dejarle las estrellas y las
+  notas desde el primer momento).
+
+El botón flotante **se ve diferente** según el estado, para que sepas
+de un vistazo en qué situación está el título:
+
+- **Icono + con fondo gris**: el título **aún no está en tu registro**
+  (vista previa del catálogo, de una saga o de una recomendación). El
+  gris se adapta al tema: gris claro en los modos claros y gris oscuro
+  en los oscuros.
+- **Icono + con fondo verde**: el título **ya está añadido pero no lo
+  has visto** (ficha). En las series también se usa este estado para
+  cualquier serie añadida que aún no esté completada.
+- **Icono ✓ con fondo dorado**: el título **ya está visto** (película
+  con al menos un visionado, o serie completada). Si una **película se
+  ha visto más de una vez**, en lugar del ✓ aparece el **número de
+  veces** que la has visto (2, 3, 4…).
+
+En la ficha, el abanico incluye la **opción inversa** según el estado:
+**«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
+registro, con **«Deshacer»** para cancelar) y **«Quitar última
+visualización»** si ya lo está (en películas, elimina la última vez que
+la viste; en series, desmarca el último episodio visto).
+
+En series ya completadas (o en pausa/abandonadas), la opción «Marcar
+como vista» no aparece, porque no tiene sentido; la ficha ofrece
+«Volver a verla desde el principio» para un nuevo visionado. Las
+opciones que se despliegan del botón **salen con un sombreado** para
+que se distingan del fondo y del contenido de la página. El abanico se
+despliega **sin que las opciones se tapen unas a otras**, y se cierra
+pulsando fuera, con **Esc** o volviendo a pulsar el botón.
 
 ## 13. Valoraciones con estrellas
 
@@ -1154,9 +1223,15 @@ Puedes valorar de **1 a 5 estrellas**, incluidas las **medias estrellas**
 - **Videojuegos**: al terminar una partida se abre la misma ventana.
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
-  que se guarda desde su ficha).
+  que se guarda desde su ficha con el **botón flotante**, opción
+  «Valorar»).
 
-En la ficha de una **serie**, debajo de la valoración general, se muestra
+Desde la **ficha de una película o serie**, la ventana de valoración se
+abre con el **botón flotante** (opción **«Valorar»**) e incluye también
+el campo de **notas**: puedes escribir (o cambiar) tus impresiones y
+guardarlas junto a las estrellas con **«Guardar valoración»**.
+
+En la ficha de una **serie**, junto a las temporadas se muestra
 la **media de tus valoraciones de episodios** (por ejemplo
 «Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
 vistos sin valorar no se tienen en cuenta (la valoración mínima de un
@@ -1206,8 +1281,9 @@ abras para retomarla.
 
 ### 14.3 Deshacer un borrado
 
-Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
-instante: aparece el aviso ««Título» se eliminará…» con un botón
+Cuando pulsas **«Eliminar»** en cualquier ficha (o **«Quitar de
+añadidos»** en el botón flotante de una película o serie), la web no
+borra al instante: aparece el aviso ««Título» se eliminará…» con un botón
 **«Deshacer»**. Tienes unos segundos para pulsarlo y cancelar. Si no
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)

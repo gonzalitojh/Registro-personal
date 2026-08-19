@@ -4,7 +4,7 @@
 // lógica de presentación de la lógica de estado general.
 // =============================================================
 
-import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
+import { removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
 import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
@@ -70,9 +70,15 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
       communityRating: item.communityRating ?? null,
       communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
-      onSave: async (rating) => {
-        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
+      // Notas del ítem (issue #300): el campo de notas vive en la
+      // ventana de valoración; sin notas previas se muestra vacío.
+      initialNotes: item.notes ?? "",
+      onSave: async (rating, notes) => {
+        const payload = { rating };
+        if (notes !== undefined) payload.notes = notes;
+        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, payload);
         item.rating = rating;
+        if (notes !== undefined) item.notes = notes;
       },
       onUndo: opts.onUndo,
       undoLabel: opts.undoLabel,
@@ -202,32 +208,8 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
   }
 
   ui.openMovieModal(item, {
-    onAddWatch: async (date) => {
-      const prevLog = item.watchLog;
-      const prevAwaitingRelease = item.awaitingRelease;
-      const prevStatus = item.status;
-      await persist(addWatch(item.watchLog, date));
-      // Deshacer (issue #136): restaura el watchLog y el status previos
-      // sin pasar por persist(), que fuerza awaitingRelease:false. El
-      // status se restaura LITERAL al capturado (no al recomputado del
-      // log) por si el usuario lo tenía en un estado manual.
-      await maybeOpenItemRatingWindow(item, ctx, "movie", {
-        onUndo: async () => {
-          await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
-            watchLog: prevLog,
-            status: prevStatus,
-            awaitingRelease: prevAwaitingRelease,
-          });
-          item.watchLog = prevLog;
-          item.status = prevStatus;
-          item.awaitingRelease = prevAwaitingRelease;
-        },
-      });
-    },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
-    onSaveMeta: saveMeta(item, "movie", ctx, target ? reopen : null),
-    onDelete: confirmDelete(item, "movie", ctx, target ? () => goBackFromItemPage() : null),
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
     // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
@@ -692,8 +674,6 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       return progressWithStatus(seasonsMeta, item);
     },
 
-    onSaveMeta: saveMeta(item, "tv", ctx, target ? reopen : null),
-    onDelete: confirmDelete(item, "tv", ctx, target ? () => goBackFromItemPage() : null),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
@@ -721,20 +701,6 @@ export function openItem(item, ctx) {
   else if (item.type === "movie") openMovieItem(item, ctx);
   else if (item.type === "game") openGameItem(item, ctx);
   else openBookItem(item, ctx);
-}
-
-// Hook de «volver a la pantalla previa» que registra item-page.js
-// (issue #285): lo usa confirmDelete en modo página para salir de la
-// ficha tras eliminar un ítem. Se inyecta para evitar una dependencia
-// circular (item-page.js importa de aquí openMovieItem/openTvItem).
-let itemPageBackHandler = null;
-
-export function setItemPageBackHandler(fn) {
-  itemPageBackHandler = fn;
-}
-
-function goBackFromItemPage() {
-  if (itemPageBackHandler) itemPageBackHandler();
 }
 
 export function setupModalCloseListeners() {
