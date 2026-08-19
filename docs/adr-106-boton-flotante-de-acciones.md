@@ -116,8 +116,7 @@ fondo/sombra; `pointer-events: none` y solo con `.is-open` (opacity
 transicionada, la `visibility` la hereda de la acción). En la revisión
 QA se detectó que con `background: var(--fab-halo)` el tinte velaba
 también el interior (icono a 1.23:1 en oscuro); se corrigió pasando el
-tinte al borde del pseudo. Implementado en los commits `bff3ab9` y
-`????????`.
+tinte al borde del pseudo. Implementado en los commits `bff3ab9` y `1d7d710`.
 
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
 
