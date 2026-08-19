@@ -7,7 +7,7 @@
 import { removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
-import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
+import { computeProgress, progressWithRewatch, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
@@ -148,6 +148,13 @@ function progressWithStatus(seasonsMeta, item) {
   const base = computeProgress(seasonsMeta, item.watched);
   if (item.status === "standby" || item.status === "abandonado") {
     return { ...base, status: item.status };
+  }
+  // Rewatch (issue #310): los episodios se conservan marcados, así que
+  // el progreso computado diría "completado"; durante el rewatch la
+  // ficha debe mostrar el próximo episodio T1E1 y no el banner de
+  // serie terminada.
+  if (item.rewatching) {
+    return { ...base, status: "pendiente", nextEpisode: { season: 1, episode: 1 } };
   }
   return base;
 }
@@ -536,18 +543,24 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
   }
 
   async function persistWatched(newWatched) {
-    const newProgress = computeProgress(seasonsMeta, newWatched);
-    // awaitingRelease se limpia siempre al marcar un episodio: una
-    // serie con episodios vistos no puede seguir "sin estrenar"
-    // (idempotente).
-    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+    const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
+    const changes = {
       watched: newWatched,
       status: newProgress.status,
       nextEpisode: newProgress.nextEpisode,
       firstWatchedAt: newProgress.firstWatchedAt,
       lastWatchedAt: newProgress.lastWatchedAt,
       awaitingRelease: false,
-    });
+    };
+    // El flag de rewatch (issue #310) viaja con el progreso: solo se
+    // persiste cuando hay un rewatch en curso (item.rewatching true);
+    // al completarlo progressWithRewatch devuelve rewatching: false y
+    // aquí se limpia en Firestore.
+    if (item.rewatching) {
+      changes.rewatching = newProgress.rewatching;
+      item.rewatching = newProgress.rewatching;
+    }
+    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
     item.watched = newWatched;
     item.status = newProgress.status;
     item.nextEpisode = newProgress.nextEpisode;
