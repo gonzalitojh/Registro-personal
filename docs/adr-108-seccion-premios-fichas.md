@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado (iteración: premios desde la API y plataformas en su sitio; iteración 2: agrupación por tipo, nominaciones e implicados; iteración 3: minimizado por defecto y plural correcto; iteración 4: contadores separados de premios y nominaciones y sin rótulos de implicados)
+Aceptado (iteración: premios desde la API y plataformas en su sitio; iteración 2: agrupación por tipo, nominaciones e implicados; iteración 3: minimizado por defecto y plural correcto; iteración 4: contadores separados de premios y nominaciones y sin rótulos de implicados; iteración 5: cabeceras alineadas a la izquierda con posición fija)
 
 ## Fecha
 
@@ -49,6 +49,14 @@ Un cuarto comentario (2026-08-19T10:04:18Z, cuarta iteración) pide:
 2. **Implicados sin rótulo**: en los premios, eliminar
    «ganador/es» y «nominado/s» y dejar **simplemente el nombre de
    las personas**.
+
+Un quinto comentario (2026-08-19T10:27:39Z, quinta iteración) pide:
+
+1. **Cabeceras alineadas a la izquierda**: la palabra «Premios» de la
+   sección o el nombre de cada premio (familia) debe ir **alineado a la
+   izquierda**, para que esté **siempre en la misma posición**; ahora,
+   en función del texto de la derecha (premios ganados y nominados), la
+   posición se muestra diferente para cada premio.
 
 La issue indica además que el trabajo parte de la rama `feat/issue-201`
 y que la PR irá a **esa misma rama** (no a `dev`), igual que las
@@ -234,11 +242,27 @@ eliminan `.awards__hint`, `.awards__remove`, `.awards__form` y
   `flex-shrink: 0` del contador de grupo y ganan `min-width: 0`,
   `text-align: right` y `overflow-wrap: anywhere`, para que se
   encogen/ajustan junto al título sin desbordar en móvil.
+- Iteración 5 — cabeceras con título/nombre anclados a la izquierda:
+  se elimina `justify-content: space-between` de `.awards__head` y
+  `.awards__group-head` — con 3 ítems flex (chevron `::before`,
+  título/nombre y contador) el espacio libre se repartía y el título
+  quedaba centrado en el hueco, desplazándose según la longitud del
+  texto del contador — y `margin-left: auto` en
+  `.awards__count`/`.awards__group-count` empuja el contador al
+  borde derecho, dejando «Premios» y el nombre de cada familia
+  SIEMPRE anclados a la izquierda en la misma posición (el comentario
+  del patrón queda documentado en el CSS). Verificado sin scroll
+  horizontal con QA Chromium headless (playwright-core), 12/12 PASS
+  en los cuatro temas × 360/768/1280 px, con contadores cortos y
+  largos: posición izquierda constante de `.awards__title` y de todos
+  los `.awards__group-name`, contador siempre a la derecha del nombre
+  y `scrollWidth <= innerWidth`. Sin cambios de color: los cuatro
+  temas y el contraste AA no se ven afectados.
 
 ### 6. Bump PWA
 
 Cambian assets estáticos (CSS y JS): bump de la versión de despliegue a
-`20260822` (iteración 4; la iteración 3 usó `20260821`) con
+`20260823` (iteración 5; la iteración 4 usó `20260822`) con
 `scripts/bump-version.sh` (ADR-019), coherente en `js/config.js`,
 `index.html` y `service-worker.js`.
 
@@ -297,6 +321,10 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
   separado** premios y nominaciones («3 premios, 2 nominaciones», nunca
   un total único, como pide el cuarto comentario) y los implicados se
   muestran **solo con sus nombres**, sin rótulos de ganador/nominado.
+  Desde la iteración 5, las cabeceras de la sección y de cada familia
+  tienen el título/nombre SIEMPRE alineado a la izquierda en la misma
+  posición, con el contador a la derecha, como pide el quinto
+  comentario.
 - Las plataformas vuelven a su posición original y los premios quedan
   justo debajo (`sinopsis → plataformas → premios → producción →
   reparto`), exactamente como pide el comentario de la issue.
@@ -332,8 +360,8 @@ Related issue: #302 — https://github.com/gonzalitojh/Registro-personal/issues/
 | `js/ui.js` | **Modificado**: `awardsHtml(item)` ahora solo lectura (sección solo si hay premios; sin formulario ni botones); en la iteración 2 pinta **grupos por familia** como `<details>` minimizables con cabecera y contador, y por cada premio/nominación la etiqueta **«Premio»/«Nominación»**, nombre, año, detalle «Por: …» e **implicados** «Ganador/Nominado(s): …» (nueva `awardRowHtml`); la iteración 3 convierte **la sección entera en un `<details>`** con `<summary>` «Premios (N)», quita el `open` por defecto de la sección y de los grupos (**todo minimizado por defecto**) y corrige el plural de los implicados (Ganador/Ganadores, Nominado/Nominados); la iteración 4 separa **premios de nominaciones en los contadores** de la sección y de cada familia (nueva `awardsCountText`: «(3 premios, 2 nominaciones)», singular/plural y sin ceros inútiles, en lugar del total único) y elimina los **prefijos «Ganador:»/«Nominado(s):»** de los implicados (solo sus nombres, con `escapeHtml`); eliminado `wireAwards`; `extraInfoHtml` con la opción `skipCarousels`; reorden de `openMovieModal`/`openTvModal`/`openReadOnlyModal` a `infoHtml → watchProvidersHtml → awardsHtml → castCrewHtml`; la ficha de amigo consulta `getItemAwards` (patrón `loadItemDetails`, guardia `_awardsFetched`) |
 | `js/modal-handlers.js` | **Modificado**: eliminados `saveAwards`/`onAddAward`/`onRemoveAward`; `openMovieItem`/`openTvItem` consultan `getItemAwards` (no crítico, try/catch) antes del render |
 | `js/item-page.js` | **Modificado**: `loadPreviewExtras` consulta también `getItemAwards` (allSettled); `paintPreview` reordenada (plataformas y premios antes del bloque de producción/reparto) |
-| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); la iteración 2 añade `.awards__group*` (borde, radio, chevron propio rotado con `[open]`, marcador nativo oculto), `.awards__badge--award` (píldora ocre, dúo de `.recipe-card__badge`) y `.awards__badge--nom`/`.awards__people`, todo con el override documentado `[data-theme="dark"] .modal__card … { color: #5f5849 }` y `.awards__name`/`.awards__group-head` con `color: inherit`; la iteración 3 convierte `.awards__head` en `<summary>` (cursor, marcador oculto, chevron con rotación `[open]`, `margin-bottom` solo desplegada) para la sección minimizable; la iteración 4 ajusta `.awards__count`/`.awards__group-count` (quita `flex-shrink: 0`, añade `min-width: 0`/`text-align: right`/`overflow-wrap: anywhere`) para que los contadores separados se encogan sin desbordar en móvil |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260822` (ADR-019) |
-| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios **y nominaciones** extraídos de Wikidata: agrupados por tipo con grupos minimizables, etiqueta Premio/Nominación, implicados, año y trabajo; cabecera de la sección y de cada grupo con contadores **separados** de premios y nominaciones; si no hay premios la sección no aparece; la iteración 4 menciona que los implicados son solo nombres) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto) |
+| `ocio/ocio.css` | **Modificado**: bloque `.awards` podado a solo lectura (se eliminan hint/formulario/inputs/«Quitar»); la iteración 2 añade `.awards__group*` (borde, radio, chevron propio rotado con `[open]`, marcador nativo oculto), `.awards__badge--award` (píldora ocre, dúo de `.recipe-card__badge`) y `.awards__badge--nom`/`.awards__people`, todo con el override documentado `[data-theme="dark"] .modal__card … { color: #5f5849 }` y `.awards__name`/`.awards__group-head` con `color: inherit`; la iteración 3 convierte `.awards__head` en `<summary>` (cursor, marcador oculto, chevron con rotación `[open]`, `margin-bottom` solo desplegada) para la sección minimizable; la iteración 4 ajusta `.awards__count`/`.awards__group-count` (quita `flex-shrink: 0`, añade `min-width: 0`/`text-align: right`/`overflow-wrap: anywhere`) para que los contadores separados se encogan sin desbordar en móvil; la iteración 5 elimina `justify-content: space-between` de `.awards__head`/`.awards__group-head` (con 3 ítems flex el título se centraba en el hueco y se desplazaba según la longitud del contador) y añade `margin-left: auto` a `.awards__count`/`.awards__group-count` (título/nombre anclados a la izquierda en posición fija, contador al borde derecho) |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificado**: bump PWA a `20260823` (ADR-019) |
+| `docs/manual-de-usuario.md` | **Modificado**: §12 — bullet «Premios» reescrito (sección de solo lectura con premios **y nominaciones** extraídos de Wikidata: agrupados por tipo con grupos minimizables, etiqueta Premio/Nominación, implicados, año y trabajo; cabecera de la sección y de cada grupo con contadores **separados** de premios y nominaciones; si no hay premios la sección no aparece; la iteración 4 menciona que los implicados son solo nombres) y «Dónde verla» actualizado con su posición (tras la sinopsis, antes de premios/producción/reparto); la iteración 5 documenta las cabeceras **alineadas a la izquierda** (el nombre de la sección o de cada familia queda siempre en la misma posición, con el contador a la derecha) |
 | `tasks/task-issue-302.json` | **Modificado**: estado y criterios tras la iteración |
-| `docs/adr-108-seccion-premios-fichas.md` | **Modificado**: este documento (iteración del ADR de la PR #303) |
+| `docs/adr-108-seccion-premios-fichas.md` | **Modificado**: este documento (iteración del ADR de la iteración 5) |
