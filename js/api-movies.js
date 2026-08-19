@@ -489,13 +489,17 @@ export async function getItemAwards(type, externalId) {
       `${BASE_URL}/${type}/${id}/external_ids?api_key=${TMDB_API_KEY}`,
       { retries: 1 }
     ).catch(() => null);
+    // Defensa en profundidad (QA seguridad #302): los identificadores
+    // se interpolan en la query SPARQL, así que se valida el formato
+    // esperado antes de construirla (las fuentes son TMDB, pero un
+    // formato inesperado no debe llegar a Wikidata).
     let query = null;
-    if (ext && ext.wikidata_id) {
+    if (ext && /^Q\d+$/.test(ext.wikidata_id || "")) {
       query = wikidataAwardsQuery(ext.wikidata_id);
-    } else if (type === "tv") {
+    } else if (type === "tv" && /^\d+$/.test(id)) {
       // Sin wikidata_id (raro): la serie se busca por su id de TMDB.
       query = wikidataAwardsByExternalIdQuery("tv", id);
-    } else if (ext && ext.imdb_id) {
+    } else if (ext && /^tt\d+$/.test(ext.imdb_id || "")) {
       // Sin wikidata_id: la película se busca por su id de IMDb.
       query = wikidataAwardsByExternalIdQuery("movie", ext.imdb_id);
     }
