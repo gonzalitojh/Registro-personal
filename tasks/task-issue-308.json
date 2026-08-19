@@ -1,7 +1,7 @@
 {
   "title": "Lista completa de reparto y producción",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nNo se está mostrando la lista completa de reparto y producción, al menos en las series, se muestra una versión reducida.",
-  "status": "validated",
+  "status": "documented",
   "acceptance criteria": [
     "Se muestra la lista completa de reparto y producción en las fichas/series (no una versión reducida).",
     "El cambio se realiza sobre una rama nueva creada desde `feat/issue-201`.",
@@ -39,5 +39,16 @@
     ],
     "live_tmdb": "GoT(1399) cast=587 crew=348; Mandalorian(82856) cast=159 crew=169; multi-personaje «Khal Drogo, Karl Drogo»; crew sin order → 999; created_by intacto; Matrix(603) cast=37 sin regresión",
     "preliminary": "node --check OK (api-movies, ui, cast-modal, item-page, modal-handlers)"
+  },
+  "security": {
+    "scan": "CLEAN (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "documentation": {
+    "adr": "docs/adr-110-elenco-completo-series.md",
+    "related_issue": "#308",
+    "manual_usuario": "§12 bullet «Información ampliada»: elenco completo en series (todas las temporadas), personajes múltiples y puestos múltiples unidos"
   }
 }
