@@ -52,7 +52,8 @@ import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
-import { quickMarkMovie, quickMarkTvComplete, promptItemRating, quickUnwatchMovie, quickUnwatchTv } from "./quick-actions.js";
+import { quickMarkMovie, quickMarkTvComplete, promptItemRating, quickUnwatchMovie, quickUnwatchTv, getSeasonsMetaFor } from "./quick-actions.js";
+import { computeProgress } from "./tv-progress.js";
 import { scheduleDeletion } from "./undo-delete.js";
 
 let pageCtx = null;
@@ -159,14 +160,25 @@ function renderItemContent() {
 //     películas, la última entrada del historial), «Marcar como
 //     vista» (u «Añadir otro visionado» en películas ya vistas) y
 //     «Valorar».
+//   - ficha de SERIE (issue #304): además, las acciones de estado —
+//     «En pausa» (si no está en pausa), «Abandonar» (si no está
+//     abandonada) y «Retomar» (si está en pausa o abandonada) — que
+//     antes vivían en la propia página de la serie; el abanico pasa
+//     a 4-5 opciones (FAB_ARC_POINTS).
 // El botón se ve DISTINTO según el estado (iteraciones 3 y 4 de la
 // issue #298), con TRES estados diferenciados:
 //   - no añadido (preview): icono + gris del tema (se puede añadir).
 //   - añadido y no visto (ficha): icono + verde.
 //   - visto (ficha): ✓ ocre; en una película vista MÁS DE UNA VEZ el
 //     ✓ se sustituye por el NÚMERO de visionados.
-// En series solo se distinguen estos tres estados (completada =
-// vista), igual que en películas.
+// En series (issue #304) los estados añadido/visto se desdoblan según
+// el estado interno de la serie (ver renderFab):
+//   - pendiente (añadida, sin episodios vistos): + verde.
+//   - en_curso (viéndose): icono REPRODUCIR verde (ni + ni ✓).
+//   - completada: ✓ ocre.
+//   - standby (en pausa): icono PAUSA con el gris del estado.
+//   - abandonada: icono TACHADO (círculo con barra) con el rojo del
+//     estado.
 const FAB_ID = "item-fab";
 
 const FAB_ICONS = {
@@ -178,6 +190,12 @@ const FAB_ICONS = {
   // circular para «Quitar última visualización» (visto).
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   rotateCcw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+  // Estados de serie (issue #304): reproducir para «viéndose», pausa
+  // para «en pausa» y señal tachada (círculo con barra) para
+  // «abandonada». Mismo lenguaje visual (stroke actual) del resto.
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>',
+  ban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
 };
 
 // Ángulos (grados) de las opciones alrededor del botón, medidos desde
@@ -201,6 +219,36 @@ const FAB_ARC_ANGLES = {
   3: [-22, -62, -90], // preview: «Añadir» + «Marcar como vista» + «Valorar»
 };
 const FAB_ARC_RADIUS = 9.5; // rem, distancia del centro del FAB a las opciones
+
+// Puntos explícitos (fx, fy en rem) para abanicos de 4 y 5 opciones
+// (issue #304: los botones de pausar/abandonar/retomar de las series
+// amplían el menú de la ficha). Un único arco circular no cabría: 5
+// pastillas de hasta 2 líneas (59 px con la fuente real) exigen
+// separaciones verticales ≥ 4.2 rem entre centros, y el cuadrante
+// superior-izquierdo con radio 9.5 rem solo alberga 3 (ver cabecera
+// de la sección). La diagonal escalonada reparte las opciones con
+// separación vertical constante de 4.2 rem (holgura ≈ 0.5 rem sobre
+// pastillas de 59 px) y mantiene TODAS las pastillas dentro del
+// viewport de 360 px: la más externa (abajo a la izquierda, fx -13.5
+// rem) con la etiqueta más corta («Valorar», media pastilla ≈ 3.4 rem)
+// queda a ≥ 0.5 rem del borde izquierdo; las etiquetas largas
+// («Quitar de añadidos») van arriba, cerca de la vertical del botón.
+// La opción 0 va arriba y la última abajo, igual que en el arco.
+const FAB_ARC_POINTS = {
+  4: [
+    { fx: -3.5, fy: -12.6 }, // 1ª opción (arriba): etiqueta larga
+    { fx: -6.5, fy: -8.4 },
+    { fx: -9.5, fy: -4.2 },
+    { fx: -13.5, fy: 0 }, // última opción (abajo): etiqueta corta
+  ],
+  5: [
+    { fx: -3.5, fy: -16.8 }, // 1ª opción (arriba): etiqueta larga
+    { fx: -6.5, fy: -12.6 },
+    { fx: -9.5, fy: -8.4 },
+    { fx: -11.5, fy: -4.2 },
+    { fx: -13.5, fy: 0 }, // última opción (abajo): etiqueta corta
+  ],
+};
 
 // Punto (fx, fy en rem) de una opción del abanico, relativo al centro
 // del botón flotante (fx positivo = derecha, fy positivo = abajo).
@@ -294,6 +342,21 @@ function fabOptions(item, mode) {
     const label = !isTv && seen ? "Añadir otro visionado" : "Marcar como vista";
     actions.push({ action: "mark", icon: FAB_ICONS.check, label });
   }
+  // Estados de serie (issue #304): los botones de pausar / abandonar /
+  // retomar se mueven de la página de la serie al botón flotante
+  // (mismo criterio que renderStatusActions de ui.js, que deja de
+  // usarse en series). En series completadas no se ofrecen.
+  if (isTv && item.status !== "completado") {
+    if (item.status !== "standby") {
+      actions.push({ action: "pause", icon: FAB_ICONS.pause, label: "En pausa" });
+    }
+    if (item.status !== "abandonado") {
+      actions.push({ action: "abandon", icon: FAB_ICONS.ban, label: "Abandonar" });
+    }
+    if (item.status === "standby" || item.status === "abandonado") {
+      actions.push({ action: "resume", icon: FAB_ICONS.play, label: "Retomar" });
+    }
+  }
   actions.push({ action: "rate", icon: FAB_ICONS.star, label: "Valorar" });
   return actions;
 }
@@ -304,15 +367,26 @@ function fabOptions(item, mode) {
 // cabecera de la sección: preview → + gris del tema; ficha sin ver →
 // + verde (clase .item-fab--added); ficha visto → ✓ ocre (clase
 // .item-fab--seen), con el NÚMERO de visionados en lugar del ✓ cuando
-// una película se ha visto más de una vez. El aria-label del toggle
-// refleja el estado («no añadido», «pendiente», «visto» o «visto N
-// veces»).
+// una película se ha visto más de una vez. En series (issue #304) se
+// añaden dos estados propios: standby → icono pausa con el gris del
+// estado (clase .item-fab--standby) y abandonada → icono tachado con
+// el rojo del estado (clase .item-fab--abandoned); la serie en curso
+// muestra el icono REPRODUCIR verde (misma clase .item-fab--added).
+// El aria-label del toggle refleja el estado («no añadido»,
+// «pendiente», «viéndose», «en pausa», «abandonada», «visto» o
+// «visto N veces»).
 function renderFab(item, mode) {
   removeFab();
   const isPreview = mode === "preview";
   const seen = !isPreview && isItemSeen(item);
+  // Estado visual propio de las series (issue #304): en función del
+  // estado interno de la serie el botón cambia de icono y color,
+  // incluso cuando "visto" (isItemSeen) es false. Solo aplica a la
+  // ficha; la preview mantiene el + gris.
+  const tvState = !isPreview && item.type === "tv" ? item.status : null;
   // Nº de visionados: solo aplica a películas en ficha (para series
-  // solo cuentan los tres estados: añadido / no vista / vista).
+  // solo cuentan los estados: pendiente / viéndose / en pausa /
+  // abandonada / completada).
   const watchCount =
     !isPreview && item.type === "movie"
       ? item.watchLog
@@ -322,29 +396,55 @@ function renderFab(item, mode) {
   const showCount = seen && watchCount > 1;
   const fab = document.createElement("div");
   fab.id = FAB_ID;
-  fab.className =
-    "item-fab" +
-    (isPreview ? "" : seen ? " item-fab--seen" : " item-fab--added");
+  // Clase de estado: la serie en pausa/abandonada tiene reglas propias
+  // (gris del estado / rojo del estado); la serie completada usa el
+  // ocre de visto y el resto (pendiente/en curso) el verde de añadido.
+  if (isPreview) {
+    fab.className = "item-fab";
+  } else if (tvState === "standby") {
+    fab.className = "item-fab item-fab--standby";
+  } else if (tvState === "abandonado") {
+    fab.className = "item-fab item-fab--abandoned";
+  } else if (seen) {
+    fab.className = "item-fab item-fab--seen";
+  } else {
+    fab.className = "item-fab item-fab--added";
+  }
   const options = fabOptions(item, mode);
-  const angles = FAB_ARC_ANGLES[options.length] || FAB_ARC_ANGLES[2];
+  const points = FAB_ARC_POINTS[options.length];
+  const positions =
+    points ||
+    (FAB_ARC_ANGLES[options.length] || FAB_ARC_ANGLES[2]).map((a) => fabArcPoint(a));
   const actionsHtml = options
     .map((opt, i) => {
-      const { fx, fy } = fabArcPoint(angles[i]);
+      const { fx, fy } = positions[i];
       return `<button type="button" class="item-fab__action" role="menuitem" data-fab-action="${opt.action}" style="--fx:${fx.toFixed(2)}rem; --fy:${fy.toFixed(2)}rem; --i:${i}">${opt.icon}<span>${opt.label}</span></button>`;
     })
     .join("");
   const stateLabel = isPreview
     ? "no añadido"
-    : seen
-      ? showCount
-        ? `visto ${watchCount} veces`
-        : "visto"
-      : "pendiente";
+    : tvState === "standby"
+      ? "en pausa"
+      : tvState === "abandonado"
+        ? "abandonada"
+        : tvState === "en_curso"
+          ? "viéndose"
+          : seen
+            ? showCount
+              ? `visto ${watchCount} veces`
+              : "visto"
+            : "pendiente";
   const toggleIcon = showCount
     ? `<span class="item-fab__count" aria-hidden="true">${watchCount > 99 ? "99+" : watchCount}</span>`
-    : seen
-      ? FAB_ICONS.check
-      : FAB_ICONS.plus;
+    : tvState === "standby"
+      ? FAB_ICONS.pause
+      : tvState === "abandonado"
+        ? FAB_ICONS.ban
+        : tvState === "en_curso"
+          ? FAB_ICONS.play
+          : seen
+            ? FAB_ICONS.check
+            : FAB_ICONS.plus;
   fab.innerHTML = `
     <div class="item-fab__menu" role="menu" aria-label="Acciones rápidas">
       ${actionsHtml}
@@ -370,6 +470,10 @@ function renderFab(item, mode) {
 // En la vista previa (ítem aún no añadido) «Marcar como vista» y
 // «Valorar» primero dan de ALTA el ítem y luego actúan sobre él
 // (issue #298: el usuario no distingue añadir+accionar).
+// Issue #304: las acciones de estado de serie (pause/abandon/resume)
+// cambian el status con el mismo criterio que onSetStatus del modal
+// (status literal; retomar recomputa el status del progreso) y el
+// repintado posterior deja la ficha y el FAB en el nuevo estado.
 async function runFabAction(item, action) {
   closeFabMenu();
   try {
@@ -402,6 +506,17 @@ async function runFabAction(item, action) {
       // desmarca el último episodio visto (ver quick-actions.js).
       if (item.type === "tv") await quickUnwatchTv(item, pageCtx);
       else await quickUnwatchMovie(item, pageCtx);
+    } else if (action === "pause") {
+      // Issue #304: «En pausa» (estado standby) desde el FAB.
+      await setTvStatus(item, "standby");
+    } else if (action === "abandon") {
+      // Issue #304: «Abandonar» desde el FAB, con la misma
+      // confirmación que tenía el botón de la página de la serie.
+      if (!window.confirm("¿Marcar como abandonado? No se perderá tu progreso.")) return;
+      await setTvStatus(item, "abandonado");
+    } else if (action === "resume") {
+      // Issue #304: «Retomar» desde el FAB (status recomputado).
+      await setTvStatus(item, null);
     }
     if (isCurrent(currentToken)) {
       renderFicha(item, true);
@@ -413,6 +528,19 @@ async function runFabAction(item, action) {
   } catch (err) {
     ui.showToast("No se pudo actualizar: " + (err && err.message ? err.message : err));
   }
+}
+
+// Cambia el estado de una serie desde el botón flotante (issue #304).
+// Mismo patrón que onSetStatus del modal de serie (modal-handlers.js):
+// con un estado literal se persiste tal cual; con null («Retomar») el
+// estado se recomputa del progreso visto. Muta el objeto en memoria
+// para que el repintado posterior (renderFicha + renderFab) refleje
+// el nuevo estado.
+async function setTvStatus(item, statusOrNull) {
+  const seasonsMeta = await getSeasonsMetaFor(item, pageCtx);
+  const status = statusOrNull || computeProgress(seasonsMeta, item.watched).status;
+  await pageCtx.updateItem(pageCtx.getCurrentUser().uid, "tv", item.id, { status });
+  item.status = status;
 }
 
 // Alta en curso desde la preview (issue #298): candado compartido
