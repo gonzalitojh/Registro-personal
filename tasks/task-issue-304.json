@@ -1,7 +1,7 @@
 {
   "title": "Botón flotante para series",
   "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nEn el caso de las series, cuando una serie se está viendo, el botón flotante debe mostrar un icono diferente (ni el + de añadido, ni el tick de visto), por ejemplo el símbolo de reproducir.\n\nCuando una serie se ha pausado o abandonado, el botón flotante debe aparecer con el color empleado para dichos estados (gris y rojo) y con un símbolo también coherente (símbolo de pausa y una señal tachada).\n\nAdemás, los botones para pausar y abandonar una serie, deben aparecer en el botón flotante y ser eliminados de la propia página de la serie.",
-  "status": "implemented",
+  "status": "review",
   "acceptance_criteria": [
     "En series viéndose, el botón flotante muestra un icono diferente al + de añadido y al tick de visto (p. ej. reproducir).",
     "En series pausadas, el botón flotante aparece con el color del estado pausado (gris) y un símbolo de pausa.",
@@ -26,5 +26,13 @@
     "number": 304,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/304",
     "title": "Botón flotante para series"
+  },
+  "pr": {
+    "number": 306,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/306",
+    "title": "feat: botón flotante para series (issue #304)",
+    "branch": "feat/issue-304-boton-flotante-series",
+    "commit": "e2b4720",
+    "closes": "#304"
   }
 }
