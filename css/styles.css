@@ -48,18 +48,6 @@
      del botón flotante visto; el resto de la app sigue con
      --ochre-spine-dark. */
   --ochre-spine-hover: #74501d;
-  /* Tinte del difuminado por opción del FAB (issue #298, iteración 6):
-     anillo de backdrop-filter (blur 4px, fijo en
-     .item-fab__action::before) que sobresale 0.75rem de cada
-     pastilla del abanico, en el tono del fondo de cada familia
-     (oscuro: velo oscuro como --backdrop; claro: velo de tinta
-     suave). El tinte se aplica como BORDE de 12px del pseudo (el
-     interior queda transparente para no velar la pastilla; ver la
-     regla .item-fab__action::before). Al ser el anillo estrecho, el
-     tinte de las familias oscuras se suaviza (0.35/0.4 frente al
-     0.5/0.55 del halo de 26 rem de la iteración 5) para que el
-     difuminado siga siendo «leve» como pide el usuario. */
-  --fab-halo: rgba(10, 9, 7, 0.35);
 
   /* Neutros */
   --white: #ffffff;
@@ -172,11 +160,6 @@
      contraste AA (11.3:1 / hover 13.3:1). */
   --fab-idle: #2e2e2e;
   --fab-idle-dark: #222222;
-  /* Difuminado por opción del FAB en negro puro: velo casi negro
-     (los tintes oscuros no se ven sobre #000; el desenfoque sigue
-     diferenciando). 0.4 (frente al 0.55 del halo de 26 rem) por el
-     anillo estrecho. */
-  --fab-halo: rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================================
@@ -212,10 +195,6 @@
      .item-fab): base #d8d3c8 ≈ 9.8:1 e hover #c6c0b2 ≈ 8.1:1. */
   --fab-idle: #d8d3c8;
   --fab-idle-dark: #c6c0b2;
-  /* Difuminado por opción del FAB en la familia clara: velo de tinta
-     suave (los velos oscuros fuertes ensucian el fondo claro; 0.14 de
-     tinta + blur es la versión «difuminada» de la sombra) */
-  --fab-halo: rgba(44, 40, 34, 0.14);
 
   --white: #ffffff;
   --backdrop: rgba(0, 0, 0, 0.25);
@@ -285,9 +264,6 @@
      15.9:1 con el texto negro (hover #d4cfc2 ≈ 13.5:1). */
   --fab-idle: #e4e0d6;
   --fab-idle-dark: #d4cfc2;
-  /* Difuminado por opción del FAB en blanco puro: velo de tinta
-     suave (0.16) */
-  --fab-halo: rgba(0, 0, 0, 0.16);
 
   --backdrop: rgba(0, 0, 0, 0.25);
 
@@ -1995,15 +1971,16 @@ body.is-back-to-top-visible .back-to-top {
    (completada = vista). z-index 40: sobre el contenido, por
    debajo de la cabecera (46), de las pestañas (45) y de los
    modales (≥50) para que nunca tape las ventanas.
-   Nota de animación: el menú usa la clase .is-open en .item-fab
-   (no .hidden) para que las transiciones de apertura/cierre
-   funcionen; con prefers-reduced-motion las transiciones se
-   anulan en bloque (regla global) y el abanico aparece/desaparece
-   al instante.
-   Difuminado del fondo: cada opción lleva su propio anillo de
-   backdrop-filter (blur 4px + tinte --fab-halo) que sobresale
-   0.75rem de la pastilla (iteración 6; ver .item-fab__action::before).
-   ========================================================= */
+    Nota de animación: el menú usa la clase .is-open en .item-fab
+    (no .hidden) para que las transiciones de apertura/cierre
+    funcionen; con prefers-reduced-motion las transiciones se
+    anulan en bloque (regla global) y el abanico aparece/desaparece
+    al instante.
+    Difuminado: NINGUNO (iteración 7 de la issue #298): el usuario
+    pidió eliminar el difuminado del fondo («no me gusta, creo que
+    es mejor sin él»); las opciones se distinguen por su sombreado
+    --fab-action-shadow y su superficie --paper/--ink.
+    ========================================================= */
 .item-fab {
   position: fixed;
   /* En pantallas anchas se ancla al borde derecho de la columna
@@ -2016,42 +1993,14 @@ body.is-back-to-top-visible .back-to-top {
   height: 3.5rem;
 }
 
-/* Difuminado por opción (issue #298, iteración 6): en lugar del halo
-   circular fijo de 26 rem detrás de todo el abanico (iteración 5,
-   «demasiado amplio, sobre todo en móvil»), cada pastilla trae su
-   propio anillo de desenfoque con backdrop-filter (blur 4px): el
-   ::before de la acción sobresale 0.75 rem (≤ 1 rem pedido) por cada
-   lado de la pastilla siguiendo su silueta (border-radius: inherit;
-   borde de 12 px con el tinte --fab-halo por familia), de modo que
-   el difuminado del fondo nace «a partir de cada opción» y es de
-   poca anchura. El tinte vive SOLO en el borde (el interior del
-   pseudo es transparente): el interior de la pastilla no se vela
-   (el backdrop-filter del área central desenfoca su fondo opaco
-   uniforme → sin cambio visible), así que el contraste del icono y
-   del texto no se degrada; solo se ve el anillo exterior fundido
-   con el borde de la pastilla. El tinte (--fab-halo) hace visible
-   el anillo también en fondos claros (donde el blur solo no se
-   percibe). z-index: -1 lo pinta bajo el contenido de la pastilla y
-   su outline, pero sobre su fondo/sombra (la acción tiene transform,
-   así que su contexto de apilamiento lo contiene); pointer-events:
-   none para no interceptar clics ni el hover. Solo con .is-open
-   (opacity transicionada; la visibilidad la hereda de la acción). */
-.item-fab__action::before {
-  content: "";
-  position: absolute;
-  inset: -0.75rem;
-  border-radius: inherit;
-  border: 12px solid var(--fab-halo);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.item-fab.is-open .item-fab__action::before {
-  opacity: 1;
-}
+/* Difuminado: ELIMINADO (issue #298, iteración 7): el usuario pidió
+   quitar el difuminado del fondo («no me gusta, creo que es mejor sin
+   él»). Se eliminan el halo circular de 26 rem (iteración 5) y el
+   anillo por opción con backdrop-filter blur(4px) + tinte --fab-halo
+   (iteración 6) — regla .item-fab__action::before y sus variables
+   --fab-halo de cada familia. Las opciones siguen diferenciándose del
+   fondo por su sombreado (--fab-action-shadow) y por su superficie
+   --paper/--ink, sin desenfocar el contenido de la página. */
 
 .item-fab__toggle {
   width: 3.5rem;

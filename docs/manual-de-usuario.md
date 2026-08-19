@@ -1209,12 +1209,9 @@ En series ya completadas (o en pausa/abandonadas), la opción «Marcar
 como vista» no aparece, porque no tiene sentido; la ficha ofrece
 «Volver a verla desde el principio» para un nuevo visionado. Las
 opciones que se despliegan del botón **salen con un sombreado** para
-que se distingan del fondo y del contenido de la página, y **cada una
-trae un ligero difuminado del fondo a su alrededor**, de poca anchura
-(apenas sobresale de la opción), de modo que las opciones resalten en
-cualquier tema sin manchar la pantalla. El abanico se despliega **sin
-que las opciones se tapen unas a otras**, y se cierra pulsando fuera,
-con **Esc** o volviendo a pulsar el botón.
+que se distingan del fondo y del contenido de la página. El abanico se
+despliega **sin que las opciones se tapen unas a otras**, y se cierra
+pulsando fuera, con **Esc** o volviendo a pulsar el botón.
 
 ## 13. Valoraciones con estrellas
 
