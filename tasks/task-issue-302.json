@@ -1,7 +1,7 @@
 {
   "title": "Premios",
   "description": "Issue #302: La base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev). Entre la producción y las plataformas en las que está disponible el ítem, quiero una nueva sección con los premios.",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "Nueva sección de premios ubicada entre la sección de producción y la sección de plataformas del ítem.",
     "La sección muestra los premios del ítem correspondiente.",

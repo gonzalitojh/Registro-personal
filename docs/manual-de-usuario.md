@@ -1060,10 +1060,6 @@ tipo, verás:
   tiene; en los videojuegos, solo cuando IGDB dispone de uno). En
   películas y series, el botón está en la cabecera, junto a la
   valoración.
-- **Dónde verla**: plataformas de streaming disponibles (agrupadas en
-  **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
-  aviso «Sin info. de streaming para este país». Si hay plataformas, se
-  incluye también el enlace «Ver opciones en TMDB».
 - **Información ampliada**: en películas y series, dos carruseles
   deslizables en horizontal: **«Producción»** (director, guionista,
   compositor...) y **«Reparto»** (los actores y actrices, en el orden
@@ -1091,6 +1087,19 @@ tipo, verás:
   muestran arriba, en la cabecera. Cada sección de la ficha va
   separada por una **línea horizontal**. En los videojuegos:
   desarrolladores, editores y clasificación por edades (ESRB).
+- **Premios**: entre la producción y el «Dónde verla» aparece la
+  sección **Premios**, donde puedes anotar los premios del título
+  (es un dato personal tuyo, no viene de TMDB). Con el botón
+  **«Añadir premio»** introduces el **nombre** del premio
+  (obligatorio; por ejemplo «Óscar»), el **año** (opcional) y un
+  **detalle** opcional (por ejemplo «Mejor actriz»). Cada premio
+  anotado se muestra en su propia línea con su botón **«Quitar»**.
+  Válido para películas y series.
+- **Dónde verla**: plataformas de streaming disponibles (agrupadas en
+  **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
+  aviso «Sin info. de streaming para este país». Si hay plataformas, se
+  incluye también el enlace «Ver opciones en TMDB». En la ficha aparece
+  justo después de los premios, tras la producción y el reparto.
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
