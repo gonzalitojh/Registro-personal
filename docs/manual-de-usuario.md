@@ -1098,16 +1098,18 @@ tipo, verás:
   dispone el título. Están **agrupados por tipo** (Óscar, Globos de Oro,
   Emmy…). **La sección entera aparece minimizada** y también **cada
   grupo**: se **despliegan o minimizan** pulsando su cabecera («Premios
-  (N)» para toda la sección, el nombre de la familia para cada grupo).
-  Cada premio muestra el **nombre** (p. ej. «Óscar al mejor actor de
-  reparto»), el **año** de la ceremonia, una **etiqueta** que lo
-  distingue (**«Premio»** o **«Nominación»**), los **implicados**
-  (p. ej. el nombre del actor premiado o los nominados) y, en su caso,
-  el **trabajo** por el que se concedió (p. ej. el episodio premiado de
-  una serie). Los datos se extraen automáticamente de **Wikidata** (la
-  API de TMDB no expone premios), así que no hay que anotar nada; si el
-  título no tiene premios registrados, la sección no aparece. Válido
-  para películas y series.
+  (3 premios, 2 nominaciones)» para toda la sección, el nombre de la
+  familia con su contador para cada grupo: el número de **premios** y de
+  **nominaciones** se muestra **por separado**). Cada premio muestra el
+  **nombre** (p. ej. «Óscar al mejor actor de reparto»), el **año** de
+  la ceremonia, una **etiqueta** que lo distingue (**«Premio»** o
+  **«Nominación»**), los **implicados** (solo sus **nombres**, p. ej.
+  el actor premiado o los nominados, sin rótulos añadidos) y, en su
+  caso, el **trabajo** por el que se concedió (p. ej. el episodio
+  premiado de una serie). Los datos se extraen automáticamente de
+  **Wikidata** (la API de TMDB no expone premios), así que no hay que
+  anotar nada; si el título no tiene premios registrados, la sección no
+  aparece. Válido para películas y series.
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
 - **Sagas** (películas): si la película forma parte de una saga, se
