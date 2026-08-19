@@ -1,7 +1,7 @@
 {
   "title": "Premios",
   "description": "Issue #302: La base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev). ITERACIÓN (comentario 2026-08-19): 1) las plataformas disponibles deben volver a su sitio (encima de la producción, bajo la sinopsis; la primera iteración las dejó bajo el reparto); 2) la sección de premios va bajo las plataformas y debe EXTRAER los premios de la API (no ser un formulario para que el usuario los introduzca).",
-  "status": "implemented",
+  "status": "review",
   "acceptance criteria": [
     "Las plataformas disponibles («Dónde verla») vuelven a estar encima de la producción y bajo la sinopsis.",
     "Nueva sección «Premios» bajo las plataformas, en solo lectura, con los premios del ítem extraídos de la API (Wikidata, P166).",
