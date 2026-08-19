@@ -45,6 +45,7 @@ import {
   renderSagaMovies,
   renderRecommendations,
   wireCastCrewClicks,
+  awardsHtml,
 } from "./ui.js";
 import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
@@ -673,12 +674,13 @@ function paintPreview(
     ${itemHeroHtml(item, { showUserRating: false })}
     <p class="item-preview__hint">Este título aún no está en tu registro.</p>
     ${unreleasedBadge}
-    ${watchProvidersHtml(item)}
     <div class="field-group" id="preview-details">
       ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })}
       ${previewSeasonsHtml(item)}
       ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     </div>
+    ${awardsHtml(item)}
+    ${watchProvidersHtml(item)}
     ${sagaHtml}
     ${renderRecommendations(recommendations, existingIds, kind, true, onOpenRecommendation)}
     <div class="modal-actions">

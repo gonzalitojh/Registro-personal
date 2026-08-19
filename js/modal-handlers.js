@@ -172,6 +172,15 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     item.awaitingRelease = false;
   }
 
+  // Premios (issue #302): lista editable { name, year?, detail? } por
+  // ítem (el título puede no estar aún añadido; TMDB no expone premios
+  // en su API pública, así que es un dato del registro personal). Se
+  // muta en memoria SOLO tras persistir (patrón onRewatch).
+  async function saveAwards(awards) {
+    await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { awards });
+    item.awards = awards;
+  }
+
   // Obtener watch providers (no crítico, si falla se muestra sin providers)
   if (item.externalId) {
     try {
@@ -250,6 +259,28 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     // misma navegación a la página de detalle de la película/serie.
     onOpenRecommendation: (recItem) =>
       navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+    // Premios (issue #302): añadir o quitar un premio de la lista del
+    // ítem (campo `awards`). Tras persistir se re-renderiza la ficha
+    // (reopen con isRerender: no vuelve a pedir detalles). En modo
+    // página el re-render repinta en #item-view-content; en el modal
+    // clásico, en #modal-content sin cerrarlo.
+    onAddAward: async (award, btn) => {
+      try {
+        await saveAwards([...(item.awards || []), award]);
+        reopen();
+      } catch (err) {
+        if (btn) btn.disabled = false;
+        ui.showToast("No se pudo guardar el premio: " + (err && err.message ? err.message : err));
+      }
+    },
+    onRemoveAward: async (index) => {
+      try {
+        await saveAwards((item.awards || []).filter((_, i) => i !== index));
+        reopen();
+      } catch (err) {
+        ui.showToast("No se pudo quitar el premio: " + (err && err.message ? err.message : err));
+      }
+    },
   }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
@@ -535,6 +566,13 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     return newProgress;
   }
 
+  // Premios (issue #302): misma lista editable que en películas (ver
+  // openMovieItem). Se muta en memoria SOLO tras persistir.
+  async function saveAwards(awards) {
+    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awards });
+    item.awards = awards;
+  }
+
   // Abre la ventana de valoración de un episodio recién marcado
   // (issue #21). Muestra la nota de comunidad DEL EPISODIO (TMDB),
   // no la de la serie. Nunca lanza: el marcado ya persistido queda
@@ -686,6 +724,25 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     // previa con «Añadir».
     onOpenRecommendation: (recItem) =>
       navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+    // Premios (issue #302): ídem openMovieItem — añadir o quitar un
+    // premio del campo `awards` del ítem y re-renderizar la ficha.
+    onAddAward: async (award, btn) => {
+      try {
+        await saveAwards([...(item.awards || []), award]);
+        reopen();
+      } catch (err) {
+        if (btn) btn.disabled = false;
+        ui.showToast("No se pudo guardar el premio: " + (err && err.message ? err.message : err));
+      }
+    },
+    onRemoveAward: async (index) => {
+      try {
+        await saveAwards((item.awards || []).filter((_, i) => i !== index));
+        reopen();
+      } catch (err) {
+        ui.showToast("No se pudo quitar el premio: " + (err && err.message ? err.message : err));
+      }
+    },
   }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
