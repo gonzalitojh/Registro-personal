@@ -2436,6 +2436,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
             updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
             if (newProgress) updateBanner(newProgress);
+            // La media de episodios (issue #310) vive en el hero: al
+            // desmarcar un episodio valorado (diálogo #133) el chip
+            // queda obsoleto si no se refresca (QA H2).
+            updateEpisodeAverage();
           } catch (err) {
             showToast("No se pudo actualizar: " + String(err && err.message ? err.message : err));
           } finally {

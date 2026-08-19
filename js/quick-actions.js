@@ -382,6 +382,7 @@ async function quickMarkTv(item, ctx) {
   const prevAwaitingRelease = item.awaitingRelease;
   const prevStatus = item.status;
   const prevRewatching = item.rewatching;
+  const prevNextEpisode = item.nextEpisode;
   const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
   await saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate);
   // Valoración del episodio: con datos TMDB se muestra la nota de
@@ -407,12 +408,19 @@ async function quickMarkTv(item, ctx) {
   const undone = await maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta, {
     onUndo: async () => {
       // Rewatch (issue #310): el progreso previo se restaura con el
-      // mismo criterio (flag incluido).
-      const prevProgress = progressWithRewatch(seasonsMeta, item, prevWatched);
+      // MISMO criterio con que se calculó el nuevo (flag previo
+      // incluido; si saveTvProgress completó el rewatch y limpió el
+      // flag, sin reconstruirlo el undo devolvería nextEpisode null y
+      // perdería el ciclo en curso — issue #310, QA H1).
+      const prevProgress = progressWithRewatch(
+        seasonsMeta,
+        { ...item, rewatching: prevRewatching },
+        prevWatched || {}
+      );
       const payload = {
         watched: prevWatched,
         status: prevStatus,
-        nextEpisode: prevProgress.nextEpisode,
+        nextEpisode: prevNextEpisode ?? prevProgress.nextEpisode,
         firstWatchedAt: prevProgress.firstWatchedAt,
         lastWatchedAt: prevProgress.lastWatchedAt,
         awaitingRelease: prevAwaitingRelease,

@@ -638,6 +638,7 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       const wasWatched = Boolean(prevEntry && prevEntry.date);
       const prevAwaitingRelease = item.awaitingRelease;
       const prevStatus = item.status;
+      const prevRewatching = item.rewatching;
       const newProgress = await persistWatched(
         setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)
       );
@@ -647,6 +648,12 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
         // la casilla/estrellas/fecha correctamente (item ya mutado).
         const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
           onUndo: async () => {
+            // Rewatch (issue #310, QA H1): el marcado pudo COMPLETAR el
+            // rewatch y limpiar el flag (persistWatched lo mutó a false);
+            // el undo lo restaura ANTES de recomputar, para que el
+            // progreso vuelva a ser el del rewatch en curso (T1E1) y no
+            // un "completado" sin ciclo retomable.
+            if (prevRewatching) item.rewatching = true;
             await persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, null));
             // persistWatched fuerza awaitingRelease:false y el status
             // recomputado; el segundo update restaura el flag/estado
