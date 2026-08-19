@@ -919,7 +919,7 @@ export function wireCastCrewInertialScroll(scrollEl) {
     rafId = requestAnimationFrame(step);
   };
 
-scrollEl.addEventListener(
+  scrollEl.addEventListener(
     "wheel",
     (e) => {
       // Dirección efectiva del gesto y normalización a píxeles
