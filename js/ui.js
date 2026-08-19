@@ -2182,7 +2182,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
-    onSetStatus,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
@@ -2250,7 +2249,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     </div>
 
     ${renderStandbyBanner(item.status, `${progress.totalWatched}/${progress.totalEpisodes} episodios vistos`)}
-    ${renderStatusActions(item.status)}
 
     ${
       item.status === "completado"
@@ -2605,13 +2603,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
   // Carruseles de elenco (issue #294): ver openMovieModal.
   wireCastCrewClicks(content, item);
-
-  wireStatusActions(content, async (newStatusOrNull) => {
-    const newProgress = await onSetStatus(newStatusOrNull);
-    // El target se propaga en el re-render (issue #285): en modo
-    // página la ficha de serie se repinta en #item-view-content.
-    openTvModal(item, seasonsMeta, newProgress, callbacks, recommendations, existingIds, { target });
-  });
 
   // Wire recommendation "Añadir" buttons
   if (onAddRecommendation) {

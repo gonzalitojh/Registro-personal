@@ -100,6 +100,18 @@
      distingan del fondo y del contenido de la página. En negro puro
      la separación la da el borde (las sombras negras no se ven). */
   --fab-action-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.5);
+
+  /* FAB estados de serie (issue #304): el gris del estado standby y
+     el rojo del estado abandonado — los MISMOS tonos que los sellos
+     de las tarjetas (--bg-state-standby/--bg-state-abandonado) —
+     con su variante oscurecida para el hover. En la familia oscura
+     (default) y en la clara/blanca el estado es un tono claro (icono
+     ink en ambas); el negro puro los redefine a sus variantes
+     oscuras más abajo. */
+  --fab-standby: #d9d2c0;
+  --fab-standby-dark: #c4bda8;
+  --fab-abandoned: #f0c2b8;
+  --fab-abandoned-dark: #e0a99b;
 }
 
 /* =========================================================
@@ -160,6 +172,15 @@
      contraste AA (11.3:1 / hover 13.3:1). */
   --fab-idle: #2e2e2e;
   --fab-idle-dark: #222222;
+
+  /* FAB estados de serie (issue #304) en negro puro: variantes
+     OSCURAS de los estados standby/abandonado (mismos tonos que los
+     sellos oscuros de las tarjetas, --bg-state-*); el icono pasa a
+     --paper (ver reglas del toggle más abajo). */
+  --fab-standby: #26241e;
+  --fab-standby-dark: #33302a;
+  --fab-abandoned: #3d1f18;
+  --fab-abandoned-dark: #4a2720;
 }
 
 /* =========================================================
@@ -1961,14 +1982,18 @@ body.is-back-to-top-visible .back-to-top {
    añadidos» o «Quitar última visualización») + «Marcar como vista» +
    «Valorar»; preview → «Añadir» + «Marcar como vista» +
    «Valorar». El toggle se ve DISTINTO según el estado (iteraciones
-   3 y 4 de la issue #298), con tres estados diferenciados:
+   3 y 4 de la issue #298 y issue #304):
    preview/no añadido → + gris del tema (--fab-idle, clase base);
    ficha añadido y no visto → + verde (--teal-reel, clase
    .item-fab--added); ficha visto → ✓ ocre (clase
    .item-fab--seen), con el NÚMERO de visionados
    (.item-fab__count, clase en películas vistas más de una vez)
-   en lugar del ✓. En series solo cuentan estos tres estados
-   (completada = vista). z-index 40: sobre el contenido, por
+   en lugar del ✓. En SERIES (issue #304) se añaden estados propios
+   con el color y el símbolo de cada estado: viéndose → icono
+   REPRODUCIR verde (.item-fab--added); en pausa → icono PAUSA con
+   el gris del estado (.item-fab--standby); abandonada → icono
+   TACHADO con el rojo del estado (.item-fab--abandoned);
+   completada = vista (✓ ocre). z-index 40: sobre el contenido, por
    debajo de la cabecera (46), de las pestañas (45) y de los
    modales (≥50) para que nunca tape las ventanas.
     Nota de animación: el menú usa la clase .is-open en .item-fab
@@ -2105,6 +2130,44 @@ body.is-back-to-top-visible .back-to-top {
 }
 .item-fab--added .item-fab__toggle:hover {
   background: var(--teal-reel-dark);
+  color: var(--paper);
+}
+
+/* Ítem en pausa (serie, issue #304): el toggle usa el GRIS del estado
+   standby (--fab-standby, mismo tono que --bg-state-standby) con el
+   icono de pausa. En la familia oscura y en la clara es un gris
+   claro: icono ink (oscuro) para mantener AA (≈7.6:1 en oscuro /
+   ≈7.5:1 en claro). En negro puro la variable es su variante OSCURA
+   (#26241e) y el icono pasa a --paper (≈10:1), ver override al final. */
+.item-fab--standby .item-fab__toggle {
+  background: var(--fab-standby);
+  color: var(--ink);
+}
+.item-fab--standby .item-fab__toggle:hover {
+  background: var(--fab-standby-dark);
+}
+
+/* Ítem abandonado (serie, issue #304): el toggle usa el ROJO/salmón
+   del estado abandonado (--fab-abandoned, mismo tono que
+   --bg-state-abandonado) con el icono tachado (círculo con barra).
+   Mismas reglas de contraste que standby: icono ink sobre el salmón
+   claro de las familias oscura/clara (≈9.1:1) y paper sobre el rojo
+   oscuro de negro puro (≈10:1). */
+.item-fab--abandoned .item-fab__toggle {
+  background: var(--fab-abandoned);
+  color: var(--ink);
+}
+.item-fab--abandoned .item-fab__toggle:hover {
+  background: var(--fab-abandoned-dark);
+}
+
+/* Negro puro: los estados standby/abandonado usan variantes OSCURAS
+   (gris/rojo oscuros), así que el icono pasa a --paper (los tonos
+   claros de la familia oscura heredan ink y quedan cubiertos por las
+   reglas base). El selector agrupado de la familia clara (más abajo)
+   no aplica a negro puro. */
+[data-theme="black"] .item-fab--standby .item-fab__toggle,
+[data-theme="black"] .item-fab--abandoned .item-fab__toggle {
   color: var(--paper);
 }
 
