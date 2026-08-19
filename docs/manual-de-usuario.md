@@ -269,7 +269,10 @@ Para cada episodio puedes:
   última visualización pasa a hoy y el contador del episodio suma uno.
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
-- **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
+- **Ver las fechas de tus visionados**: bajo cada episodio visto hay un
+  enlace **«Visionados anteriores»**; al pulsarlo se despliegan las
+  fechas de todas las veces que lo has visto (ocultas por defecto, tanto
+  si es una como si son varias).
 - **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
@@ -295,8 +298,12 @@ dependiendo del momento:
 ### 4.5 Volver a ver una serie desde el principio
 
 Si una serie está completa, la ficha ofrece **«Volver a verla desde el
-principio»**. La web guarda el visionado anterior en tu historial y
-reinicia la serie para que empieces de nuevo. Verás el aviso
+principio»**. La web guarda el visionado anterior en tu historial y te
+propone empezar de nuevo: **conserva los episodios vistos** y el aviso
+cambia para indicar que estás volviendo a ver la serie. Mientras tanto,
+cada episodio que vuelvas a ver (con su casilla, eligiendo «Lo he visto
+de nuevo») suma una vez más a su contador y añade la fecha al listado de
+**«Visionados anteriores»** del episodio. Verás el aviso
 «Has terminado esta serie (visionado nº X)» cuando la vuelvas a completar.
 
 ### 4.6 Historial de visionados
@@ -1050,7 +1057,10 @@ tipo, verás:
   duración — en las series, en lugar de la duración se indica el
   **número de temporadas y episodios** —; debajo, **pequeñas etiquetas**
   con los géneros; debajo, la **valoración de la comunidad**, **tu
-  valoración** (solo si ya se la has puesto) y el botón **Tráiler ▶**;
+  valoración** (solo si ya se la has puesto), la **media de tus
+  valoraciones de episodios** (solo en series, con un estilo de chip
+  distinto; más en la [sección 13](#13-valoraciones-con-estrellas)) y el
+  botón **Tráiler ▶**;
   y debajo de todo, la **sinopsis**.
 - **Portada, título y año**: la cabecera clásica se mantiene en libros y
   videojuegos (en la vista previa de búsqueda de estos se indica el tipo
@@ -1279,11 +1289,13 @@ abre con el **botón flotante** (opción **«Valorar»**) e incluye también
 el campo de **notas**: puedes escribir (o cambiar) tus impresiones y
 guardarlas junto a las estrellas con **«Guardar valoración»**.
 
-En la ficha de una **serie**, junto a las temporadas se muestra
-la **media de tus valoraciones de episodios** (por ejemplo
-«Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
-vistos sin valorar no se tienen en cuenta (la valoración mínima de un
-episodio es media estrella, 0.5). Si todavía no has valorado ningún
+En la ficha de una **serie**, en la parte superior (junto a la
+valoración de la comunidad y la tuya) se muestra la **media de tus
+valoraciones de episodios**, como un chip con borde (por ejemplo
+«Media episodios: 4,2»), a propósito con un estilo ligeramente distinto
+al resto de valoraciones. Solo cuentan los episodios que has valorado:
+los vistos sin valorar no se tienen en cuenta (la valoración mínima de
+un episodio es media estrella, 0.5). Si todavía no has valorado ningún
 episodio, la media no aparece. Se actualiza sola en cuanto valoras un
 episodio, quitas una valoración o desmarcas episodios.
 
