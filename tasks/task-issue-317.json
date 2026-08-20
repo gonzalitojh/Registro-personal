@@ -15,7 +15,7 @@
     "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
     "ADR documentado con 'Related issue: #317'.",
     "Manual de usuario actualizado si el cambio afecta a lo que el usuario ve.",
-    "PR creada contra feat/issue-201 SIN keyword de cierre; task file subido con status review + bloque pr; issue actualizada a status: needs-review."
+    "PR actualizada contra feat/issue-201 SIN keyword de cierre; task file subido con status review + bloque pr; issue actualizada a status: needs-review."
   ],
   "issue": {
     "number": 317,
@@ -23,7 +23,7 @@
     "title": "Unificación películas/series añadidas y no añadidas"
   },
   "plan": {
-    "approach": "Reescribir paintPreview para espejar la ficha compartiendo helpers de ui.js (no tocar openMovieItem/openTvItem/modales): hero con showUserRating:true, carruseles de elenco (castCrewHtml), banner de progreso en series si seasonsMeta, temporadas .season-block desplegables solo lectura (renderSeasonBlockReadOnly/renderEpisodeRowsReadOnly en ui.js), hint reposicionado a zona de banners, CTA unico Añadir (quitado Volver), FAB preview sin cambios. PR contra feat/issue-201.",
+    "approach": "Reescribir paintPreview para espejar la ficha compartiendo helpers de ui.js (no tocar openMovieItem/openTvItem/modales): hero con showUserRating:true, carruseles de elenco (castCrewHtml), banner de progreso en series si seasonsMeta, temporadas .season-block desplegables solo lectura (renderSeasonBlockReadOnly/renderEpisodeRowsReadOnly en ui.js), hint reposicionado a zona de banners, CTA unico Añadir (quitado Volver), FAB preview sin cambios. PR contra feat/issue-201. Iteración por feedback del usuario: eliminar también el botón «Añadir» de la página (la alta solo se hace desde el botón flotante).",
     "files": [
       "js/ui.js",
       "js/item-page.js",
@@ -37,25 +37,25 @@
   },
   "qa": {
     "result": "PASS",
-    "notes": "QA reviewer: AC 1-5 confirmados; unico hallazgo el ADR-113 (paso de documentacion posterior del flujo SDD). Label type: content coherente con issue #290 (misma familia)."
+    "notes": "QA reviewer (iteración feedback #317, commit a5acd23): AC 1-4 confirmados. Preview sin CTA final, idéntica a la ficha (que tampoco tiene CTA en el cuerpo); hint «Añádelo con el botón flotante»; add/mark/rate por FAB con target local; sin referencias residuales a btn-preview-add en item-page.js; FAB presente en toda preview visible con datos; manual §10.1/§12/§12.1 coherente; sin riesgo de scroll horizontal (rem + overflow-wrap) ni cambios de tema. No-blocking: ADR-106 con nota correctiva añadida."
   },
   "security": {
     "result": "PASS",
     "high": 0,
-    "medium": 0,
-    "low": 2,
-    "notes": "LOW informativos pre-existentes (claves client-side del SPA por diseño; data-air-date igual al patron de la ficha)."
+    "medium": 1,
+    "low": 1,
+    "notes": "MEDIUM informativo pre-existente (claves client-side del SPA por diseño, sin cambios en el diff); LOW informativo (btn-preview-add de la preview por MODAL de búsqueda, intencional y documentado). Bump PWA 20261012 consistente en config.js/index.html/service-worker.js."
   },
   "adr": {
     "file": "docs/adr-113-unificacion-ficha-preview.md",
-    "commit": "0df8167"
+    "commit": "68ccf78"
   },
   "pr": {
     "number": 318,
     "url": "https://github.com/gonzalitojh/Registro-personal/pull/318",
     "title": "feat: unificación películas/series añadidas y no añadidas (issue #317)",
     "branch": "feat/issue-317-unificar-fichas-no-anadidas",
-    "commit": "4163fe9",
+    "commit": "a5acd23",
     "closes": "#317"
   }
 }
