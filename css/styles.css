@@ -2328,6 +2328,228 @@ body.is-item-page #btn-item-back {
   display: inline-flex;
 }
 
+/* Swap ☰/⚙ → atrás para la página de PERSONA (issue #321): misma
+   mecánica que la de ítem, con su propia clase de body
+   (body.is-person-page) y su propio botón (#btn-person-back), para
+   no pisar los listeners de la página de ítem. Las dos páginas son
+   mutuamente excluyentes (cada ruta cierra la otra en app.js), pero
+   la regla de exclusión explícita evita que ambos botones se
+   mostraran a la vez si ambas clases coexistieran por un bug. */
+#btn-person-back {
+  display: none;
+}
+body.is-person-page #btn-sidebar-toggle,
+body.is-person-page #btn-header-settings {
+  display: none;
+}
+body.is-person-page #btn-person-back {
+  display: inline-flex;
+}
+body.is-person-page #btn-item-back,
+body.is-item-page #btn-person-back {
+  display: none;
+}
+
+/* =========================================================
+   Página de detalle de persona (issue #321)
+   Reutiliza el layout de .item-view (max-width 720px, padding bajo
+   la cabecera fija y overrides de tema: la familia clara y el negro
+   puro ya cubren #person-view por su clase .item-view y
+   .item-view__card). Contenido: hero con foto + nombre + datos de
+   vida, biografía, películas/series (créditos) y premios (estos
+   últimos reutilizan .awards de ocio.css tal cual).
+   Colores: todo usa variables de tema — el texto hereda el del
+   fondo de la página (--paper en la familia oscura, --ink en la
+   clara), que cumple AA en los cuatro modos; los secundarios usan
+   --ink-soft (AA en los 4 modos sobre el fondo de la página, mismo
+   caso documentado que el hero de la ficha de ítem, issue #292).
+   ========================================================= */
+
+.person-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+}
+
+.person-hero__photo {
+  /* Ancho relativo (regla 2 de AGENTS.md): encoge en pantallas
+     estrechas vía media query, nunca con px fijos. */
+  width: 7.5rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.person-hero__info {
+  min-width: 0;
+}
+
+.person-hero__name {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0 0 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.person-hero__known {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin: 0 0 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.person-hero__life {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.person-bio {
+  margin: 1.1rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.person-bio--empty {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.person-separator {
+  border: 0;
+  border-top: 1px solid var(--paper-line);
+  margin: 1.3rem 0 0.2rem;
+}
+
+.person-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 1.1rem 0 0.6rem;
+}
+
+.person-credits__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.9rem 0 0.5rem;
+}
+
+.person-credits__count {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.person-credits__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.person-credit {
+  min-width: 0;
+}
+
+.person-credit__btn {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.4rem 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--paper-line);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+/* La fila pulsable es el <button> dentro del <li>: el :last-child
+   del ul es el li, así que el borde se retira ahí. */
+.person-credit:last-child .person-credit__btn {
+  border-bottom: none;
+}
+
+.person-credit__btn:hover {
+  background: var(--ink-alpha-10);
+}
+
+.person-credit__btn:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+.person-credit__poster {
+  width: 2.75rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.person-credit__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.person-credit__title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.person-credit__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  min-width: 0;
+}
+
+.person-credit__year {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.person-credit__role {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.person-empty {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin: 0.6rem 0;
+}
+
+.person-awards {
+  margin-top: 1.4rem;
+}
+
+/* En pantallas estrechas la foto del hero encoge para dejar aire al
+   nombre (regla 2 de AGENTS.md: el texto nunca se estrecha sin límite). */
+@media (max-width: 400px) {
+  .person-hero__photo {
+    width: 5.75rem;
+  }
+}
+
 /* Aviso de preview («aún no en tu registro») sobre la tarjeta:
    llamada invertida (fondo de tinta, texto de papel). --ink/--paper
    se intercambian automáticamente por familia de tema (oscura:

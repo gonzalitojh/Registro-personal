@@ -67,6 +67,7 @@ import { initAutoHideNav } from "./auto-hide-nav.js";
 import { handleNotificationsSnapshot, resetDevicePush } from "./push.js";
 import { initRouter, keyForPanel, getLastOcioKey, hashForKey } from "./router.js";
 import { setupItemPage } from "./item-page.js";
+import { setupPersonPage } from "./person-page.js";
 import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.js";
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
@@ -549,6 +550,7 @@ async function init() {
   let recipesApi = null;
   let gymApi = null;
   let itemApi = null;
+  let personApi = null;
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el
@@ -576,7 +578,7 @@ async function init() {
           ? route.profileSection === "settings"
             ? "settings"
             : null
-          : route.section === "item"
+          : route.section === "item" || route.section === "person"
           ? null
           : route.section
       );
@@ -587,6 +589,7 @@ async function init() {
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
         itemApi?.closePage();
+        personApi?.closePage();
         if (profileApi) {
           profileApi.openProfileSection(route.profileSection, ctx, {
             fromRouter: true,
@@ -600,6 +603,7 @@ async function init() {
         // visible y se reescribe la URL (mismo guard que Ocio, #97).
         document.getElementById("gym-view")?.classList.add("hidden");
         itemApi?.closePage();
+        personApi?.closePage();
         if (recipesApi) {
           const tab = normalizeTabKey("recetas", route.tab);
           if (tab !== route.tab) {
@@ -617,6 +621,7 @@ async function init() {
         if (profileView) profileView.classList.add("hidden");
         document.getElementById("recipes-view")?.classList.add("hidden");
         itemApi?.closePage();
+        personApi?.closePage();
         if (gymApi) {
           const tab = normalizeTabKey("gimnasio", route.tab);
           if (tab !== route.tab) {
@@ -631,6 +636,7 @@ async function init() {
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
         itemApi?.closePage();
+        personApi?.closePage();
         activatePanel(route.panelId);
         // Sin sesión, #app permanece oculta (pantalla de acceso): no
         // destapar la interfaz ni sus controles. Al entrar, ui.showApp
@@ -651,7 +657,19 @@ async function init() {
         document.getElementById("recipes-view")?.classList.add("hidden");
         document.getElementById("gym-view")?.classList.add("hidden");
         document.getElementById("app").classList.add("hidden");
+        personApi?.closePage();
         itemApi?.openPage(route.kind, route.externalId);
+      } else if (route.section === "person") {
+        // Página de detalle de una persona (issue #321): mismo patrón
+        // que la de ítem — se ocultan #app y las vistas de primer
+        // nivel y se muestra la página con la persona en #person-view
+        // (cabecera superior con el botón atrás vía body.is-person-page).
+        if (profileView) profileView.classList.add("hidden");
+        document.getElementById("recipes-view")?.classList.add("hidden");
+        document.getElementById("gym-view")?.classList.add("hidden");
+        document.getElementById("app").classList.add("hidden");
+        itemApi?.closePage();
+        personApi?.openPage(route.personId);
       }
     },
   });
@@ -717,6 +735,9 @@ async function init() {
   // (lazy loading, issue #178) para que los snapshots refresquen la
   // página (notifyGroupChanged) y el alta desde preview funcione.
   itemApi = setupItemPage(ctx, { ensureGroup: ensureGroupSubscribed });
+  // Issue #321: página de detalle de persona. Sin datos de Firestore
+  // (todo es TMDB/Wikidata), así que no necesita ensureGroup.
+  personApi = setupPersonPage(ctx);
   // Reflejar las pestañas ocultas guardadas en el estado inicial
   // (el sidebar ya se re-renderizó dentro de setupSidebar).
   applyTabVisibility();
@@ -753,6 +774,8 @@ async function init() {
       // Issue #285: si la sesión se cerró desde la página de detalle,
       // se cierra también (quedaría sobre la pantalla de acceso).
       itemApi?.closePage();
+      // Issue #321: igual con la página de persona.
+      personApi?.closePage();
       cleanupSettings();
       resetDevicePush();
       // Restaurar el indicador de carga en los paneles con partial ya
@@ -816,6 +839,11 @@ async function init() {
     // #/ocio/{series|peliculas}/<id> sin sesión, se muestra al entrar
     // (el loader inicial de openPage repinta con la sesión ya activa).
     if (router.getCurrentSection() === "item") {
+      router.applyRoute();
+    }
+    // Y con la página de persona (issue #321): mismo contrato — si la
+    // recarga pedía #/ocio/personas/<id> sin sesión, se retoma al entrar.
+    if (router.getCurrentSection() === "person") {
       router.applyRoute();
     }
 

@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20261013" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20261013" />
+  <link rel="stylesheet" href="css/styles.css?v=20261014" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20261014" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -86,6 +86,18 @@
            clase .hidden, cuyo display:none !important ganaría a la
            regla de swap), y solo body.is-item-page lo muestra. -->
       <button type="button" class="icon-btn" id="btn-item-back" aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      <!-- Botón atrás de la página de persona (issue #321): mismo
+           patrón que #btn-item-back — oculto por CSS base
+           (display:none, NUNCA clase .hidden) y mostrado solo con
+           body.is-person-page via CSS. Al pulsar una persona de los
+           carruseles de producción/reparto se navega a su página. -->
+      <button type="button" class="icon-btn" id="btn-person-back" aria-label="Volver a la pantalla anterior">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="15 18 9 12 15 6" />
@@ -267,6 +279,20 @@
        renderiza js/item-page.js dentro de #item-view-content. -->
   <div id="item-view" class="item-view hidden" role="main" aria-label="Ficha de película o serie">
     <div id="item-view-content"></div>
+  </div>
+
+  <!-- Página de detalle de una persona (issue #321): al pulsar una
+       persona de los carruseles de producción/reparto (o de la ventana
+       «Ver en más detalle») se abre esta vista de primer nivel
+       (hermana de #item-view, fuera de #app) con su foto, biografía,
+       películas/series en las que ha trabajado y sus premios. La
+       cabecera global superior se respeta (con el botón atrás en
+       lugar del ☰ vía body.is-person-page) y el contenido lo
+       renderiza js/person-page.js dentro de #person-view-content.
+       Reutiliza la clase .item-view para el layout (max-width,
+       padding bajo la cabecera, overrides de tema). -->
+  <div id="person-view" class="item-view hidden" role="main" aria-label="Ficha de persona">
+    <div id="person-view-content"></div>
   </div>
 
   <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
@@ -890,7 +916,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20261013"></script>
+  <script type="module" src="js/app.js?v=20261014"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
