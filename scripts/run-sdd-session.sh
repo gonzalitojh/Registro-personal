@@ -36,6 +36,25 @@
 #   7. En fallo escribe el motivo en $SESSION_FAIL_REASON (por defecto
 #      session-failure.txt) para que el paso de rollback del workflow lo
 #      incluya en el comentario de la issue.
+#   8. Verificación de finalización real (issue #314): opencode run --auto
+#      devuelve exit 0 cuando el modelo emite su mensaje final, y el modelo
+#      free a veces lo emite EN MITAD del flujo SDD (p. ej. tras el escaneo
+#      de seguridad, antes del publisher): exit 0 pero tarea sin completar.
+#      Si el título de la sesión es "auto: issue #N" (sesiones automáticas
+#      de CI), este script consulta tras el exit 0 la label status: * de la
+#      issue: si sigue en 'status: in-progress' → falso éxito: escribe el
+#      motivo en el archivo de fallo y devuelve exit 1 (el workflow lo trata
+#      como fallo de sesión: wip-save + relanzamiento automático, issue
+#      #226). Cualquier otro status (needs-review, blocked, done, todo o
+#      ninguno) → OK. El uso local (título distinto) no verifica. Fail-closed
+#      deliberado: si no se puede leer el estado en una sesión "auto: issue
+#      #N", también se falla (relanzar es seguro; no verificar reintroduciría
+#      el falso éxito).
+#      NOTA de entorno: el GITHUB_TOKEN de la sesión (GitHub App) no tiene
+#      permiso workflows, así que GitHub rechaza push/refs que modifiquen
+#      .github/workflows/* (verificado 2026-08-20: git push y Git Data API).
+#      Este fix vive en scripts/ (publicable con el token de sesión), no en
+#      el workflow.
 #
 # Variables de entorno (todas con default):
 #   SESSION_STALL_LIMIT_SEC  segundos sin actividad (BD) antes de matar (1200)
@@ -125,6 +144,44 @@ probe_activity() {
   python3 "$ROOT/scripts/dump-session-transcript.py" --activity "$TITLE" "$START_TS_MS" 2>/dev/null
 }
 
+# -----------------------------------------------------------------------------
+# verify_completion (issue #314): solo en sesiones automáticas de CI (título
+# "auto: issue #N"). Tras un exit 0 de opencode, comprueba que la tarea se
+# completó realmente: la issue debe haber salido de 'status: in-progress'
+# (el flujo SDD normal termina en needs-review vía publisher, o en
+# blocked/todo si decide parar). Si sigue en in-progress → falso éxito.
+# Devuelve 0 = OK (o no aplica); 1 = falso éxito / no verificable (escribe
+# el motivo en $FAIL_REASON_FILE).
+# -----------------------------------------------------------------------------
+verify_completion() {
+  local N LABELS STATUS REASON
+  # Opt-in por título: las sesiones del workflow usan "auto: issue #N";
+  # el uso local lleva títulos arbitrarios y NO verifica.
+  if [[ "$TITLE" =~ ^auto:\ issue\ #([0-9]+)$ ]]; then
+    N="${BASH_REMATCH[1]}"
+  else
+    return 0
+  fi
+  if ! LABELS="$(gh issue view "$N" --json labels --jq '.labels[].name' 2>/dev/null)"; then
+    REASON="no se pudo verificar el estado de la issue #$N tras la sesión (fallo de lectura; issue #314)"
+    echo "$REASON" > "$FAIL_REASON_FILE"
+    echo "::error::Falso éxito no verificable (issue #314): $REASON" >&2
+    return 1
+  fi
+  STATUS=""
+  if echo "$LABELS" | grep -q "^status: "; then
+    STATUS="$(echo "$LABELS" | grep '^status: ' | sed 's/^status: //' | head -1)"
+  fi
+  if [[ "$STATUS" == "in-progress" ]]; then
+    REASON="la sesión terminó con éxito aparente pero la issue #$N sigue en status: in-progress (falso éxito: el modelo emitió su mensaje final antes de completar el flujo SDD, issue #314)"
+    echo "$REASON" > "$FAIL_REASON_FILE"
+    echo "::error::Falso éxito detectado (issue #314): $REASON" >&2
+    return 1
+  fi
+  echo "Verificación OK: la issue #$N quedó en status: ${STATUS:-ninguno} tras la sesión."
+  return 0
+}
+
 while kill -0 "$PID" 2>/dev/null; do
   NOW="$(date +%s)"
   ELAPSED=$((NOW - START_TS))
@@ -207,6 +264,15 @@ if [ "$CODE" -ne 0 ]; then
   echo "=== Últimas 80 líneas de la salida cruda de la sesión ==="
   tail -n 80 "$OUT" || true
   echo "::error::FALLO de la sesión automática: $REASON."
+  exit 1
+fi
+
+# Verificación de finalización real (issue #314): opencode puede terminar
+# con exit 0 en mitad del flujo SDD (falso éxito). Si la issue sigue en
+# 'status: in-progress', se trata como fallo (escribe $FAIL_REASON_FILE y
+# exit 1 → el workflow lanza la maquinaria de fallo: wip-save + relanzamiento).
+if ! verify_completion; then
+  echo "::error::FALLO de la sesión automática: $(cat "$FAIL_REASON_FILE")"
   exit 1
 fi
 
