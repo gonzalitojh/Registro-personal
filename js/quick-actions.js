@@ -252,15 +252,17 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
     // (idempotente, igual que en el modal de detalle).
     awaitingRelease: false,
   };
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted — no al pulsar «Volver a verla desde el principio»,
+  // que solo reinicia el ciclo. Se computa ANTES de mutar el flag: el
+  // helper necesita el estado previo (rewatching true → startedAt =
+  // rewatchStartedAt).
+  const completed = completedViewingChanges(item, newWatched, newProgress);
   if (item.rewatching) {
     payload.rewatching = newProgress.rewatching;
     item.rewatching = newProgress.rewatching;
   }
-  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
-  // visionado en history («visualizaciones anteriores») y se incrementa
-  // timesCompleted — no al pulsar «Volver a verla desde el principio»,
-  // que solo reinicia el ciclo.
-  const completed = completedViewingChanges(item, newWatched, newProgress);
   if (completed) {
     payload.history = completed.history;
     payload.timesCompleted = completed.timesCompleted;
@@ -523,14 +525,16 @@ export async function quickMarkTvComplete(item, ctx) {
     // Una serie con episodios vistos no puede seguir "sin estrenar".
     awaitingRelease: false,
   };
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted. Se computa ANTES de mutar el flag: el helper
+  // necesita el estado previo (rewatching true → startedAt =
+  // rewatchStartedAt).
+  const completed = completedViewingChanges(item, newWatched, newProgress);
   if (item.rewatching) {
     payload.rewatching = newProgress.rewatching;
     item.rewatching = newProgress.rewatching;
   }
-  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
-  // visionado en history («visualizaciones anteriores») y se incrementa
-  // timesCompleted.
-  const completed = completedViewingChanges(item, newWatched, newProgress);
   if (completed) {
     payload.history = completed.history;
     payload.timesCompleted = completed.timesCompleted;

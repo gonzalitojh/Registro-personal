@@ -548,19 +548,17 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       lastWatchedAt: newProgress.lastWatchedAt,
       awaitingRelease: false,
     };
-    // El flag de rewatch (issue #310) viaja con el progreso: solo se
-    // persiste cuando hay un rewatch en curso (item.rewatching true);
-    // al completarlo progressWithRewatch devuelve rewatching: false y
-    // aquí se limpia en Firestore.
+    // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva
+    // el visionado en history («visualizaciones anteriores») y se
+    // incrementa timesCompleted — no al pulsar «Volver a verla desde
+    // el principio», que solo reinicia el ciclo (startRewatch). Se
+    // computa ANTES de mutar el flag: el helper necesita el estado
+    // previo (rewatching true → startedAt = rewatchStartedAt).
+    const completed = completedViewingChanges(item, newWatched, newProgress);
     if (item.rewatching) {
       changes.rewatching = newProgress.rewatching;
       item.rewatching = newProgress.rewatching;
     }
-    // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva
-    // el visionado en history («visualizaciones anteriores») y se
-    // incrementa timesCompleted — no al pulsar «Volver a verla desde
-    // el principio», que solo reinicia el ciclo (startRewatch).
-    const completed = completedViewingChanges(item, newWatched, newProgress);
     if (completed) {
       changes.history = completed.history;
       changes.timesCompleted = completed.timesCompleted;
