@@ -1920,12 +1920,19 @@ button, a, input, select, textarea { touch-action: manipulation; }
   outline-offset: -1px;
 }
 
-.chip:focus-visible {
+/* «Marcar todo» de temporada (feedback #310, iteración 3): check
+   circular con contador que reemplaza al antiguo botón de texto.
+   Reutiliza el patrón .episode-checkbox-wrap de las filas. */
+.season-mark-all {
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+.season-mark-all:has(input:focus-visible) .episode-checkbox-visual {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
 
-.season-mark-all:focus-visible {
+.chip:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }

@@ -145,18 +145,14 @@ function editHandlerFor(item, kind, reopen, ctx, target = null) {
 }
 
 function progressWithStatus(seasonsMeta, item) {
-  const base = computeProgress(seasonsMeta, item.watched);
   if (item.status === "standby" || item.status === "abandonado") {
-    return { ...base, status: item.status };
+    return { ...computeProgress(seasonsMeta, item.watched), status: item.status };
   }
-  // Rewatch (issue #310): los episodios se conservan marcados, así que
-  // el progreso computado diría "completado"; durante el rewatch la
-  // ficha debe mostrar el próximo episodio T1E1 y no el banner de
-  // serie terminada.
-  if (item.rewatching) {
-    return { ...base, status: "pendiente", nextEpisode: { season: 1, episode: 1 } };
-  }
-  return base;
+  // Rewatch (issue #310): progressWithRewatch devuelve el progreso del
+  // ciclo ACTUAL — contadores de episodios vistos en el ciclo (1/73,
+  // iteración 3 feedback #310), siguiente episodio del ciclo sin ver y
+  // estado de hecho "en_curso" («viendo») en lugar de "completado".
+  return progressWithRewatch(seasonsMeta, item);
 }
 
 // País del usuario para los watch providers (definido y exportado

@@ -2096,6 +2096,29 @@ body.is-back-to-top-visible .back-to-top {
   color: var(--white);
 }
 
+/* Rewatch de serie (feedback #310, iteración 3): «el estado de hecho
+   debería ser viendo pero pon el color de visto» — icono REPRODUCIR
+   sobre el mismo dúo ocre del FAB visto. Mismos contrastes AA que
+   .item-fab--seen (documentados arriba), incluido el hover y el
+   override de negro puro; la familia clara queda excluida del
+   selector agrupado base para no forzarle el color ink. */
+.item-fab--rewatch .item-fab__toggle {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+.item-fab--rewatch .item-fab__toggle:hover {
+  background: var(--ochre-spine-hover);
+  color: var(--paper);
+}
+[data-theme="light"] .item-fab--rewatch .item-fab__toggle:hover,
+[data-theme="white"] .item-fab--rewatch .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+}
+[data-theme="black"] .item-fab--rewatch .item-fab__toggle:hover {
+  background: var(--ochre-spine-dark);
+  color: var(--white);
+}
+
 /* Hover del FAB añadido (verde) en negro puro: --teal-reel-dark
    #4f9c8e con texto paper = 2.7:1 (falla AA gráficos); con --white
    ≈ 5.9:1. El estado base (gris del tema) ya supera 5:1 con paper
@@ -2107,11 +2130,11 @@ body.is-back-to-top-visible .back-to-top {
 /* Familia clara (claro + blanco puro): el estado base del FAB es gris
    CLARO (--fab-idle #d8d3c8 / #e4e0d6), así que el icono pasa de
    paper a ink para mantener AA (9.8:1 / 15.9:1; hover 8.1:1 / 13.5:1).
-   Los estados añadido (verde) y visto (ocre) conservan su dúo
-   paper/ink original (sus reglas específicas ganan por especificidad
-   a este selector agrupado). */
-[data-theme="light"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle,
-[data-theme="white"] .item-fab:not(.item-fab--seen):not(.item-fab--added) .item-fab__toggle {
+   Los estados añadido (verde), visto (ocre) y rewatch (ocre con icono
+   de reproducir) conservan su dúo paper/ink original (sus reglas
+   específicas ganan por especificidad a este selector agrupado). */
+[data-theme="light"] .item-fab:not(.item-fab--seen):not(.item-fab--added):not(.item-fab--rewatch) .item-fab__toggle,
+[data-theme="white"] .item-fab:not(.item-fab--seen):not(.item-fab--added):not(.item-fab--rewatch) .item-fab__toggle {
   color: var(--ink);
 }
 

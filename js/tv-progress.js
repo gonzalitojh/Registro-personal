@@ -314,30 +314,94 @@ export function isRewatchComplete(seasonsMeta, watched, startedAt = null, minTim
   return anySeason;
 }
 
+// ¿La entrada tiene alguna visión en el ciclo actual (>= startedAt)?
+// Sin startedAt (sin rewatch) cualquier fecha cuenta. Compartida con la
+// UI para los contadores de temporada del ciclo en curso (#310, it. 3).
+export function entrySeenSince(entry, startedAt = null) {
+  if (!entry || !entry.date) return false;
+  if (!startedAt) return true;
+  return entryDates(entry).some((d) => d >= startedAt);
+}
+
+// Veces que se ha visto COMPLETA una temporada (feedback #310,
+// iteración 3): el contador de la temporada es el del episodio con
+// MENOS visionados — para completar la temporada todos sus episodios
+// deben haberse visto al menos N veces — y 0 si algún episodio no
+// está marcado. Es la fuente coherente para el check circular de
+// «Marcar todo» (tick si 1, número si > 1) y para que cuadre con los
+// contadores de los episodios individuales.
+export function seasonCompleteTimes(seasonWatched, episodeCount) {
+  let min = Infinity;
+  for (let ep = 1; ep <= episodeCount; ep++) {
+    const entry = normalizeEntry(seasonWatched && seasonWatched[String(ep)]);
+    if (!entry || !entry.date) return 0;
+    min = Math.min(min, Number(entry.times) || 1);
+  }
+  return min === Infinity ? 0 : min;
+}
+
+// Veces que se ha visto COMPLETA la serie según los episodios
+// (feedback #310, iteración 3): mínimo de `times` de todos los
+// episodios marcados (para completar la serie, cada episodio debe
+// haberse visto al menos N veces). Coherente con los «Visionados
+// anteriores» de los episodios y con el sumario de la serie (evita el
+// contador inflado por `timesCompleted` cuando el usuario marcó la
+// serie completa varias veces por error). 0 si no hay episodios.
+export function seriesCompleteTimes(watched) {
+  let min = Infinity;
+  for (const seasonMap of Object.values(watched || {})) {
+    if (!seasonMap || typeof seasonMap !== "object") continue;
+    for (const raw of Object.values(seasonMap)) {
+      const entry = normalizeEntry(raw);
+      if (!entry || !entry.date) continue;
+      min = Math.min(min, Math.max(1, Number(entry.times) || 1));
+    }
+  }
+  return min === Infinity ? 0 : min;
+}
+
 // Estado a persistir cuando hay un rewatch en curso (issue #310):
 // - completo (todos los episodios vistos en el ciclo, iteración 2): el
 //   rewatch termina → status "completado" y rewatching false.
-// - en curso: status "pendiente" y próximo episodio T1E1 aunque el
-//   `watched` conservado esté completo (computeProgress no lo sabría).
+// - en curso (iteración 3, feedback #310): el progreso del BANNER y de
+//   los contadores debe reflejar el visionado ACTUAL (fechas >=
+//   rewatchStartedAt), no el histórico completo: totalWatched cuenta
+//   solo los episodios del ciclo, nextEpisode es el siguiente episodio
+//   del ciclo sin ver, y el estado de hecho es "en_curso" («viendo»).
+//   Ciclo legacy en vuelo (iniciado antes de la iteración 2, sin
+//   rewatchStartedAt): sin fecha de inicio no se puede separar el
+//   ciclo actual → comportamiento previo (T1E1 y "pendiente").
 // Sin rewatch: delega en computeProgress (comportamiento previo).
 export function progressWithRewatch(seasonsMeta, item, newWatched = null) {
-  const base = computeProgress(seasonsMeta, newWatched ?? item.watched);
+  const watched = newWatched ?? item.watched;
+  const base = computeProgress(seasonsMeta, watched);
   if (!item.rewatching) return base;
+  const startedAt = item.rewatchStartedAt || null;
   const minTimes = (item.timesCompleted || 0) + 1;
-  if (
-    isRewatchComplete(
-      seasonsMeta,
-      newWatched ?? item.watched,
-      item.rewatchStartedAt || null,
-      minTimes
-    )
-  ) {
+  if (isRewatchComplete(seasonsMeta, watched, startedAt, minTimes)) {
     return { ...base, status: "completado", rewatching: false };
+  }
+  if (!startedAt) {
+    return { ...base, status: "pendiente", nextEpisode: { season: 1, episode: 1 }, rewatching: true };
+  }
+  let totalWatched = 0;
+  let nextEpisode = null;
+  for (const s of seasonsMeta || []) {
+    const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
+    for (let ep = 1; ep <= s.episodeCount; ep++) {
+      const entry = normalizeEntry(seasonWatched[String(ep)]);
+      if (entrySeenSince(entry, startedAt)) {
+        totalWatched++;
+      } else if (!nextEpisode) {
+        nextEpisode = { season: s.seasonNumber, episode: ep };
+      }
+    }
   }
   return {
     ...base,
-    status: "pendiente",
-    nextEpisode: { season: 1, episode: 1 },
+    totalWatched,
+    nextEpisode: nextEpisode || { season: 1, episode: 1 },
+    status: "en_curso",
     rewatching: true,
   };
 }

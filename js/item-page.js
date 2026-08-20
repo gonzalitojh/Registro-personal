@@ -53,7 +53,7 @@ import { getLastOcioKey, navigate, parseHash } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { isUnreleasedDate } from "./release.js";
 import { quickMarkMovie, quickMarkTvComplete, promptItemRating, quickUnwatchMovie, quickUnwatchTv, getSeasonsMetaFor } from "./quick-actions.js";
-import { computeProgress } from "./tv-progress.js";
+import { computeProgress, progressWithRewatch } from "./tv-progress.js";
 import { scheduleDeletion } from "./undo-delete.js";
 
 let pageCtx = null;
@@ -372,6 +372,11 @@ function fabOptions(item, mode) {
 // estado (clase .item-fab--standby) y abandonada → icono tachado con
 // el rojo del estado (clase .item-fab--abandoned); la serie en curso
 // muestra el icono REPRODUCIR verde (misma clase .item-fab--added).
+// Rewatch (feedback #310, iteración 3): una serie que SE ESTÁ VIENDO
+// DE NUEVO muestra el icono REPRODUCIR (como cuando se ve por primera
+// vez) pero con el COLOR DE VISTO (ocre, clase propia
+// .item-fab--rewatch): «el estado de hecho debería ser viendo pero
+// pon el color de visto».
 // El aria-label del toggle refleja el estado («no añadido»,
 // «pendiente», «viéndose», «en pausa», «abandonada», «visto» o
 // «visto N veces»).
@@ -384,6 +389,16 @@ function renderFab(item, mode) {
   // incluso cuando "visto" (isItemSeen) es false. Solo aplica a la
   // ficha; la preview mantiene el + gris.
   const tvState = !isPreview && item.type === "tv" ? item.status : null;
+  // Rewatch (feedback #310, iteración 3): el icono de «viéndose de
+  // nuevo» gana a los estados activos (en curso/pendiente), pero
+  // respeta pausa/abandono (la serie retomable sigue teniendo su
+  // estado propio si el usuario la pausa o abandona a mitad del ciclo).
+  const isRewatching =
+    !isPreview &&
+    item.type === "tv" &&
+    Boolean(item.rewatching) &&
+    item.status !== "standby" &&
+    item.status !== "abandonado";
   // Nº de visionados: solo aplica a películas en ficha (para series
   // solo cuentan los estados: pendiente / viéndose / en pausa /
   // abandonada / completada).
@@ -405,6 +420,8 @@ function renderFab(item, mode) {
     fab.className = "item-fab item-fab--standby";
   } else if (tvState === "abandonado") {
     fab.className = "item-fab item-fab--abandoned";
+  } else if (isRewatching) {
+    fab.className = "item-fab item-fab--rewatch";
   } else if (seen) {
     fab.className = "item-fab item-fab--seen";
   } else {
@@ -427,24 +444,28 @@ function renderFab(item, mode) {
       ? "en pausa"
       : tvState === "abandonado"
         ? "abandonada"
-        : tvState === "en_curso"
-          ? "viéndose"
-          : seen
-            ? showCount
-              ? `visto ${watchCount} veces`
-              : "visto"
-            : "pendiente";
+        : isRewatching
+          ? "viéndose de nuevo"
+          : tvState === "en_curso"
+            ? "viéndose"
+            : seen
+              ? showCount
+                ? `visto ${watchCount} veces`
+                : "visto"
+              : "pendiente";
   const toggleIcon = showCount
     ? `<span class="item-fab__count" aria-hidden="true">${watchCount > 99 ? "99+" : watchCount}</span>`
     : tvState === "standby"
       ? FAB_ICONS.pause
       : tvState === "abandonado"
         ? FAB_ICONS.ban
-        : tvState === "en_curso"
+        : isRewatching
           ? FAB_ICONS.play
-          : seen
-            ? FAB_ICONS.check
-            : FAB_ICONS.plus;
+          : tvState === "en_curso"
+            ? FAB_ICONS.play
+            : seen
+              ? FAB_ICONS.check
+              : FAB_ICONS.plus;
   fab.innerHTML = `
     <div class="item-fab__menu" role="menu" aria-label="Acciones rápidas">
       ${actionsHtml}
@@ -538,7 +559,15 @@ async function runFabAction(item, action) {
 // el nuevo estado.
 async function setTvStatus(item, statusOrNull) {
   const seasonsMeta = await getSeasonsMetaFor(item, pageCtx);
-  const status = statusOrNull || computeProgress(seasonsMeta, item.watched).status;
+  // Retomar (statusOrNull null): el estado se recomputa del progreso.
+  // Con un rewatch en curso (issue #310, iteración 3) se usa
+  // progressWithRewatch: el ciclo sigue «en_curso» (viendo) y nunca se
+  // devuelve un «completado» fantasma por las marcas históricas.
+  const status =
+    statusOrNull ||
+    (item.rewatching
+      ? progressWithRewatch(seasonsMeta, item).status
+      : computeProgress(seasonsMeta, item.watched).status);
   await pageCtx.updateItem(pageCtx.getCurrentUser().uid, "tv", item.id, { status });
   item.status = status;
 }
