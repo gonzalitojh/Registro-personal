@@ -1012,15 +1012,18 @@ igual). Para cada resultado:
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
   con sus detalles antes de añadirlo. En **películas y series** esa
   vista previa se abre en una **página nueva** (el botón **←** de arriba
-  te devuelve a la búsqueda y el botón **«Añadir»** funciona igual que
-  siempre) y es **igual a la ficha**: distintivo de no estrenado si
-  aplica, puntuación de la comunidad, tráiler, dónde verla, premios,
+  te devuelve a la búsqueda) y es **igual a la ficha**: distintivo de no
+  estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
+  premios,
   producción y reparto, saga (películas) y recomendaciones; en las
   series, además, el banner de progreso (a 0 %) y las temporadas
   desplegables en **solo lectura** con la nota de la comunidad de cada
   episodio (más en la [sección 12](#12-la-ficha-de-cada-película-serie-libro-o-videojuego)).
-  El aviso **«Este título aún no está en tu registro»** y el botón
-  **«Añadir»** están al **final** de la página. En libros y videojuegos
+  El aviso **«Este título aún no está en tu registro»** está al
+  **final** de la página y, para añadirlo, se usa el **botón flotante**
+  (opción **«Añadir película» / «Añadir serie»**; ver
+  [sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)) —
+  ya no hay botón «Añadir» en la página. En libros y videojuegos
   la vista previa se sigue abriendo en su ventana. Cuando añadas el
   título, la página pasa a la ficha con tus acciones personales
   (visionados, valoración, notas...).
@@ -1251,9 +1254,10 @@ tipo, verás:
   comunidad, dónde verla y tráiler si lo tiene) antes de añadirla: se
   abre la **página de esa película**
   (navega, no es una ventana) — si aún no está en tu registro, verás su
-  **ficha completa** (igual que la de un título añadido) con el botón
-  **«Añadir»** al final (lo mismo que en la vista previa del catálogo;
-  ver sección 12); usa el botón **←** de
+  **ficha completa** (igual que la de un título añadido), sin botón
+  «Añadir» en la página: se añade con el **botón flotante** (lo mismo
+  que en la vista previa del catálogo; ver sección 12); usa el botón
+  **←** de
   arriba para volver a la ficha en la que estabas. Las películas que ya
   tienes en tu registro se muestran con **«Ya añadido»** (botón
   deshabilitado).
@@ -1265,8 +1269,9 @@ tipo, verás:
   comunidad, dónde verla y tráiler si lo tiene; en las series, además,
   sus temporadas) antes de añadirla: se abre la **página de esa película o
   serie** (navega, no es una ventana) — si aún no está en tu registro,
-  verás su **ficha completa** (igual que la de un título añadido) con
-  el botón **«Añadir»** al final (lo mismo que
+  verás su **ficha completa** (igual que la de un título añadido), sin
+  botón **«Añadir»** en la página: se añade con el **botón flotante**
+  (lo mismo que
   en la vista previa del catálogo; ver sección 12); usa el botón **←**
   de arriba para volver a la ficha en la que estabas. Los títulos que ya
   tienes en tu registro se muestran con **«Ya añadido»** (botón
@@ -1297,9 +1302,13 @@ comunidad de cada episodio** (formato «TMDB 8.5»); no hay casillas de
 marcado ni valoraciones propias porque el título aún no está en tu
 registro.
 
-El aviso **«Este título aún no está en tu registro»** y el botón
-**«Añadir»** están al **final** de la página, después de todas las
-secciones de información. El botón **«Volver»** que antes había al
+El aviso **«Este título aún no está en tu registro»** está al **final**
+de la página, después de todas las secciones de información. Ya no hay
+botón **«Añadir»** en la página: para añadirlo usa el **botón
+flotante** (opción **«Añadir película» / «Añadir serie»**, ver
+[sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)).
+Ese botón está disponible siempre en la página, incluso en la vista
+previa de un título no añadido. El botón **«Volver»** que antes había al
 final ya no existe: para volver usa el botón **←** de arriba o la tecla
 **Esc**. Tu valoración, tus notas, tu progreso y las opciones del
 **botón flotante** (incluida «Quitar de añadidos») solo aparecen
