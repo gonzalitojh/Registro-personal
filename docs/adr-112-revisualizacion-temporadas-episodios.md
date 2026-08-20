@@ -1,4 +1,4 @@
-# ADR-111: Revisualización de temporadas y episodios (issue #310)
+# ADR-112: Revisualización de temporadas y episodios (issue #310)
 
 ## Estado
 
@@ -376,6 +376,30 @@ Con esto, al reiniciar una serie completada hoy: contadores a **0/N**
 el ciclo se completa solo cuando TODOS los episodios superan su
 baseline (N+1 visualizaciones).
 
+### 8. Iteración 6 (resume workflow_dispatch 2026-08-20)
+
+Sexta ronda: reanudación manual del flujo SDD (workflow_dispatch) para
+re-analizar, re-validar y re-publicar la PR #313 tras el feedback de la
+iteración 5. Cambios de esta iteración:
+
+- **Integración de `feat/issue-201`**: la PR #313 se había quedado en
+  CONFLICTING porque la rama base avanzó con la issue #311 (lista de
+  premios completa, PR #312). Se integró `feat/issue-201` en la rama de
+  la PR (merge `9ade5e1`) resolviendo los conflictos de versión
+  (`js/config.js`, `service-worker.js`, `index.html`: se conserva la
+  versión más alta de la rama de #310) sin tocar la lógica de rewatch.
+- **Renumeración ADR-111 → ADR-112**: el ADR-111 quedó ocupado en
+  `feat/issue-201` por la documentación de la issue #311 (lista de
+  premios completa). Este ADR se renumeró a **ADR-112** para evitar dos
+  ADR-111 al fusionar la PR #313 (un número de ADR por documento).
+- **Re-validación QA**: 38/38 checks de simulación re-ejecutados sobre
+  la lógica de rewatch (escenarios A-H: baseline por episodio, el bug
+  «no se reinicia / se completa al primer episodio» sigue corregido,
+  archive al completar, desmarcar última visión, marcar/desmarcar todo
+  por temporada, progreso del ciclo actual, fallback por fechas para
+  ciclos en vuelo y legacy con contadores inflados).
+- Versión PWA bumped a `20261009`.
+
 ## Alternativas descartadas
 
 - **Seguir limpiando `watched` en `startRewatch` y mostrar el rewatch
@@ -460,7 +484,8 @@ baseline (N+1 visualizaciones).
   vuelo** (iniciados por la iteración 2/3/4, sin `rewatchBaseline`)
   conservan el criterio por fechas hasta que se completen; solo los
   ciclos NUEVOS disfrutan del reinicio real de contadores. Versión PWA
-  bumped a `20261008`.
+  bumped a `20261008`. La iteración 6 (resume 2026-08-20) la sube a
+  `20261009`.
 
 ## Archivos creados/modificados
 
@@ -476,8 +501,8 @@ baseline (N+1 visualizaciones).
 | `ocio/ocio.css` | **Modificado**: bloque `.item-episode-average` (chip, `[hidden]` forzado) e `.episode-rewatches`/`__chevron`/`__dates`/`__list`/`__unknown` (botón con chevron rotatorio y área táctil 32px; iteración #310); overrides `[data-theme="dark"]` (tinta suave #6b6355 sobre superficies de papel, strong papel en item-view) y `[data-theme="black"]` (botón completo → `--paper`, hover/focus, strong chip); eliminadas las referencias a `.episode-date`/`.episode-average` de la media query móvil y de los bloques de tema. **Iteración 2 (feedback 2026-08-19)**: `.episode-rewatches` **sin subrayado en hover/pulso** (el foco de teclado se indica solo con outline; motivo documentado en comentario del CSS). **Iteración 3 (feedback 2026-08-20)**: `.season-mark-all` como label del check circular (reutiliza `.episode-checkbox-wrap`), foco visible con `:has(input:focus-visible)` sobre `.episode-checkbox-visual` |
 | `css/styles.css` | **Modificado**: override `[data-theme="dark"] .item-view` pasa de `.episode-average strong` a `.item-episode-average strong` (color papel sobre el fondo oscuro de la página). **Iteración 3 (feedback 2026-08-20)**: `.item-fab--rewatch` (dúo ocre de `.item-fab--seen` con hover y override de negro puro; la familia clara lo excluye del selector agrupado base) |
 | `docs/manual-de-usuario.md` | **Modificado**: §4.3 (fechas por episodio ocultas tras «Visionados anteriores»; «Quitar última visualización» vs «Desmarcar»), §4.5 (el rewatch conserva los episodios y suma contadores), §4.7 y §12 (desmarcado del último episodio con varias visiones), §12 (chip de media en el hero de series) y §13 (media de episodios en la parte superior, estilo chip; FAQ desmarcar episodios). **Iteración 2 (feedback 2026-08-19)**: §4.3 («Marcar todo» añade una visualización a cada episodio; «Desmarcar todo» quita la última de cada uno —los vistos varias veces siguen marcados—; al «Lo he visto de nuevo» la ventana de valoración trae la valoración anterior por defecto y «Deshacer» revierte el visionado recién añadido) y §4.5 (la visualización termina al volver a ver TODOS los episodios; las visiones antiguas no cuentan). **Iteración 3 (feedback 2026-08-20)**: §4.3 («Marcar todo» pasa a ser un check circular con contador y el progreso de temporada muestra el ciclo actual durante un rewatch), §4.5 (los contadores de la serie y «Visionados anteriores» se derivan de los episodios), §4.6 (coherencia del contador de la serie con los episodios) y §12.1 (FAB del rewatch: icono de «viendo» con color de visto). **Iteración 4 (feedback 2026-08-20)**: §4.5 («Volver a verla» reinicia el ciclo desde T1E1 pasando a «viendo» sin archivar nada; el visionado se archiva al terminar la serie) y §4.6 (cada visionado se registra con sus fechas cuando la serie se termina). **Iteración 5 (feedback 2026-08-20)**: §4.5 (al reiniciar, los contadores del ciclo vuelven a 0 y el episodio cuenta como visto en el nuevo visionado solo cuando supera las veces que tenía al empezar —«hasta que no tengan N+1 no se consideran vistos en esta revisualización»—; ya no se da la serie por terminada al ver el primer episodio) |
-| `docs/adr-111-revisualizacion-temporadas-episodios.md` | **Nuevo**: este documento (incluye la iteración por feedback de #310 y la subsección «Iteración 2 (feedback 2026-08-19)» con las 4 decisiones de la segunda ronda) |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificados**: bump de versión PWA a `20261003` (primera implementación), `20261004` (iteración por feedback), `20261006` (iteración 3), `20261007` (iteración 4) y `20261008` (iteración 5) |
+| `docs/adr-112-revisualizacion-temporadas-episodios.md` | **Nuevo**: este documento (incluye la iteración por feedback de #310 y la subsección «Iteración 2 (feedback 2026-08-19)» con las 4 decisiones de la segunda ronda). **Iteración 6 (resume workflow_dispatch 2026-08-20)**: renumerado de ADR-111 a ADR-112 porque el ADR-111 quedó ocupado en `feat/issue-201` por la issue #311 (lista de premios completa, PR #312) — dos ADR-111 colisionarían al fusionar la PR #313; Documentado también el bump PWA `20261009` |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificados**: bump de versión PWA a `20261003` (primera implementación), `20261004` (iteración por feedback), `20261006` (iteración 3), `20261007` (iteración 4), `20261008` (iteración 5) y `20261009` (iteración 6) |
 | `tasks/task-issue-310.json` | Task file de la tarea |
 
 Related issue: #310 — https://github.com/gonzalitojh/Registro-personal/issues/310
