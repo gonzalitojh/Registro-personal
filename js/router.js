@@ -115,6 +115,19 @@ const ITEM_KEY_TO_KIND = {
 // uid de Firebase, con un tope de longitud cómodo.
 const ITEM_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
 
+// Ruta de detalle de una PERSONA (issue #321): el token público
+// "personas" (plural, consistente con "series"/"peliculas") + el id
+// de TMDB de la persona → página de la persona (foto, biografía,
+// créditos y premios), con el mismo patrón de página nueva que el
+// ítem (ADR-100). No es una pestaña de Ocio: no tiene entrada en la
+// barra lateral ni actualiza las memorias del router.
+const PERSON_KEY = "personas";
+
+// Id de persona en la URL: mismos ids de TMDB (numéricos) — el mismo
+// alfabeto de ITEM_ID_RE; la persona nunca es "manual-…" (los datos
+// vienen siempre de TMDB).
+const PERSON_ID_RE = ITEM_ID_RE;
+
 // Devuelve la clave de ruta de Ocio para un id de panel, o null si
 // no existe ninguna (data-human desconocido).
 export function keyForPanel(panelId) {
@@ -168,9 +181,16 @@ export function itemHashFor(kind, externalId) {
   return `#${ROUTE_PREFIX}/${token}/${encodeURIComponent(externalId)}`;
 }
 
+// Hash canónico de la página de una persona (issue #321):
+// #/ocio/personas/<personId> (id de TMDB de la persona).
+export function personHashFor(personId) {
+  return `#${ROUTE_PREFIX}/${PERSON_KEY}/${encodeURIComponent(personId)}`;
+}
+
 // Interpreta un fragmento (location.hash por defecto). Contrato:
 // - Ocio    → { section:"ocio", key, panelId } (+ default/invalid).
 // - Ítem    → { section:"item", kind:"tv"|"movie", externalId }.
+// - Persona → { section:"person", personId } (issue #321).
 // - Perfil  → { section:"perfil", profileSection, uid? } (+default/invalid).
 // - Recetas → { section:"recetas", tab, panelId } (+ default/invalid).
 // - Gimnasio→ { section:"gimnasio", tab, panelId } (+ default/invalid).
@@ -264,24 +284,38 @@ export function parseHash(hash = location.hash) {
   if (segments.length === 1) {
     return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true };
   }
-  // #/ocio/<clave>/<id>: página de detalle de un ítem (issue #285).
-  // Solo series y películas tienen ruta de ítem; el id se valida
-  // (alfabeto acotado) tras decodeURIComponent, como el uid de amigo.
-  if (
-    segments.length === 3 &&
-    Object.prototype.hasOwnProperty.call(ITEM_KEY_TO_KIND, segments[1])
-  ) {
-    let externalId = segments[2];
-    try {
-      externalId = decodeURIComponent(externalId);
-    } catch {
-      externalId = "";
+  // #/ocio/<clave>/<id>: página de detalle de un ítem (issue #285)
+  // o de una persona (issue #321). El id se valida (alfabeto acotado)
+  // tras decodeURIComponent, como el uid de amigo.
+  if (segments.length === 3) {
+    // Persona: #/ocio/personas/<personId> (issue #321).
+    if (segments[1] === PERSON_KEY) {
+      let personId = segments[2];
+      try {
+        personId = decodeURIComponent(personId);
+      } catch {
+        personId = "";
+      }
+      if (PERSON_ID_RE.test(personId)) {
+        return { section: "person", personId };
+      }
+      // Id inválido → saneado a la pestaña por defecto (URL canónica).
+      return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
     }
-    if (ITEM_ID_RE.test(externalId)) {
-      return { section: "item", kind: ITEM_KEY_TO_KIND[segments[1]], externalId };
+    // Ítem: solo series y películas tienen ruta de ítem.
+    if (Object.prototype.hasOwnProperty.call(ITEM_KEY_TO_KIND, segments[1])) {
+      let externalId = segments[2];
+      try {
+        externalId = decodeURIComponent(externalId);
+      } catch {
+        externalId = "";
+      }
+      if (ITEM_ID_RE.test(externalId)) {
+        return { section: "item", kind: ITEM_KEY_TO_KIND[segments[1]], externalId };
+      }
+      // Id inválido → saneado a la pestaña por defecto (URL canónica).
+      return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
     }
-    // Id inválido → saneado a la pestaña por defecto (URL canónica).
-    return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
   }
   // #/ocio/<clave>: solo valen las cuatro claves conocidas.
   if (segments.length === 2 && KEY_TO_PANEL[segments[1]]) {
@@ -291,9 +325,9 @@ export function parseHash(hash = location.hash) {
   return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
 }
 
-// Hash canónico para una ruta (ocio, perfil, recetas, gimnasio o
-// detalle de ítem) según su forma. Usada por navigate() para
-// normalizar.
+// Hash canónico para una ruta (ocio, perfil, recetas, gimnasio,
+// detalle de ítem o detalle de persona) según su forma. Usada por
+// navigate() para normalizar.
 function canonicalHashFor(route) {
   if (route?.section === "perfil") {
     return profileHashKey(route.profileSection, route.uid);
@@ -306,6 +340,9 @@ function canonicalHashFor(route) {
   }
   if (route?.section === "item") {
     return itemHashFor(route.kind, route.externalId);
+  }
+  if (route?.section === "person") {
+    return personHashFor(route.personId);
   }
   return hashForKey(route?.key || DEFAULT_KEY);
 }

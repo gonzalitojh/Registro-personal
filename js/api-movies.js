@@ -744,6 +744,150 @@ export async function getItemAwards(type, externalId) {
 }
 
 // =============================================================
+// Persona (actor/actriz o miembro del equipo técnico) desde TMDB
+// (issue #321): página de detalle de una persona con su foto,
+// biografía, fechas, y las películas/series en las que ha trabajado
+// o trabajará (combined_credits), más sus premios y nominaciones
+// desde Wikidata (P166/P1411 personales, misma infraestructura que
+// los premios de títulos de la issue #302). Caché en memoria de 24 h
+// (la compartida con el resto de detalles).
+// =============================================================
+
+// Foto grande de la persona (issue #321): w342 equilibra nitidez y
+// peso para el hero de la página de persona (mismo patrón que el
+// póster de las fichas, IMG_BASE). Los créditos usan w92 (miniaturas).
+const IMG_PERSON_LARGE = "https://image.tmdb.org/t/p/w342";
+
+// Foto miniatura de un crédito de la persona (issue #321): w92, el
+// mismo tamaño de logo que los watch providers (peso mínimo para
+// listas con muchos créditos).
+const IMG_CREDIT = "https://image.tmdb.org/t/p/w92";
+
+// Crédito de combined_credits de TMDB (issue #321): normaliza una
+// entrada {media_type, id, title|name, release_date|first_air_date,
+// poster_path, character|job} al contrato de la página de persona.
+// Solo interesan películas y series; el resto (videojuegos, vídeo…)
+// se descarta. role = personaje (actuación) o puesto (equipo).
+function mapPersonCredit(c) {
+  const kind = c.media_type === "tv" ? "tv" : c.media_type === "movie" ? "movie" : null;
+  if (!kind) return null;
+  return {
+    externalId: String(c.id),
+    kind,
+    title: c.title || c.name || "",
+    year: (c.release_date || c.first_air_date || "").slice(0, 4),
+    posterUrl: c.poster_path ? `${IMG_CREDIT}${c.poster_path}` : null,
+    role: c.character || c.job || "",
+  };
+}
+
+// Ordena los créditos por año desc. (los estrenos futuros quedan
+// arriba: es información de "trabajará") y los sin año al final.
+function sortCreditsByYear(credits) {
+  return [...credits].sort((a, b) => {
+    const ya = Number(a.year) || 0;
+    const yb = Number(b.year) || 0;
+    if (ya !== yb) return yb - ya;
+    return (a.title < b.title ? -1 : a.title > b.title ? 1 : 0);
+  });
+}
+
+/**
+ * Datos de detalle de una persona (issue #321): foto, nombre,
+ * biografía, fechas y lugar de nacimiento, área conocida y las
+ * películas/series en las que ha trabajado o trabajará
+ * (combined_credits de TMDB), separadas en actuación (cast, con
+ * personaje) y equipo técnico (crew, con puesto). También se piden
+ * los external_ids para poder consultar sus premios en Wikidata
+ * (wikidata_id o, en su defecto, imdb_id "nm…"). Con caché en memoria
+ * de 24 h (la compartida con los detalles de títulos y watch
+ * providers): una persona ya visitada no vuelve a llamar a la API.
+ * @param {string|number} personId - ID de TMDB de la persona
+ */
+export async function getPersonDetails(personId) {
+  const id = String(personId);
+  const cacheKey = `person_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const url = `${BASE_URL}/person/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=combined_credits,external_ids`;
+  const data = await fetchJson(url, { retries: 1 }).catch(() => null);
+  if (!data) return null;
+
+  const credits = data.combined_credits || {};
+  const result = {
+    id,
+    name: data.name || "",
+    biography: data.biography || "",
+    birthday: data.birthday || null,
+    deathday: data.deathday || null,
+    placeOfBirth: data.place_of_birth || "",
+    knownForDepartment: data.known_for_department || "",
+    profileUrl: data.profile_path ? `${IMG_PERSON_LARGE}${data.profile_path}` : null,
+    castCredits: sortCreditsByYear((credits.cast || []).map(mapPersonCredit).filter(Boolean)),
+    crewCredits: sortCreditsByYear((credits.crew || []).map(mapPersonCredit).filter(Boolean)),
+    wikidataId: /^Q\d+$/.test(data.external_ids?.wikidata_id || "") ? data.external_ids.wikidata_id : null,
+    imdbId: /^nm\d+$/.test(data.external_ids?.imdb_id || "") ? data.external_ids.imdb_id : null,
+  };
+  setCache(cacheKey, result);
+  return result;
+}
+
+/**
+ * Premios y nominaciones de una PERSONA desde Wikidata (issue #321):
+ * las declaraciones P166 («award received») y P1411 («nominated
+ * for») del ítem de la persona, con el año de la ceremonia (P585) y
+ * el trabajo por el que se concedió (P1686, p. ej. la película).
+ * Reutiliza la consulta y el mapeo de los premios de títulos (issue
+ * #302): la agrupación por familia (Óscar, Globos de Oro…) y la
+ * presentación son idénticas a las fichas de películas/series. No es
+ * crítico: cualquier fallo (red, sin ítem en Wikidata, sin premios)
+ * devuelve null y la sección no se pinta.
+ * @param {string|number} personId - ID de TMDB de la persona
+ * @returns {Promise<Array<{group: string, entries: Array<{kind: 'award'|'nom', name: string, year?: string, detail?: string, people: string[]}>}>|null>}
+ */
+export async function getPersonAwards(personId) {
+  const id = String(personId);
+  const cacheKey = `awards_person_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  let awards = null;
+  let data = null;
+  try {
+    // El wikidata_id viene en el resultado cacheado de getPersonDetails
+    // (external_ids de /person/<id>), pero aquí se consulta en frío
+    // por si la persona aún no se ha visitado (mismas defensas de
+    // getItemAwards: validación de formato antes de interpolar en SPARQL).
+    const details = await getPersonDetails(id);
+    let query = null;
+    if (details && /^Q\d+$/.test(details.wikidataId || "")) {
+      query = wikidataAwardsQuery(details.wikidataId);
+    } else if (details && /^nm\d+$/.test(details.imdbId || "")) {
+      // Sin wikidata_id (raro): la persona se busca por su id de IMDb.
+      // La propiedad P345 de Wikidata es compartida por títulos y
+      // personas — la rama "movie" de la consulta por external id usa
+      // exactamente P345, así que sirve igual para una persona.
+      query = wikidataAwardsByExternalIdQuery("movie", details.imdbId);
+    }
+    if (query) {
+      const url = `${WDQS_URL}?format=json&query=${encodeURIComponent(query)}`;
+      data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+      const rows = data && data.results ? data.results.bindings : null;
+      if (rows) awards = mapAwardsBindings(rows.filter((b) => !isListPointerRow(b)));
+    }
+  } catch {
+    awards = null;
+  }
+  // Solo se cachea un resultado REAL (misma política que getItemAwards,
+  // issue #311): un fallo transitorio de Wikidata no debe dejar a la
+  // persona «sin premios» durante 24 h — se reintenta en la siguiente
+  // apertura. [] (consulta respondida sin filas) sí se cachea.
+  if (data) setCache(cacheKey, awards);
+  return awards;
+}
+
+// =============================================================
 // Recomendaciones desde TMDB con el endpoint /recommendations
 // (issue #319): es el que alimenta la sección de recomendaciones
 // de la propia web de TMDB. NO se usa /similar, que según la
