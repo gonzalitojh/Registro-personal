@@ -16,6 +16,7 @@
 // =============================================================
 
 import { trapFocus } from "./focus-utils.js";
+import { navigate } from "./router.js";
 
 const PLACEHOLDER_PERSON_COVER =
   "data:image/svg+xml;utf8," +
@@ -51,6 +52,20 @@ export function closeCastModal() {
 // módulo (no por cada apertura), igual que en rating-modal.js.
 document.getElementById("cast-modal-close").addEventListener("click", () => closeCastModal());
 document.getElementById("cast-modal-backdrop").addEventListener("click", () => closeCastModal());
+
+// Filas de persona pulsables (issue #321): listener DELEGADO en el
+// armazón (una sola vez al cargar el módulo, como los cierres) porque
+// las filas se re-renderizan con el buscador y los listeners por fila
+// morirían en cada filtrado. Al pulsar una fila se cierra la ventana
+// (restaura foco y limpia el focus trap) y se navega a la página de
+// la persona.
+document.getElementById("cast-modal").addEventListener("click", (e) => {
+  const row = e.target.closest?.("[data-person-id]");
+  if (!row) return;
+  e.preventDefault();
+  closeCastModal();
+  navigate({ section: "person", personId: row.dataset.personId });
+});
 
 function escapeHtml(str) {
   if (!str) return "";
@@ -180,14 +195,24 @@ export function groupCrewByDepartment(people) {
 
 function personRowHtml(person) {
   const detail = person.character || person.roles || "";
-  return `
-    <li class="cast-modal__row">
-      <img class="cast-modal__photo" src="${escapeHtml(safePhotoUrl(person.profileUrl))}" alt="" loading="lazy" />
-      <div class="cast-modal__person">
-        <span class="cast-modal__name">${escapeHtml(person.name)}</span>
-        ${detail ? `<span class="cast-modal__role">${escapeHtml(detail)}</span>` : ""}
-      </div>
+  const inner = `
+    <img class="cast-modal__photo" src="${escapeHtml(safePhotoUrl(person.profileUrl))}" alt="" loading="lazy" />
+    <div class="cast-modal__person">
+      <span class="cast-modal__name">${escapeHtml(person.name)}</span>
+      ${detail ? `<span class="cast-modal__role">${escapeHtml(detail)}</span>` : ""}
+    </div>`;
+  // Fila pulsable (issue #321): con id de TMDB la persona abre su
+  // página (#/ocio/personas/<id>); sin id (datos legacy) se degrada a
+  // la fila estática de siempre.
+  if (person.id) {
+    return `<li class="cast-modal__row-wrap">
+      <button type="button" class="cast-modal__row" data-person-id="${escapeHtml(String(person.id))}"
+              aria-label="Ver la página de ${escapeHtml(person.name)}">
+        ${inner}
+      </button>
     </li>`;
+  }
+  return `<li class="cast-modal__row">${inner}</li>`;
 }
 
 // Filtra las personas por el texto del buscador (iteración issue

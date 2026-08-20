@@ -2261,6 +2261,28 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: inherit;
 }
 
+/* Tarjeta pulsable (issue #321): .cast-card se renderiza como
+   <button> cuando la persona tiene id de TMDB (abre su página).
+   Reset del estilo de botón del navegador: la tarjeta mantiene el
+   aspecto de siempre (los estilos de .cast-card se aplican igual al
+   botón). El hover/focus sutil usa la misma tinta alfa que el resto
+   de superficies pulsables de la web. */
+button.cast-card {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.cast-card:hover {
+  background: var(--ink-alpha-10);
+}
+button.cast-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
 .cast-card__photo {
   width: 100%;
   aspect-ratio: 2 / 3;
@@ -2639,6 +2661,41 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 .cast-modal__row:last-child {
+  border-bottom: none;
+}
+
+/* Fila pulsable (issue #321): .cast-modal__row se renderiza como
+   <button> (dentro de un <li> contenedor) cuando la persona tiene id
+   de TMDB (abre su página). Reset del estilo de botón del navegador;
+   la fila conserva el aspecto de siempre. La delegación de clicks
+   está en js/cast-modal.js (las filas se re-renderizan al buscar). */
+.cast-modal__row-wrap {
+  display: flex;
+  min-width: 0;
+}
+.cast-modal__row-wrap .cast-modal__row {
+  flex: 1 1 auto;
+}
+button.cast-modal__row {
+  appearance: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 0;
+  border-bottom: 1px solid var(--paper-alpha-14);
+}
+button.cast-modal__row:hover {
+  background: var(--ink-alpha-10);
+}
+button.cast-modal__row:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+/* En la variante con <li> contenedor, el :last-child del ul es el
+   wrap: el borde inferior se retira igual que en la fila directa. */
+.cast-modal__row-wrap:last-child .cast-modal__row {
   border-bottom: none;
 }
 
