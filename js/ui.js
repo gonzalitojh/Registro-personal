@@ -2318,6 +2318,61 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMa
     .join("");
 }
 
+// Temporada de SOLO LECTURA para la vista previa de la página de ítem
+// (issue #317): misma estructura que renderSeasonBlock (encabezado con
+// chevron, nombre y contador) pero SIN la casilla circular de «Marcar
+// todo», porque el título aún no está en el registro. El contador se
+// pinta 0/N — el equivalente vacío de una serie recién añadida — y los
+// episodios se cargan bajo demanda desde TMDB al desplegar (sin
+// controles de marcado/valoración). Si falta episodeCount se muestra
+// 0/0 (temporada sin episodios conocidos aún).
+export function renderSeasonBlockReadOnly(s) {
+  const count = s.episodeCount || 0;
+  return `
+    <div class="season-block" data-season="${s.seasonNumber}" data-episode-count="${count}">
+      <div class="season-header">
+        <button type="button" class="season-toggle" data-season="${s.seasonNumber}" aria-expanded="false">
+          <span class="season-chevron">▸</span>
+          <span class="season-name">${escapeHtml(s.name)}</span>
+          <span class="season-count">0/${count}</span>
+        </button>
+      </div>
+      <div class="season-episodes hidden" data-season-episodes="${s.seasonNumber}"></div>
+    </div>`;
+}
+
+// Filas de episodio de SOLO LECTURA para la vista previa de la página
+// de ítem (issue #317): mismo aspecto que renderEpisodeRows (número
+// E#, nombre con el aviso «sin estrenar» y la nota de la comunidad
+// TMDB del episodio cuando la tiene) pero SIN casilla de marcado,
+// valoración personal ni desplegable de visionados: el título aún no
+// está en el registro y no hay nada que marcar. Los episodios llegan
+// de TMDB (getSeasonEpisodes), nunca de una serie manual.
+export function renderEpisodeRowsReadOnly(episodes) {
+  return episodes
+    .map((e) => {
+      const future = isUnreleasedDate(e.airDate);
+      const communityBadge =
+        e.episodeRating != null ? communityRatingValueHtml(e.episodeRating) : "";
+      return `
+      <div class="episode-row" data-episode="${e.episodeNumber}"
+           data-air-date="${e.airDate || ""}" data-episode-name="${escapeHtml(e.name)}">
+        <div class="episode-row__main">
+          <span class="episode-row__num" aria-hidden="true">E${e.episodeNumber}</span>
+          <span class="episode-row__name">${escapeHtml(e.name)}${
+        future
+          ? ` <em class="episode-row__future">${
+              e.airDate ? `(sin estrenar · ${formatDateEs(e.airDate)})` : "(sin estrenar)"
+            }</em>`
+          : ""
+      }</span>
+          ${communityBadge}
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
 export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set(), { target = null } = {}) {
   const {
     onExpandSeason,
