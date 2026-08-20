@@ -467,7 +467,9 @@ export async function getWatchProviders(id, type, countryCode = "ES") {
 const WDQS_URL = "https://query.wikidata.org/sparql";
 
 // Consulta SPARQL de los premios y nominaciones de un ítem de
-// Wikidata (iteración 2026-08-19, comentario de la issue #302):
+// Wikidata (iteración 2026-08-19, comentario de la issue #302;
+// issue #311: ?award y ?isList para filtrar los punteros a
+// artículos de lista):
 // - PREMIOS: declaraciones P166 («award received»).
 // - NOMINACIONES: declaraciones P1411 («nominated for»), marcadas
 //   con ?kind ("nom") para diferenciarlas de los premios.
@@ -482,10 +484,17 @@ const WDQS_URL = "https://query.wikidata.org/sparql";
 //   nombre del premio (COALESCE a ?group).
 // - Fecha de la ceremonia (P585), obra por la que se concedió
 //   (P1686, omitida cuando es el propio ítem).
+// - PUNTEROS A LISTAS (issue #311): ?isList marca las filas cuyo
+//   valor de premio es un ítem de «artículo de lista de Wikimedia»
+//   (P31 = Q13406463, p. ej. «List of awards and nominations
+//   received by X»): NO es un premio real y la app lo descarta
+//   (isListPointerRow/mapAwardsBindings); ?award (el QID) permite
+//   desreferenciar el ítem de lista en busca de declaraciones
+//   propias P166/P1411 cuando el título no tiene ninguna.
 // Las etiquetas se resuelven en español y, si no existe, en inglés.
 function wikidataAwardsQuery(wikidataId) {
   return `
-SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
+SELECT ?kind ?award ?isList ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
   {
     wd:${wikidataId} p:P166 ?st.
     ?st ps:P166 ?award.
@@ -504,6 +513,7 @@ SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
   OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
   BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
   BIND(YEAR(?date) as ?year)
+  BIND(EXISTS { ?award wdt:P31 wd:Q13406463 } AS ?isList)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
 } ORDER BY DESC(?year)`;
 }
@@ -516,7 +526,7 @@ SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
 function wikidataAwardsByExternalIdQuery(type, externalId) {
   const prop = type === "tv" ? "P4983" : "P345";
   return `
-SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
+SELECT ?kind ?award ?isList ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
   ?item wdt:${prop} "${externalId}".
   {
     ?item p:P166 ?st.
@@ -536,6 +546,7 @@ SELECT ?kind ?awardLabel ?groupLabel ?year ?workLabel ?personLabel WHERE {
   OPTIONAL { ?award wdt:P361|wdt:P179 ?groupOfAward. }
   BIND(COALESCE(?groupOfCeremony, ?groupOfAward, ?award) AS ?group)
   BIND(YEAR(?date) as ?year)
+  BIND(EXISTS { ?award wdt:P31 wd:Q13406463 } AS ?isList)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
 } ORDER BY DESC(?year)`;
 }
@@ -547,12 +558,32 @@ function cleanAwardLabel(label) {
   return (label || "").replace(/^Anexo:\s*/i, "").trim();
 }
 
+// True cuando la fila de la consulta SPARQL es un PUNTERO a un
+// artículo de lista de Wikipedia (issue #311): el valor del premio
+// no es un premio real sino el ítem «List of awards and nominations
+// received by X» (P31 = Q13406463 «artículo de lista de Wikimedia»,
+// p. ej. el caso de Stranger Things). Esas filas no deben pintarse
+// como premio (sería una entrada basura) y, cuando son las ÚNICAS
+// del título, marcan la ruta de desreferencia de getItemAwards
+// (consultar las declaraciones propias P166/P1411 del ítem de
+// lista). Detección por la propiedad ?isList de la consulta y, por
+// robustez, por el patrón del nombre (nunca coinciden los anexos
+// legítimos tipo «Anexo:Óscar al mejor actor», cuyo nombre limpio
+// es «Óscar al mejor actor»).
+function isListPointerRow(b) {
+  if (b.isList && b.isList.value === "true") return true;
+  const name = cleanAwardLabel(b.awardLabel && b.awardLabel.value);
+  return /^list of (awards|honors|accolades|prizes)/i.test(name);
+}
+
 // Normaliza las filas de la respuesta SPARQL a los grupos de la
 // sección «Premios» del render: [{ group, entries: [...] }].
 // Entrada por fila: { kind, awardLabel, groupLabel, year,
 // workLabel, personLabel }. Pasos:
 // 1. Limpieza de etiquetas (prefijo «Anexo:») y salto de filas sin
-//    nombre de premio.
+//    nombre de premio y de los PUNTEROS a artículos de lista
+//    (isListPointerRow, issue #311: «List of awards and nominations
+//    received by X» no es un premio).
 // 2. Deduplicación por premio+año+obra+tipo (un mismo premio puede
 //    repetirse con varios cualificadores y varias declaraciones);
 //    los implicados (P1346/P2453) de filas del mismo premio se
@@ -567,6 +598,7 @@ function mapAwardsBindings(bindings) {
   for (const b of bindings || []) {
     const name = cleanAwardLabel(b.awardLabel && b.awardLabel.value);
     if (!name) continue;
+    if (isListPointerRow(b)) continue;
     const kind = b.kind && b.kind.value === "award" ? "award" : "nom";
     const year = b.year ? String(b.year.value) : "";
     const detail =
@@ -640,6 +672,7 @@ export async function getItemAwards(type, externalId) {
   if (cached) return cached;
 
   let awards = null;
+  let data = null;
   try {
     const ext = await fetchJson(
       `${BASE_URL}/${type}/${id}/external_ids?api_key=${TMDB_API_KEY}`,
@@ -663,13 +696,50 @@ export async function getItemAwards(type, externalId) {
       const url = `${WDQS_URL}?format=json&query=${encodeURIComponent(query)}`;
       // Accept explícito: Wikidata sirve HTML (su web) si no se pide
       // JSON, incluso con format=json en la URL.
-      const data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
-      awards = data ? mapAwardsBindings(data.results && data.results.bindings) : null;
+      data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+      const rows = data && data.results ? data.results.bindings : null;
+      if (rows) {
+        const realRows = rows.filter((b) => !isListPointerRow(b));
+        if (realRows.length) {
+          // Caso normal: el título tiene declaraciones P166/P1411
+          // propias (premios reales y/o nominaciones).
+          awards = mapAwardsBindings(realRows);
+        } else {
+          // Punteros a artículos de lista (issue #311): el título NO
+          // tiene declaraciones de premios propias — p. ej. Stranger
+          // Things solo tiene P166 → «List of awards and nominations
+          // received by Stranger Things» (P31 = Q13406463). Algunos
+          // ítems de lista guardan las declaraciones P166/P1411 en sí
+          // mismos; se desreferencian (un nivel) y se mapean como si
+          // fueran del título. Si el ítem de lista tampoco tiene
+          // declaraciones (el caso habitual hoy), el resultado es []
+          // y la sección no se pinta (degradación elegante; el
+          // puntero jamás se muestra como premio).
+          const fetched = new Set();
+          const listRows = [];
+          for (const b of rows) {
+            const qid =
+              b.award && b.award.value ? b.award.value.split("/").pop() : "";
+            if (!/^Q\d+$/.test(qid) || fetched.has(qid)) continue;
+            fetched.add(qid);
+            const listUrl = `${WDQS_URL}?format=json&query=${encodeURIComponent(wikidataAwardsQuery(qid))}`;
+            const listData = await fetchJson(listUrl, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+            const subRows = listData && listData.results ? listData.results.bindings : [];
+            listRows.push(...subRows);
+          }
+          awards = mapAwardsBindings(listRows);
+        }
+      }
     }
   } catch {
     awards = null;
   }
-  setCache(cacheKey, awards);
+  // Solo se cachea un resultado REAL de la consulta (issue #311):
+  // un fallo transitorio de Wikidata (504, red) NO debe dejar la
+  // sección «sin premios» durante 24 h — se reintenta en la
+  // siguiente apertura. `awards` es [] cuando la consulta respondió
+  // sin filas (cobertura real) y eso sí se cachea.
+  if (data) setCache(cacheKey, awards);
   return awards;
 }
 
