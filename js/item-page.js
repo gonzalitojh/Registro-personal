@@ -40,13 +40,14 @@ import {
 import {
   upcomingBadge,
   watchProvidersHtml,
-  extraInfoHtml,
   itemHeroHtml,
-  previewSeasonsHtml,
+  castCrewHtml,
   renderSagaMovies,
   renderRecommendations,
   wireCastCrewClicks,
   awardsHtml,
+  renderSeasonBlockReadOnly,
+  renderEpisodeRowsReadOnly,
 } from "./ui.js";
 import { handleAdd, handleAddSeen } from "./search.js";
 import { getLastOcioKey, navigate, parseHash } from "./router.js";
@@ -802,13 +803,18 @@ async function loadPreviewExtras(token, item) {
 }
 
 // Pinta la tarjeta de preview con la MISMA información del título que
-// la ficha (issue #290): distintivo de no estrenado, puntuación de la
-// comunidad, tráiler, dónde verla, información ampliada (duración,
-// géneros, director/creadores, reparto, sinopsis), temporadas
-// detalladas (series), saga (si movie con collectionId) y
-// recomendaciones. Las acciones del REGISTRO (visionados, valoración
-// personal, notas, eliminar) no aplican sin ítem en el
-// registro: se conservan el aviso «aún no añadido» y el botón Añadir.
+// la ficha (issue #290 y #317): la página de un título NO añadido es
+// IDÉNTICA a la ficha en secciones, botones y organización — hero con
+// valoración de la comunidad y tráiler, distintivo de no estrenado,
+// dónde verla, premios, producción/reparto, saga (si movie con
+// collectionId) y recomendaciones. En las series se añaden además el
+// banner de progreso (0/N, «Siguiente: T1E1», como una serie recién
+// añadida) y las temporadas desplegables de SOLO LECTURA con la nota
+// de la comunidad de cada episodio. La única diferencia con la ficha:
+// al final de la página, el aviso «aún no está en tu registro» y el
+// botón «Añadir» (la ficha solo muestra acciones del REGISTRO —
+// visionados, valoración personal, notas, eliminar —, que no aplican
+// sin ítem en el registro).
 function paintPreview(
   target,
   item,
@@ -831,26 +837,63 @@ function paintPreview(
     ? renderSagaMovies(sagaParts, existingIds, true, onOpenSagaMovie)
     : "";
 
+  // Aviso «aún no en tu registro» (issue #317): como toda la página es
+  // ya la ficha, el aviso vive al FINAL (después de las secciones de
+  // información y antes de las temporadas en series), justo encima del
+  // único botón de acción real de la página, «Añadir».
+  const hint = `<p class="item-preview__hint">Este título aún no está en tu registro.</p>`;
+
+  // Banner de progreso de la preview de SERIE (issue #317): réplica
+  // del de la ficha calculado como una serie recién añadida (sin nada
+  // visto: 0/N y «Siguiente: T1E1»), para que la sección de temporadas
+  // sea igual a la de un título en el registro. Solo cuando TMDB trae
+  // temporadas (item.seasonsMeta): sin ellas no hay banner ni lista
+  // (degradación elegante, como en la ficha).
+  let progressBannerHtml = "";
+  let seasonsHtml = "";
+  if (kind === "tv" && item.seasonsMeta && item.seasonsMeta.length) {
+    const progress = computeProgress(item.seasonsMeta, {});
+    const nextLine = progress.nextEpisode
+      ? `Siguiente: T${progress.nextEpisode.season}E${progress.nextEpisode.episode}`
+      : "¡Serie completada!";
+    const pct = progress.totalEpisodes
+      ? Math.round((progress.totalWatched / progress.totalEpisodes) * 100)
+      : 0;
+    progressBannerHtml = `
+    <div class="progress-banner">
+      <span class="next-line">${nextLine}</span>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width:${pct}%"></div>
+      </div>
+      <span class="progress-count">${progress.totalWatched}/${progress.totalEpisodes} episodios</span>
+    </div>`;
+    seasonsHtml = `
+    <div class="seasons-list">
+      ${item.seasonsMeta.map((s) => renderSeasonBlockReadOnly(s)).join("")}
+    </div>`;
+  }
+
+  // Orden de secciones (issue #317): IDÉNTICO al de la ficha
+  // (openMovieModal/openTvModal en modo página) — hero → badge →
+  // plataformas → premios → producción/reparto → saga (películas) →
+  // recomendaciones → [series: banner de progreso] → aviso de preview
+  // → [series: temporadas] → CTA «Añadir».
   target.innerHTML = `
-    ${itemHeroHtml(item, { showUserRating: false })}
-    <p class="item-preview__hint">Este título aún no está en tu registro.</p>
+    ${itemHeroHtml(item, { showUserRating: true })}
     ${unreleasedBadge}
+    ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
     ${watchProvidersHtml(item)}
     ${awardsHtml(item)}
-    <div class="field-group" id="preview-details">
-      ${extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true })}
-      ${previewSeasonsHtml(item)}
-      ${loading ? `<p class="extra-info__line" id="preview-loading">Cargando detalles…</p>` : ""}
-    </div>
+    ${castCrewHtml(item)}
     ${sagaHtml}
     ${renderRecommendations(recommendations, existingIds, kind, true, onOpenRecommendation)}
+    ${progressBannerHtml}
+    ${hint}
+    ${seasonsHtml}
     <div class="modal-actions">
-      <button type="button" class="btn btn--outline" id="btn-preview-back">Volver</button>
       <button type="button" class="btn btn--accent-media" id="btn-preview-add">Añadir</button>
     </div>
   `;
-
-  target.querySelector("#btn-preview-back").addEventListener("click", goBack);
 
   // Carruseles de elenco (issue #294): los botones «Ver en más
   // detalle» de la preview (producción/reparto) con los datos del ítem.
@@ -905,6 +948,51 @@ function paintPreview(
       });
     });
   }
+
+  // Temporadas de solo lectura de la preview de serie (issue #317):
+  // misma mecánica de expansión que la ficha (chevron ▸/▾, aria-
+  // expanded y .hidden en el bloque) pero sin controles de marcado:
+  // los episodios se piden a TMDB la primera vez que se despliega la
+  // temporada y se pintan con renderEpisodeRowsReadOnly. El botón se
+  // deshabilita durante la carga (evita dobles fetch) y el guard
+  // isCurrent + isConnected evita pintar en un bloque huérfano si la
+  // ruta cambió durante el await (patrón anti-race de la página).
+  target.querySelectorAll(".season-toggle").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const seasonNumber = Number(btn.dataset.season);
+      const block = target.querySelector(
+        `.season-episodes[data-season-episodes="${seasonNumber}"]`
+      );
+      const chevron = btn.querySelector(".season-chevron");
+      if (!block || !chevron) return;
+      const isHidden = block.classList.contains("hidden");
+
+      if (!isHidden) {
+        block.classList.add("hidden");
+        chevron.textContent = "▸";
+        btn.setAttribute("aria-expanded", "false");
+        return;
+      }
+      block.classList.remove("hidden");
+      chevron.textContent = "▾";
+      btn.setAttribute("aria-expanded", "true");
+      if (block.dataset.loaded) return;
+
+      btn.disabled = true;
+      block.innerHTML = `<p class="episode-loading">Cargando episodios…</p>`;
+      try {
+        const episodes = await pageCtx.getSeasonEpisodes(item.externalId, seasonNumber);
+        if (!isCurrent(currentToken) || !block.isConnected) return;
+        block.innerHTML = renderEpisodeRowsReadOnly(episodes);
+        block.dataset.loaded = "1";
+      } catch (err) {
+        if (!isCurrent(currentToken) || !block.isConnected) return;
+        block.innerHTML = `<p class="episode-loading">No se pudieron cargar los episodios.</p>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
 
   const addBtn = target.querySelector("#btn-preview-add");
   addBtn.addEventListener("click", () => addFromPreview(item, addBtn));
