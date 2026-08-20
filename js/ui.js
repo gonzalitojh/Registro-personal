@@ -2463,7 +2463,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       ? "Quitar la última visualización de todos los episodios de la temporada"
       : "Marcar todos los episodios de la temporada como vistos";
     checkbox.setAttribute("aria-label", label);
-    markWrap.dataset.allWatched = allWatched ? "0" : "1";
   }
 
   function updateSeasonCount(seasonNumber, episodeCount) {
@@ -2785,6 +2784,12 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           });
         }
         updateEpisodeAverage();
+      } catch (err) {
+        // Patrón issue #136 también en el camino de error: restaurar el
+        // check desde item.watched y avisar (mismo patrón que las filas).
+        applySeasonMarkAllState(seasonNumber);
+        updateSeasonCount(seasonNumber, episodeCount);
+        showToast("No se pudo actualizar la temporada: " + String(err && err.message ? err.message : err));
       } finally {
         checkbox.disabled = false;
       }
