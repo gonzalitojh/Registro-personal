@@ -81,8 +81,9 @@ Related issue: #310 — https://github.com/gonzalitojh/Registro-personal/issues/
     **limpia el flag**.
 - `js/modal-handlers.js`: `progressWithStatus` respeta `item.rewatching`
   (estado «pendiente» y `nextEpisode` T1E1 si el episodio siguiente ya
-  está visto en el rewatch); `persistWatched` usa `progressWithRewatch`
-  y persiste/limpia `rewatching`.
+  está visto en el rewatch — comportamiento sustituido en la iteración
+  3 por el progreso del ciclo actual, ver §5); `persistWatched` usa
+  `progressWithRewatch` y persiste/limpia `rewatching`.
 - `js/quick-actions.js`: `saveTvProgress`, `quickMarkTv`,
   `quickUnwatchTv` y `quickMarkTvComplete` (más sus deshaceres) usan los
   nuevos helpers. En un episodio del rewatch, «marcar» llama a
@@ -208,6 +209,73 @@ nuevo»** (`js/modal-handlers.js`, `js/ui.js`):
   con `minTimes`, documentado en el código. `progressWithRewatch` pasa
   `item.rewatchStartedAt || null`.
 
+### 5. Iteración 3 (feedback 2026-08-20)
+
+Tercera ronda de feedback del usuario en la issue #310 (comentario
+2026-08-20T05:33:45Z). Cinco puntos, todos sobre la COHERENCIA de los
+contadores y el estado visual durante un rewatch:
+
+**El progreso mostrado durante un rewatch es el del CICLO ACTUAL, no el
+histórico completo** (`js/tv-progress.js`, `js/modal-handlers.js`,
+`js/ui.js`):
+- Nuevo `entrySeenSince(entry, startedAt)`: una entrada cuenta como
+  «vista en el ciclo» si alguna de sus fechas (`dates`, o `date` en
+  datos legacy) es `>= rewatchStartedAt`. Sin `startedAt` (sin rewatch)
+  cualquier fecha cuenta.
+- `progressWithRewatch` (con `rewatchStartedAt`): `totalWatched` cuenta
+  solo los episodios del ciclo (**1/73 al empezar**, no los 73
+  históricos), `nextEpisode` es el siguiente episodio del ciclo sin ver
+  y el estado de hecho es **`en_curso` («viendo»)**, no «pendiente».
+  El ciclo legacy en vuelo (sin `rewatchStartedAt`, iniciado antes de
+  la iteración 2) conserva el comportamiento previo (pendiente + T1E1).
+- `progressWithStatus` (ficha, modal y página) delega en
+  `progressWithRewatch` salvo standby/abandonado: los contadores se
+  derivan SIEMPRE de las fechas del ciclo.
+- En el modal: `renderSeasonBlock` + `updateSeasonCount` muestran el
+  progreso del ciclo en el cabecero de temporada (`seasonCycleCount`),
+  `renderEpisodeRows` y `applyEpisodeRowState` marcan cada fila según
+  `entrySeenSince(entry, startedAt)` y, al marcar una casilla durante
+  un rewatch, un episodio con visiones históricas pero sin vista en el
+  ciclo se trata como «Verlo de nuevo» (+1 real, `onEpisodeSeenAgain`)
+  — `setEpisodeDate` no incrementaría el contador.
+
+**«Marcar todo»/«Desmarcar todo» de temporada como CHECK CIRCULAR**
+(`js/ui.js`, `ocio/ocio.css`): el botón de texto se sustituye por una
+casilla con el mismo patrón visual que los episodios
+(`.episode-checkbox-wrap` + `:checked ~ .episode-checkbox-visual`).
+El estado se deriva de `seasonCompleteTimes` (temporada completa
+histórica): **tick si se ha completado 1 vez, número si > 1** (misma
+semántica del `data-count` por episodio). El contador del cabecero de
+temporada sigue mostrando el ciclo actual; el check, la completitud
+histórica (coherente con las casillas de los episodios: para completar
+la temporada todos sus episodios deben estar marcados).
+
+**Coherencia del contador de la serie y de «Visionados anteriores»**
+(`js/tv-progress.js`, `js/ui.js`):
+- `seriesCompleteTimes(watched)` = mínimo de `times` de todos los
+  episodios marcados: el nº de veces que la serie está completa según
+  los episodios (fuente de verdad). `seasonCompleteTimes` es su versión
+  por temporada (0 si algún episodio sin marcar).
+- `progressLine` (tarjetas/lista) y el banner de «Has terminado esta
+  serie» usan `seriesCompleteTimes` en lugar del `timesCompleted`
+  inflado por marcados completos erróneos (fallback `timesCompleted+1`
+  solo sin episodios).
+- El sumario «Visionados anteriores (N)» de la serie deriva N del mismo
+  contador: `max(seriesCompleteTimes, history.length)`, y si los
+  episodios indican más visiones completas que las fechadas en el
+  historial se añade la línea «N visiones completas más sin fecha
+  registrada» (mismo patrón informativo que el desplegable por
+  episodio). `history` (ciclos iniciados con «Volver a verla desde el
+  principio») sigue mostrando sus fechas `startedAt → finishedAt`.
+
+**FAB de serie en rewatch: icono de «viendo» con color de visto**
+(`js/item-page.js`, `css/styles.css`): nueva clase `.item-fab--rewatch`
+(icono REPRODUCIR sobre el dúo OCRE del FAB visto, con los mismos
+contrastes AA documentados para `.item-fab--seen`, incluidos hover y
+override de negro puro). Gana a los estados activos (en curso/
+pendiente) pero respeta pausa/abandono; el `aria-label` del toggle pasa
+a «viéndose de nuevo».
+
 ## Alternativas descartadas
 
 - **Seguir limpiando `watched` en `startRewatch` y mostrar el rewatch
@@ -268,22 +336,25 @@ nuevo»** (`js/modal-handlers.js`, `js/ui.js`):
   que el episodio se vuelva a tocar.
 - Versión PWA bumped a `20261004` (la iteración se publica sobre la
   `20261003` de la primera implementación de #310; se evita colisión
-  de precache y de las versiones en vuelo de otras ramas).
+  de precache y de las versiones en vuelo de otras ramas). La
+  iteración 3 la sube a `20261006` (la `20261005` la consumió la
+  iteración 2).
 
 ## Archivos creados/modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/tv-progress.js` | **Modificado**: `startRewatch` conserva `watched` y marca `rewatching: true`; `normalizeEntry`/`entryDates` siempre derivan `dates` (legacy `[date]`); `setEpisodeDate`, `setEpisodeRating`, `setSeasonWatched`, `markEpisodeSeenAgain` mantienen/acumulan `dates`; `setSeasonWatched` (allWatched) suma +1 a los ya vistos en rewatch; nuevos `isRewatchComplete`, `progressWithRewatch` y `removeLastEpisodeViewing` (quita solo la última visión; iteración #310). **Iteración 2 (feedback 2026-08-19)**: `setSeasonWatched` aplica «Marcar/Desmarcar todo» con la semántica del episodio individual por episodio (`lastViewingRemovedEntry` compartido con `removeLastEpisodeViewing`; «Desmarcar todo» ya no vacía la temporada); `startRewatch` persiste `rewatchStartedAt` y eleva `timesCompleted` al máximo entre contador y veces por episodio (datos legacy); `isRewatchComplete` pasa a decidir por fechas `>= rewatchStartedAt` con fallback por contador para ciclos en vuelo sin el campo |
-| `js/modal-handlers.js` | **Modificado**: `progressWithStatus` respeta el flag `rewatching` (pendiente + nextEpisode T1E1); `persistWatched` usa `progressWithRewatch` y persiste/limpia el flag; callback `onRemoveLastViewing` (iteración #310). **Iteración 2 (feedback 2026-08-19)**: `onEpisodeSeenAgain` (renombrado desde `onSetEpisodeSeenAgain`) persiste el +1 y abre la ventana de valoración con la **valoración anterior por defecto** (`initialRating`); «Deshacer» revierte el +1 vía `removeLastEpisodeViewing` y restaura `awaitingRelease`/`status`/`rewatching` (sin «completado» fantasma con `progressWithRewatch`) |
+| `js/tv-progress.js` | **Modificado**: `startRewatch` conserva `watched` y marca `rewatching: true`; `normalizeEntry`/`entryDates` siempre derivan `dates` (legacy `[date]`); `setEpisodeDate`, `setEpisodeRating`, `setSeasonWatched`, `markEpisodeSeenAgain` mantienen/acumulan `dates`; `setSeasonWatched` (allWatched) suma +1 a los ya vistos en rewatch; nuevos `isRewatchComplete`, `progressWithRewatch` y `removeLastEpisodeViewing` (quita solo la última visión; iteración #310). **Iteración 2 (feedback 2026-08-19)**: `setSeasonWatched` aplica «Marcar/Desmarcar todo» con la semántica del episodio individual por episodio (`lastViewingRemovedEntry` compartido con `removeLastEpisodeViewing`; «Desmarcar todo» ya no vacía la temporada); `startRewatch` persiste `rewatchStartedAt` y eleva `timesCompleted` al máximo entre contador y veces por episodio (datos legacy); `isRewatchComplete` pasa a decidir por fechas `>= rewatchStartedAt` con fallback por contador para ciclos en vuelo sin el campo. **Iteración 3 (feedback 2026-08-20)**: nuevos `entrySeenSince` (visión en el ciclo `>= startedAt`), `seasonCompleteTimes` y `seriesCompleteTimes` (mínimo de `times` de los episodios: completitud de temporada/serie según los episodios, 0 si algún episodio sin marcar); `progressWithRewatch` cuenta `totalWatched` y `nextEpisode` del ciclo actual con `startedAt` y devuelve `status: "en_curso"` («viendo») en lugar de «pendiente» |
+| `js/modal-handlers.js` | **Modificado**: `progressWithStatus` respeta el flag `rewatching` (pendiente + nextEpisode T1E1); `persistWatched` usa `progressWithRewatch` y persiste/limpia el flag; callback `onRemoveLastViewing` (iteración #310). **Iteración 2 (feedback 2026-08-19)**: `onEpisodeSeenAgain` (renombrado desde `onSetEpisodeSeenAgain`) persiste el +1 y abre la ventana de valoración con la **valoración anterior por defecto** (`initialRating`); «Deshacer» revierte el +1 vía `removeLastEpisodeViewing` y restaura `awaitingRelease`/`status`/`rewatching` (sin «completado» fantasma con `progressWithRewatch`). **Iteración 3 (feedback 2026-08-20)**: `progressWithStatus` delega en `progressWithRewatch` (progreso por ciclo) salvo standby/abandonado |
 | `js/quick-actions.js` | **Modificado**: `saveTvProgress`, `quickMarkTv` (rewatch → `markEpisodeSeenAgain`), `quickUnwatchTv` (iteración #310 → `removeLastEpisodeViewing`), `quickMarkTvComplete` y sus deshaceres usan los nuevos helpers y restauran `rewatching` |
-| `js/ui.js` | **Modificado**: `episodeAverageBadgeHtml` (chip, id fijo `item-episode-average`) en hero (tv con valoración propia) y modal clásico; `renderEpisodeRows` sin input de fecha + botón `episode-rewatches` (chevron + label con contador; iteración #310) y bloque `episode-rewatches__dates` (toggle aria-expanded); `rewatchesListHtml` con línea informativa legacy; `applyEpisodeRowState`/`wireEpisodeRows` rellenan y repliegan el desplegable; rama «unmarked» → `onRemoveLastViewing`. **Iteración 2 (feedback 2026-08-19)**: rama «seen_again» → `onEpisodeSeenAgain` (espera a la ventana de valoración con la valoración previa); el contador de temporada tras «Marcar/Desmarcar todo» se deriva de `item.watched` (etiqueta fiel tras desmarcar con varias visiones) |
+| `js/ui.js` | **Modificado**: `episodeAverageBadgeHtml` (chip, id fijo `item-episode-average`) en hero (tv con valoración propia) y modal clásico; `renderEpisodeRows` sin input de fecha + botón `episode-rewatches` (chevron + label con contador; iteración #310) y bloque `episode-rewatches__dates` (toggle aria-expanded); `rewatchesListHtml` con línea informativa legacy; `applyEpisodeRowState`/`wireEpisodeRows` rellenan y repliegan el desplegable; rama «unmarked» → `onRemoveLastViewing`. **Iteración 2 (feedback 2026-08-19)**: rama «seen_again» → `onEpisodeSeenAgain` (espera a la ventana de valoración con la valoración previa); el contador de temporada tras «Marcar/Desmarcar todo» se deriva de `item.watched` (etiqueta fiel tras desmarcar con varias visiones). **Iteración 3 (feedback 2026-08-20)**: `renderSeasonBlock`/`updateSeasonCount`/`seasonCycleCount` (progreso del ciclo en el cabecero de temporada) y «Marcar todo» como **check circular** con `seasonCompleteTimes` (tick si 1, número si > 1; `applySeasonMarkAllState`); filas y `applyEpisodeRowState` según `entrySeenSince` con `cycleStartedAt`; marcar una casilla con visiones históricas en rewatch → `onEpisodeSeenAgain` (+1); `progressLine` y banner «Has terminado esta serie» con `seriesCompleteTimes` (sin `timesCompleted` inflado); sumario «Visionados anteriores (N)» de la serie coherente con los episodios (línea «N visiones completas más sin fecha registrada» si procede) |
 | `js/episode-actions-modal.js` | **Modificado** (iteración #310): etiqueta «Quitar última visualización» si `times > 1`, «Desmarcar» si `times === 1` |
-| `ocio/ocio.css` | **Modificado**: bloque `.item-episode-average` (chip, `[hidden]` forzado) e `.episode-rewatches`/`__chevron`/`__dates`/`__list`/`__unknown` (botón con chevron rotatorio y área táctil 32px; iteración #310); overrides `[data-theme="dark"]` (tinta suave #6b6355 sobre superficies de papel, strong papel en item-view) y `[data-theme="black"]` (botón completo → `--paper`, hover/focus, strong chip); eliminadas las referencias a `.episode-date`/`.episode-average` de la media query móvil y de los bloques de tema. **Iteración 2 (feedback 2026-08-19)**: `.episode-rewatches` **sin subrayado en hover/pulso** (el foco de teclado se indica solo con outline; motivo documentado en comentario del CSS) |
-| `css/styles.css` | **Modificado**: override `[data-theme="dark"] .item-view` pasa de `.episode-average strong` a `.item-episode-average strong` (color papel sobre el fondo oscuro de la página) |
-| `docs/manual-de-usuario.md` | **Modificado**: §4.3 (fechas por episodio ocultas tras «Visionados anteriores»; «Quitar última visualización» vs «Desmarcar»), §4.5 (el rewatch conserva los episodios y suma contadores), §4.7 y §12 (desmarcado del último episodio con varias visiones), §12 (chip de media en el hero de series) y §13 (media de episodios en la parte superior, estilo chip; FAQ desmarcar episodios). **Iteración 2 (feedback 2026-08-19)**: §4.3 («Marcar todo» añade una visualización a cada episodio; «Desmarcar todo» quita la última de cada uno —los vistos varias veces siguen marcados—; al «Lo he visto de nuevo» la ventana de valoración trae la valoración anterior por defecto y «Deshacer» revierte el visionado recién añadido) y §4.5 (la visualización termina al volver a ver TODOS los episodios; las visiones antiguas no cuentan) |
+| `js/item-page.js` | **Modificado** (iteración 3, feedback 2026-08-20): `renderFab` con estado propio `.item-fab--rewatch` (icono REPRODUCIR con color de VISTO ocre — «el estado de hecho debería ser viendo pero pon el color de visto»; respeta pausa/abandono; aria-label «viéndose de nuevo»); `setTvStatus` usa `progressWithRewatch` al retomar un rewatch (sin «completado» fantasma) |
+| `ocio/ocio.css` | **Modificado**: bloque `.item-episode-average` (chip, `[hidden]` forzado) e `.episode-rewatches`/`__chevron`/`__dates`/`__list`/`__unknown` (botón con chevron rotatorio y área táctil 32px; iteración #310); overrides `[data-theme="dark"]` (tinta suave #6b6355 sobre superficies de papel, strong papel en item-view) y `[data-theme="black"]` (botón completo → `--paper`, hover/focus, strong chip); eliminadas las referencias a `.episode-date`/`.episode-average` de la media query móvil y de los bloques de tema. **Iteración 2 (feedback 2026-08-19)**: `.episode-rewatches` **sin subrayado en hover/pulso** (el foco de teclado se indica solo con outline; motivo documentado en comentario del CSS). **Iteración 3 (feedback 2026-08-20)**: `.season-mark-all` como label del check circular (reutiliza `.episode-checkbox-wrap`), foco visible con `:has(input:focus-visible)` sobre `.episode-checkbox-visual` |
+| `css/styles.css` | **Modificado**: override `[data-theme="dark"] .item-view` pasa de `.episode-average strong` a `.item-episode-average strong` (color papel sobre el fondo oscuro de la página). **Iteración 3 (feedback 2026-08-20)**: `.item-fab--rewatch` (dúo ocre de `.item-fab--seen` con hover y override de negro puro; la familia clara lo excluye del selector agrupado base) |
+| `docs/manual-de-usuario.md` | **Modificado**: §4.3 (fechas por episodio ocultas tras «Visionados anteriores»; «Quitar última visualización» vs «Desmarcar»), §4.5 (el rewatch conserva los episodios y suma contadores), §4.7 y §12 (desmarcado del último episodio con varias visiones), §12 (chip de media en el hero de series) y §13 (media de episodios en la parte superior, estilo chip; FAQ desmarcar episodios). **Iteración 2 (feedback 2026-08-19)**: §4.3 («Marcar todo» añade una visualización a cada episodio; «Desmarcar todo» quita la última de cada uno —los vistos varias veces siguen marcados—; al «Lo he visto de nuevo» la ventana de valoración trae la valoración anterior por defecto y «Deshacer» revierte el visionado recién añadido) y §4.5 (la visualización termina al volver a ver TODOS los episodios; las visiones antiguas no cuentan). **Iteración 3 (feedback 2026-08-20)**: §4.3 («Marcar todo» pasa a ser un check circular con contador), §4.4 (durante un rewatch el progreso y el «Siguiente» muestran el ciclo actual, estado «viendo»), §4.5 (los contadores de la serie y «Visionados anteriores» se derivan de los episodios), §4.6 y §12 (FAB del rewatch: icono de «viendo» con color de visto) |
 | `docs/adr-111-revisualizacion-temporadas-episodios.md` | **Nuevo**: este documento (incluye la iteración por feedback de #310 y la subsección «Iteración 2 (feedback 2026-08-19)» con las 4 decisiones de la segunda ronda) |
-| `js/config.js`, `index.html`, `service-worker.js` | **Modificados**: bump de versión PWA a `20261003` (primera implementación) y `20261004` (iteración por feedback) |
+| `js/config.js`, `index.html`, `service-worker.js` | **Modificados**: bump de versión PWA a `20261003` (primera implementación), `20261004` (iteración por feedback) y `20261006` (iteración 3) |
 | `tasks/task-issue-310.json` | Task file de la tarea |
 
 Related issue: #310 — https://github.com/gonzalitojh/Registro-personal/issues/310

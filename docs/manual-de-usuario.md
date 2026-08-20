@@ -300,9 +300,21 @@ pulsar «Desmarcar todo» varias veces para desmarcarlos del todo. Si hay
 episodios aún sin estrenar, la web te pedirá confirmación antes de
 marcarlos todos.
 
+«Marcar todo» es ahora una **casilla con un círculo**, igual que las de
+los episodios: está marcada cuando la temporada está completa y, si la
+temporada se ha completado más de una vez, el círculo muestra el
+**número de veces** en lugar de la ✓ (igual que los episodios). Encima
+de cada temporada verás también cuántos episodios llevas vistos
+(`1/10`, etc.).
+
 La serie se considera **«Vista»** cuando marcas el último episodio que
 falta. En tu lista verás siempre qué toca ver ahora (por ejemplo,
-«Siguiente: T2E5»).
+«Siguiente: T2E5»). Si estás **volviendo a verla** (sección 4.5), el
+contador «Siguiente» y los de cada temporada muestran el **progreso del
+visionado actual**, no el de las veces anteriores: al empezar a volver
+a verla verás `0/10` (o `1/10` recién visto el primero), aunque la
+serie entera esté marcada de antes; el estado de la serie es
+**«viendo»** mientras dura el ciclo.
 
 ### 4.4 Pausar, abandonar y retomar
 
@@ -331,11 +343,31 @@ de antes de empezar a volver a verla) no cuentan para terminarla. Verás
 el aviso
 «Has terminado esta serie (visionado nº X)» cuando la completes.
 
+Durante el rewatch, **los contadores son del visionado actual**: el
+progreso de la barra, el «Siguiente», el número de episodios de cada
+temporada y qué episodios aparecen marcados en cada temporada reflejan
+solo este ciclo (un episodio que viste en la vez anterior pero aún no
+en esta aparece sin marcar; al marcarlo cuenta como «Lo he visto de
+nuevo» y suma a su contador total). El nº de veces de cada episodio y
+los **«Visionados anteriores»** (con el botón «N visiones completas más
+sin fecha registrada» cuando el contador es de antes de guardar fechas)
+siguen mostrando el total histórico. En tu lista, la serie en rewatch
+muestra el contador «Completa · ×N» con el número de veces REAL según
+los episodios (por ejemplo «Completa · ×2» si todos los episodios se
+han visto dos veces).
+
 ### 4.6 Historial de visionados
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
 anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
-cada vez que la has visto.
+cada vez que la has visto. El número de visionados del desplegable es
+el **mismo que el de los episodios**: si la serie se ha visto completa
+más veces de las que tienen fecha registrada (datos antiguos), se
+indica la diferencia con una línea «N visiones completas más sin fecha
+registrada». La ficha de una serie con episodios se considera completa
+según los episodios: el contador «Completa · ×N» de la lista muestra el
+número real de veces según los episodios, aunque se marcara la serie
+completa varias veces por error en el pasado.
 
 ### 4.7 Eliminar una serie
 
@@ -1281,6 +1313,10 @@ tiene dos estados y un icono propios:
   lista.
 - **Icono tachado 🚫 con fondo rojo**: la serie está **abandonada**. El
   rojo es el mismo color del estado de la serie en tu lista.
+- **Icono de reproducir ▶ con fondo dorado**: la serie **se está
+  volviendo a ver** (estás en pleno rewatch, sección 4.5): el estado
+  de hecho es «viendo», pero con el color dorado de visto, para que
+  sepas de un vistazo que ya la habías visto.
 
 En la ficha, el abanico incluye la **opción inversa** según el estado:
 **«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
