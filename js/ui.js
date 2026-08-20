@@ -2205,7 +2205,7 @@ function rewatchesListHtml(entry) {
   const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
   if (!times) return "";
   const known = dates
-    .map((d) => `<li class="episode-rewatches__date">${formatDateEs(d)}</li>`)
+    .map((d) => `<li class="episode-rewatches__date">${escapeHtml(formatDateEs(d))}</li>`)
     .join("");
   const missing = Math.max(0, times - dates.length);
   const missingLine = missing
@@ -2407,7 +2407,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           <ul>
             ${historyEntries
               .map(
-                (h) => `<li>${formatDateEs(h.startedAt)} → ${formatDateEs(h.finishedAt)}</li>`
+                (h) => `<li>${escapeHtml(formatDateEs(h.startedAt))} → ${escapeHtml(formatDateEs(h.finishedAt))}</li>`
               )
               .join("")}
             ${
