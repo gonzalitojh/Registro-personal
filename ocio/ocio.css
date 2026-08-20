@@ -1224,8 +1224,13 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* Contador de visualizaciones (issue #133): con times > 1 el
-   círculo muestra el nº de veces en lugar del tick */
-.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+   círculo muestra el nº de veces en lugar del tick. Desde el feedback
+   #310 (iteración 7) el contador se muestra TAMBIÉN en episodios NO
+   marcados en el ciclo actual de rewatch: los datos reales (visionados
+   previos) deben verse aunque el episodio no esté marcado. Sobre la
+   casilla sin marcar (superficie --white) el número usa tinta;
+   sobre la marcada (teal) papel; negro puro lo invierte abajo. */
+.episode-checkbox-visual[data-count]::after {
   content: attr(data-count);
   opacity: 1;
   border: none;
@@ -1243,6 +1248,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1;
+  color: var(--ink);
+}
+.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
   color: var(--paper);
 }
 
@@ -2135,6 +2143,19 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual {
   background: var(--teal-reel-dark);
   border-color: var(--teal-reel-dark);
+}
+
+/* Contador de visionados de la casilla en negro puro (feedback #310,
+   iteración 7): la casilla SIN marcar es una superficie oscura
+   (--white ≈ #0f0f0f), así que el número se lee en papel claro; la
+   marcada usa teal claro (--teal-reel-dark ≈ #4f9c8e) y el número en
+   tinta, mismo patrón que los hovers de acento de la familia oscura
+   (fondo claro + tinta oscura, ≈6.5:1 AA). */
+[data-theme="black"] .episode-checkbox-visual[data-count]::after {
+  color: var(--paper);
+}
+[data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+  color: var(--ink);
 }
 
 /* Sellos de tarjeta: se mantienen sobre papel claro; conservan los

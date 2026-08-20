@@ -277,14 +277,18 @@ Para cada episodio puedes:
   el episodio se ha visto varias veces (quita solo la visión más reciente:
   el episodio sigue marcado y el contador baja una vez) y **«Desmarcar»**
   cuando solo se ha visto una vez (el episodio queda sin marcar).
-- **Ver las fechas de tus visionados**: bajo cada episodio visto hay un
-  botón **«Visionados anteriores (nº de veces)»**, con la misma flecha que
-  los apartados desplegables de la serie; al pulsarlo se despliegan las
-  fechas de todas las veces que lo has visto (ocultas por defecto, tanto
-  si es una como si son varias). Si alguna visualización antigua no tiene
-  fecha registrada, aparece una línea que indica cuántas visiones quedan
-  sin fecha, para que el número concuerde con el contador del episodio.
-- **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
+- **Ver las fechas de tus visionados**: bajo cada episodio con
+  visualizaciones hay un botón **«Visionados anteriores (nº de veces)»**,
+  con la misma flecha que los apartados desplegables de la serie; al
+  pulsarlo se despliegan las fechas de todas las veces que lo has visto
+  (ocultas por defecto, tanto si es una como si son varias). Si alguna
+  visualización antigua no tiene fecha registrada, aparece una línea que
+  indica cuántas visiones quedan sin fecha, para que el número concuerde
+  con el contador del episodio.
+- **Valorarlo** con estrellas, una vez visto (más en
+  [sección 13](#13-valoraciones-con-estrellas)). Si ya lo habías valorado
+  en un visionado anterior, la valoración aparece puesta aunque el
+  episodio no esté marcado (por ejemplo, durante un rewatch).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
@@ -362,7 +366,11 @@ progreso de la barra, el «Siguiente», el número de episodios de cada
 temporada y qué episodios aparecen marcados en cada temporada reflejan
 solo este ciclo (un episodio que viste en la vez anterior pero aún no
 en esta aparece sin marcar; al marcarlo cuenta como «Lo he visto de
-nuevo» y suma a su contador total). El nº de veces de cada episodio y
+nuevo» y suma a su contador total). Aunque un episodio no esté marcado,
+si tiene valoración o visualizaciones previas estas **siguen
+mostrándose** (las estrellas con la valoración que le diste y el botón
+«Visionados anteriores» con su contador); solo se ocultan cuando el
+episodio no se ha visto nunca. El nº de veces de cada episodio y
 los **«Visionados anteriores»** (con el botón «N visiones completas más
 sin fecha registrada» cuando el contador es de antes de guardar fechas)
 siguen mostrando el total histórico. En tu lista, la serie en rewatch

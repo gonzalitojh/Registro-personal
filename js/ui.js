@@ -2114,7 +2114,14 @@ function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallba
   const checked = baselineMap
     ? Boolean(entrySeenInCycle(entry, baseline))
     : Boolean(entrySeenSince(entry, startedAtForFallback));
-  const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+  // Datos REALES del episodio (feedback #310, iteración 7): aunque el
+  // episodio no esté marcado en el ciclo actual (p. ej. un episodio con
+  // visionados históricos durante un rewatch), si tiene valoración o
+  // visualizaciones previas, estas deben mostrarse — no solo cuando se
+  // marca el episodio. `times` refleja el contador real de la entrada
+  // (nunca 0 por no estar marcado en el ciclo).
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  const hasData = Boolean(entry && (times > 0 || entry.rating != null));
   const checkbox = row.querySelector(".episode-checkbox");
   const visual = row.querySelector(".episode-checkbox-visual");
   const meta = row.querySelector(".episode-row__meta");
@@ -2123,9 +2130,9 @@ function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallba
   const datesBlock = row.querySelector(".episode-rewatches__dates");
   checkbox.checked = checked;
   row.classList.toggle("is-watched", checked);
-  meta.classList.toggle("hidden", !checked);
+  meta.classList.toggle("hidden", !hasData);
   if (rewatchBtn) {
-    rewatchBtn.hidden = !checked;
+    rewatchBtn.hidden = !hasData;
     rewatchBtn.setAttribute("aria-expanded", "false");
     // El contador del botón se sincroniza con `times`, igual que el
     // summary «Visionados anteriores (N)» de la serie (feedback #310).
@@ -2133,14 +2140,14 @@ function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallba
     if (label) label.textContent = `Visionados anteriores (${times})`;
   }
   if (datesBlock) {
-    datesBlock.innerHTML = checked ? rewatchesListHtml(entry) : "";
+    datesBlock.innerHTML = hasData ? rewatchesListHtml(entry) : "";
     datesBlock.hidden = true;
   }
   if (times > 1) visual.setAttribute("data-count", String(times));
   else visual.removeAttribute("data-count");
   ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => {
     const n = Number(s.dataset.value);
-    const value = normalizeRating(checked ? entry.rating : 0);
+    const value = normalizeRating(hasData ? entry.rating : 0);
     const full = value >= n;
     const half = value === n - 0.5;
     s.classList.toggle("is-active", full && !half);
@@ -2246,7 +2253,12 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMa
       const checked = baselineMap
         ? Boolean(entrySeenInCycle(entry, baseline))
         : Boolean(entrySeenSince(entry, startedAtForFallback));
-      const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+      // Datos REALES del episodio (feedback #310, iteración 7): aunque
+      // no esté marcado en el ciclo actual (rewatch), si tiene
+      // valoración o visionados previos, estos deben mostrarse. `times`
+      // refleja el contador real de la entrada, nunca 0 por no marcado.
+      const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+      const hasData = Boolean(entry && (times > 0 || entry.rating != null));
       const future = !manual && isUnreleasedDate(e.airDate);
       // Badge de nota TMDB: solo en series automáticas y cuando el episodio
       // tiene votos (episodeRating != null). Las series manuales no lo traen.
@@ -2263,7 +2275,9 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMa
                    aria-label="${
                      checked
                        ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o quitar la última visualización`
-                       : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
+                       : hasData
+                         ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo`
+                         : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
                    }" />
             <span class="episode-checkbox-visual" aria-hidden="true"
                   ${times > 1 ? `data-count="${times}"` : ""}></span>
@@ -2278,7 +2292,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMa
       }</span>
           ${communityBadge}
         </div>
-        <div class="episode-row__meta ${checked ? "" : "hidden"}">
+        <div class="episode-row__meta ${hasData ? "" : "hidden"}">
           <div class="episode-rating">
             ${[1, 2, 3, 4, 5]
               .map((n) => {
@@ -2293,7 +2307,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMa
               })
               .join("")}
           </div>
-          <button type="button" class="episode-rewatches" ${checked ? "" : "hidden"}
+          <button type="button" class="episode-rewatches" ${hasData ? "" : "hidden"}
                   aria-expanded="false"><span class="episode-rewatches__chevron" aria-hidden="true">▸</span> <span class="episode-rewatches__label">Visionados anteriores (${times})</span></button>
         </div>
         <div class="episode-rewatches__dates" hidden>
