@@ -1188,9 +1188,26 @@ tipo, verás:
   Guionista»). En la parte superior de la ventana hay una **lupa**:
   escribe en el buscador para filtrar por el **nombre** de la persona
   o por su **personaje** (en el reparto) o su **función** (en la
-  producción); con la tecla **Esc** se limpia la búsqueda. La ventana
-  se cierra con la **✕**, con la tecla **Esc**
-  o pulsando fuera de ella. La fecha de estreno, la duración (o
+producción); con la tecla **Esc** se limpia la búsqueda. La ventana
+   se cierra con la **✕**, con la tecla **Esc**
+   o pulsando fuera de ella. **Cada persona de los carruseles y de la
+   ventana «Ver en más detalle» se puede pulsar** y abre su **página
+   de persona** (una ventana nueva con el mismo patrón que la ficha
+   de una película o serie: se mantiene la barra de navegación
+   superior con la búsqueda y el perfil, y el botón **←** vuelve a la
+   pantalla anterior; también funciona la tecla **Esc** y el botón
+   atrás del navegador). En la página de persona se ve su **foto**,
+   su **nombre**, su **biografía** (en español si está disponible), su
+   **fecha de nacimiento (y de fallecimiento, si lo hay)** y su
+   **lugar de nacimiento**, además de las **películas y series en las
+   que ha trabajado o trabajará**, separadas en **«Actuación»** (con
+   su personaje) y **«Equipo»** (con su puesto) y ordenadas de más
+   reciente a más antigua; cada título se puede pulsar y abre su
+   ficha, y el botón atrás vuelve a la página de la persona. También
+   se incluyen sus **premios y nominaciones**, con el mismo aspecto
+   que los de las fichas de títulos (agrupados por tipo y
+   minimizados; los datos se extraen de Wikidata, así que si no hay
+   premios registrados esa parte no aparece). La fecha de estreno, la duración (o
   temporadas y episodios en series), los géneros y la sinopsis ya se
   muestran arriba, en la cabecera. Cada sección de la ficha va
   separada por una **línea horizontal**. En los videojuegos:
