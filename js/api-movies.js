@@ -744,21 +744,25 @@ export async function getItemAwards(type, externalId) {
 }
 
 // =============================================================
-// Recomendaciones (contenido similar) desde TMDB. Devuelve
-// listas de películas o series similares usando el endpoint
-// /similar de TMDB. Los resultados tienen la misma forma que
-// los de búsqueda (externalId, title, year, coverUrl, overview).
+// Recomendaciones desde TMDB con el endpoint /recommendations
+// (issue #319): es el que alimenta la sección de recomendaciones
+// de la propia web de TMDB. NO se usa /similar, que según la
+// documentación oficial es "similar movies based on keywords and
+// genres" y "not the same as the Recommendation system you see on
+// the website" (daba recomendaciones poco relevantes). Los
+// resultados tienen la misma forma que los de búsqueda
+// (externalId, title, year, coverUrl, overview).
 // =============================================================
 
-export async function getSimilarMovies(id) {
-  const url = `${BASE_URL}/movie/${id}/similar?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
+export async function getRecommendedMovies(id) {
+  const url = `${BASE_URL}/movie/${id}/recommendations?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data || !data.results) return [];
   return data.results.map(mapMovieResult);
 }
 
-export async function getSimilarTv(id) {
-  const url = `${BASE_URL}/tv/${id}/similar?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
+export async function getRecommendedTv(id) {
+  const url = `${BASE_URL}/tv/${id}/recommendations?api_key=${TMDB_API_KEY}&language=es-ES&page=1`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data || !data.results) return [];
   return data.results.map(mapTvResult);

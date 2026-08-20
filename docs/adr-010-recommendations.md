@@ -147,3 +147,13 @@ deshabilitado.
   `.recommendations__scroll`, `.rec-card`, `.rec-card__cover`,
   `.rec-card__body`, `.rec-card__title`, `.rec-card__year`,
   `.rec-card__add`.
+
+> **Nota (ADR-114, issue #319)**: los endpoints pasaron de `/similar`
+> a `/recommendations` (el que alimenta la sección de recomendaciones
+> de la propia web de TMDB; `/similar` es solo "similar based on
+> keywords and genres" según la documentación oficial — ver ADR-114).
+> Además se corrige el registro: el «Filtra items ya registrados
+> (existingIds)» del flujo de datos (líneas 47-52) era **aspiracional**
+> hasta la issue #319 — el código solo deshabilitaba el botón
+> «Añadido» de las tarjetas ya registradas, que seguían apareciendo.
+> Desde #319 el filtrado es real y ocurre ANTES del `slice(0, 10)`.

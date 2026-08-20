@@ -31,8 +31,8 @@ import {
   getTvExtraDetails,
   getTvSeasonsMeta,
   getWatchProviders,
-  getSimilarMovies,
-  getSimilarTv,
+  getRecommendedMovies,
+  getRecommendedTv,
   getCollectionDetails,
   getUserCountry,
   getItemAwards,
@@ -777,22 +777,34 @@ async function buildPreviewItem(kind, externalId) {
 // ficha). Nunca lanza.
 async function loadPreviewExtras(token, item) {
   const group = groupFor(token.kind);
-  const similar = token.kind === "tv" ? getSimilarTv : getSimilarMovies;
+  const recommended = token.kind === "tv" ? getRecommendedTv : getRecommendedMovies;
   const results = await Promise.allSettled([
     getWatchProviders(token.externalId, token.kind, getUserCountry()),
     getItemAwards(token.kind, token.externalId),
-    similar(token.externalId),
+    recommended(token.externalId),
     pageCtx.getGroupItemsResolved(group),
     item.collectionId ? getCollectionDetails(item.collectionId) : Promise.resolve(null),
   ]);
   const [providers, awards, recs, ids, saga] = results;
+  // Filtrado de títulos ya registrados y del propio ítem abierto
+  // ANTES del slice(0,10) (issue #319): no se recomienda contenido ya
+  // visto/añadido y los huecos se rellenan con los siguientes de la
+  // página 1. El Set existingIds se comparte con el render (botón
+  // «Añadido» de red de seguridad para el hot-add, issue #280).
+  const existingIds = new Set(
+    (ids.status === "fulfilled" ? ids.value : []).map((i) => i.externalId)
+  );
   return {
     watchProviders: providers.status === "fulfilled" ? providers.value : null,
     awards: awards.status === "fulfilled" ? awards.value : null,
-    recommendations: (recs.status === "fulfilled" ? recs.value : []).slice(0, 10),
-    existingIds: new Set(
-      (ids.status === "fulfilled" ? ids.value : []).map((i) => i.externalId)
-    ),
+    recommendations: (recs.status === "fulfilled" ? recs.value : [])
+      .filter(
+        (r) =>
+          !existingIds.has(String(r.externalId)) &&
+          String(r.externalId) !== String(token.externalId)
+      )
+      .slice(0, 10),
+    existingIds,
     sagaParts:
       item.collectionId && saga.status === "fulfilled" && saga.value && saga.value.parts.length
         ? saga.value.parts

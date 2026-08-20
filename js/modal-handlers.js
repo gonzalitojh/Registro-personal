@@ -13,7 +13,7 @@ import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getWatchProviders, getUserCountry, getItemAwards } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getRecommendedMovies, getRecommendedTv, getTvExtraDetails, getWatchProviders, getUserCountry, getItemAwards } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
@@ -196,17 +196,28 @@ export async function openMovieItem(item, ctx, isRerender = false, target = null
     }
   }
 
-  // --- Cargar recomendaciones (similares) ---
+  // --- Cargar recomendaciones (issue #319) ---
+  // Endpoint /recommendations de TMDB (el que alimenta la web de
+  // TMDB), filtrando los títulos ya registrados (existingIds) y el
+  // propio ítem abierto ANTES del slice(0,10): así no se recomienda
+  // contenido ya visto/añadido y los huecos se rellenan con los
+  // siguientes de la página 1.
   let recommendations = [];
   let existingIds = new Set();
   if (item.externalId) {
     try {
-      recommendations = await getSimilarMovies(item.externalId);
-      recommendations = recommendations.slice(0, 10);
+      recommendations = await getRecommendedMovies(item.externalId);
+      existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
+      recommendations = recommendations
+        .filter(
+          (r) =>
+            !existingIds.has(String(r.externalId)) &&
+            String(r.externalId) !== String(item.externalId)
+        )
+        .slice(0, 10);
     } catch {
       recommendations = [];
     }
-    existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
   // --- Cargar películas de la saga (issue #280) ---
@@ -613,17 +624,28 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     return false;
   }
 
-  // --- Cargar recomendaciones (similares) ---
+  // --- Cargar recomendaciones (issue #319) ---
+  // Endpoint /recommendations de TMDB (el que alimenta la web de
+  // TMDB), filtrando los títulos ya registrados (existingIds) y el
+  // propio ítem abierto ANTES del slice(0,10): así no se recomienda
+  // contenido ya visto/añadido y los huecos se rellenan con los
+  // siguientes de la página 1.
   let recommendations = [];
   let existingIds = new Set();
   if (item.externalId) {
     try {
-      recommendations = await getSimilarTv(item.externalId);
-      recommendations = recommendations.slice(0, 10);
+      recommendations = await getRecommendedTv(item.externalId);
+      existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
+      recommendations = recommendations
+        .filter(
+          (r) =>
+            !existingIds.has(String(r.externalId)) &&
+            String(r.externalId) !== String(item.externalId)
+        )
+        .slice(0, 10);
     } catch {
       recommendations = [];
     }
-    existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
   }
 
   ui.openTvModal(item, seasonsMeta, progress, {
