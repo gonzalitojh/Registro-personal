@@ -2345,15 +2345,6 @@ body.is-item-page #btn-item-back {
   overflow-wrap: break-word;
 }
 
-/* CTA único de la preview (issue #317): la página de un título no
-   añadido termina con un SOLO botón «Añadir» (sin el «Volver» de
-   antes; el atrás vive en la cabecera ← y en Esc). .modal-actions
-   reparte sus hijos con space-between, así que con un único botón el
-   margen automático lo ancla a la derecha, igual que la ficha. */
-#item-view #btn-preview-add {
-  margin-inline-start: auto;
-}
-
 /* =========================================================
    Perfil y estadísticas
    ========================================================= */

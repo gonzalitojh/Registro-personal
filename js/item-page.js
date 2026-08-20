@@ -573,23 +573,22 @@ async function setTvStatus(item, statusOrNull) {
   item.status = status;
 }
 
-// Alta en curso desde la preview (issue #298): candado compartido
-// entre el botón real «Añadir» y el botón flotante. Previene dobles
-// altas concurrentes (el botón real solo se deshabilita durante el
-// handleAdd del propio alta; el FAB puede reabrir su menú mientras
-// tanto y volver a ofrecer «Añadir»).
+// Alta en curso desde la preview (issue #298): el candado evita dobles
+// altas concurrentes del botón flotante (el FAB puede reabrir su menú
+// mientras el alta está en vuelo y volver a ofrecer «Añadir»). Desde el
+// feedback #317 la preview ya no tiene botón real «Añadir»: todas las
+// rutas usan un target local.
 let previewAddInFlight = false;
 
-// Alta desde la vista previa (botón «Añadir» o botón flotante):
-// handleAdd da de alta en el registro y refreshAfterAdd pasa a la
-// ficha completa leyendo el ítem recién creado. Si existe el botón
-// real de la preview se usa (handleAdd lo deshabilita y restaura su
-// estado); el objeto local es un fallback para el botón flotante.
+// Alta desde la vista previa (botón flotante «Añadir»): handleAdd da de
+// alta en el registro y refreshAfterAdd pasa a la ficha completa
+// leyendo el ítem recién creado. Sin botón real en el DOM, se usa un
+// objeto local como target para el patrón deshabilitar/restaurar de
+// handleAdd (el FAB ya cerró su menú).
 async function addFromPreview(item, btn) {
   if (previewAddInFlight) return;
   previewAddInFlight = true;
-  const realBtn = document.getElementById("btn-preview-add");
-  const target = realBtn || btn || { disabled: false, textContent: "" };
+  const target = btn || { disabled: false, textContent: "" };
   target.disabled = true;
   target.textContent = "Añadiendo…";
   try {
@@ -616,8 +615,8 @@ async function addFromPreview(item, btn) {
 // (handleAddSeen: en series marca TODOS los episodios de TODAS las
 // temporadas — mismo GATE de temporadas y confirmaciones que el
 // catálogo) y pasa a la ficha. Comparte el candado previewAddInFlight
-// con el alta normal: no puede haber dos altas concurrentes (botón
-// real + flotante).
+// con el alta normal: no puede haber dos altas concurrentes (el FAB
+// cierra su menú al accionar; el candado cubre el resto del flujo).
 async function addSeenFromPreview(item) {
   if (previewAddInFlight) return;
   previewAddInFlight = true;
@@ -641,14 +640,13 @@ async function addSeenFromPreview(item) {
 // Preview · «Valorar» (issue #298): añade el ítem al registro (con
 // el flujo normal, sin marcar nada) y, nada más pasar a la ficha,
 // abre la valoración del ítem recién creado. El candado anti doble
-// alta cubre todo el flujo (alta + modal de valoración).
+// alta cubre todo el flujo (alta + modal de valoración). Sin botón
+// real de la preview (feedback #317): el target es local como en
+// addFromPreview (el botón flotante ya cerró su menú).
 async function addAndRateFromPreview(item) {
   if (previewAddInFlight) return;
   previewAddInFlight = true;
-  // handleAdd espera un btn para deshabilitarlo/restaurarlo; si
-  // existe el botón real de la preview se usa (como en addFromPreview).
-  const realBtn = document.getElementById("btn-preview-add");
-  const target = realBtn || { disabled: false, textContent: "" };
+  const target = { disabled: false, textContent: "" };
   target.disabled = true;
   target.textContent = "Añadiendo…";
   try {
@@ -839,9 +837,10 @@ function paintPreview(
 
   // Aviso «aún no en tu registro» (issue #317): como toda la página es
   // ya la ficha, el aviso vive al FINAL (después de las secciones de
-  // información y antes de las temporadas en series), justo encima del
-  // único botón de acción real de la página, «Añadir».
-  const hint = `<p class="item-preview__hint">Este título aún no está en tu registro.</p>`;
+  // información y de las temporadas en series). Ya no hay botón «Añadir»
+  // en la página (feedback #317): la alta se hace exclusivamente desde
+  // el botón flotante (renderFab con mode="preview").
+  const hint = `<p class="item-preview__hint">Este título aún no está en tu registro. Añádelo con el botón flotante.</p>`;
 
   // Banner de progreso de la preview de SERIE (issue #317): réplica
   // del de la ficha calculado como una serie recién añadida (sin nada
@@ -877,7 +876,8 @@ function paintPreview(
   // (openMovieModal/openTvModal en modo página) — hero → badge →
   // plataformas → premios → producción/reparto → saga (películas) →
   // recomendaciones → [series: banner de progreso] → aviso de preview
-  // → [series: temporadas] → CTA «Añadir».
+  // → [series: temporadas]. Sin CTA final (feedback #317): como en la
+  // ficha, las acciones viven en el botón flotante.
   target.innerHTML = `
     ${itemHeroHtml(item, { showUserRating: true })}
     ${unreleasedBadge}
@@ -890,9 +890,6 @@ function paintPreview(
     ${progressBannerHtml}
     ${hint}
     ${seasonsHtml}
-    <div class="modal-actions">
-      <button type="button" class="btn btn--accent-media" id="btn-preview-add">Añadir</button>
-    </div>
   `;
 
   // Carruseles de elenco (issue #294): los botones «Ver en más
@@ -994,8 +991,9 @@ function paintPreview(
     });
   });
 
-  const addBtn = target.querySelector("#btn-preview-add");
-  addBtn.addEventListener("click", () => addFromPreview(item, addBtn));
+  // Sin botón real de «Añadir» (feedback #317): la alta de la preview
+  // se hace exclusivamente desde el botón flotante (runFabAction →
+  // addFromPreview con target local).
 
   requestAnimationFrame(() => {
     const title = target.querySelector(".item-hero__title");
@@ -1005,8 +1003,10 @@ function paintPreview(
     }
   });
 
-  // Botón flotante de la vista previa: solo con la acción «Añadir»
-  // (el ítem aún no está en el registro; issue #298).
+  // Botón flotante de la vista previa (issue #298): acciones
+  // «Añadir», «Marcar como vista» y «Valorar» (el ítem aún no está en
+  // el registro; feedback #317: el FAB es la ÚNICA vía de alta, ya no
+  // hay botón «Añadir» en la página).
   renderFab(item, "preview");
 }
 
