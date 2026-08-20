@@ -408,22 +408,32 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: var(--ink);
 }
 
-/* Media de valoración de episodios (issue #80): desde la issue #300 es
-   una línea informativa junto a las temporadas (la valoración general
-   se hace con el botón flotante y el picker ya no está en la ficha) */
-.episode-average {
-  display: block;
-  margin: 0.6rem 0 1rem;
+/* Media de valoración de episodios (issue #80): desde la issue #310
+   vive en la parte superior de la ficha de la serie, junto a la
+   valoración de TMDB y la propia, como un chip con borde (estilo
+   deliberadamente distinto del resto de valoraciones para
+   diferenciarlo). */
+.item-episode-average {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--ink-soft);
+  border: 1px solid var(--paper-line);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
 }
-/* Sin episodios valorados la media no se muestra: display:block del
-   elemento vencería al [hidden] del navegador, así que se fuerza. */
-.episode-average[hidden] {
+/* Sin episodios valorados la media no se muestra: display block/inline
+   del elemento vencería al [hidden] del navegador, así que se fuerza. */
+.item-episode-average[hidden] {
   display: none;
 }
-.episode-average strong { color: var(--ink); }
+.item-episode-average__label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.item-episode-average strong { color: var(--ink); }
 
 .modal-actions {
   display: flex;
@@ -762,24 +772,99 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 
 /* =========================================================
-   Fecha por episodio
+   Visionados anteriores por episodio (issue #310)
    ========================================================= */
 
-.episode-row input.episode-date {
+/* Botón que sustituye al antiguo input de fecha: mismo lugar (segunda
+   fila del episodio, junto a las estrellas). Desde el feedback de la
+   issue #310 tiene la MISMA estética que el summary «Visionados
+   anteriores (N)» de la serie y que el cabecero de temporada: tinta
+   normal (no mono), con chevron ▸ que rota 90° al desplegarse. Área
+   táctil mínima de 32px y [hidden] explícito (es un botón, sin estilo
+   nativo que vencer al atributo). */
+.episode-rewatches {
   margin-left: auto;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  background: var(--white);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  padding: 0.15rem 0.3rem;
-  width: min(150px, 100%);
-}
-.episode-row input.episode-date:disabled {
-  opacity: 0.35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   background: transparent;
-  border-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--ink);
+  padding: 0.25rem 0.4rem;
+  min-height: 32px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  text-align: left;
+}
+/* Sin subrayado en hover ni al pulsar (feedback #310, iteración 2: el
+   usuario pidió que el botón «Visionados anteriores» no se subraye al
+   pulsarse — en táctil el tap aplica hover y el subrayado se quedaba
+   pegado, como texto seleccionado). El foco de teclado se indica con
+   el outline (anillo), igual que el summary de la serie y el cabecero
+   de temporada, que tampoco subrayan. */
+.episode-rewatches:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+.episode-rewatches[hidden] {
+  display: none;
+}
+
+/* Chevron del botón: rota 90° cuando el desplegable está abierto
+   (aria-expanded), igual que la flecha del summary de la serie. */
+.episode-rewatches__chevron {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.episode-rewatches[aria-expanded="true"] .episode-rewatches__chevron {
+  transform: rotate(90deg);
+}
+
+/* Lista de fechas, oculta por defecto y alineada con la meta del
+   episodio (mismo sangrado que .episode-row__meta) */
+.episode-rewatches__dates {
+  margin: 0.15rem 0 0.25rem 30px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.episode-rewatches__dates[hidden] {
+  display: none;
+}
+.episode-rewatches__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+/* Visiones legacy sin fecha registrada (feedback #310): línea
+   informativa que mantiene la coherencia con el contador de la
+   casilla cuando los datos previos a #310 no guardaban las fechas. */
+.episode-rewatches__unknown {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Botón y lista de fechas sobre las superficies de PAPEL de la familia
+   oscura (dark): el botón usa --ink (correcto sobre papel claro);
+   --ink-soft base (#948a76) va pensado para superficies oscuras, así
+   que la lista de fechas usa la tinta suave de la familia clara
+   (#6b6355, ≈4.9:1 AA sobre --paper). En negro puro las superficies
+   son oscuras y el bloque de tema de abajo completa el ajuste. */
+[data-theme="dark"] .episode-rewatches__dates {
+  color: #6b6355;
+}
+/* Igual para el label del chip de media de episodios cuando vive en el
+   modal clásico (superficie papel); en el hero (modo página) el fondo
+   es oscuro y el --ink-soft base cumple AA. */
+[data-theme="dark"] .modal__card .item-episode-average {
+  color: #6b6355;
 }
 
 
@@ -1139,8 +1224,13 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* Contador de visualizaciones (issue #133): con times > 1 el
-   círculo muestra el nº de veces en lugar del tick */
-.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+   círculo muestra el nº de veces en lugar del tick. Desde el feedback
+   #310 (iteración 7) el contador se muestra TAMBIÉN en episodios NO
+   marcados en el ciclo actual de rewatch: los datos reales (visionados
+   previos) deben verse aunque el episodio no esté marcado. Sobre la
+   casilla sin marcar (superficie --white) el número usa tinta;
+   sobre la marcada (teal) papel; negro puro lo invierte abajo. */
+.episode-checkbox-visual[data-count]::after {
   content: attr(data-count);
   opacity: 1;
   border: none;
@@ -1158,6 +1248,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1;
+  color: var(--ink);
+}
+.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
   color: var(--paper);
 }
 
@@ -1180,9 +1273,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   gap: 0.5rem;
   flex-wrap: wrap;
   padding-left: 30px;
-}
-.episode-row__meta .episode-date {
-  flex-shrink: 0;
 }
 
 .episode-rating {
@@ -1512,7 +1602,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .manual-form input,
   .log-row input[type="date"],
   .log-add-row input[type="date"],
-  .episode-row input.episode-date,
   .sort-select {
     font-size: 16px;
   }
@@ -1839,12 +1928,19 @@ button, a, input, select, textarea { touch-action: manipulation; }
   outline-offset: -1px;
 }
 
-.chip:focus-visible {
+/* «Marcar todo» de temporada (feedback #310, iteración 3): check
+   circular con contador que reemplaza al antiguo botón de texto.
+   Reutiliza el patrón .episode-checkbox-wrap de las filas. */
+.season-mark-all {
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+.season-mark-all:has(input:focus-visible) .episode-checkbox-visual {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
 
-.season-mark-all:focus-visible {
+.chip:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
@@ -1976,7 +2072,10 @@ button, a, input, select, textarea { touch-action: manipulation; }
 /* Texto que usaba tinta sobre superficies ahora oscuras */
 [data-theme="black"] .list-row__open,
 [data-theme="black"] .season-toggle,
-[data-theme="black"] .episode-average strong,
+[data-theme="black"] .episode-rewatches,
+[data-theme="black"] .episode-rewatches:hover,
+[data-theme="black"] .episode-rewatches:focus-visible,
+[data-theme="black"] .item-episode-average strong,
 [data-theme="black"] .rewatch-history summary,
 [data-theme="black"] .watch-log-details summary,
 [data-theme="black"] .desc-picker__text,
@@ -1997,7 +2096,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .log-add-row input[type="text"],
 [data-theme="black"] .log-row input[type="date"],
 [data-theme="black"] .log-row input[type="number"],
-[data-theme="black"] .episode-row input.episode-date,
 [data-theme="black"] .manual-form .field-group input {
   color: var(--paper);
 }
@@ -2045,6 +2143,19 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual {
   background: var(--teal-reel-dark);
   border-color: var(--teal-reel-dark);
+}
+
+/* Contador de visionados de la casilla en negro puro (feedback #310,
+   iteración 7): la casilla SIN marcar es una superficie oscura
+   (--white ≈ #0f0f0f), así que el número se lee en papel claro; la
+   marcada usa teal claro (--teal-reel-dark ≈ #4f9c8e) y el número en
+   tinta, mismo patrón que los hovers de acento de la familia oscura
+   (fondo claro + tinta oscura, ≈6.5:1 AA). */
+[data-theme="black"] .episode-checkbox-visual[data-count]::after {
+  color: var(--paper);
+}
+[data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+  color: var(--ink);
 }
 
 /* Sellos de tarjeta: se mantienen sobre papel claro; conservan los

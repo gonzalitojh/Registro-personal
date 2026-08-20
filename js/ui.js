@@ -7,7 +7,7 @@
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
 import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
-import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
+import { normalizeEntry, computeEpisodeAverageRating, seriesCompleteTimes, seasonCompleteTimes, entrySeenInCycle, entrySeenSince, episodeBaseline } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
@@ -324,7 +324,11 @@ function progressLine(item) {
     if (item.status === "standby") return "En pausa";
     if (item.status === "abandonado") return "Abandonada";
     if (item.status === "completado") {
-      const times = (item.timesCompleted || 0) + 1;
+      // Contador coherente con los episodios (feedback #310, it. 3):
+      // mínimo de veces de los episodios — el contador inflado por
+      // timesCompleted (marcados completos erróneos) ya no se muestra;
+      // fallback a timesCompleted+1 solo sin datos de episodios.
+      const times = seriesCompleteTimes(item.watched) || (item.timesCompleted || 0) + 1;
       return `Completa${times > 1 ? ` · ×${times}` : ""} · ${formatDateEs(item.lastWatchedAt)}`;
     }
     if (item.nextEpisode) {
@@ -629,15 +633,23 @@ export function ratingPickerHtml(rating, idPrefix = "field-rating", extraHtml = 
     </div>`;
 }
 
-// Media de valoración de los episodios valorados de la serie (issue #80).
-// Sin media: span oculto (placeholder que updateEpisodeAverage actualiza).
-function episodeAverageHtml(watched, idPrefix) {
+// Media de valoración de los episodios valorados de la serie (issue
+// #80): desde la issue #310 vive en la parte superior de la ficha,
+// junto a la valoración de TMDB y la propia, como un chip con borde
+// (estilo ligeramente diferente para distinguirla, como pide la
+// issue). Sin media: span oculto (placeholder que updateEpisodeAverage
+// activa). El id es fijo (#item-episode-average): el hero (modo
+// página) y la fila de valoraciones (modal clásico) lo usan, pero
+// nunca se renderizan ambos a la vez.
+function episodeAverageBadgeHtml(watched) {
   const avg = computeEpisodeAverageRating(watched);
   if (!avg) {
-    return `<span class="episode-average" id="${idPrefix}-episode-average" hidden></span>`;
+    return `<span class="item-episode-average" id="item-episode-average" hidden></span>`;
   }
   const ratedLabel = avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
-  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${ratedLabel}">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
+  return `<span class="item-episode-average" id="item-episode-average" title="Media de ${ratedLabel}"><span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+    .toFixed(1)
+    .replace(".", ",")}</strong></span>`;
 }
 
 function notesFieldHtml(notes) {
@@ -1109,6 +1121,7 @@ export function itemHeroHtml(item, { showUserRating = true, seasonsMeta = null }
         <div class="item-hero__ratings">
           ${communityRatingDisplay(item)}
           ${ownRatingHtml}
+          ${item.type === "tv" && showUserRating ? episodeAverageBadgeHtml(item.watched) : ""}
           ${trailerButtonHtml(item)}
         </div>
       </div>
@@ -2084,25 +2097,57 @@ export function openGameModal(item, callbacks) {
 
 // Sincroniza el estado VISUAL de una fila de episodio con su entrada
 // real (normalizada o null) en item.watched: checkbox, clase is-watched,
-// fecha, fila 2 (meta), contador y estrellas (issue #133/#136).
-function applyEpisodeRowState(row, entry) {
-  const checked = Boolean(entry && entry.date);
-  const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+// botón de visionados anteriores (con sus fechas), fila 2 (meta),
+// contador y estrellas (issue #133/#136/#310). El desplegable de
+// fechas se REPLIEGA en cada repintado derivado de dato (patrón
+// #136): el estado visual siempre deriva de item.watched.
+// baselineMap/startedAt (feedback #310, iteración 5): con rewatch en
+// curso, el estado «visto» de la fila refleja el CICLO ACTUAL por
+// CONTADOR — el episodio está visto en el ciclo si su `times` supera
+// el baseline que tenía al iniciarlo (entrySeenInCycle/episodeBaseline);
+// ciclos en vuelo sin baseline conservan el criterio por fechas
+// (entrySeenSince); sin rewatch, cualquier episodio marcado cuenta.
+function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallback = null) {
+  const seasonNumber = Number(row.closest(".season-block")?.dataset.season);
+  const episodeNumber = Number(row.dataset.episode);
+  const baseline = episodeBaseline(baselineMap, seasonNumber, episodeNumber);
+  const checked = baselineMap
+    ? Boolean(entrySeenInCycle(entry, baseline))
+    : Boolean(entrySeenSince(entry, startedAtForFallback));
+  // Datos REALES del episodio (feedback #310, iteración 7): aunque el
+  // episodio no esté marcado en el ciclo actual (p. ej. un episodio con
+  // visionados históricos durante un rewatch), si tiene valoración o
+  // visualizaciones previas, estas deben mostrarse — no solo cuando se
+  // marca el episodio. `times` refleja el contador real de la entrada
+  // (nunca 0 por no estar marcado en el ciclo).
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  const hasData = Boolean(entry && (times > 0 || entry.rating != null));
   const checkbox = row.querySelector(".episode-checkbox");
   const visual = row.querySelector(".episode-checkbox-visual");
-  const dateInput = row.querySelector(".episode-date");
   const meta = row.querySelector(".episode-row__meta");
   const ratingWrap = row.querySelector(".episode-rating");
+  const rewatchBtn = row.querySelector(".episode-rewatches");
+  const datesBlock = row.querySelector(".episode-rewatches__dates");
   checkbox.checked = checked;
   row.classList.toggle("is-watched", checked);
-  dateInput.disabled = !checked;
-  dateInput.value = checked ? entry.date : "";
-  meta.classList.toggle("hidden", !checked);
+  meta.classList.toggle("hidden", !hasData);
+  if (rewatchBtn) {
+    rewatchBtn.hidden = !hasData;
+    rewatchBtn.setAttribute("aria-expanded", "false");
+    // El contador del botón se sincroniza con `times`, igual que el
+    // summary «Visionados anteriores (N)» de la serie (feedback #310).
+    const label = rewatchBtn.querySelector(".episode-rewatches__label");
+    if (label) label.textContent = `Visionados anteriores (${times})`;
+  }
+  if (datesBlock) {
+    datesBlock.innerHTML = hasData ? rewatchesListHtml(entry) : "";
+    datesBlock.hidden = true;
+  }
   if (times > 1) visual.setAttribute("data-count", String(times));
   else visual.removeAttribute("data-count");
   ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => {
     const n = Number(s.dataset.value);
-    const value = normalizeRating(checked ? entry.rating : 0);
+    const value = normalizeRating(hasData ? entry.rating : 0);
     const full = value >= n;
     const half = value === n - 0.5;
     s.classList.toggle("is-active", full && !half);
@@ -2115,10 +2160,35 @@ function applyEpisodeRowState(row, entry) {
   });
 }
 
-function renderSeasonBlock(s, watched) {
+// Conteo de episodios de una temporada visto en el CICLO ACTUAL
+// (feedback #310, iteración 3): con un rewatch en curso se cuentan
+// solo los episodios del ciclo; sin rewatch, cualquier episodio
+// marcado (comportamiento previo). Desde la iteración 5 la pertenencia
+// al ciclo se decide por CONTADOR contra el baseline por episodio
+// (entrySeenInCycle/episodeBaseline), no por fechas: un ciclo iniciado
+// el mismo día en que se completó el anterior ya no cuenta las marcas
+// del ciclo previo (1/10 al empezar, no 10/10). Ciclos en vuelo sin
+// baseline (iniciados por versiones anteriores) conservan el criterio
+// por fechas (startedAt).
+function seasonCycleCount(seasonWatched, episodeCount, baselineMap = null, startedAt = null, seasonNumber = 1) {
+  let count = 0;
+  for (let ep = 1; ep <= episodeCount; ep++) {
+    const entry = normalizeEntry(seasonWatched && seasonWatched[String(ep)]);
+    const baseline = episodeBaseline(baselineMap, seasonNumber, ep);
+    const seen = baselineMap ? entrySeenInCycle(entry, baseline) : entrySeenSince(entry, startedAt);
+    if (seen) count++;
+  }
+  return count;
+}
+
+function renderSeasonBlock(s, watched, baselineMap = null, startedAt = null) {
   const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
-  const watchedCount = Object.keys(seasonWatched).length;
-  const allWatched = watchedCount >= s.episodeCount && s.episodeCount > 0;
+  // El contador del encabezado refleja el progreso del ciclo ACTUAL
+  // (feedback #310, iteración 3); el check circular de «Marcar todo»,
+  // el de la temporada completa histórica (tick si 1, número si > 1).
+  const watchedCount = seasonCycleCount(seasonWatched, s.episodeCount, baselineMap, startedAt, s.seasonNumber);
+  const completeTimes = seasonCompleteTimes(seasonWatched, s.episodeCount);
+  const allWatched = completeTimes > 0;
   return `
     <div class="season-block" data-season="${s.seasonNumber}" data-episode-count="${s.episodeCount}">
       <div class="season-header">
@@ -2127,25 +2197,68 @@ function renderSeasonBlock(s, watched) {
           <span class="season-name">${escapeHtml(s.name)}</span>
           <span class="season-count">${watchedCount}/${s.episodeCount}</span>
         </button>
-        <button class="btn btn--small season-mark-all" data-season="${s.seasonNumber}"
-                data-all-watched="${allWatched ? "0" : "1"}">
-          ${allWatched ? "Desmarcar todo" : "Marcar todo"}
-        </button>
+        <label class="episode-checkbox-wrap season-mark-all" data-season="${s.seasonNumber}"
+               data-episode-count="${s.episodeCount}"
+               title="Marcar o desmarcar todos los episodios de la temporada">
+          <input type="checkbox" class="episode-checkbox" ${allWatched ? "checked" : ""}
+                 aria-label="${
+                   allWatched
+                     ? "Quitar la última visualización de todos los episodios de la temporada"
+                     : "Marcar todos los episodios de la temporada como vistos"
+                 }" />
+          <span class="episode-checkbox-visual" aria-hidden="true"
+                ${completeTimes > 1 ? `data-count="${completeTimes}"` : ""}></span>
+        </label>
       </div>
       <div class="season-episodes hidden" data-season-episodes="${s.seasonNumber}"></div>
     </div>`;
 }
 
+// Lista de fechas de visionado de un episodio (issue #310): una línea
+// por visión ("Visto el DD/MM/AAAA"), tanto si es 1 como si son más.
+// Vacía si la entrada no existe (episodio sin ver).
+// Legacy (feedback #310): los datos previos a #310 solo guardaban la
+// última fecha + el contador; si `times` es mayor que las fechas
+// conocidas, se muestra una línea indicando las visiones restantes sin
+// fecha registrada para que el desplegable sea coherente con el
+// contador de la casilla (p. ej. serie vista dos veces completa).
+function rewatchesListHtml(entry) {
+  const dates = entry ? entry.dates || [entry.date] : [];
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  if (!times) return "";
+  const known = dates
+    .map((d) => `<li class="episode-rewatches__date">${escapeHtml(formatDateEs(d))}</li>`)
+    .join("");
+  const missing = Math.max(0, times - dates.length);
+  const missingLine = missing
+    ? `<li class="episode-rewatches__unknown">${missing} ${missing === 1 ? "visión más" : "visiones más"} sin fecha registrada</li>`
+    : "";
+  return `<ul class="episode-rewatches__list">${known}${missingLine}</ul>`;
+}
+
 // manual=true (series manuales): no se marcan episodios como "sin
 // estrenar" porque no tienen fechas reales de TMDB.
-function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
+// baselineMap/seasonNumber (feedback #310, iteración 5): con rewatch
+// en curso, el estado marcado de cada episodio refleja el CICLO ACTUAL
+// por CONTADOR — solo los episodios con times > su baseline del ciclo
+// cuentan como vistos en el ciclo (0/10 al empezar, no los 73
+// históricos, aunque el ciclo anterior se terminara el mismo día).
+function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMap = null, startedAtForFallback = null, seasonNumber = 1 } = {}) {
   return episodes
     .map((e) => {
       const entry = normalizeEntry(seasonWatched[String(e.episodeNumber)]);
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
-      const checked = Boolean(date);
-      const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+      const baseline = episodeBaseline(baselineMap, seasonNumber, e.episodeNumber);
+      const checked = baselineMap
+        ? Boolean(entrySeenInCycle(entry, baseline))
+        : Boolean(entrySeenSince(entry, startedAtForFallback));
+      // Datos REALES del episodio (feedback #310, iteración 7): aunque
+      // no esté marcado en el ciclo actual (rewatch), si tiene
+      // valoración o visionados previos, estos deben mostrarse. `times`
+      // refleja el contador real de la entrada, nunca 0 por no marcado.
+      const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+      const hasData = Boolean(entry && (times > 0 || entry.rating != null));
       const future = !manual && isUnreleasedDate(e.airDate);
       // Badge de nota TMDB: solo en series automáticas y cuando el episodio
       // tiene votos (episodeRating != null). Las series manuales no lo traen.
@@ -2161,8 +2274,10 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
             <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""}
                    aria-label="${
                      checked
-                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o desmarcarlo`
-                       : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
+                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o quitar la última visualización`
+                       : hasData
+                         ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo`
+                         : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
                    }" />
             <span class="episode-checkbox-visual" aria-hidden="true"
                   ${times > 1 ? `data-count="${times}"` : ""}></span>
@@ -2177,7 +2292,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
       }</span>
           ${communityBadge}
         </div>
-        <div class="episode-row__meta ${checked ? "" : "hidden"}">
+        <div class="episode-row__meta ${hasData ? "" : "hidden"}">
           <div class="episode-rating">
             ${[1, 2, 3, 4, 5]
               .map((n) => {
@@ -2192,7 +2307,11 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
               })
               .join("")}
           </div>
-          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+          <button type="button" class="episode-rewatches" ${hasData ? "" : "hidden"}
+                  aria-expanded="false"><span class="episode-rewatches__chevron" aria-hidden="true">▸</span> <span class="episode-rewatches__label">Visionados anteriores (${times})</span></button>
+        </div>
+        <div class="episode-rewatches__dates" hidden>
+          ${rewatchesListHtml(entry)}
         </div>
       </div>`;
     })
@@ -2203,7 +2322,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const {
     onExpandSeason,
     onSetEpisodeDate,
-    onSetEpisodeSeenAgain,
+    onEpisodeSeenAgain,
+    onRemoveLastViewing,
     onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
@@ -2222,7 +2342,20 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const pct = progress.totalEpisodes
     ? Math.round((progress.totalWatched / progress.totalEpisodes) * 100)
     : 0;
-  const times = (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
+  // Baseline del ciclo de rewatch en curso (si lo hay): los contadores
+  // de temporada y las casillas reflejan el progreso del CICLO ACTUAL
+  // por contador (feedback #310, iteración 5): un episodio cuenta como
+  // visto en el ciclo si su `times` supera el que tenía al iniciarlo.
+  const cycleBaseline = item.rewatching ? item.rewatchBaseline || null : null;
+  // Fecha de inicio del ciclo (fallback para ciclos en vuelo iniciados
+  // por versiones anteriores, sin rewatchBaseline): criterio por fechas.
+  const cycleStartedAt = item.rewatching ? item.rewatchStartedAt || null : null;
+  // Contador del banner de serie terminada (feedback #310, iteración 3):
+  // coherente con los episodios (mínimo de sus veces) en lugar del
+  // timesCompleted inflado por marcados completos erróneos.
+  const times =
+    seriesCompleteTimes(item.watched) ||
+    (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 
   // Cabecera (issue #292): en modo página la ficha usa el bloque hero
   // (portada grande + título, meta y etiquetas, valoraciones, tráiler
@@ -2241,8 +2374,10 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       </div>
     </div>`;
   // En modo página la valoración de la comunidad y el tráiler ya viven
-  // en el hero; en el modal clásico se muestran como bloques propios.
+  // en el hero; en el modal clásico se muestran como bloques propios,
+  // con la media de episodios (issue #310) junto a la de TMDB.
   const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${episodeAverageBadgeHtml(item.watched)}
     ${trailerButtonHtml(item)}`;
   // En modo página la duración, géneros y sinopsis ya viven en el hero
   // (y su línea de carga/error, que no debe duplicarse aquí).
@@ -2290,31 +2425,43 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     }
 
     ${
-      item.history && item.history.length
-        ? `<details class="rewatch-history">
-            <summary>Visionados anteriores (${item.history.length})</summary>
-            <ul>
-              ${item.history
-                .map(
-                  (h) =>
-                    `<li>${formatDateEs(h.startedAt)} → ${formatDateEs(h.finishedAt)}</li>`
-                )
-                .join("")}
-            </ul>
-          </details>`
-        : ""
+      (() => {
+        // «Visionados anteriores» de la serie (feedback #310, it. 3):
+        // el contador debe ser COHERENTE con el de los episodios. La
+        // fuente de verdad son los episodios (seriesCompleteTimes = nº
+        // de veces que TODOS se han visto); `history` registra los
+        // visionados COMPLETADOS (feedback #310, iteración 4: se
+        // archivan al terminar la serie, no al pulsar «Volver a verla
+        // desde el principio»). Si los episodios indican más visiones
+        // completas que las fechadas, se muestra la diferencia con el
+        // mismo patrón «sin fecha registrada» del desplegable de
+        // episodios.
+        const historyEntries = item.history || [];
+        const episodeViewings = seriesCompleteTimes(item.watched);
+        const viewings = Math.max(episodeViewings, historyEntries.length);
+        if (!(historyEntries.length > 0 || episodeViewings > 1)) return "";
+        const unknownDiff = episodeViewings > 0 ? episodeViewings - historyEntries.length : 0;
+        return `<details class="rewatch-history">
+          <summary>Visionados anteriores (${viewings})</summary>
+          <ul>
+            ${historyEntries
+              .map(
+                (h) => `<li>${escapeHtml(formatDateEs(h.startedAt))} → ${escapeHtml(formatDateEs(h.finishedAt))}</li>`
+              )
+              .join("")}
+            ${
+              unknownDiff > 0
+                ? `<li class="episode-rewatches__unknown">${unknownDiff} ${unknownDiff === 1 ? "visión completa más" : "visiones completas más"} sin fecha registrada</li>`
+                : ""
+            }
+          </ul>
+        </details>`;
+      })()
     }
 
     <div class="seasons-list">
-      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
+      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched, cycleBaseline, cycleStartedAt)).join("")}
     </div>
-
-    ${
-      // Media de episodios (issue #80) como línea informativa: la
-      // valoración general se hace con el botón flotante (issue
-      // #298/#300) y el picker ya no vive en la ficha.
-      episodeAverageHtml(item.watched, "field-rating")
-    }
   `;
 
   function updateBanner(newProgress) {
@@ -2330,25 +2477,59 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       `${newProgress.totalWatched}/${newProgress.totalEpisodes} episodios`;
   }
 
-  function updateSeasonCount(seasonNumber, watchedCount, episodeCount) {
+  // Estado del check circular de «Marcar todo» (feedback #310, it. 3):
+  // derivado SIEMPRE de item.watched (patrón issue #136): checked si la
+  // temporada está completa, con el nº de veces completo de la
+  // temporada (tick si 1) en lugar del texto del antiguo botón.
+  function applySeasonMarkAllState(seasonNumber) {
     const block = content.querySelector(`.season-block[data-season="${seasonNumber}"]`);
+    if (!block) return;
+    const markWrap = block.querySelector(".season-mark-all");
+    const checkbox = markWrap && markWrap.querySelector(".episode-checkbox");
+    const visual = markWrap && markWrap.querySelector(".episode-checkbox-visual");
+    if (!markWrap || !checkbox || !visual) return;
+    const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
+    const episodeCount = seasonMeta ? seasonMeta.episodeCount : Number(markWrap.dataset.episodeCount);
+    const completeTimes = seasonCompleteTimes(
+      (item.watched || {})[String(seasonNumber)] || {},
+      episodeCount
+    );
+    const allWatched = completeTimes > 0;
+    checkbox.checked = allWatched;
+    if (completeTimes > 1) visual.setAttribute("data-count", String(completeTimes));
+    else visual.removeAttribute("data-count");
+    const label = allWatched
+      ? "Quitar la última visualización de todos los episodios de la temporada"
+      : "Marcar todos los episodios de la temporada como vistos";
+    checkbox.setAttribute("aria-label", label);
+  }
+
+  function updateSeasonCount(seasonNumber, episodeCount) {
+    const block = content.querySelector(`.season-block[data-season="${seasonNumber}"]`);
+    const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
+    const watchedCount = seasonCycleCount(
+      (item.watched || {})[String(seasonNumber)] || {},
+      episodeCount,
+      cycleBaseline,
+      cycleStartedAt,
+      seasonNumber
+    );
     block.querySelector(".season-count").textContent = `${watchedCount}/${episodeCount}`;
-    const markBtn = block.querySelector(".season-mark-all");
-    const allWatched = watchedCount >= episodeCount && episodeCount > 0;
-    markBtn.textContent = allWatched ? "Desmarcar todo" : "Marcar todo";
-    markBtn.dataset.allWatched = allWatched ? "0" : "1";
+    if (seasonMeta) applySeasonMarkAllState(seasonNumber);
   }
 
   function updateEpisodeAverage() {
     const avg = computeEpisodeAverageRating(item.watched);
-    const el = content.querySelector("#field-rating-episode-average");
+    const el = content.querySelector("#item-episode-average");
     if (!el) return;
     el.hidden = !avg;
     if (avg) {
       const ratedLabel =
         avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
       el.title = `Media de ${ratedLabel}`;
-      el.innerHTML = `Media episodios: <strong>${avg.average.toFixed(1)}</strong>`;
+      el.innerHTML = `<span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+        .toFixed(1)
+        .replace(".", ",")}</strong>`;
     } else {
       // Sin episodios valorados: ocultar y vaciar (evita texto obsoleto
       // si el CSS por cualquier motivo dejara de respetar el [hidden]).
@@ -2361,16 +2542,27 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     block.querySelectorAll(".episode-row").forEach((row) => {
       const episodeNumber = Number(row.dataset.episode);
       const checkbox = row.querySelector(".episode-checkbox");
-      const dateInput = row.querySelector(".episode-date");
       const ratingWrap = row.querySelector(".episode-rating");
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
-        // Estado REAL antes del clic (el navegador ya conmutó el checkbox)
+        // Estado REAL antes del clic (el navegador ya conmutó el checkbox).
+        // Con rewatch en curso (feedback #310, iteración 5) se compara con
+        // el CICLO actual por CONTADOR: un episodio con visiones
+        // históricas pero aún no visto en el ciclo (su times no supera el
+        // baseline) se comporta como sin marcar (coherente con la casilla
+        // desmarcada que ve el usuario).
         const currentEntry = normalizeEntry(
           (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
         );
-        const wasWatched = Boolean(currentEntry && currentEntry.date);
+        const wasWatched = cycleBaseline
+          ? Boolean(
+              entrySeenInCycle(
+                currentEntry,
+                episodeBaseline(cycleBaseline, seasonNumber, episodeNumber)
+              )
+            )
+          : Boolean(entrySeenSince(currentEntry, cycleStartedAt));
 
         // Episodio ya visto: preguntar qué hacer (verlo de nuevo o
         // desmarcarlo) en lugar de desmarcar a secas (issue #133).
@@ -2390,9 +2582,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             });
             let newProgress = null;
             if (choice === "seen_again") {
-              newProgress = await onSetEpisodeSeenAgain(seasonNumber, episodeNumber);
+              // Feedback #310 (iteración 2): «volver a ver» persiste el
+              // +1 y abre la ventana de valoración con la valoración
+              // previa por defecto (bloquea hasta cerrar, igual que el
+              // marcado de un episodio nuevo; «Deshacer» revierte el +1).
+              newProgress = await onEpisodeSeenAgain(seasonNumber, episodeNumber);
             } else if (choice === "unmarked") {
-              newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, null);
+              // Feedback issue #310: desmarcar con más de una
+              // visualización elimina solo la ÚLTIMA (decrementa times y
+              // quita la fecha más reciente); con una sola, desmarca.
+              newProgress = await onRemoveLastViewing(seasonNumber, episodeNumber);
             }
             // Repintado SIEMPRE derivado de item.watched (patrón issue #136):
             // en el caso «cancelar» la fila vuelve a su estado real (inofensivo)
@@ -2400,10 +2599,13 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry2 = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
             );
-            applyEpisodeRowState(row, entry2);
-            const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
-            updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
+            applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
+            updateSeasonCount(seasonNumber, episodeCount);
             if (newProgress) updateBanner(newProgress);
+            // La media de episodios (issue #310) vive en el hero: al
+            // desmarcar un episodio valorado (diálogo #133) el chip
+            // queda obsoleto si no se refresca (QA H2).
+            updateEpisodeAverage();
           } catch (err) {
             showToast("No se pudo actualizar: " + String(err && err.message ? err.message : err));
           } finally {
@@ -2425,16 +2627,24 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         checkbox.disabled = true;
         const newDate = checkbox.checked ? todayISO() : null;
         try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
+          // Con rewatch en curso (feedback #310, iteración 3), marcar un
+          // episodio que NO está visto en el ciclo pero sí tenía visiones
+          // históricas = «verlo de nuevo» (+1 al contador con fecha de
+          // hoy y la valoración previa como predeterminada), igual que
+          // el diálogo #133: setEpisodeDate no incrementaría el contador.
+          const historicalViewings = Boolean(currentEntry && currentEntry.date);
+          const newProgress =
+            checkbox.checked && cycleStartedAt && historicalViewings
+              ? await onEpisodeSeenAgain(seasonNumber, episodeNumber)
+              : await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
           // Pintado DERIVADO de item.watched (no del checkbox pulsado):
           // refleja también un posible «Deshacer» desde la ventana de
           // valoración emergente (issue #136).
           const entry2 = normalizeEntry(
             (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
           );
-          applyEpisodeRowState(row, entry2);
-          const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
-          updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
+          applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
+          updateSeasonCount(seasonNumber, episodeCount);
           updateBanner(newProgress);
           updateEpisodeAverage();
         } catch (err) {
@@ -2444,16 +2654,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         }
       });
 
-      dateInput.addEventListener("change", async () => {
-        if (!dateInput.value) return;
-        dateInput.disabled = true;
-        try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, dateInput.value);
-          updateBanner(newProgress);
-        } finally {
-          dateInput.disabled = false;
-        }
-      });
+      // Desplegable «Visionados anteriores» (issue #310): muestra las
+      // fechas de todos los visionados del episodio, oculto por
+      // defecto. Simple toggle local (sin repintado derivado).
+      const rewatchBtn = row.querySelector(".episode-rewatches");
+      if (rewatchBtn) {
+        rewatchBtn.addEventListener("click", () => {
+          const datesBlock = row.querySelector(".episode-rewatches__dates");
+          if (!datesBlock) return;
+          datesBlock.hidden = !datesBlock.hidden;
+          rewatchBtn.setAttribute("aria-expanded", String(!datesBlock.hidden));
+        });
+      }
 
       const starButtons = ratingWrap.querySelectorAll(".episode-rating__star");
       starButtons.forEach((btn) => {
@@ -2539,7 +2751,11 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           }
         }
         const seasonWatched = (item.watched && item.watched[String(seasonNumber)]) || {};
-        block.innerHTML = renderEpisodeRows(episodes, seasonWatched, { manual: item.manual });
+        block.innerHTML = renderEpisodeRows(episodes, seasonWatched, {
+          manual: item.manual,
+          baselineMap: cycleBaseline,
+          startedAtForFallback: cycleStartedAt,
+        });
         block.dataset.loaded = "1";
         const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
         wireEpisodeRows(block, seasonNumber, episodeCount);
@@ -2549,11 +2765,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     });
   });
 
-  content.querySelectorAll(".season-mark-all").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const seasonNumber = Number(btn.dataset.season);
-      const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
-      const shouldMarkAll = btn.dataset.allWatched === "1";
+  content.querySelectorAll(".season-mark-all").forEach((wrap) => {
+    const checkbox = wrap.querySelector(".episode-checkbox");
+    checkbox.addEventListener("change", async () => {
+      const seasonNumber = Number(wrap.dataset.season);
+      const episodeCount = Number(wrap.closest(".season-block").dataset.episodeCount);
+      // Intención del usuario: marcar todo (checkbox → checked) o
+      // desmarcar todo (checkbox → unchecked). El repintado final se
+      // deriva SIEMPRE de item.watched (patrón issue #136).
+      const shouldMarkAll = checkbox.checked;
 
       // Al marcar toda una temporada, contar los episodios sin estrenar
       // (sin fecha oficial o con fecha futura) y pedir confirmación.
@@ -2585,13 +2805,21 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         const ok = window.confirm(
           `«${item.title}» · Temporada ${seasonNumber}: ${unreleasedCount} episodio(s) sin estrenar (sin fecha oficial o con fecha futura). ¿Marcarlos todos igualmente como vistos?`
         );
-        if (!ok) return;
+        if (!ok) {
+          checkbox.checked = !checkbox.checked;
+          return;
+        }
       }
 
-      btn.disabled = true;
+      checkbox.disabled = true;
       try {
         const newProgress = await onToggleSeason(seasonNumber, shouldMarkAll);
-        updateSeasonCount(seasonNumber, shouldMarkAll ? episodeCount : 0, episodeCount);
+        // Repintado derivado de item.watched (feedback #310, iteración 2):
+        // «Desmarcar todo» quita solo la última visualización de cada
+        // episodio, así que los episodios con varias visiones siguen
+        // marcados y el contador/check deben reflejar el estado real
+        // (no 0 ni episodeCount a ciegas).
+        updateSeasonCount(seasonNumber, episodeCount);
         updateBanner(newProgress);
 
         const episodesBlock = content.querySelector(
@@ -2602,12 +2830,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(row.dataset.episode)]
             );
-            applyEpisodeRowState(row, entry);
+            applyEpisodeRowState(row, entry, cycleBaseline, cycleStartedAt);
           });
         }
         updateEpisodeAverage();
+      } catch (err) {
+        // Patrón issue #136 también en el camino de error: restaurar el
+        // check desde item.watched y avisar (mismo patrón que las filas).
+        applySeasonMarkAllState(seasonNumber);
+        updateSeasonCount(seasonNumber, episodeCount);
+        showToast("No se pudo actualizar la temporada: " + String(err && err.message ? err.message : err));
       } finally {
-        btn.disabled = false;
+        checkbox.disabled = false;
       }
     });
   });
@@ -2617,7 +2851,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     rewatchBtn.addEventListener("click", async () => {
       if (
         !window.confirm(
-          `¿Volver a ver «${item.title}» desde el principio? Se guardará el visionado anterior en el historial.`
+          `¿Volver a ver «${item.title}» desde el principio? Empezará un nuevo visionado desde T1E1 y la serie pasará a «viendo»; se conservan las visualizaciones y valoraciones anteriores.`
         )
       ) {
         return;

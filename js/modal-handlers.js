@@ -7,7 +7,7 @@
 import { removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
-import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
+import { computeProgress, progressWithRewatch, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain, removeLastEpisodeViewing, completedViewingChanges } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
@@ -145,11 +145,14 @@ function editHandlerFor(item, kind, reopen, ctx, target = null) {
 }
 
 function progressWithStatus(seasonsMeta, item) {
-  const base = computeProgress(seasonsMeta, item.watched);
   if (item.status === "standby" || item.status === "abandonado") {
-    return { ...base, status: item.status };
+    return { ...computeProgress(seasonsMeta, item.watched), status: item.status };
   }
-  return base;
+  // Rewatch (issue #310): progressWithRewatch devuelve el progreso del
+  // ciclo ACTUAL — contadores de episodios vistos en el ciclo (1/73,
+  // iteración 3 feedback #310), siguiente episodio del ciclo sin ver y
+  // estado de hecho "en_curso" («viendo») en lugar de "completado".
+  return progressWithRewatch(seasonsMeta, item);
 }
 
 // País del usuario para los watch providers (definido y exportado
@@ -536,24 +539,41 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
   }
 
   async function persistWatched(newWatched) {
-    const newProgress = computeProgress(seasonsMeta, newWatched);
-    // awaitingRelease se limpia siempre al marcar un episodio: una
-    // serie con episodios vistos no puede seguir "sin estrenar"
-    // (idempotente).
-    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+    const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
+    const changes = {
       watched: newWatched,
       status: newProgress.status,
       nextEpisode: newProgress.nextEpisode,
       firstWatchedAt: newProgress.firstWatchedAt,
       lastWatchedAt: newProgress.lastWatchedAt,
       awaitingRelease: false,
-    });
+    };
+    // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva
+    // el visionado en history («visualizaciones anteriores») y se
+    // incrementa timesCompleted — no al pulsar «Volver a verla desde
+    // el principio», que solo reinicia el ciclo (startRewatch). Se
+    // computa ANTES de mutar el flag: el helper necesita el estado
+    // previo (rewatching true → startedAt = rewatchStartedAt).
+    const completed = completedViewingChanges(item, newWatched, newProgress);
+    if (item.rewatching) {
+      changes.rewatching = newProgress.rewatching;
+      item.rewatching = newProgress.rewatching;
+    }
+    if (completed) {
+      changes.history = completed.history;
+      changes.timesCompleted = completed.timesCompleted;
+    }
+    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
     item.watched = newWatched;
     item.status = newProgress.status;
     item.nextEpisode = newProgress.nextEpisode;
     item.firstWatchedAt = newProgress.firstWatchedAt;
     item.lastWatchedAt = newProgress.lastWatchedAt;
     item.awaitingRelease = false;
+    if (completed) {
+      item.history = completed.history;
+      item.timesCompleted = completed.timesCompleted;
+    }
     return newProgress;
   }
 
@@ -625,6 +645,9 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
       const wasWatched = Boolean(prevEntry && prevEntry.date);
       const prevAwaitingRelease = item.awaitingRelease;
       const prevStatus = item.status;
+      const prevRewatching = item.rewatching;
+      const prevHistory = item.history;
+      const prevTimesCompleted = item.timesCompleted;
       const newProgress = await persistWatched(
         setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)
       );
@@ -634,17 +657,31 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
         // la casilla/estrellas/fecha correctamente (item ya mutado).
         const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
           onUndo: async () => {
+            // Rewatch (issue #310, QA H1): el marcado pudo COMPLETAR el
+            // rewatch y limpiar el flag (persistWatched lo mutó a false);
+            // el undo lo restaura ANTES de recomputar, para que el
+            // progreso vuelva a ser el del rewatch en curso (T1E1) y no
+            // un "completado" sin ciclo retomable.
+            if (prevRewatching) item.rewatching = true;
             await persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, null));
             // persistWatched fuerza awaitingRelease:false y el status
             // recomputado; el segundo update restaura el flag/estado
-            // previo. Ventana transitoria en DB auto-reparable
-            // (idempotente, issue #136).
+            // previo (y, feedback #310 iteración 4, el history y el
+            // contador de completados que el marcado pudo incrementar al
+            // completar la serie). Ventana transitoria en DB
+            // auto-reparable (idempotente, issue #136).
             if (prevAwaitingRelease) {
               await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awaitingRelease: true });
               item.awaitingRelease = true;
             }
-            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { status: prevStatus });
+            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+              status: prevStatus,
+              history: prevHistory,
+              timesCompleted: prevTimesCompleted,
+            });
             item.status = prevStatus;
+            item.history = prevHistory;
+            item.timesCompleted = prevTimesCompleted;
           },
         });
         if (undone) return computeProgress(seasonsMeta, item.watched); // progreso REVERTIDO
@@ -655,10 +692,57 @@ export async function openTvItem(item, ctx, isRerender = false, target = null) {
     onSetEpisodeRating: (seasonNumber, episodeNumber, rating) =>
       persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating)),
 
-    // Episodio YA visto visto de nuevo (issue #133): suma 1 al contador
-    // de visualizaciones y pone la fecha en hoy, conservando la valoración.
-    onSetEpisodeSeenAgain: (seasonNumber, episodeNumber) =>
-      persistWatched(markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())),
+    // Episodio YA visto visto de nuevo (issue #133) + ventana de
+    // valoración con la valoración previa por defecto (feedback #310,
+    // iteración 2): persiste el +1 al contador con la fecha de hoy
+    // (markEpisodeSeenAgain, conservando la valoración) y abre la
+    // ventana de valoración MOSTRANDO la valoración que se le dio la
+    // vez anterior («debe ser siempre la misma a menos que se
+    // cambie»). «Deshacer» revierte el +1 y la fecha recién
+    // registrada (removeLastEpisodeViewing) y, si el marcado hubiera
+    // completado el rewatch, restaura el flag previo y el estado.
+    onEpisodeSeenAgain: async (seasonNumber, episodeNumber) => {
+      const prevAwaitingRelease = item.awaitingRelease;
+      const prevStatus = item.status;
+      const prevRewatching = item.rewatching;
+      const prevHistory = item.history;
+      const prevTimesCompleted = item.timesCompleted;
+      const newProgress = await persistWatched(
+        markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())
+      );
+      const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
+        onUndo: async () => {
+          if (prevRewatching) item.rewatching = true;
+          await persistWatched(removeLastEpisodeViewing(item.watched, seasonNumber, episodeNumber));
+          if (prevAwaitingRelease) {
+            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awaitingRelease: true });
+            item.awaitingRelease = true;
+          }
+          // Feedback #310 (iteración 4): si el «verlo de nuevo» hubiera
+          // COMPLETADO la serie, el marcado archivó el visionado en
+          // history y elevó timesCompleted; el undo los restaura.
+          await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+            status: prevStatus,
+            history: prevHistory,
+            timesCompleted: prevTimesCompleted,
+          });
+          item.status = prevStatus;
+          item.history = prevHistory;
+          item.timesCompleted = prevTimesCompleted;
+        },
+      });
+      // Progreso REVERTIDO (issue #136): progressWithRewatch con el
+      // flag restaurado devuelve el del rewatch en curso (T1E1) para
+      // que el banner no pinte un «completado» fantasma.
+      if (undone) return progressWithRewatch(seasonsMeta, item, item.watched);
+      return newProgress;
+    },
+
+    // Desmarcar con varias visualizaciones (feedback issue #310):
+    // elimina solo la ÚLTIMA visión (decrementa times y quita la fecha
+    // más reciente); con una sola visión, desmarca por completo.
+    onRemoveLastViewing: (seasonNumber, episodeNumber) =>
+      persistWatched(removeLastEpisodeViewing(item.watched, seasonNumber, episodeNumber)),
 
     onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);

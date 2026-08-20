@@ -265,21 +265,60 @@ Para cada episodio puedes:
   **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Volver a ver un episodio**: si el episodio ya está marcado como visto
   y pulsas su casilla, la web te preguntará si **lo has visto de nuevo** o
-  si quieres **desmarcarlo**. Si eliges «Lo he visto de nuevo», la fecha de
-  última visualización pasa a hoy y el contador del episodio suma uno.
+  si quieres **quitarle la última visualización**. Si eliges «Lo he visto
+  de nuevo», la web guarda el nuevo visionado (la fecha de hoy, y el
+  contador del episodio suma uno) y te abre la ventana de valoración con
+  **la valoración que le diste la vez anterior ya puesta**: puedes
+  dejarla igual o cambiarla. Si pulsas **«Deshacer»**, el visionado recién
+  añadido se quita y el episodio queda como estaba.
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
-- **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
-- **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
+  La opción de descontar se llama **«Quitar última visualización»** cuando
+  el episodio se ha visto varias veces (quita solo la visión más reciente:
+  el episodio sigue marcado y el contador baja una vez) y **«Desmarcar»**
+  cuando solo se ha visto una vez (el episodio queda sin marcar).
+- **Ver las fechas de tus visionados**: bajo cada episodio con
+  visualizaciones hay un botón **«Visionados anteriores (nº de veces)»**,
+  con la misma flecha que los apartados desplegables de la serie; al
+  pulsarlo se despliegan las fechas de todas las veces que lo has visto
+  (ocultas por defecto, tanto si es una como si son varias). Si alguna
+  visualización antigua no tiene fecha registrada, aparece una línea que
+  indica cuántas visiones quedan sin fecha, para que el número concuerde
+  con el contador del episodio.
+- **Valorarlo** con estrellas, una vez visto (más en
+  [sección 13](#13-valoraciones-con-estrellas)). Si ya lo habías valorado
+  en un visionado anterior, la valoración aparece puesta aunque el
+  episodio no esté marcado (por ejemplo, durante un rewatch).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
-**«Desmarcar todo»**. Si hay episodios aún sin estrenar, la web te pedirá
-confirmación antes de marcarlos todos.
+**«Desmarcar todo»**, que actúan sobre cada episodio como si lo pulsaras
+individualmente. «Marcar todo» **añade una visualización a cada
+episodio**: los que ya habías visto suman una vez más a su contador (con
+la fecha de hoy) y los que aún no estaban vistos quedan marcados por
+primera vez. «Desmarcar todo» **quita la última visualización de cada
+episodio**: los vistos una sola vez se desmarcan, pero los vistos varias
+veces siguen marcados, con el contador reducido en una; si todos los
+episodios de la temporada tienen más de una visualización, tendrás que
+pulsar «Desmarcar todo» varias veces para desmarcarlos del todo. Si hay
+episodios aún sin estrenar, la web te pedirá confirmación antes de
+marcarlos todos.
+
+«Marcar todo» es ahora una **casilla con un círculo**, igual que las de
+los episodios: está marcada cuando la temporada está completa y, si la
+temporada se ha completado más de una vez, el círculo muestra el
+**número de veces** en lugar de la ✓ (igual que los episodios). Encima
+de cada temporada verás también cuántos episodios llevas vistos
+(`1/10`, etc.).
 
 La serie se considera **«Vista»** cuando marcas el último episodio que
 falta. En tu lista verás siempre qué toca ver ahora (por ejemplo,
-«Siguiente: T2E5»).
+«Siguiente: T2E5»). Si estás **volviendo a verla** (sección 4.5), el
+contador «Siguiente» y los de cada temporada muestran el **progreso del
+visionado actual**, no el de las veces anteriores: al empezar a volver
+a verla verás `0/10` (o `1/10` recién visto el primero), aunque la
+serie entera esté marcada de antes; el estado de la serie es
+**«viendo»** mientras dura el ciclo.
 
 ### 4.4 Pausar, abandonar y retomar
 
@@ -295,21 +334,73 @@ dependiendo del momento:
 ### 4.5 Volver a ver una serie desde el principio
 
 Si una serie está completa, la ficha ofrece **«Volver a verla desde el
-principio»**. La web guarda el visionado anterior en tu historial y
-reinicia la serie para que empieces de nuevo. Verás el aviso
-«Has terminado esta serie (visionado nº X)» cuando la vuelvas a completar.
+principio»**. Al pulsarlo la serie **se reinicia**: el siguiente episodio
+vuelve a ser el **T1E1** y la serie pasa a **«viendo»**, avanzando a
+medida que marcas episodios como si no la hubieras visto antes. **No se
+pierden los números de visualizaciones ni las valoraciones**: los
+episodios siguen mostrando cuántas veces los has visto en total (por
+ejemplo, si la habías visto completa 3 veces, cada episodio parte de 3
+visualizaciones y hasta que no tenga la 4.ª no se considera visto en esta
+revisualización). Los contadores de cada temporada también se ponen a
+cero (`0/10`) e irán subiendo hasta que todos sus episodios tengan la
+visualización nueva (`10/10`), momento en el que la temporada se marca
+como vista esa vez más.
+
+Cuando vuelves a ver un episodio (con su casilla, eligiendo «Lo he visto
+de nuevo»), suma una vez más a su contador, añade la fecha al listado de
+**«Visionados anteriores»** del episodio y abre la ventana de valoración
+con **la valoración anterior ya puesta** (puedes dejarla o cambiarla). La
+visualización se da por terminada cuando has vuelto a ver
+**todos los episodios** de la serie: las visualizaciones antiguas (las
+de antes de empezar a volver a verla) no cuentan para terminarla. Verás
+el aviso «Has terminado esta serie (visionado nº X)» cuando la completes
+y ese visionado quedará archivado en «Visionados anteriores» con sus
+fechas de inicio y fin (en la [sección 4.6](#46-historial-de-visionados)
+se explica cómo verlas). Aunque terminaras la serie y la reinicies el
+mismo día, los contadores vuelven a cero y la serie **no se da por
+terminada al marcar el primer episodio**: solo se completará cuando
+todos los episodios tengan su visualización nueva de este ciclo.
+
+Durante el rewatch, **los contadores son del visionado actual**: el
+progreso de la barra, el «Siguiente», el número de episodios de cada
+temporada y qué episodios aparecen marcados en cada temporada reflejan
+solo este ciclo (un episodio que viste en la vez anterior pero aún no
+en esta aparece sin marcar; al marcarlo cuenta como «Lo he visto de
+nuevo» y suma a su contador total). Aunque un episodio no esté marcado,
+si tiene valoración o visualizaciones previas estas **siguen
+mostrándose** (las estrellas con la valoración que le diste y el botón
+«Visionados anteriores» con su contador); solo se ocultan cuando el
+episodio no se ha visto nunca. El nº de veces de cada episodio y
+los **«Visionados anteriores»** (con el botón «N visiones completas más
+sin fecha registrada» cuando el contador es de antes de guardar fechas)
+siguen mostrando el total histórico. En tu lista, la serie en rewatch
+muestra el contador «Completa · ×N» con el número de veces REAL según
+los episodios (por ejemplo «Completa · ×2» si todos los episodios se
+han visto dos veces).
 
 ### 4.6 Historial de visionados
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
 anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
-cada vez que la has visto.
+cada vez que la has visto. Cada visionado se archiva **cuando la serie
+se termina** (no al pulsar «Volver a verla desde el principio»): si la
+terminas 3 veces, verás 3 entradas con sus fechas (y así sucesivamente
+en cada revisualización completada). El número de visionados del
+desplegable es el **mismo que el de los episodios**: si la serie se ha
+visto completa más veces de las que tienen fecha registrada (datos
+antiguos), se indica la diferencia con una línea «N visiones completas
+más sin fecha registrada». La ficha de una serie con episodios se
+considera completa según los episodios: el contador «Completa · ×N» de
+la lista muestra el número real de veces según los episodios, aunque se
+marcara la serie completa varias veces por error en el pasado.
 
 ### 4.7 Eliminar una serie
 
 El botón flotante de la ficha ofrece **«Quitar de añadidos»** (o
 **«Quitar última visualización»** si la serie ya está completada, que
-desmarca su último episodio visto). «Quitar de añadidos» borra la serie.
+desmarca su último episodio visto; si ese episodio se había visto
+varias veces, solo le quita la visión más reciente y sigue marcado).
+«Quitar de añadidos» borra la serie.
 El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
@@ -1050,7 +1141,10 @@ tipo, verás:
   duración — en las series, en lugar de la duración se indica el
   **número de temporadas y episodios** —; debajo, **pequeñas etiquetas**
   con los géneros; debajo, la **valoración de la comunidad**, **tu
-  valoración** (solo si ya se la has puesto) y el botón **Tráiler ▶**;
+  valoración** (solo si ya se la has puesto), la **media de tus
+  valoraciones de episodios** (solo en series, con un estilo de chip
+  distinto; más en la [sección 13](#13-valoraciones-con-estrellas)) y el
+  botón **Tráiler ▶**;
   y debajo de todo, la **sinopsis**.
 - **Portada, título y año**: la cabecera clásica se mantiene en libros y
   videojuegos (en la vista previa de búsqueda de estos se indica el tipo
@@ -1263,12 +1357,17 @@ tiene dos estados y un icono propios:
   lista.
 - **Icono tachado 🚫 con fondo rojo**: la serie está **abandonada**. El
   rojo es el mismo color del estado de la serie en tu lista.
+- **Icono de reproducir ▶ con fondo dorado**: la serie **se está
+  volviendo a ver** (estás en pleno rewatch, sección 4.5): el estado
+  de hecho es «viendo», pero con el color dorado de visto, para que
+  sepas de un vistazo que ya la habías visto.
 
 En la ficha, el abanico incluye la **opción inversa** según el estado:
 **«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
 registro, con **«Deshacer»** para cancelar) y **«Quitar última
 visualización»** si ya lo está (en películas, elimina la última vez que
-la viste; en series, desmarca el último episodio visto).
+la viste; en series, desmarca el último episodio visto, o le quita solo
+su visión más reciente si ese episodio se había visto varias veces).
 
 En series ya completadas (o en pausa/abandonadas), la opción «Marcar
 como vista» no aparece, porque no tiene sentido; en su lugar, en una
@@ -1298,11 +1397,13 @@ abre con el **botón flotante** (opción **«Valorar»**) e incluye también
 el campo de **notas**: puedes escribir (o cambiar) tus impresiones y
 guardarlas junto a las estrellas con **«Guardar valoración»**.
 
-En la ficha de una **serie**, junto a las temporadas se muestra
-la **media de tus valoraciones de episodios** (por ejemplo
-«Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
-vistos sin valorar no se tienen en cuenta (la valoración mínima de un
-episodio es media estrella, 0.5). Si todavía no has valorado ningún
+En la ficha de una **serie**, en la parte superior (junto a la
+valoración de la comunidad y la tuya) se muestra la **media de tus
+valoraciones de episodios**, como un chip con borde (por ejemplo
+«Media episodios: 4,2»), a propósito con un estilo ligeramente distinto
+al resto de valoraciones. Solo cuentan los episodios que has valorado:
+los vistos sin valorar no se tienen en cuenta (la valoración mínima de
+un episodio es media estrella, 0.5). Si todavía no has valorado ningún
 episodio, la media no aparece. Se actualiza sola en cuanto valoras un
 episodio, quitas una valoración o desmarcas episodios.
 
@@ -1636,8 +1737,9 @@ conexión a internet y **recarga la página**.
 **He marcado algo por error**
 Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
 valoración que se abre al marcar y todo vuelve a estar como antes.
-También puedes desmarcar episodios, quitar visionados del historial y
-«Deshacer» cualquier borrado en los segundos posteriores.
+También puedes desmarcar episodios (o quitarles la última
+visualización si se habían visto varias veces), quitar visionados del
+historial y «Deshacer» cualquier borrado en los segundos posteriores.
 
 **No veo a un amigo nuevo**
 La lista de amigos es la de todos los usuarios registrados. Si la persona
