@@ -1,0 +1,61 @@
+{
+  "title": "Unificación películas/series añadidas y no añadidas",
+  "description": "Cuando se accede a la página de una serie o película que no se ha añadido, esta debe ser igual a las que sí se han añadido en cuanto a secciones, botones y organización. La base del trabajo es la rama feat/issue-201: crear una nueva rama a partir de ahí y hacer la PR a esa rama (no a dev).",
+  "status": "review",
+  "acceptance criteria": [
+    "La ficha de detalle de una película/serie NO añadida muestra las mismas secciones que la de una añadida.",
+    "Los botones visibles en la ficha de un ítem no añadido coinciden con los de un ítem añadido (misma organización y misma información).",
+    "La organización de secciones (info, valoración, visionados, temporadas, premios, etc.) es idéntica entre ítems añadidos y no añadidos.",
+    "Para ítems no añadidos que carecen de datos propios (p.ej. valoración personal o progreso), se muestra el equivalente vacío/por defecto coherente con el estado no añadido, sin secciones fantasma ni huecos extraños."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada sobre rama derivada de feat/issue-201.",
+    "Validación QA superada (qa-reviewer) contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #317'.",
+    "Manual de usuario actualizado si el cambio afecta a lo que el usuario ve.",
+    "PR creada contra feat/issue-201 SIN keyword de cierre; task file subido con status review + bloque pr; issue actualizada a status: needs-review."
+  ],
+  "issue": {
+    "number": 317,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/317",
+    "title": "Unificación películas/series añadidas y no añadidas"
+  },
+  "plan": {
+    "approach": "Reescribir paintPreview para espejar la ficha compartiendo helpers de ui.js (no tocar openMovieItem/openTvItem/modales): hero con showUserRating:true, carruseles de elenco (castCrewHtml), banner de progreso en series si seasonsMeta, temporadas .season-block desplegables solo lectura (renderSeasonBlockReadOnly/renderEpisodeRowsReadOnly en ui.js), hint reposicionado a zona de banners, CTA unico Añadir (quitado Volver), FAB preview sin cambios. PR contra feat/issue-201.",
+    "files": [
+      "js/ui.js",
+      "js/item-page.js",
+      "css/styles.css",
+      "docs/manual-de-usuario.md",
+      "docs/adr-113-*.md",
+      "js/config.js",
+      "index.html",
+      "service-worker.js"
+    ]
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA reviewer: AC 1-5 confirmados; unico hallazgo el ADR-113 (paso de documentacion posterior del flujo SDD). Label type: content coherente con issue #290 (misma familia)."
+  },
+  "security": {
+    "result": "PASS",
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "notes": "LOW informativos pre-existentes (claves client-side del SPA por diseño; data-air-date igual al patron de la ficha)."
+  },
+  "adr": {
+    "file": "docs/adr-113-unificacion-ficha-preview.md",
+    "commit": "0df8167"
+  },
+  "pr": {
+    "number": 318,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/318",
+    "title": "feat: unificación películas/series añadidas y no añadidas (issue #317)",
+    "branch": "feat/issue-317-unificar-fichas-no-anadidas",
+    "commit": "4163fe9",
+    "closes": "#317"
+  }
+}
