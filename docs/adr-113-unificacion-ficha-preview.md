@@ -43,7 +43,8 @@ mismo contenedor:
      desplegables** de la ficha.
    - Sin banner de progreso en series.
    - Pie con **dos botones**: «Volver» (`#btn-preview-back` →
-     `goBack`) y «Añadir».
+     `goBack`) y «Añadir» (este último se eliminaría también por
+     feedback del usuario en la iteración, ver §2).
 
 Related issue: #317 — https://github.com/gonzalitojh/Registro-personal/issues/317
 
@@ -71,16 +72,21 @@ antes faltaban) → `renderSagaMovies` (películas con `collectionId`) →
 - `extraInfoHtml` y `previewSeasonsHtml` dejan de importarse en
   js/item-page.js.
 
-### 2. CTA único «Añadir» al final; el «Volver» del pie desaparece
+### 2. Sin CTA final: «Añadir» vive solo en el botón flotante
 
-El pie `.modal-actions` queda con **un solo botón**,
-`#btn-preview-add` (añade mediante `addFromPreview` y pasa a la ficha,
-comportamiento intacto). El botón `#btn-preview-back` se elimina: la
-navegación de vuelta ya la cubren la **cabecera ←** (`#btn-item-back`),
-la tecla **Esc** (`handleEscape`) y el fallback de `goBack`
-(`history.back()` o navegación a la última pestaña de Ocio). Nueva
-regla única de CSS para anclar el CTA a la derecha (`.modal-actions`
-reparte con `space-between`):
+El pie `.modal-actions` de la preview **desaparece por completo**
+(iteración por feedback #317: «Elimina el botón de añadir, ya que eso
+se hace a través del botón flotante»). La ficha de un título añadido
+tampoco tiene botones en el cuerpo de la página — todas las acciones
+viven en el FAB —, así que la preview queda **aún más idéntica a la
+ficha**: sin `#btn-preview-add` ni `#btn-preview-back`. La alta se hace
+desde el **botón flotante** (`renderFab(item, "preview")`), que ya
+ofrecía «Añadir» desde la issue #298 (además de «Marcar como vista» y
+«Valorar»); `addFromPreview`/`addAndRateFromPreview` pasan a usar
+siempre un **target local** para el patrón deshabilitar/restaurar de
+`handleAdd` (no hay botón real que deshabilitar). El aviso
+`item-preview__hint` indica al usuario dónde está la acción: «Añádelo
+con el botón flotante». Se elimina la regla CSS única del CTA:
 
 ```css
 #item-view #btn-preview-add { margin-inline-start: auto; }
@@ -91,9 +97,10 @@ reparte con `space-between`):
 El aviso `item-preview__hint` se **reposiciona al final**: después de
 las recomendaciones y del banner de progreso de la serie (la zona que
 en la ficha ocupan los banners de estado), justo encima de las
-temporadas (series) y del CTA «Añadir». Ocupa así el lugar natural del
-«equivalente vacío» de los banners de registro (standby, completado,
-rewatch), que no aplican sin ítem.
+temporadas (series). Ocupa así el lugar natural del «equivalente
+vacío» de los banners de registro (standby, completado, rewatch), que
+no aplican sin ítem. Su texto guía hacia el botón flotante, única vía
+de alta (feedback #317).
 
 ### 4. Series: banner de progreso «recién añadida» y temporadas de solo lectura
 
@@ -131,7 +138,9 @@ valoración personal (hero de ítem añadido sin valorar: comunidad +
 tráiler), sección de visionados (`watchLog` — igual que una película
 añadida sin ver), banners de standby/completado/rewatch, casilla «Marcar
 todo» por temporada y casillas/valoraciones de episodio. El FAB de la
-preview no cambia (modo `preview`, solo «Añadir», issue #298).
+preview (modo `preview`, issue #298) ofrece **«Añadir», «Marcar como
+vista» y «Valorar»**; tras el feedback #317, «Añadir» es la **única vía
+de alta** de la página (no hay botón real).
 
 ## Alternativas descartadas
 
@@ -164,7 +173,8 @@ preview no cambia (modo `preview`, solo «Añadir», issue #298).
   secciones, botones y organización (el objetivo de #317): misma
   cabecera, premios, carruseles de producción/reparto, saga,
   recomendaciones y, en series, banner de progreso y temporadas
-  desplegables.
+  desplegables; **sin botón «Añadir» en el cuerpo** (feedback #317:
+  como en la ficha, las acciones viven en el botón flotante).
 - **Cero duplicación de markup**: todos los bloques salen de los
   helpers compartidos de la ficha (práctica ADR-102); cualquier cambio
   futuro en una sección queda en sincronía entre ficha y preview.
@@ -185,18 +195,22 @@ preview no cambia (modo `preview`, solo «Añadir», issue #298).
   serie (mismo patrón bajo demanda que la ficha para ítems añadidos);
   solo la primera expansión, luego se cachea en el DOM
   (`block.dataset.loaded`).
-- El **pie ya no tiene «Volver»**: la navegación de vuelta queda en la
-  cabecera ←, Esc y el fallback de `goBack` (documentado en el manual).
+- El **pie ya no tiene «Volver» ni «Añadir»**: la navegación de vuelta
+  queda en la cabecera ←, Esc y el fallback de `goBack`, y la alta en
+  el botón flotante (documentado en el manual).
 - La **preview de búsqueda por modal** (libros, videojuegos y series
-  vía `openSearchPreviewModal` + `previewSeasonsHtml`) **no se toca**.
-- Regla CSS única para el CTA (`#item-view #btn-preview-add`); el botón
-  queda anclado a la derecha en los cuatro modos de tema sin overrides
-  adicionales.
+  vía `openSearchPreviewModal` + `previewSeasonsHtml`) **no se toca**:
+  conserva su propio botón «Añadir» en `modal-actions` (contexto
+  distinto, sin FAB).
+- El aviso `item-preview__hint` gana una frase guía («Añádelo con el
+  botón flotante») para que la eliminación del CTA no deje a nadie sin
+  saber cómo añadir el título.
 - Handbooks: el manual de usuario se actualiza en §10.1 (vista previa
-  del catálogo = ficha) y §12 (página de título no añadido idéntica a
-  la ficha; aviso y «Añadir» al final; sin botón «Volver» — ← o Esc;
-  temporadas en solo lectura con nota de la comunidad por episodio).
-- Versión PWA bumped a `20261011` (js/config.js, index.html,
+  del catálogo = ficha; alta por botón flotante, sin CTA en la página)
+  y §12 (página de título no añadido idéntica a la ficha; aviso al
+  final, sin botón «Añadir» ni «Volver» — ← o Esc; temporadas en solo
+  lectura con nota de la comunidad por episodio).
+- Versión PWA bumped a `20261012` (js/config.js, index.html,
   service-worker.js): un precache adicional para los usuarios al
   desplegar.
 
@@ -204,14 +218,14 @@ preview no cambia (modo `preview`, solo «Añadir», issue #298).
 
 | Archivo | Cambio |
 |---------|--------|
-| `js/item-page.js` | **Modificado**: `paintPreview` reescrita para espejar la ficha — hero con `showUserRating: true`, `castCrewHtml` (carruseles de producción/reparto), misma organización de secciones, aviso `item-preview__hint` reposicionado a la zona de banners, CTA único `#btn-preview-add` (eliminado `#btn-preview-back`/`Volver`), banner de progreso de serie (`computeProgress(seasonsMeta, {})` → «Siguiente: T1E1», 0 %, `0/N`) y temporadas desplegables de solo lectura con carga bajo demanda de episodios (`pageCtx.getSeasonEpisodes`) con guards anti-race (`isCurrent` + `isConnected`) y botón deshabilitado durante la carga; imports actualizados (salen `extraInfoHtml` y `previewSeasonsHtml`; entran `castCrewHtml`, `renderSeasonBlockReadOnly`, `renderEpisodeRowsReadOnly`) |
+| `js/item-page.js` | **Modificado**: `paintPreview` reescrita para espejar la ficha — hero con `showUserRating: true`, `castCrewHtml` (carruseles de producción/reparto), misma organización de secciones, aviso `item-preview__hint` reposicionado a la zona de banners, banner de progreso de serie (`computeProgress(seasonsMeta, {})` → «Siguiente: T1E1», 0 %, `0/N`) y temporadas desplegables de solo lectura con carga bajo demanda de episodios (`pageCtx.getSeasonEpisodes`) con guards anti-race (`isCurrent` + `isConnected`) y botón deshabilitado durante la carga; imports actualizados (salen `extraInfoHtml` y `previewSeasonsHtml`; entran `castCrewHtml`, `renderSeasonBlockReadOnly`, `renderEpisodeRowsReadOnly`). **Iteración (feedback #317)**: eliminado el CTA final `.modal-actions`/`#btn-preview-add` (y su wiring) — la alta queda solo en el botón flotante; `addFromPreview`/`addAndRateFromPreview` usan target local (sin `getElementById("btn-preview-add")`); aviso con frase guía «Añádelo con el botón flotante» |
 | `js/ui.js` | **Modificado**: nuevos exports `renderSeasonBlockReadOnly` (cabecera con chevron/aria-expanded y contador `0/N`, sin «Marcar todo») y `renderEpisodeRowsReadOnly` (filas `E#` + nombre + «sin estrenar · fecha» + nota de la comunidad TMDB, sin casillas ni valoración personal) |
-| `css/styles.css` | **Modificado**: regla única `#item-view #btn-preview-add { margin-inline-start: auto; }` (ancla el CTA único a la derecha de `.modal-actions` en la página) |
-| `docs/manual-de-usuario.md` | **Modificado**: §10.1 (la vista previa del catálogo es igual a la ficha: banner de progreso y temporadas en solo lectura con nota de la comunidad por episodio; aviso y «Añadir» al final) y §12 (página de título no añadido = ficha completa; sin botón «Volver» — ← o Esc; temporadas de solo lectura con fecha de estreno y nota TMDB por episodio) |
-| `js/config.js` | **Modificado**: `APP_VERSION` a `20261011` |
-| `index.html` | **Modificado**: 3 referencias `?v=` a `20261011` |
-| `service-worker.js` | **Modificado**: 11 referencias `?v=` de `STATIC_ASSETS` a `20261011` |
-| `docs/adr-113-unificacion-ficha-preview.md` | **Nuevo**: este documento |
+| `css/styles.css` | **Modificado**: regla `#item-view #btn-preview-add { margin-inline-start: auto; }` (ancla del CTA a la derecha de `.modal-actions`) — añadida en la iteración 1 y **eliminada en la iteración por feedback #317** (ya no hay CTA) |
+| `docs/manual-de-usuario.md` | **Modificado**: §10.1 (la vista previa del catálogo es igual a la ficha: banner de progreso y temporadas en solo lectura con nota de la comunidad por episodio; aviso al final; alta por botón flotante — sin CTA en la página) y §12 (página de título no añadido = ficha completa; sin botón «Añadir» ni «Volver» — ← o Esc; temporadas de solo lectura con fecha de estreno y nota TMDB por episodio) |
+| `js/config.js` | **Modificado**: `APP_VERSION` a `20261012` |
+| `index.html` | **Modificado**: 3 referencias `?v=` a `20261012` |
+| `service-worker.js` | **Modificado**: 11 referencias `?v=` de `STATIC_ASSETS` a `20261012` |
+| `docs/adr-113-unificacion-ficha-preview.md` | **Nuevo**: este documento (actualizado en la iteración por feedback #317) |
 | `tasks/task-issue-317.json` | Task file de la tarea |
 
 Related issue: #317 — https://github.com/gonzalitojh/Registro-personal/issues/317
