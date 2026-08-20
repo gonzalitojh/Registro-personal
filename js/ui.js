@@ -2506,11 +2506,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
-        // Estado REAL antes del clic (el navegador ya conmutó el checkbox)
+        // Estado REAL antes del clic (el navegador ya conmutó el checkbox).
+        // Con rewatch en curso (feedback #310, iteración 3) se compara con
+        // el CICLO actual: un episodio con visiones históricas pero aún no
+        // visto en el ciclo se comporta como sin marcar (coherente con la
+        // casilla desmarcada que ve el usuario).
         const currentEntry = normalizeEntry(
           (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
         );
-        const wasWatched = Boolean(currentEntry && currentEntry.date);
+        const wasWatched = Boolean(entrySeenSince(currentEntry, cycleStartedAt));
 
         // Episodio ya visto: preguntar qué hacer (verlo de nuevo o
         // desmarcarlo) en lugar de desmarcar a secas (issue #133).
@@ -2575,7 +2579,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         checkbox.disabled = true;
         const newDate = checkbox.checked ? todayISO() : null;
         try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
+          // Con rewatch en curso (feedback #310, iteración 3), marcar un
+          // episodio que NO está visto en el ciclo pero sí tenía visiones
+          // históricas = «verlo de nuevo» (+1 al contador con fecha de
+          // hoy y la valoración previa como predeterminada), igual que
+          // el diálogo #133: setEpisodeDate no incrementaría el contador.
+          const historicalViewings = Boolean(currentEntry && currentEntry.date);
+          const newProgress =
+            checkbox.checked && cycleStartedAt && historicalViewings
+              ? await onEpisodeSeenAgain(seasonNumber, episodeNumber)
+              : await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
           // Pintado DERIVADO de item.watched (no del checkbox pulsado):
           // refleja también un posible «Deshacer» desde la ventana de
           // valoración emergente (issue #136).
