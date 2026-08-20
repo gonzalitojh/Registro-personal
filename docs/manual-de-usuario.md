@@ -330,18 +330,29 @@ dependiendo del momento:
 ### 4.5 Volver a ver una serie desde el principio
 
 Si una serie está completa, la ficha ofrece **«Volver a verla desde el
-principio»**. La web guarda el visionado anterior en tu historial y te
-propone empezar de nuevo: **conserva los episodios vistos** y el aviso
-cambia para indicar que estás volviendo a ver la serie. Mientras tanto,
-cada episodio que vuelvas a ver (con su casilla, eligiendo «Lo he visto
-de nuevo») suma una vez más a su contador, añade la fecha al listado de
+principio»**. Al pulsarlo la serie **se reinicia**: el siguiente episodio
+vuelve a ser el **T1E1** y la serie pasa a **«viendo»**, avanzando a
+medida que marcas episodios como si no la hubieras visto antes. **No se
+pierden los números de visualizaciones ni las valoraciones**: los
+episodios siguen mostrando cuántas veces los has visto en total (por
+ejemplo, si la habías visto completa 3 veces, cada episodio parte de 3
+visualizaciones y hasta que no tenga la 4.ª no se considera visto en esta
+revisualización). Los contadores de cada temporada también se ponen a
+cero (`0/10`) e irán subiendo hasta que todos sus episodios tengan la
+visualización nueva (`10/10`), momento en el que la temporada se marca
+como vista esa vez más.
+
+Cuando vuelves a ver un episodio (con su casilla, eligiendo «Lo he visto
+de nuevo»), suma una vez más a su contador, añade la fecha al listado de
 **«Visionados anteriores»** del episodio y abre la ventana de valoración
-con **la valoración anterior ya puesta** (puedes dejarla o cambiarla).
-La visualización se da por terminada cuando has vuelto a ver
+con **la valoración anterior ya puesta** (puedes dejarla o cambiarla). La
+visualización se da por terminada cuando has vuelto a ver
 **todos los episodios** de la serie: las visualizaciones antiguas (las
 de antes de empezar a volver a verla) no cuentan para terminarla. Verás
-el aviso
-«Has terminado esta serie (visionado nº X)» cuando la completes.
+el aviso «Has terminado esta serie (visionado nº X)» cuando la completes
+y ese visionado quedará archivado en «Visionados anteriores» con sus
+fechas de inicio y fin (en la [sección 4.6](#46-historial-de-visionados)
+se explica cómo verlas).
 
 Durante el rewatch, **los contadores son del visionado actual**: el
 progreso de la barra, el «Siguiente», el número de episodios de cada
@@ -360,14 +371,17 @@ han visto dos veces).
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
 anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
-cada vez que la has visto. El número de visionados del desplegable es
-el **mismo que el de los episodios**: si la serie se ha visto completa
-más veces de las que tienen fecha registrada (datos antiguos), se
-indica la diferencia con una línea «N visiones completas más sin fecha
-registrada». La ficha de una serie con episodios se considera completa
-según los episodios: el contador «Completa · ×N» de la lista muestra el
-número real de veces según los episodios, aunque se marcara la serie
-completa varias veces por error en el pasado.
+cada vez que la has visto. Cada visionado se archiva **cuando la serie
+se termina** (no al pulsar «Volver a verla desde el principio»): si la
+terminas 3 veces, verás 3 entradas con sus fechas (y así sucesivamente
+en cada revisualización completada). El número de visionados del
+desplegable es el **mismo que el de los episodios**: si la serie se ha
+visto completa más veces de las que tienen fecha registrada (datos
+antiguos), se indica la diferencia con una línea «N visiones completas
+más sin fecha registrada». La ficha de una serie con episodios se
+considera completa según los episodios: el contador «Completa · ×N» de
+la lista muestra el número real de veces según los episodios, aunque se
+marcara la serie completa varias veces por error en el pasado.
 
 ### 4.7 Eliminar una serie
 
