@@ -1262,7 +1262,11 @@ tipo, verás:
   tienes en tu registro se muestran con **«Ya añadido»** (botón
   deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
-  con títulos similares que puedes añadir directamente. También puedes
+  con títulos similares que puedes añadir directamente. Las
+  recomendaciones son las mismas que verías en la web de TMDB para esa
+  película o serie, y excluyen automáticamente los títulos que **ya
+  tienes en tu registro** (aunque no los hayas visto): así solo
+  descubres contenido nuevo. También puedes
   **pulsar sobre la tarjeta** de una recomendación para ver su
   información ampliada (igual que las tarjetas de saga: portada,
   duración, género, producción y reparto, sinopsis, puntuación de la
@@ -1273,9 +1277,7 @@ tipo, verás:
   botón **«Añadir»** en la página: se añade con el **botón flotante**
   (lo mismo que
   en la vista previa del catálogo; ver sección 12); usa el botón **←**
-  de arriba para volver a la ficha en la que estabas. Los títulos que ya
-  tienes en tu registro se muestran con **«Ya añadido»** (botón
-  deshabilitado).
+  de arriba para volver a la ficha en la que estabas.
 - **Tu valoración y tus notas** se gestionan desde el **botón flotante**
   (opción **«Valorar»**; la ventana que se despliega incluye las
   estrellas y un campo de **notas**). Con la opción **«Quitar de
