@@ -352,7 +352,10 @@ de antes de empezar a volver a verla) no cuentan para terminarla. Verás
 el aviso «Has terminado esta serie (visionado nº X)» cuando la completes
 y ese visionado quedará archivado en «Visionados anteriores» con sus
 fechas de inicio y fin (en la [sección 4.6](#46-historial-de-visionados)
-se explica cómo verlas).
+se explica cómo verlas). Aunque terminaras la serie y la reinicies el
+mismo día, los contadores vuelven a cero y la serie **no se da por
+terminada al marcar el primer episodio**: solo se completará cuando
+todos los episodios tengan su visualización nueva de este ciclo.
 
 Durante el rewatch, **los contadores son del visionado actual**: el
 progreso de la barra, el «Siguiente», el número de episodios de cada

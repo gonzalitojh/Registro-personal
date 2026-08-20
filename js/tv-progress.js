@@ -243,6 +243,59 @@ export function markAllSeasonsWatched(watched, seasonsMeta, date) {
   );
 }
 
+// Baseline del ciclo de rewatch (feedback #310, iteración 5): mapa
+// { temporada: { episodio: veces } } con las veces que tenía cada
+// episodio AL INICIAR el ciclo. El criterio de «visto en el ciclo» es
+// por CONTADOR (times > baseline), como pidió el usuario: «si una
+// serie se ha visto completa 3 veces y se comienza de nuevo, los
+// episodios parten de esas 3 visualizaciones; hasta que no tengan 4
+// no se consideran vistos en esta revisualización». Reemplaza al
+// criterio por fechas (>= rewatchStartedAt) de la iteración 2, que
+// fallaba cuando el ciclo anterior se había completado el MISMO DÍA
+// (fechas de hoy en todos los episodios → el rewatch se daba por
+// terminado al instante y los contadores no se reiniciaban).
+// Los episodios sin marcar al iniciar el ciclo no aparecen en el
+// mapa (baseline 0: la primera visión del ciclo les cuenta).
+function buildRewatchBaseline(watched) {
+  const baseline = {};
+  for (const [seasonKey, seasonMap] of Object.entries(watched || {})) {
+    if (!seasonMap || typeof seasonMap !== "object") continue;
+    const seasonBaseline = {};
+    for (const [epKey, raw] of Object.entries(seasonMap)) {
+      const entry = normalizeEntry(raw);
+      if (!entry || !entry.date) continue;
+      seasonBaseline[epKey] = Math.max(1, Number(entry.times) || 1);
+    }
+    if (Object.keys(seasonBaseline).length) baseline[seasonKey] = seasonBaseline;
+  }
+  return baseline;
+}
+
+// Baseline de UN episodio dentro del mapa del ciclo: veces que tenía
+// al iniciar el rewatch; 0 si el episodio no estaba marcado entonces
+// (la primera visión del ciclo ya le cuenta); null sin mapa (sin
+// rewatch → cualquier episodio marcado cuenta, comportamiento previo).
+export function episodeBaseline(baselineMap, seasonNumber, episodeNumber) {
+  if (!baselineMap) return null;
+  const seasonBaseline = baselineMap[String(seasonNumber)];
+  if (!seasonBaseline) return 0;
+  return Math.max(0, Number(seasonBaseline[String(episodeNumber)]) || 0);
+}
+
+// ¿El episodio se ha visto en el CICLO ACTUAL de rewatch? (feedback
+// #310, iteración 5): criterio por CONTADOR — está visto en el ciclo
+// si su nº de veces SUPERA el que tenía al iniciarlo (rewatchBaseline
+// por episodio). Es robusto frente a fechas del mismo día (terminar la
+// serie y reiniciarla el mismo día ya no completa el rewatch al ver el
+// primer episodio) y frente a datos legacy con contadores inflados.
+// baseline null (sin rewatch o ciclo en vuelo sin mapa): cualquier
+// episodio con fecha cuenta (comportamiento previo).
+export function entrySeenInCycle(entry, baseline) {
+  if (!entry || !entry.date) return false;
+  if (baseline === null) return true;
+  return (Math.max(1, Number(entry.times) || 1)) > baseline;
+}
+
 // «Volver a verla desde el principio» (issue #310): REINICIA el ciclo
 // de visionado SIN desmarcar los episodios ni perder los números de
 // visualizaciones ni las valoraciones — `watched` se conserva tal cual
@@ -250,10 +303,16 @@ export function markAllSeasonsWatched(watched, seasonsMeta, date) {
 // `rewatching` marcando el nuevo ciclo. El próximo episodio vuelve a
 // ser T1E1 y la serie pasa a «viendo» (status "en_curso").
 // Iteración 2 (feedback #310): se persiste `rewatchStartedAt` (fecha
-// de inicio del ciclo): la completitud del rewatch se decide por
-// fechas de visionado >= rewatchStartedAt, así los datos legacy
-// (serie vista varias veces antes de #310 con times=2 y sin contador)
-// no hacen que un ciclo nuevo se complete sin volver a ver nada.
+// de inicio del ciclo) para completitud y para archivar el visionado
+// al completarse (iteración 4).
+// Iteración 5 (feedback #310, 2026-08-20): se persiste además
+// `rewatchBaseline` (veces por episodio al iniciar el ciclo): la
+// completitud del rewatch se decide por CONTADOR (times > baseline),
+// no por fechas — «hasta que todos los episodios no tengan N+1
+// visualizaciones no se considera visto en esta revisualización». Así
+// los datos legacy (serie vista varias veces antes de #310) y un
+// ciclo anterior terminado el mismo día no completan el ciclo nuevo
+// sin volver a ver nada.
 // Iteración 4 (feedback #310, 2026-08-20): el visionado que se termina
 // NO se archiva aquí en `history` («visualizaciones anteriores»): se
 // archiva cuando la serie se COMPLETA (completedViewingChanges).
@@ -267,6 +326,7 @@ export function startRewatch(item) {
     timesCompleted: item.timesCompleted || 0,
     rewatching: true,
     rewatchStartedAt: todayISO(),
+    rewatchBaseline: buildRewatchBaseline(item.watched || {}),
   };
 }
 
@@ -309,7 +369,14 @@ export function completedViewingChanges(item, newWatched, newProgress) {
 // visionados heterogéneos previos al ciclo. Sin startedAt (ciclos en
 // vuelo iniciados por una versión anterior) se cae al criterio por
 // contador con minTimes.
-export function isRewatchComplete(seasonsMeta, watched, startedAt = null, minTimes = 1) {
+// Iteración 5 (feedback #310, 2026-08-20): con `baselineMap`
+// (rewatchBaseline por episodio) el criterio es por CONTADOR RELATIVO
+// AL CICLO: cada episodio debe tener times > su baseline («hasta que
+// no tengan N+1 visualizaciones no se consideran vistos en esta
+// revisualización»). Gana al criterio por fechas, que daba por
+// terminado un rewatch iniciado el MISMO DÍA en que se completó el
+// ciclo anterior (todas las fechas eran de hoy).
+export function isRewatchComplete(seasonsMeta, watched, startedAt = null, minTimes = 1, baselineMap = null) {
   let anySeason = false;
   for (const s of seasonsMeta || []) {
     if (!s.episodeCount) continue;
@@ -318,7 +385,9 @@ export function isRewatchComplete(seasonsMeta, watched, startedAt = null, minTim
     for (let ep = 1; ep <= s.episodeCount; ep++) {
       const entry = normalizeEntry(seasonWatched[String(ep)]);
       if (!entry || !entry.date) return false;
-      if (startedAt) {
+      if (baselineMap) {
+        if (!entrySeenInCycle(entry, episodeBaseline(baselineMap, s.seasonNumber, ep))) return false;
+      } else if (startedAt) {
         if (!entryDates(entry).some((d) => d >= startedAt)) return false;
       } else if ((entry.times || 1) < minTimes) {
         return false;
@@ -375,24 +444,32 @@ export function seriesCompleteTimes(watched) {
 }
 
 // Estado a persistir cuando hay un rewatch en curso (issue #310):
-// - completo (todos los episodios vistos en el ciclo, iteración 2): el
-//   rewatch termina → status "completado" y rewatching false.
+// - completo (todos los episodios vistos en el ciclo): el rewatch
+//   termina → status "completado" y rewatching false.
 // - en curso (iteración 3, feedback #310): el progreso del BANNER y de
-//   los contadores debe reflejar el visionado ACTUAL (fechas >=
-//   rewatchStartedAt), no el histórico completo: totalWatched cuenta
-//   solo los episodios del ciclo, nextEpisode es el siguiente episodio
-//   del ciclo sin ver, y el estado de hecho es "en_curso" («viendo»).
-//   Ciclo legacy en vuelo (iniciado antes de la iteración 2, sin
-//   rewatchStartedAt): sin fecha de inicio no se puede separar el
-//   ciclo actual → comportamiento previo (T1E1 y "pendiente").
+//   los contadores debe reflejar el visionado ACTUAL, no el histórico
+//   completo: totalWatched cuenta solo los episodios del ciclo,
+//   nextEpisode es el siguiente episodio del ciclo sin ver, y el
+//   estado de hecho es "en_curso" («viendo»).
+// Iteración 5 (feedback #310, 2026-08-20): la pertenencia al ciclo se
+// decide por CONTADOR contra el baseline por episodio (times >
+// rewatchBaseline[season][ep]) — «visto en el ciclo» = visto más veces
+// que al iniciarlo. Es robusto frente a un ciclo anterior completado
+// el MISMO DÍA (el criterio por fechas de la iteración 2 daba por
+// terminado el rewatch nada más empezar y no reiniciaba los
+// contadores: todas las fechas eran de hoy). Ciclos en vuelo iniciados
+// por versiones anteriores (sin rewatchBaseline) mantienen el criterio
+// por fechas; sin rewatchStartedAt (ciclos legacy de la iteración 1):
+// comportamiento previo (T1E1 y "pendiente").
 // Sin rewatch: delega en computeProgress (comportamiento previo).
 export function progressWithRewatch(seasonsMeta, item, newWatched = null) {
   const watched = newWatched ?? item.watched;
   const base = computeProgress(seasonsMeta, watched);
   if (!item.rewatching) return base;
   const startedAt = item.rewatchStartedAt || null;
+  const baselineMap = item.rewatchBaseline || null;
   const minTimes = (item.timesCompleted || 0) + 1;
-  if (isRewatchComplete(seasonsMeta, watched, startedAt, minTimes)) {
+  if (isRewatchComplete(seasonsMeta, watched, startedAt, minTimes, baselineMap)) {
     return { ...base, status: "completado", rewatching: false };
   }
   if (!startedAt) {
@@ -404,7 +481,13 @@ export function progressWithRewatch(seasonsMeta, item, newWatched = null) {
     const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
     for (let ep = 1; ep <= s.episodeCount; ep++) {
       const entry = normalizeEntry(seasonWatched[String(ep)]);
-      if (entrySeenSince(entry, startedAt)) {
+      let seen;
+      if (baselineMap) {
+        seen = entrySeenInCycle(entry, episodeBaseline(baselineMap, s.seasonNumber, ep));
+      } else {
+        seen = entrySeenSince(entry, startedAt);
+      }
+      if (seen) {
         totalWatched++;
       } else if (!nextEpisode) {
         nextEpisode = { season: s.seasonNumber, episode: ep };

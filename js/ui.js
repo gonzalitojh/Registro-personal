@@ -7,7 +7,7 @@
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
 import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
-import { normalizeEntry, computeEpisodeAverageRating, seriesCompleteTimes, seasonCompleteTimes, entrySeenSince } from "./tv-progress.js";
+import { normalizeEntry, computeEpisodeAverageRating, seriesCompleteTimes, seasonCompleteTimes, entrySeenInCycle, entrySeenSince, episodeBaseline } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
 import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
@@ -2101,11 +2101,19 @@ export function openGameModal(item, callbacks) {
 // contador y estrellas (issue #133/#136/#310). El desplegable de
 // fechas se REPLIEGA en cada repintado derivado de dato (patrón
 // #136): el estado visual siempre deriva de item.watched.
-// startedAt (feedback #310, iteración 3): con rewatch en curso, el
-// estado «visto» de la fila refleja el CICLO ACTUAL (véase
-// entrySeenSince), no las marcas históricas del episodio.
-function applyEpisodeRowState(row, entry, startedAt = null) {
-  const checked = Boolean(entrySeenSince(entry, startedAt));
+// baselineMap/startedAt (feedback #310, iteración 5): con rewatch en
+// curso, el estado «visto» de la fila refleja el CICLO ACTUAL por
+// CONTADOR — el episodio está visto en el ciclo si su `times` supera
+// el baseline que tenía al iniciarlo (entrySeenInCycle/episodeBaseline);
+// ciclos en vuelo sin baseline conservan el criterio por fechas
+// (entrySeenSince); sin rewatch, cualquier episodio marcado cuenta.
+function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallback = null) {
+  const seasonNumber = Number(row.closest(".season-block")?.dataset.season);
+  const episodeNumber = Number(row.dataset.episode);
+  const baseline = episodeBaseline(baselineMap, seasonNumber, episodeNumber);
+  const checked = baselineMap
+    ? Boolean(entrySeenInCycle(entry, baseline))
+    : Boolean(entrySeenSince(entry, startedAtForFallback));
   const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
   const checkbox = row.querySelector(".episode-checkbox");
   const visual = row.querySelector(".episode-checkbox-visual");
@@ -2146,25 +2154,32 @@ function applyEpisodeRowState(row, entry, startedAt = null) {
 }
 
 // Conteo de episodios de una temporada visto en el CICLO ACTUAL
-// (feedback #310, iteración 3): con un rewatch en curso (startedAt) se
-// cuentan solo los episodios con alguna fecha >= al inicio del ciclo
-// (1/10 cuando se acaba de empezar); sin rewatch, cualquier episodio
-// marcado (comportamiento previo).
-function seasonCycleCount(seasonWatched, episodeCount, startedAt = null) {
+// (feedback #310, iteración 3): con un rewatch en curso se cuentan
+// solo los episodios del ciclo; sin rewatch, cualquier episodio
+// marcado (comportamiento previo). Desde la iteración 5 la pertenencia
+// al ciclo se decide por CONTADOR contra el baseline por episodio
+// (entrySeenInCycle/episodeBaseline), no por fechas: un ciclo iniciado
+// el mismo día en que se completó el anterior ya no cuenta las marcas
+// del ciclo previo (1/10 al empezar, no 10/10). Ciclos en vuelo sin
+// baseline (iniciados por versiones anteriores) conservan el criterio
+// por fechas (startedAt).
+function seasonCycleCount(seasonWatched, episodeCount, baselineMap = null, startedAt = null, seasonNumber = 1) {
   let count = 0;
   for (let ep = 1; ep <= episodeCount; ep++) {
     const entry = normalizeEntry(seasonWatched && seasonWatched[String(ep)]);
-    if (entrySeenSince(entry, startedAt)) count++;
+    const baseline = episodeBaseline(baselineMap, seasonNumber, ep);
+    const seen = baselineMap ? entrySeenInCycle(entry, baseline) : entrySeenSince(entry, startedAt);
+    if (seen) count++;
   }
   return count;
 }
 
-function renderSeasonBlock(s, watched, startedAt = null) {
+function renderSeasonBlock(s, watched, baselineMap = null, startedAt = null) {
   const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
   // El contador del encabezado refleja el progreso del ciclo ACTUAL
   // (feedback #310, iteración 3); el check circular de «Marcar todo»,
   // el de la temporada completa histórica (tick si 1, número si > 1).
-  const watchedCount = seasonCycleCount(seasonWatched, s.episodeCount, startedAt);
+  const watchedCount = seasonCycleCount(seasonWatched, s.episodeCount, baselineMap, startedAt, s.seasonNumber);
   const completeTimes = seasonCompleteTimes(seasonWatched, s.episodeCount);
   const allWatched = completeTimes > 0;
   return `
@@ -2216,17 +2231,21 @@ function rewatchesListHtml(entry) {
 
 // manual=true (series manuales): no se marcan episodios como "sin
 // estrenar" porque no tienen fechas reales de TMDB.
-// startedAt (feedback #310, iteración 3): con rewatch en curso, el
-// estado marcado de cada episodio refleja el CICLO ACTUAL — solo los
-// episodios con alguna fecha >= startedAt cuentan como vistos en el
-// ciclo (1/10 al empezar, no los 73 históricos).
-function renderEpisodeRows(episodes, seasonWatched, { manual = false, startedAt = null } = {}) {
+// baselineMap/seasonNumber (feedback #310, iteración 5): con rewatch
+// en curso, el estado marcado de cada episodio refleja el CICLO ACTUAL
+// por CONTADOR — solo los episodios con times > su baseline del ciclo
+// cuentan como vistos en el ciclo (0/10 al empezar, no los 73
+// históricos, aunque el ciclo anterior se terminara el mismo día).
+function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMap = null, startedAtForFallback = null, seasonNumber = 1 } = {}) {
   return episodes
     .map((e) => {
       const entry = normalizeEntry(seasonWatched[String(e.episodeNumber)]);
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
-      const checked = Boolean(entrySeenSince(entry, startedAt));
+      const baseline = episodeBaseline(baselineMap, seasonNumber, e.episodeNumber);
+      const checked = baselineMap
+        ? Boolean(entrySeenInCycle(entry, baseline))
+        : Boolean(entrySeenSince(entry, startedAtForFallback));
       const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
       const future = !manual && isUnreleasedDate(e.airDate);
       // Badge de nota TMDB: solo en series automáticas y cuando el episodio
@@ -2309,8 +2328,13 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const pct = progress.totalEpisodes
     ? Math.round((progress.totalWatched / progress.totalEpisodes) * 100)
     : 0;
-  // Fecha de inicio del ciclo de rewatch en curso (si lo hay): los
-  // contadores de temporada reflejan el progreso del CICLO ACTUAL.
+  // Baseline del ciclo de rewatch en curso (si lo hay): los contadores
+  // de temporada y las casillas reflejan el progreso del CICLO ACTUAL
+  // por contador (feedback #310, iteración 5): un episodio cuenta como
+  // visto en el ciclo si su `times` supera el que tenía al iniciarlo.
+  const cycleBaseline = item.rewatching ? item.rewatchBaseline || null : null;
+  // Fecha de inicio del ciclo (fallback para ciclos en vuelo iniciados
+  // por versiones anteriores, sin rewatchBaseline): criterio por fechas.
   const cycleStartedAt = item.rewatching ? item.rewatchStartedAt || null : null;
   // Contador del banner de serie terminada (feedback #310, iteración 3):
   // coherente con los episodios (mínimo de sus veces) en lugar del
@@ -2422,7 +2446,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     }
 
     <div class="seasons-list">
-      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched, cycleStartedAt)).join("")}
+      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched, cycleBaseline, cycleStartedAt)).join("")}
     </div>
   `;
 
@@ -2472,7 +2496,9 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     const watchedCount = seasonCycleCount(
       (item.watched || {})[String(seasonNumber)] || {},
       episodeCount,
-      cycleStartedAt
+      cycleBaseline,
+      cycleStartedAt,
+      seasonNumber
     );
     block.querySelector(".season-count").textContent = `${watchedCount}/${episodeCount}`;
     if (seasonMeta) applySeasonMarkAllState(seasonNumber);
@@ -2507,14 +2533,22 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
 
       checkbox.addEventListener("change", async () => {
         // Estado REAL antes del clic (el navegador ya conmutó el checkbox).
-        // Con rewatch en curso (feedback #310, iteración 3) se compara con
-        // el CICLO actual: un episodio con visiones históricas pero aún no
-        // visto en el ciclo se comporta como sin marcar (coherente con la
-        // casilla desmarcada que ve el usuario).
+        // Con rewatch en curso (feedback #310, iteración 5) se compara con
+        // el CICLO actual por CONTADOR: un episodio con visiones
+        // históricas pero aún no visto en el ciclo (su times no supera el
+        // baseline) se comporta como sin marcar (coherente con la casilla
+        // desmarcada que ve el usuario).
         const currentEntry = normalizeEntry(
           (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
         );
-        const wasWatched = Boolean(entrySeenSince(currentEntry, cycleStartedAt));
+        const wasWatched = cycleBaseline
+          ? Boolean(
+              entrySeenInCycle(
+                currentEntry,
+                episodeBaseline(cycleBaseline, seasonNumber, episodeNumber)
+              )
+            )
+          : Boolean(entrySeenSince(currentEntry, cycleStartedAt));
 
         // Episodio ya visto: preguntar qué hacer (verlo de nuevo o
         // desmarcarlo) en lugar de desmarcar a secas (issue #133).
@@ -2551,7 +2585,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry2 = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
             );
-            applyEpisodeRowState(row, entry2, cycleStartedAt);
+            applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
             updateSeasonCount(seasonNumber, episodeCount);
             if (newProgress) updateBanner(newProgress);
             // La media de episodios (issue #310) vive en el hero: al
@@ -2595,7 +2629,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           const entry2 = normalizeEntry(
             (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
           );
-          applyEpisodeRowState(row, entry2, cycleStartedAt);
+          applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
           updateSeasonCount(seasonNumber, episodeCount);
           updateBanner(newProgress);
           updateEpisodeAverage();
@@ -2705,7 +2739,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         const seasonWatched = (item.watched && item.watched[String(seasonNumber)]) || {};
         block.innerHTML = renderEpisodeRows(episodes, seasonWatched, {
           manual: item.manual,
-          startedAt: cycleStartedAt,
+          baselineMap: cycleBaseline,
+          startedAtForFallback: cycleStartedAt,
         });
         block.dataset.loaded = "1";
         const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
@@ -2781,7 +2816,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(row.dataset.episode)]
             );
-            applyEpisodeRowState(row, entry, cycleStartedAt);
+            applyEpisodeRowState(row, entry, cycleBaseline, cycleStartedAt);
           });
         }
         updateEpisodeAverage();

@@ -29,9 +29,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20261007',
-  './css/ocio.css?v=20261007',
-  './js/app.js?v=20261007',
+  './css/styles.css?v=20261008',
+  './css/ocio.css?v=20261008',
+  './js/app.js?v=20261008',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -82,10 +82,10 @@ const STATIC_ASSETS = [
   // Sección de gimnasio (issue #62)
   './js/gym.js',
   './resources/icon.png',
-  './ocio/series.html?v=20261007',
-  './ocio/peliculas.html?v=20261007',
-  './ocio/libros.html?v=20261007',
-  './ocio/videojuegos.html?v=20261007',
+  './ocio/series.html?v=20261008',
+  './ocio/peliculas.html?v=20261008',
+  './ocio/libros.html?v=20261008',
+  './ocio/videojuegos.html?v=20261008',
 ];
 
 // -------------------------------------------------------------
