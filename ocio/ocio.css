@@ -2660,7 +2660,12 @@ button.cast-card:focus-visible {
   min-width: 0;
 }
 
-.cast-modal__row:last-child {
+/* El :last-child del ul es el li: en las filas legacy (li directo,
+   QA #321) el selector de abajo retira el borde; en las pulsables
+   (li.cast-modal__row-wrap > button) NO debe casar li.cast-modal__row
+   con el button (es hijo único y :last-child siempre casa; QA #321:
+   perdía el separador de TODAS las filas pulsables). */
+li.cast-modal__row:last-child {
   border-bottom: none;
 }
 

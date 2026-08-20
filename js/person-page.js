@@ -159,9 +159,10 @@ function creditRowHtml(credit) {
 }
 
 // Subsección «Actuación» o «Equipo» con su contador. Sin créditos de
-// ese tipo no se pinta nada (una persona puede ser solo actor o solo
-// equipo; TMDB divida así combined_credits).
-function creditsSectionHtml(title, credits, emptyMessage) {
+// ese tipo se devuelve "" (no se pinta nada): una persona puede ser
+// solo actor o solo equipo; TMDB divide así combined_credits. El caso
+// «sin ningún crédito» lo maneja el llamador (creditsHtml).
+function creditsSectionHtml(title, credits) {
   if (!credits || !credits.length) return "";
   return `
     <section class="person-credits__section">

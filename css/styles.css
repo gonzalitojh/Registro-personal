@@ -2358,11 +2358,11 @@ body.is-item-page #btn-person-back {
    .item-view__card). Contenido: hero con foto + nombre + datos de
    vida, biografía, películas/series (créditos) y premios (estos
    últimos reutilizan .awards de ocio.css tal cual).
-   Colores: todo usa variables de tema — el texto hereda el del
-   fondo de la página (--paper en la familia oscura, --ink en la
-   clara), que cumple AA en los cuatro modos; los secundarios usan
-   --ink-soft (AA en los 4 modos sobre el fondo de la página, mismo
-   caso documentado que el hero de la ficha de ítem, issue #292).
+   Colores: todo usa variables de tema — el texto principal hereda
+   el del fondo de la tarjeta (.item-view__card); los secundarios
+   usan --ink-soft con override específico para el tema Oscuro por
+   defecto (la tarjeta es --paper, e --ink-soft no cumple AA ahí;
+   ver el bloque [data-theme="dark"] al final de esta sección).
    ========================================================= */
 
 .person-hero {
@@ -2548,6 +2548,26 @@ body.is-item-page #btn-person-back {
   .person-hero__photo {
     width: 5.75rem;
   }
+}
+
+/* Contraste AA en el tema Oscuro por defecto (regla 4 de AGENTS.md,
+   QA #321): los textos secundarios de la página de persona van sobre
+   la tarjeta clara (.item-view__card, --paper #f1ead9) y --ink-soft
+   (#948a76) sobre #f1ead9 = 2.84:1, insuficiente; #5f5849 ≈ 5.9:1.
+   En Negro puro y las familias claras la superficie de .item-view__card
+   es oscura y --ink-soft sí cumple (≈5.8-5.9:1), por eso la
+   restauración se limita a ese override y el resto de temas sigue con
+   la regla base var(--ink-soft) (mismo patrón que
+   .cast-crew__title/.cast-modal__subtitle en ocio.css). */
+[data-theme="dark"] .person-hero__known,
+[data-theme="dark"] .person-hero__life,
+[data-theme="dark"] .person-bio--empty,
+[data-theme="dark"] .person-section-title,
+[data-theme="dark"] .person-credits__count,
+[data-theme="dark"] .person-credit__year,
+[data-theme="dark"] .person-credit__role,
+[data-theme="dark"] .person-empty {
+  color: #5f5849;
 }
 
 /* Aviso de preview («aún no en tu registro») sobre la tarjeta:
