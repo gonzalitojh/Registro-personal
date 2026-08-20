@@ -543,3 +543,12 @@ deshacer, ver §14.3). **Iteración 5**: §12.1 menciona el **halo de
 | `docs/adr-106-boton-flotante-de-acciones.md` | **Nuevo**: este documento |
 
 Related issue: #298 — https://github.com/gonzalitojh/Registro-personal/issues/298
+
+> **Nota (ADR-113, feedback issue #317)**: la página de un título NO
+> añadido (preview) dejó de tener el botón real `#btn-preview-add`: la
+> alta se hace **solo** desde el botón flotante. Las rutas de preview
+> (`addFromPreview`, `addAndRateFromPreview`, `addSeenFromPreview`)
+> usan un target local para el patrón deshabilitar/restaurar de
+> `handleAdd`/`handleAddSeen`; el candado `previewAddInFlight` sigue
+> previniendo dobles altas. La preview de búsqueda **por modal**
+> (`openSearchPreviewModal`) conserva su propio `#btn-preview-add`.
