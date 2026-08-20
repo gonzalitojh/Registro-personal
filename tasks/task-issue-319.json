@@ -1,7 +1,7 @@
 {
   "title": "Afinamiento de recomendaciones (issue #319)",
   "description": "La sección «Si te gustó esto, quizá te guste...» de las fichas de películas y series hace recomendaciones que no se parecen a las que muestra la web de TMDB. Se pide explicar cómo funciona el sistema actual y ajustarlo para que las recomendaciones sean mejores (usar el endpoint /recommendations de TMDB, que es el que alimenta la web de TMDB, en lugar de /similar), y preferiblemente no recomendar contenido ya visto (ya filtrado por existingIds, reforzarlo). La base de trabajo es la rama feat/issue-201 y la PR debe ir también a esa rama (no a dev).",
-  "status": "implemented",
+  "status": "documented",
   "acceptance criteria": [
     "Se explica cómo funciona el sistema de recomendaciones actual (endpoint /similar de TMDB) en la documentación/PR.",
     "Las recomendaciones de películas usan el endpoint /movie/{id}/recommendations de TMDB (el que alimenta la sección de recomendaciones de la web de TMDB) en lugar de /similar.",
@@ -27,5 +27,9 @@
     "number": 319,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/319",
     "title": "Afinamiento de recomendaciones"
+  },
+  "validation": {
+    "qa": "PASS (qa-reviewer: criterios de aceptación verificados, ui.js intacto, filtrado correcto)",
+    "security": "PASS (security-champion: 0 hallazgos HIGH/MEDIUM/LOW)"
   }
 }
