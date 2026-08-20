@@ -6,7 +6,7 @@
 import { addWatch, removeWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
-import { setEpisodeDate, setEpisodeRating, computeProgress, progressWithRewatch, normalizeEntry, markAllSeasonsWatched, markEpisodeSeenAgain, removeLastEpisodeViewing } from "./tv-progress.js";
+import { setEpisodeDate, setEpisodeRating, computeProgress, progressWithRewatch, normalizeEntry, markAllSeasonsWatched, markEpisodeSeenAgain, removeLastEpisodeViewing, completedViewingChanges } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
 import { unreleasedConfirmMessage, episodeUnreleasedMessage, isUnreleasedDate } from "./release.js";
 import { getNextEpisodeAirInfo } from "./sorting.js";
@@ -256,6 +256,15 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
     payload.rewatching = newProgress.rewatching;
     item.rewatching = newProgress.rewatching;
   }
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted — no al pulsar «Volver a verla desde el principio»,
+  // que solo reinicia el ciclo.
+  const completed = completedViewingChanges(item, newWatched, newProgress);
+  if (completed) {
+    payload.history = completed.history;
+    payload.timesCompleted = completed.timesCompleted;
+  }
   if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
     payload.nextEpisodeAirDate = nextEpisodeAirDate;
   }
@@ -268,6 +277,10 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
       item.firstWatchedAt = newProgress.firstWatchedAt;
       item.lastWatchedAt = newProgress.lastWatchedAt;
       item.awaitingRelease = false;
+      if (completed) {
+        item.history = completed.history;
+        item.timesCompleted = completed.timesCompleted;
+      }
       if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
         item.nextEpisodeAirDate = nextEpisodeAirDate;
       }
@@ -387,6 +400,8 @@ async function quickMarkTv(item, ctx) {
   const prevRewatching = item.rewatching;
   const prevNextEpisode = item.nextEpisode;
   const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
+  const prevHistory = item.history;
+  const prevTimesCompleted = item.timesCompleted;
   await saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate);
   // Valoración del episodio: con datos TMDB se muestra la nota de
   // comunidad del episodio; en series manuales meta es null, así que
@@ -428,6 +443,11 @@ async function quickMarkTv(item, ctx) {
         lastWatchedAt: prevProgress.lastWatchedAt,
         awaitingRelease: prevAwaitingRelease,
         nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+        // Feedback #310 (iteración 4): si el marcado hubiera COMPLETADO
+        // la serie, se restauran también el historial de visionados y el
+        // contador de completados archivados en la persistencia.
+        history: prevHistory,
+        timesCompleted: prevTimesCompleted,
       };
       if (prevRewatching) {
         payload.rewatching = prevProgress.rewatching;
@@ -441,6 +461,8 @@ async function quickMarkTv(item, ctx) {
       item.lastWatchedAt = payload.lastWatchedAt;
       item.awaitingRelease = prevAwaitingRelease;
       item.nextEpisodeAirDate = payload.nextEpisodeAirDate;
+      item.history = payload.history;
+      item.timesCompleted = payload.timesCompleted;
     },
   });
   ctx.showToast(undone ? "Desmarcado." : `T${season}E${episode} marcado como visto.`);
@@ -485,6 +507,8 @@ export async function quickMarkTvComplete(item, ctx) {
   const prevLastWatchedAt = item.lastWatchedAt;
   const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
   const prevRewatching = item.rewatching;
+  const prevHistory = item.history;
+  const prevTimesCompleted = item.timesCompleted;
   // Todos los episodios de todas las temporadas, marcados hoy.
   const newWatched = markAllSeasonsWatched(item.watched, seasonsMeta, todayISO());
   // Rewatch (issue #310): markAllSeasonsWatched suma +1 a los ya vistos;
@@ -503,6 +527,14 @@ export async function quickMarkTvComplete(item, ctx) {
     payload.rewatching = newProgress.rewatching;
     item.rewatching = newProgress.rewatching;
   }
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted.
+  const completed = completedViewingChanges(item, newWatched, newProgress);
+  if (completed) {
+    payload.history = completed.history;
+    payload.timesCompleted = completed.timesCompleted;
+  }
   await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
   item.watched = newWatched;
   item.status = payload.status;
@@ -510,6 +542,10 @@ export async function quickMarkTvComplete(item, ctx) {
   item.firstWatchedAt = payload.firstWatchedAt;
   item.lastWatchedAt = payload.lastWatchedAt;
   item.awaitingRelease = false;
+  if (completed) {
+    item.history = completed.history;
+    item.timesCompleted = completed.timesCompleted;
+  }
   // Valoración de la serie en su conjunto. Deshacer (issue #136):
   // restaura el progreso previo (watched, status literal del
   // capturado, nextEpisode, fechas y awaitingRelease) para que la UI
@@ -527,6 +563,11 @@ export async function quickMarkTvComplete(item, ctx) {
         lastWatchedAt: prevLastWatchedAt ?? prevProgress.lastWatchedAt,
         awaitingRelease: prevAwaitingRelease,
         nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+        // Feedback #310 (iteración 4): si el marcado completo hubiera
+        // archivado el visionado, el undo restaura el historial y el
+        // contador de completados previos.
+        history: prevHistory,
+        timesCompleted: prevTimesCompleted,
       };
       if (prevRewatching) {
         undoPayload.rewatching = prevProgress.rewatching;
@@ -540,6 +581,8 @@ export async function quickMarkTvComplete(item, ctx) {
       item.lastWatchedAt = undoPayload.lastWatchedAt;
       item.awaitingRelease = undoPayload.awaitingRelease;
       item.nextEpisodeAirDate = undoPayload.nextEpisodeAirDate;
+      item.history = undoPayload.history;
+      item.timesCompleted = undoPayload.timesCompleted;
     },
   });
   ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);

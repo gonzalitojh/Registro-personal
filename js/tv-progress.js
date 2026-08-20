@@ -243,44 +243,58 @@ export function markAllSeasonsWatched(watched, seasonsMeta, date) {
   );
 }
 
-// Archiva el visionado actual (si lo hay) en el historial y deja la
-// serie lista para volver a verse desde el principio SIN desmarcar los
-// episodios (issue #310): `watched` se conserva tal cual (fechas,
-// valoraciones y nº de veces por episodio), con el flag `rewatching`
-// marcando el nuevo ciclo. timesCompleted = veces que se ha visto la
-// serie hasta ahora. Iteración 2 (feedback #310): se persiste también
-// `rewatchStartedAt` (fecha de inicio del ciclo): la completitud del
-// rewatch se decide por fechas de visionado >= rewatchStartedAt, y
-// timesCompleted se eleva al máximo entre el contador acumulado y las
-// veces registradas por episodio para que los datos legacy (serie
-// vista varias veces antes de #310 con times=2 y sin contador) no
-// hagan que un ciclo nuevo se complete sin volver a ver nada.
+// «Volver a verla desde el principio» (issue #310): REINICIA el ciclo
+// de visionado SIN desmarcar los episodios ni perder los números de
+// visualizaciones ni las valoraciones — `watched` se conserva tal cual
+// (fechas, valoraciones y nº de veces por episodio), con el flag
+// `rewatching` marcando el nuevo ciclo. El próximo episodio vuelve a
+// ser T1E1 y la serie pasa a «viendo» (status "en_curso").
+// Iteración 2 (feedback #310): se persiste `rewatchStartedAt` (fecha
+// de inicio del ciclo): la completitud del rewatch se decide por
+// fechas de visionado >= rewatchStartedAt, así los datos legacy
+// (serie vista varias veces antes de #310 con times=2 y sin contador)
+// no hacen que un ciclo nuevo se complete sin volver a ver nada.
+// Iteración 4 (feedback #310, 2026-08-20): el visionado que se termina
+// NO se archiva aquí en `history` («visualizaciones anteriores»): se
+// archiva cuando la serie se COMPLETA (completedViewingChanges).
 export function startRewatch(item) {
-  const history = [...(item.history || [])];
-  if (item.firstWatchedAt || item.lastWatchedAt) {
-    history.push({ startedAt: item.firstWatchedAt, finishedAt: item.lastWatchedAt });
-  }
-  let maxEpisodeTimes = 0;
-  for (const seasonMap of Object.values(item.watched || {})) {
-    if (!seasonMap || typeof seasonMap !== "object") continue;
-    for (const raw of Object.values(seasonMap)) {
-      const entry = normalizeEntry(raw);
-      maxEpisodeTimes = Math.max(maxEpisodeTimes, Number(entry?.times) || 1);
-    }
-  }
-  const completedTimes =
-    (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
   return {
     watched: item.watched || {},
     firstWatchedAt: null,
     lastWatchedAt: null,
-    status: "pendiente",
+    status: "en_curso",
     nextEpisode: { season: 1, episode: 1 },
-    timesCompleted: Math.max(completedTimes, maxEpisodeTimes),
-    history,
+    timesCompleted: item.timesCompleted || 0,
     rewatching: true,
     rewatchStartedAt: todayISO(),
   };
+}
+
+// Registro del visionado al COMPLETAR la serie (feedback #310,
+// iteración 4): «cuando se termina una serie, se debe añadir su
+// visualización a "visualizaciones anteriores", no cuando se da al
+// botón "Volver a verla desde el principio"». Devuelve las
+// propiedades a persistir ({ history, timesCompleted }) si el nuevo
+// progreso acaba de completar la serie (item.status aún no era
+// "completado"); null en cualquier otro caso (sin transición o serie
+// ya completada).
+// - history: entrada { startedAt, finishedAt } del visionado recién
+//   terminado — si era un rewatch, desde rewatchStartedAt; si era la
+//   primera vez, desde el primer visionado (firstWatchedAt).
+// - timesCompleted: el acumulado + 1, sin bajar del mínimo de veces
+//   de los episodios (seriesCompleteTimes) para mantener la coherencia
+//   con datos legacy sin contador.
+export function completedViewingChanges(item, newWatched, newProgress) {
+  if (!newProgress || newProgress.status !== "completado" || item.status === "completado") {
+    return null;
+  }
+  const startedAt = item.rewatching
+    ? item.rewatchStartedAt || todayISO()
+    : newProgress.firstWatchedAt || item.firstWatchedAt;
+  const finishedAt = newProgress.lastWatchedAt || item.lastWatchedAt || todayISO();
+  const history = [...(item.history || []), { startedAt, finishedAt }];
+  const timesCompleted = Math.max((item.timesCompleted || 0) + 1, seriesCompleteTimes(newWatched));
+  return { history, timesCompleted };
 }
 
 // ¿El rewatch en curso está completo? (issue #310): todos los

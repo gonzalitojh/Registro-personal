@@ -2391,12 +2391,13 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         // «Visionados anteriores» de la serie (feedback #310, it. 3):
         // el contador debe ser COHERENTE con el de los episodios. La
         // fuente de verdad son los episodios (seriesCompleteTimes = nº
-        // de veces que TODOS se han visto); `history` solo registra los
-        // ciclos iniciados con «Volver a verla desde el principio» (y
-        // los marcados completos erróneos no lo actualizan). Si los
-        // episodios indican más visiones completas que las fechadas, se
-        // muestra la diferencia con el mismo patrón «sin fecha
-        // registrada» del desplegable de episodios.
+        // de veces que TODOS se han visto); `history` registra los
+        // visionados COMPLETADOS (feedback #310, iteración 4: se
+        // archivan al terminar la serie, no al pulsar «Volver a verla
+        // desde el principio»). Si los episodios indican más visiones
+        // completas que las fechadas, se muestra la diferencia con el
+        // mismo patrón «sin fecha registrada» del desplegable de
+        // episodios.
         const historyEntries = item.history || [];
         const episodeViewings = seriesCompleteTimes(item.watched);
         const viewings = Math.max(episodeViewings, historyEntries.length);
@@ -2801,7 +2802,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     rewatchBtn.addEventListener("click", async () => {
       if (
         !window.confirm(
-          `¿Volver a ver «${item.title}» desde el principio? Se guardará el visionado anterior en el historial.`
+          `¿Volver a ver «${item.title}» desde el principio? Empezará un nuevo visionado desde T1E1 y la serie pasará a «viendo»; se conservan las visualizaciones y valoraciones anteriores.`
         )
       ) {
         return;
