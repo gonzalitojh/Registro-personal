@@ -378,6 +378,8 @@ jobs:
         # dispatch de deploy-all-branches).
         env:
           GH_TOKEN: ${{ github.token }}
+          SESSION_MODEL: ${{ vars.SESSION_MODEL }}
+          SESSION_VARIANT: ${{ vars.SESSION_VARIANT }}
         run: |
           N="$(jq -r .number "$GITHUB_WORKSPACE/candidate.json")"
           echo "Lanzando sesión automática para la issue #$N (watchdog: estancamiento 20 min por actividad BD, total 90 min)..."
