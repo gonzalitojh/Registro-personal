@@ -144,7 +144,7 @@ function biographyHtml(person) {
 function creditRowHtml(credit) {
   return `
     <li class="person-credit">
-      <button type="button" class="person-credit__btn" data-credit-id="${escapeHtml(credit.externalId)}" data-credit-kind="${credit.kind}"
+      <button type="button" class="person-credit__btn" data-credit-id="${escapeHtml(credit.externalId)}" data-credit-kind="${escapeHtml(credit.kind)}"
               aria-label="Ver la ficha de ${escapeHtml(credit.title)}">
         <img class="person-credit__poster" src="${escapeHtml(safePhotoUrl(credit.posterUrl))}" alt="" loading="lazy" />
         <span class="person-credit__info">
