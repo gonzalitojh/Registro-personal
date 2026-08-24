@@ -1196,18 +1196,11 @@ producción); con la tecla **Esc** se limpia la búsqueda. La ventana
    de una película o serie: se mantiene la barra de navegación
    superior con la búsqueda y el perfil, y el botón **←** vuelve a la
    pantalla anterior; también funciona la tecla **Esc** y el botón
-   atrás del navegador). En la página de persona se ve su **foto**,
-   su **nombre**, su **biografía** (en español si está disponible), su
-   **fecha de nacimiento (y de fallecimiento, si lo hay)**, su
-   **lugar de nacimiento** y su **área conocida** (p. ej. Interpretación, Dirección), además de las **películas y series en las
-   que ha trabajado o trabajará**, separadas en **«Actuación»** (con
-   su personaje) y **«Equipo»** (con su puesto) y ordenadas de más
-   reciente a más antigua; cada título se puede pulsar y abre su
-   ficha, y el botón atrás vuelve a la página de la persona. También
-   se incluyen sus **premios y nominaciones**, con el mismo aspecto
-   que los de las fichas de títulos (agrupados por tipo y
-   minimizados; los datos se extraen de Wikidata, así que si no hay
-   premios registrados esa parte no aparece). La fecha de estreno, la duración (o
+   atrás del navegador). La página de persona va **directa sobre el
+   fondo** (sin recuadro, como las fichas de película/serie). En ella
+   se ve su **foto**, su **nombre**, su **edad** calculada a partir de
+   la fecha de nacimiento (entre paréntesis tras la fecha; si falleció
+   se muestra la edad que tenía al fallecer), su **fecha de nacimiento (y de fallecimiento, si lo hay)**, su **lugar de nacimiento** y su **área conocida** (p. ej. Interpretación, Dirección). Su **biografía** (en español si está disponible) se muestra **recortada a unas pocas líneas**; si es larga, verás un botón **«Leer más»** que abre una ventana con la biografía completa. Debajo aparecen las **películas y series en las que ha trabajado o trabajará**, separadas en **«Actuación»** (con su personaje) y **«Equipo»** (con su puesto), ordenadas de más reciente a más antigua y **en modo carrusel** (deslizable en horizontal, igual que las personas en las fichas de película/serie); cada título se puede pulsar y abre su ficha, y el botón atrás vuelve a la página de la persona. Cada sección tiene un botón **«Ver todo»** que abre una ventana con la lista completa y un **buscador** (filtra al instante por **título, personaje o puesto**; la **Esc** limpia la búsqueda y el botón **✕** o el fondo la cierran). También se incluyen sus **premios y nominaciones**, con el mismo aspecto que los de las fichas de títulos (agrupados por tipo y minimizados; los datos se extraen de Wikidata, así que si no hay premios registrados esa parte no aparece). La fecha de estreno, la duración (o
   temporadas y episodios en series), los géneros y la sinopsis ya se
   muestran arriba, en la cabecera. Cada sección de la ficha va
   separada por una **línea horizontal**. En los videojuegos:
