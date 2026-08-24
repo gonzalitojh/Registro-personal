@@ -1198,8 +1198,8 @@ producción); con la tecla **Esc** se limpia la búsqueda. La ventana
    pantalla anterior; también funciona la tecla **Esc** y el botón
    atrás del navegador). En la página de persona se ve su **foto**,
    su **nombre**, su **biografía** (en español si está disponible), su
-   **fecha de nacimiento (y de fallecimiento, si lo hay)** y su
-   **lugar de nacimiento**, además de las **películas y series en las
+   **fecha de nacimiento (y de fallecimiento, si lo hay)**, su
+   **lugar de nacimiento** y su **área conocida** (p. ej. Interpretación, Dirección), además de las **películas y series en las
    que ha trabajado o trabajará**, separadas en **«Actuación»** (con
    su personaje) y **«Equipo»** (con su puesto) y ordenadas de más
    reciente a más antigua; cada título se puede pulsar y abre su
