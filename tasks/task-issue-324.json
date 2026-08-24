@@ -1,7 +1,7 @@
 {
   "title": "Ajustes en ventanas de actores",
   "description": "La base es la rama feat/issue-201. Crear nueva rama a partir de ahí y PR a esa rama (no a dev).\n\n- La ventana de los actores no debe verse enmarcada en un recuadro.\n- La biografía debe mostrarse unas pocas líneas por defecto y, si se desea leer más, botón Leer más que abre una ventana.\n- Las películas/series en las que ha participado la persona deben estar en modo carrusel (como las personas en las películas/series) y que se pueda expandir permitiendo además la búsqueda.\n- Bajo el nombre de la persona, donde pone la fecha de nacimiento, calcular los años.",
-  "status": "created",
+  "status": "review",
   "acceptance": [
     "La ficha de persona NO se muestra enmarcada en un recuadro (.item-view__card); va directa sobre el fondo de la página como la ficha de título (ADR-103)",
     "La biografía se muestra truncada a pocas líneas (3-4 líneas) por defecto con clamp y boton Leer más visible solo cuando hay contenido largo; al pulsar abre una ventana/modal con la biografía completa accesible y cerrable (Esc, backdrop, ✕, focus trap)",
@@ -29,5 +29,11 @@
   "type": "style",
   "priority": "medium",
   "base_branch": "feat/issue-201",
-  "pr_base": "feat/issue-201"
+  "pr_base": "feat/issue-201",
+  "pr": {
+    "number": 325,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/325",
+    "base": "feat/issue-201",
+    "branch": "style/issue-324-ajustes-actores"
+  }
 }
