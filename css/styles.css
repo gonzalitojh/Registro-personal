@@ -2351,19 +2351,29 @@ body.is-item-page #btn-person-back {
 }
 
 /* =========================================================
-   Página de detalle de persona (issue #321)
+   Página de detalle de persona (issue #321 + ajustes #324)
    Reutiliza el layout de .item-view (max-width 720px, padding bajo
-   la cabecera fija y overrides de tema: la familia clara y el negro
-   puro ya cubren #person-view por su clase .item-view y
-   .item-view__card). Contenido: hero con foto + nombre + datos de
-   vida, biografía, películas/series (créditos) y premios (estos
-   últimos reutilizan .awards de ocio.css tal cual).
-   Colores: todo usa variables de tema — el texto principal hereda
-   el del fondo de la tarjeta (.item-view__card); los secundarios
-   usan --ink-soft con override específico para el tema Oscuro por
-   defecto (la tarjeta es --paper, e --ink-soft no cumple AA ahí;
-   ver el bloque [data-theme="dark"] al final de esta sección).
+   la cabecera fija). Tras #324 la ficha YA NO va enmarcada en
+   .item-view__card (caja papel con sombra) sino directa sobre el
+   fondo de .item-view — mismo patrón que la ficha de título tras
+   ADR-103 —: .person-page es el contenedor sin recuadro. Los estados
+   transitorios (cargando/mensaje) sí conservan .item-view__card.
+   Contenido: hero + biografía truncada con Leer más → modal + 
+   filmografía EN CARRUSEL con botón expandir + búsqueda + premios.
+   Colores: sobre el fondo de la página (--ink en oscuro/negro,
+   --paper-dim en claro/blanco) el texto principal hereda el color de
+   la página y los secundarios usan --ink-soft (AA 5.5-6.2:1 en los
+   4 modos). El override oscuro de #321 para la tarjeta clara se
+   conserva solo para .item-view__card; la página sin recuadro usa
+   --ink-soft directo.
    ========================================================= */
+
+/* Contenedor sin recuadro de la ficha (issue #324): sin fondo, sin
+   sombra ni borde, espacio heredado de .item-view. */
+.person-page {
+  background: transparent;
+  color: inherit;
+}
 
 .person-hero {
   display: flex;
@@ -2421,6 +2431,29 @@ body.is-item-page #btn-person-back {
   font-style: italic;
 }
 
+/* Biografía truncada a 4 líneas (issue #324): clamp + botón Leer más.
+   El botón solo se muestra cuando el texto supera el clamp o es largo
+   (controlado en JS con scrollHeight vs clientHeight). */
+.person-bio-wrap {
+  margin: 1.1rem 0 0;
+  min-width: 0;
+}
+.person-bio-wrap .person-bio {
+  margin: 0;
+}
+.person-bio--clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.person-bio--full {
+  white-space: pre-wrap;
+}
+.person-bio__more {
+  margin-top: 0.6rem;
+}
+
 .person-separator {
   border: 0;
   border-top: 1px solid var(--paper-line);
@@ -2436,10 +2469,28 @@ body.is-item-page #btn-person-back {
   margin: 1.1rem 0 0.6rem;
 }
 
+/* Filmografía en carrusel (issue #324): cada sección (Actuación/
+   Equipo) con cabecera y carrusel horizontal scroll contenido (mismo
+   patrón que .cast-crew). */
+.person-credits__section {
+  margin: 0 0 1.1rem;
+}
+.person-credits__section:last-child {
+  margin-bottom: 0;
+}
+.person-credits__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
 .person-credits__title {
   font-size: 0.95rem;
   font-weight: 600;
-  margin: 0.9rem 0 0.5rem;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .person-credits__count {
@@ -2447,6 +2498,108 @@ body.is-item-page #btn-person-back {
   color: var(--ink-soft);
 }
 
+.person-credits__expand {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.55rem;
+  min-height: 28px;
+}
+
+.person-credits__scroll {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.person-credits__scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.person-credits__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.person-credits__scroll::-webkit-scrollbar-thumb {
+  background: var(--paper-line);
+  border-radius: 4px;
+}
+
+/* Tarjeta de crédito en carrusel (issue #324): 110px, igual que
+   .rec-card/.cast-card pero con altura fija de poster 2/3 y cuerpo
+   con título (2 líneas) + meta. Fondo de tarjeta sobre la página sin
+   recuadro: --paper en claro, --paper en oscuro sobre --ink (con el
+   override de color de texto para la familia oscura). */
+.person-credit-card {
+  flex: 0 0 110px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+.person-credit-card:hover {
+  background: var(--paper-dim);
+}
+.person-credit-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+.person-credit-card__poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background: var(--paper-dim);
+  display: block;
+}
+.person-credit-card__body {
+  padding: 0.4rem 0.45rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+.person-credit-card__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.person-credit-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.4rem;
+  min-width: 0;
+}
+.person-credit-card__year {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+}
+.person-credit-card__role {
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* Ventana expandida: reutiliza .cast-modal__* para cabecera y
+   buscador; la lista vertical vuelve al patrón lista con filas. */
 .person-credits__list {
   list-style: none;
   margin: 0;
@@ -2548,25 +2701,69 @@ body.is-item-page #btn-person-back {
   .person-hero__photo {
     width: 5.75rem;
   }
+  .person-credit-card {
+    flex-basis: 96px;
+  }
 }
 
 /* Contraste AA en el tema Oscuro por defecto (regla 4 de AGENTS.md,
-   QA #321): los textos secundarios de la página de persona van sobre
-   la tarjeta clara (.item-view__card, --paper #f1ead9) y --ink-soft
-   (#948a76) sobre #f1ead9 = 2.84:1, insuficiente; #5f5849 ≈ 5.9:1.
-   En Negro puro y las familias claras la superficie de .item-view__card
-   es oscura y --ink-soft sí cumple (≈5.8-5.9:1), por eso la
-   restauración se limita a ese override y el resto de temas sigue con
-   la regla base var(--ink-soft) (mismo patrón que
-   .cast-crew__title/.cast-modal__subtitle en ocio.css). */
-[data-theme="dark"] .person-hero__known,
-[data-theme="dark"] .person-hero__life,
-[data-theme="dark"] .person-bio--empty,
-[data-theme="dark"] .person-section-title,
-[data-theme="dark"] .person-credits__count,
-[data-theme="dark"] .person-credit__year,
-[data-theme="dark"] .person-credit__role,
-[data-theme="dark"] .person-empty {
+   QA #321): los textos secundarios SOLO cuando van sobre la tarjeta
+   clara (.item-view__card, --paper #f1ead9) necesitan tinta más oscura
+   (#5f5849 ≈ 5.9:1). En la página sin recuadro (fondo --ink) --ink-soft
+   sí cumple (5.5:1) y no necesita override. Por eso el selector se
+   acota a .item-view__card. */
+[data-theme="dark"] .item-view__card .person-hero__known,
+[data-theme="dark"] .item-view__card .person-hero__life,
+[data-theme="dark"] .item-view__card .person-bio--empty,
+[data-theme="dark"] .item-view__card .person-section-title,
+[data-theme="dark"] .item-view__card .person-credits__count,
+[data-theme="dark"] .item-view__card .person-credit__year,
+[data-theme="dark"] .item-view__card .person-credit__role,
+[data-theme="dark"] .item-view__card .person-empty {
+  color: #5f5849;
+}
+
+/* Página sin recuadro (issue #324): en oscuro los secundarios van sobre
+   --ink y --ink-soft ya cumple, así que se restaura explícitamente para
+   que el override de tarjeta no se aplique. Selectores agrupados, una
+   sola fuente de verdad por regla (AGENTS.md §4.3). */
+[data-theme="dark"] .person-page .person-hero__known,
+[data-theme="dark"] .person-page .person-hero__life,
+[data-theme="dark"] .person-page .person-bio--empty,
+[data-theme="dark"] .person-page .person-section-title,
+[data-theme="dark"] .person-page .person-credits__count,
+[data-theme="dark"] .person-page .person-credit-card__year,
+[data-theme="dark"] .person-page .person-credit-card__role,
+[data-theme="dark"] .person-page .person-empty {
+  color: var(--ink-soft);
+}
+
+/* Contraste de las tarjetas de carrusel sobre el fondo oscuro de la
+   página (issue #324): la tarjeta es clara (--paper) así que el texto
+   secundario dentro de ella usa la tinta oscura #5f5849 en oscuro
+   (mismo patrón que .rec-card/.cast-card). En la familia clara y
+   negro puro la tarjeta es --paper/--ink-raised con --ink-soft correcto. */
+[data-theme="dark"] .person-credit-card__year,
+[data-theme="dark"] .person-credit-card__role {
+  color: #5f5849;
+}
+[data-theme="light"] .person-credit-card__year,
+[data-theme="white"] .person-credit-card__year,
+[data-theme="black"] .person-credit-card__year,
+[data-theme="light"] .person-credit-card__role,
+[data-theme="white"] .person-credit-card__role,
+[data-theme="black"] .person-credit-card__role {
+  color: var(--ink-soft);
+}
+
+/* En la página sin recuadro la sección oscura restaura el texto de las
+   tarjetas anidadas dentro de .person-page (mismo caso que arriba): las
+   tarjetas son claras, así que el override a #5f5849 debe mantenerse
+   dentro de .person-page. Se deja el bloque anterior como base y este
+   como refuerzo explícito para evitar que el reset de .person-page lo
+   sobreescriba. */
+[data-theme="dark"] .person-page .person-credit-card__year,
+[data-theme="dark"] .person-page .person-credit-card__role {
   color: #5f5849;
 }
 

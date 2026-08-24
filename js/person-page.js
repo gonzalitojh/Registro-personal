@@ -1,5 +1,5 @@
 // =============================================================
-// Página de detalle de una persona (issue #321).
+// Página de detalle de una persona (issue #321 + ajustes #324).
 //
 // Al pulsar una persona de los carruseles de producción/reparto de la
 // ficha de una película/serie (issue #294), o una fila de la ventana
@@ -14,15 +14,19 @@
 // #app) y reutiliza su layout (.item-view). Contenido — todo de
 // TMDB/Wikidata, sin datos del usuario:
 //   - Hero: foto, nombre, área conocida y datos de vida
-//     (nacimiento/fallecimiento/lugar).
-//   - Biografía (en español si TMDB la tiene; si no, se avisa).
+//     (nacimiento/fallecimiento/lugar + edad calculada, issue #324).
+//   - Biografía truncada a pocas líneas con botón Leer más → ventana
+//     modal con la biografía completa (issue #324).
 //   - Películas y series en las que ha trabajado o trabajará
 //     (combined_credits), separadas en «Actuación» (con el personaje)
-//     y «Equipo» (con el puesto); cada crédito navega a la ficha del
-//     título (#/ocio/peliculas|<series>/<id>), el historial vuelve a
-//     la persona con atrás.
+//     y «Equipo» (con el puesto) EN MODO CARRUSEL con botón expandir
+//     y búsqueda dentro de la ventana expandida (issue #324).
 //   - Premios y nominaciones (Wikidata P166/P1411), con la misma
 //     presentación que las fichas de títulos (awardsSectionHtml).
+//
+// Issue #324: la ficha YA NO va enmarcada en .item-view__card; va
+// directa sobre el fondo de .item-view (igual que la ficha de título
+// tras ADR-103/ADR-104), para eliminar el recuadro.
 // =============================================================
 
 import * as ui from "./ui.js";
@@ -31,6 +35,7 @@ import { navigate, parseHash, getLastOcioKey } from "./router.js";
 import { normalizeTabKey } from "./settings.js";
 import { formatDateEs } from "./dates.js";
 import { safePhotoUrl, translateDepartment } from "./cast-modal.js";
+import { trapFocus } from "./focus-utils.js";
 
 let personCtx = null;
 
@@ -40,6 +45,10 @@ let personCtx = null;
 // dropdown de búsqueda global).
 let currentToken = null;
 let visible = false;
+// Última persona renderizada (para las ventanas de biografía y de
+// filmografía expandida).
+let lastPerson = null;
+let lastAwards = null;
 
 const CONTENT_ID = "person-view-content";
 
@@ -95,15 +104,45 @@ function renderMessage(title, text) {
   document.getElementById("btn-person-back")?.focus();
 }
 
-/* ---------- Render de la persona ---------- */
+/* ---------- Helpers de edad (issue #324) ---------- */
 
-// Línea(s) de datos de vida del hero: «Nació el 09/06/1963 en New
-// York, USA» y «Falleció el 11/05/2004». Solo muestra lo que TMDB
-// aporta; sin ninguno de los datos no se pinta la línea.
+// Calcula la edad en años entre birthday (YYYY-MM-DD) y la fecha de
+// referencia (deathday o hoy). Protegido ante fechas inválidas: si no
+// se puede parsear, devuelve null. Cálculo por calendario (mes/día).
+function calcAge(birthIso, refIso) {
+  if (!birthIso || typeof birthIso !== "string") return null;
+  const partsB = birthIso.split("-");
+  if (partsB.length !== 3) return null;
+  const yB = Number(partsB[0]);
+  const mB = Number(partsB[1]);
+  const dB = Number(partsB[2]);
+  if (!yB || !mB || !dB) return null;
+  let refDate;
+  if (refIso && typeof refIso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(refIso)) {
+    refDate = new Date(refIso + "T00:00:00");
+  } else {
+    refDate = new Date();
+  }
+  if (Number.isNaN(refDate.getTime())) return null;
+  const bDate = new Date(birthIso + "T00:00:00");
+  if (Number.isNaN(bDate.getTime())) return null;
+  let age = refDate.getFullYear() - bDate.getFullYear();
+  const m = refDate.getMonth() - bDate.getMonth();
+  if (m < 0 || (m === 0 && refDate.getDate() < bDate.getDate())) age -= 1;
+  if (age < 0 || age > 130) return null;
+  return age;
+}
+
+// Línea(s) de datos de vida del hero: «Nació el 09/06/1963 (62 años)
+// en New York, USA» y «Falleció el 11/05/2004». Si hay cumpleaños se
+// calcula la edad (actual si vive, al fallecer si hay deathday).
 function lifeInfoHtml(person) {
   const parts = [];
   if (person.birthday) {
+    const refIso = person.deathday || null;
+    const age = calcAge(person.birthday, refIso);
     let birth = `Nació el ${escapeHtml(formatDateEs(person.birthday))}`;
+    if (age !== null) birth += ` (${age} años)`;
     if (person.placeOfBirth) birth += ` en ${escapeHtml(person.placeOfBirth)}`;
     parts.push(birth);
   }
@@ -129,18 +168,45 @@ function personHeroHtml(person) {
     </header>`;
 }
 
+/* ---------- Biografía truncada + ventana Leer más (issue #324) ---------- */
+
 function biographyHtml(person) {
   if (!person.biography) {
     return `<p class="person-bio person-bio--empty">No hay biografía disponible en español para esta persona.</p>`;
   }
-  return `<p class="person-bio">${escapeHtml(person.biography)}</p>`;
+  // La biografía se muestra truncada a 4 líneas por CSS (--clamp); el
+  // botón Leer más se muestra solo cuando el texto supera el clamp o
+  // es largo (>220 caracteres). La ventana completa va en
+  // #person-bio-modal.
+  return `
+    <div class="person-bio-wrap">
+      <p class="person-bio person-bio--clamp" id="person-bio-clamped">${escapeHtml(person.biography)}</p>
+      <button type="button" class="btn btn--outline btn--small person-bio__more hidden" id="btn-person-bio-more"
+              aria-haspopup="dialog" aria-controls="person-bio-modal">Leer más</button>
+    </div>`;
 }
 
-// Fila de crédito (issue #321): miniatura w92, título, año y, según
-// la subsección, el personaje (actuación) o el puesto (equipo).
-// Pulsable → ficha del título (botón real: teclado y lector de
-// pantalla). La navegación se cablea con delegación en el render
-// (los nodos de cada render son nuevos).
+/* ---------- Filmografía en carrusel + expandida con búsqueda (issue #324) ---------- */
+
+// Tarjeta horizontal de crédito en carrusel (similar a .cast-card pero
+// con poster + título + meta; reutiliza safePhotoUrl y navegación).
+function creditCardHtml(credit) {
+  return `
+    <button type="button" class="person-credit-card" data-credit-id="${escapeHtml(credit.externalId)}" data-credit-kind="${escapeHtml(credit.kind)}"
+            aria-label="Ver la ficha de ${escapeHtml(credit.title)}">
+      <img class="person-credit-card__poster" src="${escapeHtml(safePhotoUrl(credit.posterUrl))}" alt="" loading="lazy" />
+      <span class="person-credit-card__body">
+        <span class="person-credit-card__title">${escapeHtml(credit.title)}</span>
+        <span class="person-credit-card__meta">
+          ${credit.year ? `<span class="person-credit-card__year">${escapeHtml(credit.year)}</span>` : ""}
+          ${credit.role ? `<span class="person-credit-card__role">${escapeHtml(credit.role)}</span>` : ""}
+        </span>
+      </span>
+    </button>`;
+}
+
+// Fila de crédito para la ventana expandida (lista vertical con buscador,
+// igual que la lista legacy pero ahora dentro del modal expandido).
 function creditRowHtml(credit) {
   return `
     <li class="person-credit">
@@ -158,24 +224,30 @@ function creditRowHtml(credit) {
     </li>`;
 }
 
-// Subsección «Actuación» o «Equipo» con su contador. Sin créditos de
-// ese tipo se devuelve "" (no se pinta nada): una persona puede ser
-// solo actor o solo equipo; TMDB divide así combined_credits. El caso
-// «sin ningún crédito» lo maneja el llamador (creditsHtml).
-function creditsSectionHtml(title, credits) {
+// Subsección «Actuación» o «Equipo» EN MODO CARRUSEL. Sin créditos de
+// ese tipo se devuelve "" (no se pinta nada). Cada carrusel lleva botón
+// Expandir que abre la ventana modal con buscador.
+function creditsSectionHtml(title, credits, kind) {
   if (!credits || !credits.length) return "";
+  const key = kind === "cast" ? "cast" : "crew";
   return `
-    <section class="person-credits__section">
-      <h3 class="person-credits__title">${escapeHtml(title)} <span class="person-credits__count">(${credits.length})</span></h3>
-      <ul class="person-credits__list">
-        ${credits.map(creditRowHtml).join("")}
-      </ul>
+    <section class="person-credits__section" data-section="${escapeHtml(key)}">
+      <div class="person-credits__head">
+        <h3 class="person-credits__title">${escapeHtml(title)} <span class="person-credits__count">(${credits.length})</span></h3>
+        <button type="button" class="btn btn--pill person-credits__expand" data-expand="${escapeHtml(key)}"
+                aria-haspopup="dialog" aria-controls="person-credits-modal" aria-label="Ver todos los títulos de ${escapeHtml(title)}">
+          Ver todo
+        </button>
+      </div>
+      <div class="person-credits__scroll" role="list">
+        ${credits.map(creditCardHtml).join("")}
+      </div>
     </section>`;
 }
 
 function creditsHtml(person) {
-  const acting = creditsSectionHtml("Actuación", person.castCredits);
-  const crew = creditsSectionHtml("Equipo", person.crewCredits);
+  const acting = creditsSectionHtml("Actuación", person.castCredits, "cast");
+  const crew = creditsSectionHtml("Equipo", person.crewCredits, "crew");
   if (!acting && !crew) {
     return `<p class="person-empty">No hay películas ni series registradas para esta persona.</p>`;
   }
@@ -186,37 +258,236 @@ function creditsHtml(person) {
     </section>`;
 }
 
-// Render completo de la página. awards: resultado de getPersonAwards
-// ([] o null → sin sección, igual que en las fichas de títulos).
+/* ---------- Ventana de biografía completa ---------- */
+
+let bioModalCleanup = null;
+let bioModalPrevFocus = null;
+
+function getBioModal() {
+  return document.getElementById("person-bio-modal");
+}
+function getBioModalContent() {
+  return document.getElementById("person-bio-modal-content");
+}
+
+function closeBioModal() {
+  const modal = getBioModal();
+  if (!modal || modal.classList.contains("hidden")) return;
+  if (bioModalCleanup) {
+    bioModalCleanup();
+    bioModalCleanup = null;
+  }
+  modal.classList.add("hidden");
+  getBioModalContent().innerHTML = "";
+  if (bioModalPrevFocus && document.contains(bioModalPrevFocus)) {
+    bioModalPrevFocus.focus();
+  }
+  bioModalPrevFocus = null;
+}
+
+function openBioModal(fullText) {
+  const modal = getBioModal();
+  const content = getBioModalContent();
+  if (!modal || !content) return;
+  bioModalPrevFocus = document.activeElement;
+  content.innerHTML = `
+    <h3 class="modal-detail__title">Biografía</h3>
+    <p class="person-bio person-bio--full">${escapeHtml(fullText)}</p>
+  `;
+  modal.classList.remove("hidden");
+  const card = modal.querySelector(".modal__card");
+  if (card) bioModalCleanup = trapFocus(card);
+  modal.querySelector("#person-bio-modal-close")?.focus();
+}
+
+/* ---------- Ventana expandida de filmografía con búsqueda ---------- */
+
+let creditsModalCleanup = null;
+let creditsModalPrevFocus = null;
+let creditsModalState = { title: "", credits: [] };
+
+function getCreditsModal() {
+  return document.getElementById("person-credits-modal");
+}
+function getCreditsModalContent() {
+  return document.getElementById("person-credits-modal-content");
+}
+
+function filterCreditsByQuery(credits, query) {
+  const q = (query || "").trim().toLocaleLowerCase("es");
+  if (!q) return credits;
+  return credits.filter((c) => {
+    const title = (c.title || "").toLocaleLowerCase("es");
+    const role = (c.role || "").toLocaleLowerCase("es");
+    const year = (c.year || "").toLocaleLowerCase("es");
+    return title.includes(q) || role.includes(q) || year.includes(q);
+  });
+}
+
+function creditsExpandedListHtml(credits, query) {
+  const filtered = filterCreditsByQuery(credits, query);
+  if (!filtered.length) {
+    const msg = (query || "").trim()
+      ? `No hay resultados para «${escapeHtml((query || "").trim())}».`
+      : "No hay títulos en esta sección.";
+    return `<p class="cast-modal__empty">${msg}</p>`;
+  }
+  return `<ul class="person-credits__list">${filtered.map(creditRowHtml).join("")}</ul>`;
+}
+
+const CREDITS_SEARCH_ICON = `
+  <svg class="cast-modal__search-icon" viewBox="0 0 24 24" width="16" height="16"
+       fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+       aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="15.8" y2="15.8" />
+  </svg>`;
+
+function closeCreditsModal() {
+  const modal = getCreditsModal();
+  if (!modal || modal.classList.contains("hidden")) return;
+  if (creditsModalCleanup) {
+    creditsModalCleanup();
+    creditsModalCleanup = null;
+  }
+  modal.classList.add("hidden");
+  getCreditsModalContent().innerHTML = "";
+  if (creditsModalPrevFocus && document.contains(creditsModalPrevFocus)) {
+    creditsModalPrevFocus.focus();
+  }
+  creditsModalPrevFocus = null;
+}
+
+function openCreditsModal({ title, credits }) {
+  const modal = getCreditsModal();
+  const content = getCreditsModalContent();
+  if (!modal || !content) return;
+  creditsModalState = { title, credits: Array.isArray(credits) ? credits : [] };
+  creditsModalPrevFocus = document.activeElement;
+  const count = creditsModalState.credits.length;
+  const placeholder = "Buscar por título, personaje o puesto…";
+  content.innerHTML = `
+    <div class="cast-modal__header">
+      <h3 class="cast-modal__title">${escapeHtml(title)}</h3>
+      <p class="cast-modal__subtitle">${count} títulos</p>
+    </div>
+    <div class="cast-modal__search">
+      ${CREDITS_SEARCH_ICON}
+      <input type="text" class="cast-modal__search-input" id="person-credits-search"
+             placeholder="${placeholder}"
+             aria-label="Buscar en ${escapeHtml(title)}"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <div class="person-credits__expanded-body" id="person-credits-expanded-body">
+      ${creditsExpandedListHtml(creditsModalState.credits, "")}
+    </div>
+  `;
+  modal.classList.remove("hidden");
+  const card = modal.querySelector(".modal__card");
+  if (card) creditsModalCleanup = trapFocus(card);
+
+  const input = content.querySelector("#person-credits-search");
+  const body = content.querySelector("#person-credits-expanded-body");
+  if (input && body) {
+    input.addEventListener("input", () => {
+      body.innerHTML = creditsExpandedListHtml(creditsModalState.credits, input.value);
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && input.value) {
+        e.stopPropagation();
+        input.value = "";
+        body.innerHTML = creditsExpandedListHtml(creditsModalState.credits, "");
+      }
+    });
+    // Delegación para clicks en el listado expandido → ficha
+    body.addEventListener("click", (e) => {
+      const btn = e.target.closest?.("[data-credit-id]");
+      if (!btn) return;
+      e.preventDefault();
+      closeCreditsModal();
+      navigate({
+        section: "item",
+        kind: btn.dataset.creditKind === "tv" ? "tv" : "movie",
+        externalId: btn.dataset.creditId,
+      });
+    });
+    // Foco inicial al buscador si hay muchos títulos, si no al cierre
+    if (count > 8) input.focus();
+    else modal.querySelector("#person-credits-modal-close")?.focus();
+  }
+}
+
+/* ---------- Render completo de la página (sin recuadro, issue #324) ---------- */
+
 function renderPerson(person, awards) {
+  lastPerson = person;
+  lastAwards = awards;
   const awardsBlock = Array.isArray(awards) && awards.length
     ? `<section class="person-awards">${ui.awardsSectionHtml(awards)}</section>`
     : "";
+  // Issue #324: la ficha ya NO va enmarcada en .item-view__card; va
+  // directa sobre el fondo de .item-view (como la ficha de título tras
+  // ADR-103). La clase .person-page es el contenedor sin recuadro.
   contentEl().innerHTML = `
-    <div class="item-view__card person-card">
+    <div class="person-page">
       ${personHeroHtml(person)}
       ${biographyHtml(person)}
       <hr class="person-separator" />
       ${creditsHtml(person)}
       ${awardsBlock}
     </div>`;
-  wireCreditClicks();
+  wireBioModal();
+  wireCreditInteractions();
   // Foco al nombre (patrón de las rutas de Ocio y de la página de ítem).
   const name = contentEl().querySelector(".person-hero__name");
   if (name) name.focus({ preventScroll: true });
 }
 
-// Cablea los créditos pulsables → ficha del título. Los nodos son de
-// ESTE render (innerHTML acaba de sustituirse): los listeners no se
-// duplican.
-function wireCreditClicks() {
-  contentEl().querySelectorAll("[data-credit-id]").forEach((btn) => {
+// Decide si mostrar el botón Leer más: si la biografía es larga
+// (>220 caracteres) o si el clamp corta (scrollHeight > clientHeight).
+function wireBioModal() {
+  const bio = document.getElementById("person-bio-clamped");
+  const btn = document.getElementById("btn-person-bio-more");
+  if (!bio || !btn || !lastPerson || !lastPerson.biography) return;
+  const full = String(lastPerson.biography);
+  const needsButton = full.length > 220;
+  // Evaluación de clamp: tras pintar, si el texto se recorta el
+  // scrollHeight supera al clientHeight.
+  requestAnimationFrame(() => {
+    const isClamped = bio.scrollHeight > bio.clientHeight + 2;
+    if (needsButton || isClamped) {
+      btn.classList.remove("hidden");
+      btn.addEventListener("click", () => openBioModal(full));
+    } else {
+      // Biografía corta: quitar el clamp para que no deje hueco extra
+      bio.classList.remove("person-bio--clamp");
+      btn.classList.add("hidden");
+    }
+  });
+}
+
+// Cablea los carruseles pulsables y los botones expandir → ventana con búsqueda.
+function wireCreditInteractions() {
+  if (!lastPerson) return;
+  // Clicks en tarjetas del carrusel → ficha del título
+  contentEl().querySelectorAll(".person-credit-card[data-credit-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       navigate({
         section: "item",
         kind: btn.dataset.creditKind === "tv" ? "tv" : "movie",
         externalId: btn.dataset.creditId,
       });
+    });
+  });
+  // Botones Ver todo → modal expandido
+  contentEl().querySelectorAll("[data-expand]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.expand;
+      if (key === "cast") {
+        openCreditsModal({ title: "Actuación", credits: lastPerson.castCredits || [] });
+      } else {
+        openCreditsModal({ title: "Equipo", credits: lastPerson.crewCredits || [] });
+      }
     });
   });
 }
@@ -258,6 +529,8 @@ async function openPage(personId) {
   // Defensivo: cerrar modales que pudieran quedar abiertos y el
   // drawer lateral (mismo patrón que la página de ítem).
   ui.closeModal();
+  closeBioModal();
+  closeCreditsModal();
   const sidebar = document.getElementById("app-sidebar");
   if (sidebar) {
     sidebar.classList.remove("is-open");
@@ -287,6 +560,10 @@ async function openPage(personId) {
 function closePage() {
   visible = false;
   currentToken = null;
+  lastPerson = null;
+  lastAwards = null;
+  closeBioModal();
+  closeCreditsModal();
   document.body.classList.remove("is-person-page");
   const view = viewEl();
   if (view) view.classList.add("hidden");
@@ -301,6 +578,16 @@ function closePage() {
 // de Ocio visible (issue #97). El fallback con timeout cubre el caso
 // de back() que no cambia la ruta. Mismo contrato que item-page.js.
 function goBack() {
+  // Si hay una ventana de persona abierta, cerrarla primero (como los
+  // modales) antes de navegar atrás.
+  if (!getBioModal()?.classList.contains("hidden")) {
+    closeBioModal();
+    return;
+  }
+  if (!getCreditsModal()?.classList.contains("hidden")) {
+    closeCreditsModal();
+    return;
+  }
   const fallback = () => {
     if (visible && parseHash().section === "person") {
       navigate(normalizeTabKey("ocio", getLastOcioKey()));
@@ -317,9 +604,23 @@ function goBack() {
 // Escape = volver, solo cuando la página está visible y no hay nada
 // más abierto (modal, dropdown, drawer…). En fase de captura para
 // decidir antes que los handlers de burbuja. Mismas guardas que la
-// página de ítem.
+// página de ítem, más las dos ventanas nuevas de persona.
 function handleEscape(e) {
-  if (e.key !== "Escape" || !visible) return;
+  if (e.key !== "Escape") return;
+  // Prioridad: cerrar las ventanas de persona si están abiertas
+  if (!getBioModal()?.classList.contains("hidden")) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeBioModal();
+    return;
+  }
+  if (!getCreditsModal()?.classList.contains("hidden")) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeCreditsModal();
+    return;
+  }
+  if (!visible) return;
   if (
     document.querySelector(".modal:not(.hidden)") ||
     document.querySelector(".app-sidebar.is-open") ||
@@ -336,7 +637,7 @@ function handleEscape(e) {
 }
 
 /**
- * Inicializa la página de detalle de persona (issue #321).
+ * Inicializa la página de detalle de persona (issue #321 + #324).
  * @param {Object} ctx - Contexto de datos del usuario (modelo app.js).
  * @returns {Object} API { openPage, closePage, isActive }
  */
@@ -345,6 +646,13 @@ export function setupPersonPage(ctx) {
 
   document.getElementById("btn-person-back")?.addEventListener("click", goBack);
   document.addEventListener("keydown", handleEscape, true);
+
+  // Cierres de las dos ventanas nuevas (backdrop + ✕), patrón de
+  // cast-modal.js: listeners únicos al cargar el módulo.
+  document.getElementById("person-bio-modal-close")?.addEventListener("click", closeBioModal);
+  document.getElementById("person-bio-modal-backdrop")?.addEventListener("click", closeBioModal);
+  document.getElementById("person-credits-modal-close")?.addEventListener("click", closeCreditsModal);
+  document.getElementById("person-credits-modal-backdrop")?.addEventListener("click", closeCreditsModal);
 
   return {
     openPage,
