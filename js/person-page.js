@@ -365,7 +365,7 @@ function openCreditsModal({ title, credits }) {
   creditsModalState = { title, credits: Array.isArray(credits) ? credits : [] };
   creditsModalPrevFocus = document.activeElement;
   const count = creditsModalState.credits.length;
-  const placeholder = "Buscar por título, personaje o puesto…";
+  const placeholder = "Buscar por título, personaje, puesto o año…";
   content.innerHTML = `
     <div class="cast-modal__header">
       <h3 class="cast-modal__title">${escapeHtml(title)}</h3>

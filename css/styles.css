@@ -2444,6 +2444,7 @@ body.is-item-page #btn-person-back {
 .person-bio--clamp {
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -2545,7 +2546,7 @@ body.is-item-page #btn-person-back {
   appearance: none;
 }
 .person-credit-card:hover {
-  background: var(--paper-dim);
+  background: var(--ink-alpha-10);
 }
 .person-credit-card:focus-visible {
   outline: 2px solid var(--teal-reel);
@@ -2726,44 +2727,45 @@ body.is-item-page #btn-person-back {
 /* Página sin recuadro (issue #324): en oscuro los secundarios van sobre
    --ink y --ink-soft ya cumple, así que se restaura explícitamente para
    que el override de tarjeta no se aplique. Selectores agrupados, una
-   sola fuente de verdad por regla (AGENTS.md §4.3). */
+   sola fuente de verdad por regla (AGENTS.md §4.3). Solo aplica a los
+   textos de la página, no a las tarjetas claras del carrusel. */
 [data-theme="dark"] .person-page .person-hero__known,
 [data-theme="dark"] .person-page .person-hero__life,
 [data-theme="dark"] .person-page .person-bio--empty,
 [data-theme="dark"] .person-page .person-section-title,
 [data-theme="dark"] .person-page .person-credits__count,
-[data-theme="dark"] .person-page .person-credit-card__year,
-[data-theme="dark"] .person-page .person-credit-card__role,
 [data-theme="dark"] .person-page .person-empty {
   color: var(--ink-soft);
 }
 
 /* Contraste de las tarjetas de carrusel sobre el fondo oscuro de la
    página (issue #324): la tarjeta es clara (--paper) así que el texto
-   secundario dentro de ella usa la tinta oscura #5f5849 en oscuro
-   (mismo patrón que .rec-card/.cast-card). En la familia clara y
-   negro puro la tarjeta es --paper/--ink-raised con --ink-soft correcto. */
+   secundario dentro de ella usa la tinta oscura #5f5849 en oscuro y en
+   negro puro (mismo patrón que .rec-card/.cast-card). En la familia
+   clara la tarjeta es --paper con --ink-soft correcto. */
 [data-theme="dark"] .person-credit-card__year,
-[data-theme="dark"] .person-credit-card__role {
+[data-theme="dark"] .person-credit-card__role,
+[data-theme="black"] .person-credit-card__year,
+[data-theme="black"] .person-credit-card__role {
   color: #5f5849;
 }
 [data-theme="light"] .person-credit-card__year,
 [data-theme="white"] .person-credit-card__year,
-[data-theme="black"] .person-credit-card__year,
 [data-theme="light"] .person-credit-card__role,
-[data-theme="white"] .person-credit-card__role,
-[data-theme="black"] .person-credit-card__role {
+[data-theme="white"] .person-credit-card__role {
   color: var(--ink-soft);
 }
 
-/* En la página sin recuadro la sección oscura restaura el texto de las
-   tarjetas anidadas dentro de .person-page (mismo caso que arriba): las
-   tarjetas son claras, así que el override a #5f5849 debe mantenerse
-   dentro de .person-page. Se deja el bloque anterior como base y este
-   como refuerzo explícito para evitar que el reset de .person-page lo
-   sobreescriba. */
+/* En la página sin recuadro la sección oscura y negro puro restauran
+   el texto de las tarjetas anidadas dentro de .person-page (mismo caso
+   que arriba): las tarjetas son claras, así que el override a #5f5849
+   debe mantenerse dentro de .person-page. Se deja el bloque anterior
+   como base y este como refuerzo explícito para evitar que el reset de
+   .person-page lo sobreescriba. */
 [data-theme="dark"] .person-page .person-credit-card__year,
-[data-theme="dark"] .person-page .person-credit-card__role {
+[data-theme="dark"] .person-page .person-credit-card__role,
+[data-theme="black"] .person-page .person-credit-card__year,
+[data-theme="black"] .person-page .person-credit-card__role {
   color: #5f5849;
 }
 
