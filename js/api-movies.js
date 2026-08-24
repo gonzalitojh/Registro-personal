@@ -806,11 +806,13 @@ function sortCreditsByYear(credits) {
  */
 export async function getPersonDetails(personId) {
   const id = String(personId);
+  // Defensa en profundidad (seguridad M-01): solo ids numéricos de TMDB.
+  if (!/^\d+$/.test(id)) return null;
   const cacheKey = `person_${id}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const url = `${BASE_URL}/person/${id}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=combined_credits,external_ids`;
+  const url = `${BASE_URL}/person/${encodeURIComponent(id)}?api_key=${TMDB_API_KEY}&language=es-ES&append_to_response=combined_credits,external_ids`;
   const data = await fetchJson(url, { retries: 1 }).catch(() => null);
   if (!data) return null;
 
@@ -874,7 +876,28 @@ export async function getPersonAwards(personId) {
       const url = `${WDQS_URL}?format=json&query=${encodeURIComponent(query)}`;
       data = await fetchJson(url, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
       const rows = data && data.results ? data.results.bindings : null;
-      if (rows) awards = mapAwardsBindings(rows.filter((b) => !isListPointerRow(b)));
+      if (rows) {
+        const realRows = rows.filter((b) => !isListPointerRow(b));
+        if (realRows.length) {
+          awards = mapAwardsBindings(realRows);
+        } else {
+          // Paridad con getItemAwards (issue #311): si la persona solo
+          // tiene un puntero a lista (p. ej. «List of awards...»),
+          // se desreferencian las declaraciones del propio ítem de lista.
+          const fetched = new Set();
+          const listRows = [];
+          for (const b of rows) {
+            const qid = b.award && b.award.value ? b.award.value.split("/").pop() : "";
+            if (!/^Q\d+$/.test(qid) || fetched.has(qid)) continue;
+            fetched.add(qid);
+            const listUrl = `${WDQS_URL}?format=json&query=${encodeURIComponent(wikidataAwardsQuery(qid))}`;
+            const listData = await fetchJson(listUrl, { retries: 1, headers: { Accept: "application/json" } }).catch(() => null);
+            const subRows = listData && listData.results ? listData.results.bindings : [];
+            listRows.push(...subRows);
+          }
+          awards = mapAwardsBindings(listRows);
+        }
+      }
     }
   } catch {
     awards = null;
