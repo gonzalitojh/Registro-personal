@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20261014" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20261014" />
+  <link rel="stylesheet" href="css/styles.css?v=20261015" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20261015" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -893,9 +893,30 @@
     </div>
   </div>
 
+  <!-- Ventana de biografía completa de una persona (issue #324): al
+        pulsar "Leer más" en la ficha truncada se abre esta ventana
+        sobre la página de persona con la biografía íntegra. -->
+  <div id="person-bio-modal" class="modal hidden">
+    <div class="modal__backdrop" id="person-bio-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Biografía">
+      <button id="person-bio-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="person-bio-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Ventana expandida de la filmografía de una persona (issue #324):
+        carrusel expandido con búsqueda por título/personaje/puesto. -->
+  <div id="person-credits-modal" class="modal modal--top hidden">
+    <div class="modal__backdrop" id="person-credits-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Filmografía">
+      <button id="person-credits-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="person-credits-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Ventana "ver en más detalle" del elenco (issue #294): lista
-       completa de producción (por áreas) o de reparto de la
-       película/serie, sobre la ficha (modal o página de ítem). -->
+        completa de producción (por áreas) o de reparto de la
+        película/serie, sobre la ficha (modal o página de ítem). -->
   <div id="cast-modal" class="modal modal--top hidden">
     <div class="modal__backdrop" id="cast-modal-backdrop"></div>
     <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Reparto y producción">
@@ -916,7 +937,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20261014"></script>
+  <script type="module" src="js/app.js?v=20261015"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

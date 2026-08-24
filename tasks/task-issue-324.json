@@ -1,0 +1,39 @@
+{
+  "title": "Ajustes en ventanas de actores",
+  "description": "La base es la rama feat/issue-201. Crear nueva rama a partir de ahí y PR a esa rama (no a dev).\n\n- La ventana de los actores no debe verse enmarcada en un recuadro.\n- La biografía debe mostrarse unas pocas líneas por defecto y, si se desea leer más, botón Leer más que abre una ventana.\n- Las películas/series en las que ha participado la persona deben estar en modo carrusel (como las personas en las películas/series) y que se pueda expandir permitiendo además la búsqueda.\n- Bajo el nombre de la persona, donde pone la fecha de nacimiento, calcular los años.",
+  "status": "review",
+  "acceptance": [
+    "La ficha de persona NO se muestra enmarcada en un recuadro (.item-view__card); va directa sobre el fondo de la página como la ficha de título (ADR-103)",
+    "La biografía se muestra truncada a pocas líneas (3-4 líneas) por defecto con clamp y boton Leer más visible solo cuando hay contenido largo; al pulsar abre una ventana/modal con la biografía completa accesible y cerrable (Esc, backdrop, ✕, focus trap)",
+    "La filmografía (películas/series) se muestra en carruseles horizontales por sección (Actuación / Equipo) con scroll horizontal contenido, igual que los carruseles de elenco (.cast-crew__scroll), con tarjetas pulsables que navegan a la ficha",
+    "Cada sección de filmografía tiene boton Expandir/Ver todo que abre ventana expandida con listado completo y buscador por titulo/personaje/puesto que filtra al instante, con mensaje de sin resultados y limpiado con Esc",
+    "Bajo el nombre se calcula la edad a partir de birthday: si vive, edad actual entre parentesis tras la fecha; si falleció, edad al fallecer; cálculo correcto con meses/dias (no solo año) y protegido ante fechas invalidas",
+    "Responsividad obligatoria: sin scroll horizontal a nivel de pagina en 360/768/1280, textos con overflow-wrap y min-width:0, unidades relativas, sin overflow-x hidden en body",
+    "Visualizacion correcta en los 4 temas (Oscuro, Negro puro, Claro, Blanco puro) con contraste AA verificado (texto secundario, botones, tarjetas, modales)",
+    "Manual de usuario actualizado si el cambio afecta a lo visible; ADR creado/actualizado y relacionado a issue #324"
+  ],
+  "definition_of_done": [
+    "Planificación y diseño revisados",
+    "Implementación completa en la rama style/issue-324-ajustes-actores derivada de feat/issue-201",
+    "Validación contra criterios de aceptación y DoD (responsividad en 3 anchos, 4 temas, contenido largo)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado con Related issue: #324",
+    "Manual actualizado si procede",
+    "PR creada contra feat/issue-201 SIN keyword de cierre, issue label status: needs-review"
+  ],
+  "issue": {
+    "number": 324,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/324",
+    "title": "Ajustes en ventanas de actores"
+  },
+  "type": "style",
+  "priority": "medium",
+  "base_branch": "feat/issue-201",
+  "pr_base": "feat/issue-201",
+  "pr": {
+    "number": 325,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/325",
+    "base": "feat/issue-201",
+    "branch": "style/issue-324-ajustes-actores"
+  }
+}
