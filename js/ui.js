@@ -14,6 +14,7 @@ import { openEpisodeActionsModal } from "./episode-actions-modal.js";
 import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
 import { getItemAwards } from "./api-movies.js";
+import { navigate } from "./router.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : type === "game" ? "game" : "media";
@@ -30,7 +31,8 @@ function escapeHtml(str) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 // HTML para un distintivo de puntuación de la comunidad (TMDB, IGDB
@@ -857,14 +859,22 @@ export function castCrewHtml(item) {
 
 function castCrewSectionHtml(label, people, role, roleTextOf) {
   const cards = people
-    .map(
-      (p) => `
-      <div class="cast-card">
+    .map((p) => {
+      // Tarjeta pulsable (issue #321): con id de TMDB la persona abre
+      // su página (#/ocio/personas/<id>) — un <button> real (teclado y
+      // lector de pantalla gratis). Sin id (cast legacy de documentos
+      // pre-issue #294, array de strings) se degrada al <div> actual:
+      // no hay página que abrir.
+      const inner = `
         <img class="cast-card__photo" src="${escapeHtml(safePhotoUrl(p.profileUrl))}" alt="" loading="lazy" />
         <span class="cast-card__name">${escapeHtml(p.name)}</span>
         ${roleTextOf(p) ? `<span class="cast-card__role">${escapeHtml(roleTextOf(p))}</span>` : ""}
-      </div>`
-    )
+      `;
+      if (p.id) {
+        return `<button type="button" class="cast-card" data-person-id="${escapeHtml(String(p.id))}" aria-label="Ver la página de ${escapeHtml(p.name)}">${inner}</button>`;
+      }
+      return `<div class="cast-card">${inner}</div>`;
+    })
     .join("");
   return `
     <section class="cast-crew" aria-labelledby="cast-crew-title-${role}">
@@ -984,6 +994,8 @@ export function wireCastCrewInertialScroll(scrollEl) {
 // ítem, previews y ficha de amigo). Un botón sin cablear no hace nada
 // (degradación silenciosa si un futuro llamador olvida el wiring). Cada
 // render crea nodos nuevos, así que los listeners nunca se duplican.
+// Issue #321: las tarjetas de persona [data-person-id] navegan a la
+// página de la persona (#/ocio/personas/<id>) con el router de hash.
 export function wireCastCrewClicks(root, item) {
   if (!root) return;
   root.querySelectorAll(".cast-crew__scroll").forEach(wireCastCrewInertialScroll);
@@ -1000,6 +1012,12 @@ export function wireCastCrewClicks(root, item) {
           ? (item.crew || []).filter((c) => c && c.name)
           : normalizeCastPeople(item.cast),
       });
+    });
+  });
+  // Tarjetas de persona (issue #321): abren la página de la persona.
+  root.querySelectorAll("[data-person-id]").forEach((card) => {
+    card.addEventListener("click", () => {
+      navigate({ section: "person", personId: card.dataset.personId });
     });
   });
 }
@@ -1389,7 +1407,16 @@ export function awardsHtml(item) {
   if (item.type !== "movie" && item.type !== "tv") return "";
   const groups = Array.isArray(item.awards) ? item.awards : [];
   if (!groups.length) return "";
+  return awardsSectionHtml(groups);
+}
 
+// Sección «Premios» completa para una lista de grupos de premios
+// (issue #321): extraída de awardsHtml para que la página de persona
+// la reutilice con los premios de la persona (misma presentación que
+// las fichas de títulos: badges «Premio»/«Nominación», grupos por
+// familia minimizados, contador separado). Devuelve "" sin grupos.
+export function awardsSectionHtml(groups) {
+  if (!groups || !groups.length) return "";
   const allEntries = groups.flatMap((g) => g.entries);
 
   const groupsHtml = groups
