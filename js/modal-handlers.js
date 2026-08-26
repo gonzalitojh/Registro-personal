@@ -32,11 +32,15 @@ import { navigate } from "./router.js";
 // segundo plano (caché en memoria de 24 h). Al llegar, se re-renderiza
 // el modal completo y se revalida la tarjeta guardada (portada y rating
 // comunitario, stale-while-revalidate del estudio §9 R3: 1 escritura
-// solo si cambian). Si la red falla, la ficha queda «solo tarjeta»
-// (degradación elegante) y no se reintenta en esa sesión.
+// solo si cambian) e issue #328 persiste cast/director/creators para
+// la búsqueda por actores. Si la red falla, la ficha queda «solo
+// tarjeta» (degradación elegante) y no se reintenta en esa sesión.
 function loadDetailsForModal(item, ctx, rerender) {
   const prevCoverUrl = item.coverUrl;
   const prevCommunityRating = item.communityRating;
+  const prevCast = item.cast;
+  const prevDirector = item.director;
+  const prevCreators = item.creators;
   loadItemDetails(item).then((details) => {
     if (!details) {
       item._detailsFailed = true;
@@ -48,6 +52,10 @@ function loadDetailsForModal(item, ctx, rerender) {
     if (item.communityRating != null && item.communityRating !== prevCommunityRating) {
       changes.communityRating = item.communityRating;
     }
+    // Issue #328: persistir reparto para la búsqueda por actores
+    if (item.cast && JSON.stringify(item.cast) !== JSON.stringify(prevCast)) changes.cast = item.cast;
+    if (item.director && item.director !== prevDirector) changes.director = item.director;
+    if (item.creators && JSON.stringify(item.creators) !== JSON.stringify(prevCreators)) changes.creators = item.creators;
     if (Object.keys(changes).length) {
       ctx
         .updateItem(ctx.getCurrentUser().uid, item.type, item.id, changes)

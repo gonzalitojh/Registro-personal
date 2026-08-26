@@ -71,16 +71,15 @@ export const TYPE_BY_GROUP = { movies: "movie", tv: "tv", books: "book", games: 
 // Excepción: los libros conservan `description` (sección 8.1: la
 // tarjeta y la ficha de libro lo pintan al instante, y no hay llamada
 // de detalle que lo recupere sin coste).
+// Issue #328: `cast`, `director` y `creators` se persisten para
+// permitir la búsqueda por actores desde la barra global.
 export const ON_DEMAND_DETAIL_FIELDS = [
   "runtime",
   "episodeRuntime",
   "overview",
   "description",
   "genres",
-  "cast",
   "crew",
-  "director",
-  "creators",
   "trailerUrl",
   "collectionId",
   "collectionName",

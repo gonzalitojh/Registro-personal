@@ -65,12 +65,16 @@ export function isBookAlreadyAdded(item, idsSet, keysSet) {
 // tráiler, saga, plataformas...) se pide bajo demanda al abrir la
 // ficha; getMovieDetails/getTvExtraDetails guardan ese snapshot en su
 // caché de 24 h, así que una ficha recién añadida no repite llamada.
+// Issue #328: `cast`, `director` y `creators` se persisten para la
+// búsqueda por actores (son datos pequeños y estables).
 export function minimalStoredFields(details, type) {
   const keep = {};
   if (type === "movie") {
     if (details.releaseDate !== undefined) keep.releaseDate = details.releaseDate;
     if (details.communityRating != null) keep.communityRating = details.communityRating;
     if (details.coverUrl) keep.coverUrl = details.coverUrl;
+    if (details.cast && Array.isArray(details.cast) && details.cast.length) keep.cast = details.cast.slice(0, 5);
+    if (details.director) keep.director = details.director;
   } else if (type === "tv") {
     if (details.firstAirDate !== undefined) keep.firstAirDate = details.firstAirDate;
     if (details.tmdbStatus) keep.tmdbStatus = details.tmdbStatus;
@@ -80,6 +84,9 @@ export function minimalStoredFields(details, type) {
     }
     if (details.communityRating != null) keep.communityRating = details.communityRating;
     if (details.coverUrl) keep.coverUrl = details.coverUrl;
+    if (details.cast && Array.isArray(details.cast) && details.cast.length) keep.cast = details.cast.slice(0, 5);
+    if (details.creators && Array.isArray(details.creators) && details.creators.length) keep.creators = details.creators.slice(0, 3);
+    if (details.director) keep.director = details.director;
   } else if (type === "game") {
     if (details.year) keep.year = details.year;
     if (details.releaseDate !== undefined) keep.releaseDate = details.releaseDate;

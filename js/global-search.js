@@ -140,20 +140,30 @@ function currentSection() {
 }
 
 function getSearchableText(item) {
-  // Para libros, también buscar por autor
-  const author = item.author || "";
-  return `${item.title} ${author}`.toLowerCase();
+  // Issue #328: además de título/autor, buscar por reparto/director/creadores
+  const parts = [item.title || "", item.author || ""];
+  if (Array.isArray(item.cast) && item.cast.length) parts.push(item.cast.join(" "));
+  if (item.director) parts.push(item.director);
+  if (Array.isArray(item.creators) && item.creators.length) parts.push(item.creators.join(" "));
+  return parts.join(" ").toLowerCase();
 }
 
 function relevanceScore(item, query) {
   const title = (item.title || "").toLowerCase();
   const author = (item.author || "").toLowerCase();
   const q = query.toLowerCase();
+  // Reparto/director/creadores para la búsqueda por actores (issue #328)
+  const castText = Array.isArray(item.cast) ? item.cast.join(" ").toLowerCase() : "";
+  const directorText = (item.director || "").toLowerCase();
+  const creatorsText = Array.isArray(item.creators) ? item.creators.join(" ").toLowerCase() : "";
 
   if (title === q) return 100;
   if (title.startsWith(q)) return 50;
   if (title.includes(q)) return 10;
   if (author.includes(q)) return 5;
+  if (castText.includes(q)) return 5;
+  if (directorText.includes(q)) return 4;
+  if (creatorsText.includes(q)) return 4;
   return 0;
 }
 
@@ -178,9 +188,14 @@ function filterFriends(profiles, query) {
   });
 }
 
-// Resultados de la sección activa (issue #206):
-// - ocio    → colección (películas/series/libros/videojuegos del
-//             usuario), sin amigos: el buscador ya no es global.
+// Resultados de la sección activa (issues #206 y #328):
+// - ocio    → colección COMPLETA (películas + series + libros +
+//             videojuegos del usuario) en TODO momento, sin acotar a la
+//             pestaña activa (#328: si estoy en series y busco
+//             "El señor de los anillos" deben salir también películas,
+//             libros y juegos). El buscador ya no es global entre
+//             secciones (perfil/recetas mantienen su scope) pero sí lo
+//             es DENTRO de Ocio.
 // - perfil  → solo amigos.
 // - recetas → solo recetas (filtro local, searchRecipes de recipes.js).
 // - gimnasio → sin resultados aún (issue #62, v1: sin scope de
@@ -239,7 +254,7 @@ function renderTypeButtons() {
   </div>`;
 }
 
-// Texto del hint según la sección activa (issue #206).
+// Texto del hint según la sección activa (issues #206 y #328).
 function sectionHintText() {
   if (currentSection() === "perfil") {
     return "Escribe al menos 2 caracteres para buscar en tus amigos.";
@@ -250,7 +265,7 @@ function sectionHintText() {
   if (currentSection() === "gimnasio") {
     return "Escribe al menos 2 caracteres para buscar en tu gimnasio.";
   }
-  return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros y videojuegos.";
+  return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros, videojuegos y actores.";
 }
 
 function hintHtml() {

@@ -1,0 +1,26 @@
+{
+  "title": "Búsqueda de actores y mejoría",
+  "description": "Issue #328: En la barra de búsqueda, poder buscar en todo momento en todas las colecciones (no solo en la que me encuentro — si estoy en series y busco \"El señor de los anillos\" deben salir series, películas, libros y juegos coincidentes) y poder buscar por actores en la barra de búsqueda.",
+  "status": "planned",
+  "acceptance criteria": [
+    "La barra de búsqueda de Ocio muestra resultados de TODAS las colecciones (películas, series, libros y videojuegos) independientemente de la pestaña activa (series/películas/libros/videojuegos). Si estoy en series y busco 'El señor de los anillos' aparecen coincidencias de las cuatro colecciones.",
+    "Buscar por nombre de actor/director/reparto encuentra los títulos de la colección cuyo reparto contenga ese nombre (p. ej. buscar 'Tom Hanks' encuentra películas donde aparece). La búsqueda por actor es insensible a mayúsculas y funciona con coincidencias parciales.",
+    "La búsqueda por actor usa el campo 'cast' persistido en Firestore (almacenamiento mínimo) y se carga bajo demanda para fichas abiertas; los nuevos altas guardan el reparto.",
+    "Placeholder y aria-label de la barra en Ocio reflejan que se puede buscar por actores.",
+    "Manual de usuario actualizado (§10.2) explicando búsqueda global en Ocio y por actores.",
+    "Responsividad y modos de tema sin regresiones en la barra/buscador tocados."
+  ],
+  "definition of done": [
+    "Planificación completada",
+    "Implementación realizada y validada por QA contra criterios de aceptación",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado con 'Related issue: #328'",
+    "PR contra dev SIN keyword de cierre",
+    "Issue #328 label actualizada a status: needs-review tras PR"
+  ],
+  "issue": {
+    "number": 328,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/328",
+    "title": "Búsqueda de actores y mejoría"
+  }
+}
