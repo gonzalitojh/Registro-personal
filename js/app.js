@@ -186,6 +186,15 @@ const GRID_IDS = {
 // navega a la página de ítem (issue #285) y el router se crea dentro
 // de init(). Se asigna tras initRouter y solo se usa en runtime.
 let routerApi = null;
+// APIs de página/sección creadas en init() pero usadas también desde
+// subscribeGroup/render callbacks a nivel de módulo (issue #328 fix:
+// itemApi estaba declarado solo dentro de init → ReferenceError en
+// onChange de Firestore).
+let profileApi = null;
+let recipesApi = null;
+let gymApi = null;
+let itemApi = null;
+let personApi = null;
 
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
@@ -621,15 +630,10 @@ async function init() {
   // indicada por la URL (pestaña de Ocio o sección del perfil) sin
   // robar el foco (solo el clic manual lo mueve).
   const profileView = document.getElementById("profile-view");
-  // Declarado antes de crear el router: el onRoute se ejecuta durante
-  // initRouter() con la ruta de la carga inicial, y profileApi todavía
-  // no existe (la sesión tampoco). El guard permite ignorarla: tras el
-  // login, watchAuthState llama a router.applyRoute() para retomarla.
-  let profileApi = null;
-  let recipesApi = null;
-  let gymApi = null;
-  let itemApi = null;
-  let personApi = null;
+  // Declarado a nivel de módulo (arriba) para que subscribeGroup
+  // y otros callbacks lo vean. Aquí solo se resetea si hace falta;
+  // onRoute se ejecuta durante initRouter() y el guard permite
+  // ignorar la ruta si aún no hay APIs.
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el

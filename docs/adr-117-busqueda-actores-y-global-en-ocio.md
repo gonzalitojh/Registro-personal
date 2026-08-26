@@ -29,7 +29,7 @@ Diagnóstico y alternativas:
 4. **Revalidación progresiva**: `js/modal-handlers.js:loadDetailsForModal` guarda `prevCast/prevDirector/prevCreators` y, al llegar `details`, persiste `cast`/`director`/`creators` si cambiaron (igual que `coverUrl`/`communityRating`). Así las colecciones antiguas ganan el dato de reparto la primera vez que se abre su ficha (best-effort, sin reintentos).
 5. **UI**: `js/ui.js` y `index.html` cambian el placeholder de Ocio a `Buscar películas, series, libros, videojuegos y actores…` y el `aria-label` a `Buscar en tu registro de ocio (título, autor o actor)`. `js/global-search.js:sectionHintText` añade «y actores» al hint de Ocio.
 6. **Manual**: `docs/manual-de-usuario.md` §§3 y 10.2 documentan que la búsqueda en Ocio es global entre las 4 colecciones y que también busca por reparto/director/creadores (ejemplo `Tom Hanks`).
-7. **Versión PWA**: `APP_VERSION` sube a `20261018` + `?v=20261018` en `index.html` y `service-worker.js` (misma disciplina que ADR-116).
+7. **Versión PWA**: `APP_VERSION` sube a `20261019` + `?v=20261019` en `index.html` y `service-worker.js` (misma disciplina que ADR-116). Iteración 2026-08-26 corrige el `ReferenceError: itemApi is not defined` moviendo `itemApi`/`personApi`/`profileApi`/`recipesApi`/`gymApi` a nivel de módulo en `js/app.js` (antes solo estaban dentro de `init()` y `subscribeGroup.onChange` fallaba).
 
 ## Consecuencias
 
@@ -37,6 +37,6 @@ Diagnóstico y alternativas:
 - Buscar «Tom Hanks», «Bryan Cranston» o «Vince Gilligan» encuentra las películas/series donde participan, incluso con coincidencias parciales e insensibles a mayúsculas.
 - Los nuevos títulos guardan `cast`/`director`/`creators`; los antiguos los obtienen al abrir la ficha una vez (revalidación bajo demanda). No se requiere migración masiva.
 - Sin regresiones de responsividad ni de contraste en los 4 temas: los cambios tocan solo lógica de filtrado y textos de placeholder/hint.
-- La PWA invalida cachés anteriores al subir la versión.
+- La PWA invalida cachés anteriores al subir la versión (20261019 tras el fix de `itemApi`).
 
 Related issue: #328
