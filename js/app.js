@@ -72,6 +72,7 @@ import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
 import { setupGym, subscribeGymData, resetGymData } from "./gym.js";
+import { runActorBackfill } from "./actor-backfill.js";
 
 // ---------- Estado ----------
 
@@ -186,6 +187,15 @@ const GRID_IDS = {
 // navega a la página de ítem (issue #285) y el router se crea dentro
 // de init(). Se asigna tras initRouter y solo se usa en runtime.
 let routerApi = null;
+// APIs de página/sección creadas en init() pero usadas también desde
+// subscribeGroup/render callbacks a nivel de módulo (issue #328 fix:
+// itemApi estaba declarado solo dentro de init → ReferenceError en
+// onChange de Firestore).
+let profileApi = null;
+let recipesApi = null;
+let gymApi = null;
+let itemApi = null;
+let personApi = null;
 
 function renderLibraryFor(group) {
   const [gridId, emptyId] = GRID_IDS[group];
@@ -621,15 +631,10 @@ async function init() {
   // indicada por la URL (pestaña de Ocio o sección del perfil) sin
   // robar el foco (solo el clic manual lo mueve).
   const profileView = document.getElementById("profile-view");
-  // Declarado antes de crear el router: el onRoute se ejecuta durante
-  // initRouter() con la ruta de la carga inicial, y profileApi todavía
-  // no existe (la sesión tampoco). El guard permite ignorarla: tras el
-  // login, watchAuthState llama a router.applyRoute() para retomarla.
-  let profileApi = null;
-  let recipesApi = null;
-  let gymApi = null;
-  let itemApi = null;
-  let personApi = null;
+  // Declarado a nivel de módulo (arriba) para que subscribeGroup
+  // y otros callbacks lo vean. Aquí solo se resetea si hace falta;
+  // onRoute se ejecuta durante initRouter() y el guard permite
+  // ignorar la ruta si aún no hay APIs.
   const router = initRouter({
     onRoute: (route) => {
       // Búsqueda superior acotada a la sección (issue #206): el
@@ -957,11 +962,31 @@ async function init() {
     const panelId = activePanelId && panels[activePanelId] ? activePanelId : (getFirstVisibleTabPanel("ocio") || "panel-tv");
     loadOcioPartial(panels[panelId]);
     ensureGroupSubscribed(PANEL_TO_GROUP[panelId] || "tv");
+    // Issue #328 (iteración 2026-08-26): la búsqueda en Ocio debe ser
+    // global en todo momento, también sobre pestañas aún no visitadas
+    // (lazy, #178). Para que filterItems vea las 4 colecciones desde el
+    // primer momento, se suscriben en segundo plano los grupos restantes
+    // (best-effort, sin bloquear la UI). La lectura puntual de
+    // getGroupItemsResolved en global-search.js cubre la ventana hasta
+    // que llegan los snapshots, pero la suscripción garantiza la
+    // reactividad posterior.
+    for (const g of ["movies", "tv", "books", "games"]) {
+      if (g !== (PANEL_TO_GROUP[panelId] || "tv")) ensureGroupSubscribed(g);
+    }
 
     // Comprobación diaria: una vez por sesión. Ya no espera a que
     // lleguen las suscripciones de los cuatro grupos (daily-check
     // lee de Firestore bajo demanda con getItemsOnce).
     maybeTriggerDailyCheck();
+
+    // Backfill de reparto para búsqueda por actores (issue #328,
+    // iteración 3): las colecciones antiguas perdieron `cast` con la
+    // poda #200 y solo lo recuperaban al abrir la ficha; este backfill
+    // en segundo plano lo hace sin interacción, best-effort. Fire-and-
+    // forget con catch defensivo: un fallo no debe romper el flujo.
+    runActorBackfill(createCtx()).catch((err) => {
+      console.error("No se pudo completar el backfill de actores:", err);
+    });
 
     // Notificaciones: mismo reintento, pero en silencio (como su onError
     // actual, que no molestaba). El badge se rellena cuando el reintento

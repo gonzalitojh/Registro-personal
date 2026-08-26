@@ -139,26 +139,57 @@ function currentSection() {
   }
 }
 
+// Helper para extraer nombres del reparto: `item.cast` se persiste como
+// array de objetos { name } (api-movies.js, issue #294) tras el fix de
+// #328, pero fichas antiguas pueden tener strings; se soportan ambos.
+function castNamesText(cast) {
+  if (!Array.isArray(cast) || !cast.length) return "";
+  return cast
+    .map((c) => (typeof c === "string" ? c : (c && c.name) || ""))
+    .filter(Boolean)
+    .join(" ");
+}
+
+// Normaliza para búsqueda insensible a mayúsculas y acentos (issue
+// #328 iteración 3: "García" ↔ "garcia"): NFD + strip diacríticos.
+function normalizeForSearch(str) {
+  return String(str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function getSearchableText(item) {
-  // Para libros, también buscar por autor
-  const author = item.author || "";
-  return `${item.title} ${author}`.toLowerCase();
+  // Issue #328: además de título/autor, buscar por reparto/director/creadores
+  const parts = [item.title || "", item.author || ""];
+  const cn = castNamesText(item.cast);
+  if (cn) parts.push(cn);
+  if (item.director) parts.push(item.director);
+  if (Array.isArray(item.creators) && item.creators.length) parts.push(item.creators.join(" "));
+  return normalizeForSearch(parts.join(" "));
 }
 
 function relevanceScore(item, query) {
-  const title = (item.title || "").toLowerCase();
-  const author = (item.author || "").toLowerCase();
-  const q = query.toLowerCase();
+  const title = normalizeForSearch(item.title || "");
+  const author = normalizeForSearch(item.author || "");
+  const q = normalizeForSearch(query);
+  // Reparto/director/creadores para la búsqueda por actores (issue #328)
+  const castText = normalizeForSearch(castNamesText(item.cast));
+  const directorText = normalizeForSearch(item.director || "");
+  const creatorsText = Array.isArray(item.creators) ? normalizeForSearch(item.creators.join(" ")) : "";
 
   if (title === q) return 100;
   if (title.startsWith(q)) return 50;
   if (title.includes(q)) return 10;
   if (author.includes(q)) return 5;
+  if (castText.includes(q)) return 5;
+  if (directorText.includes(q)) return 4;
+  if (creatorsText.includes(q)) return 4;
   return 0;
 }
 
 function filterItems(items, query) {
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query.trim());
   return items
     .filter((item) => {
       const text = getSearchableText(item);
@@ -170,25 +201,85 @@ function filterItems(items, query) {
 }
 
 function filterFriends(profiles, query) {
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query.trim());
   return profiles.filter((p) => {
-    const name = (p.displayName || p.name || "").toLowerCase();
-    const email = (p.email || "").toLowerCase();
+    const name = normalizeForSearch(p.displayName || p.name || "");
+    const email = normalizeForSearch(p.email || "");
     return name.includes(q) || email.includes(q);
   });
 }
 
-// Resultados de la sección activa (issue #206):
-// - ocio    → colección (películas/series/libros/videojuegos del
-//             usuario), sin amigos: el buscador ya no es global.
+// Resultados de la sección activa (issues #206 y #328):
+// - ocio    → colección COMPLETA (películas + series + libros +
+//             videojuegos del usuario) en TODO momento, sin acotar a la
+//             pestaña activa (#328: si estoy en series y busco
+//             "El señor de los anillos" deben salir también películas,
+//             libros y juegos). El buscador ya no es global entre
+//             secciones (perfil/recetas mantienen su scope) pero sí lo
+//             es DENTRO de Ocio.
 // - perfil  → solo amigos.
 // - recetas → solo recetas (filtro local, searchRecipes de recipes.js).
 // - gimnasio → sin resultados aún (issue #62, v1: sin scope de
 //             búsqueda propia; devolver vacío evita caer a la rama
 //             de Ocio y mezclar colecciones ajenas).
-// Síncrono: lo usan performSearch, runExternalSearch y
-// refreshExternalResults.
-function collectionResults(trimmed) {
+// Síncrono para amigos/recetas/gimnasio; para Ocio es asíncrono porque
+// resuelve los grupos lazy (issue #328 + #178) vía getGroupItemsResolved
+// — si el grupo aún no tiene snapshot (pestaña no visitada), se lee
+// puntualmente de Firestore para que la búsqueda sea global desde el
+// primer momento. Lo usan performSearch, runExternalSearch y
+// refreshExternalResults (todos con await).
+async function collectionResults(trimmed) {
+  if (!searchCtx) {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  const section = currentSection();
+  if (section === "perfil") {
+    return { friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 6) };
+  }
+  if (section === "recetas") {
+    return { recipes: searchRecipes(trimmed).slice(0, 6) };
+  }
+  if (section === "gimnasio") {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  // Ocio: resolver las 4 colecciones con getGroupItemsResolved si existe
+  // (fallback a getAllItems si no, o si la lectura puntual falla).
+  let movies = [], tv = [], books = [], games = [];
+  if (searchCtx.getGroupItemsResolved) {
+    try {
+      [movies, tv, books, games] = await Promise.all([
+        searchCtx.getGroupItemsResolved("movies"),
+        searchCtx.getGroupItemsResolved("tv"),
+        searchCtx.getGroupItemsResolved("books"),
+        searchCtx.getGroupItemsResolved("games"),
+      ]);
+    } catch {
+      const all = searchCtx.getAllItems();
+      movies = all.movies || [];
+      tv = all.tv || [];
+      books = all.books || [];
+      games = all.games || [];
+    }
+  } else {
+    const all = searchCtx.getAllItems();
+    movies = all.movies || [];
+    tv = all.tv || [];
+    books = all.books || [];
+    games = all.games || [];
+  }
+  return {
+    movies: filterItems(movies, trimmed).slice(0, 5),
+    tv: filterItems(tv, trimmed).slice(0, 5),
+    books: filterItems(books, trimmed).slice(0, 5),
+    games: filterItems(games, trimmed).slice(0, 5),
+  };
+}
+
+// Compat: algunos llamadores síncronos internos (refreshExternalResults
+// antes del fix) usaban la versión síncrona; se mantiene como fallback
+// rápido usando getAllItems (sin resolver lazy) para no romper si se
+// llama sin await durante la hidratación inicial.
+function collectionResultsSync(trimmed) {
   if (!searchCtx) {
     return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
   }
@@ -239,7 +330,7 @@ function renderTypeButtons() {
   </div>`;
 }
 
-// Texto del hint según la sección activa (issue #206).
+// Texto del hint según la sección activa (issues #206 y #328).
 function sectionHintText() {
   if (currentSection() === "perfil") {
     return "Escribe al menos 2 caracteres para buscar en tus amigos.";
@@ -250,7 +341,7 @@ function sectionHintText() {
   if (currentSection() === "gimnasio") {
     return "Escribe al menos 2 caracteres para buscar en tu gimnasio.";
   }
-  return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros y videojuegos.";
+  return "Escribe al menos 2 caracteres para buscar en tus películas, series, libros, videojuegos y actores.";
 }
 
 function hintHtml() {
@@ -575,7 +666,7 @@ function externalSectionLoadingHtml(g) {
 
 // ---- Botones de tipo (búsqueda en el catálogo) ----
 
-function handleTypeClick(group) {
+async function handleTypeClick(group) {
   activeGroup = group;
   const query = input.value.trim();
   if (query.length < 2) {
@@ -592,7 +683,7 @@ function handleTypeClick(group) {
   // contrario se busca.
   const cache = externalCache[group];
   if (cache && cache.query === query && !inFlight[group]) {
-    renderResults(collectionResults(query), query);
+    renderResults(await collectionResults(query), query);
     return;
   }
   runExternalSearch(group, query);
@@ -607,7 +698,7 @@ async function runExternalSearch(group, query) {
   externalQuery[group] = query;
   externalError[group] = null;
 
-  renderResults(collectionResults(query), query);
+  renderResults(await collectionResults(query), query);
 
   let result;
   try {
@@ -619,7 +710,7 @@ async function runExternalSearch(group, query) {
     }
     inFlight[group] = false;
     externalError[group] = { query, message: err.message };
-    renderResults(collectionResults(input.value.trim()), input.value.trim());
+    renderResults(await collectionResults(input.value.trim()), input.value.trim());
     return;
   }
 
@@ -633,18 +724,20 @@ async function runExternalSearch(group, query) {
     items: (result.items || []).slice(0, 5),
     source: result.source || null,
   };
-  renderResults(collectionResults(input.value.trim()), input.value.trim());
+  renderResults(await collectionResults(input.value.trim()), input.value.trim());
 }
 
 // Re-renderiza las secciones externas desde la caché con el estado
 // actual de la colección (lo llama app.js tras cada snapshot de
 // Firestore para actualizar los botones «Añadir»/«Añadido»).
-export function refreshExternalResults(ctx) {
+// Es async por el fix #328 (collectionResults resuelve lazy), pero se
+// mantiene compatible: los llamadores no necesitan await (fire-and-forget).
+export async function refreshExternalResults(ctx) {
   if (!isOpen) return;
   const query = input.value.trim();
   if (query.length < 2) return;
   if (ctx) searchCtx = ctx;
-  renderResults(collectionResults(query), query);
+  renderResults(await collectionResults(query), query);
 }
 
 // ---- Navegación ----
@@ -1065,5 +1158,5 @@ async function performSearch(ctx) {
     }
   }
 
-  renderResults(collectionResults(trimmed), trimmed);
+  renderResults(await collectionResults(trimmed), trimmed);
 }

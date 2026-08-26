@@ -93,7 +93,7 @@ Nada más entrar verás:
     en la que estés** (más en [sección 10](#10-cómo-buscar)). Al entrar,
     la barra muestra brevemente el nombre de la web —**«Mi Registro»**—
     y a los pocos segundos pasa al texto de la sección: «Buscar
-    películas, series, libros y videojuegos...» en Ocio, «Buscar
+    películas, series, libros, videojuegos y actores...» en Ocio, «Buscar
     recetas...» en Recetas y «Buscar en tu gimnasio...» en Gimnasio.
   - A la derecha:
     - **Icono de campana**: tus notificaciones (más en [sección 15](#15-notificaciones)).
@@ -1053,12 +1053,17 @@ el resultado sigue funcionando igual.
 ### 10.2 Buscar en tu registro
 
 La **barra de búsqueda de la cabecera** (o las teclas **Ctrl+K**,
-**Cmd+K** en Mac, o **/**) busca **solo dentro de la sección en la que
+**Cmd+K** en Mac, o **/**) busca **dentro de la sección en la que
 estás** (está disponible en **Ocio**, en **Recetas** y en **Gimnasio**;
 en tu perfil no hay barra de búsqueda):
 
 - En **Ocio**: en lo que ya tienes anotado — **películas, series,
-  libros** (también por autor) y **videojuegos**.
+  libros** (también por autor), **videojuegos** y **actores** (reparto,
+  director o creadores). La búsqueda en Ocio es **global dentro de
+  Ocio**: da igual en qué pestaña estés (series, películas, libros o
+  videojuegos); si buscas «El señor de los anillos» verás a la vez
+  las series, películas, libros y juegos que coincidan, y si buscas
+  «Tom Hanks» verás todas las películas y series donde aparezca.
 - En **Recetas**: en tus **recetas** (por nombre, ingrediente o
   etiqueta). Al pulsar un resultado se abre la receta en modo lectura.
 - En **Gimnasio**: **de momento la búsqueda no encuentra nada**: la

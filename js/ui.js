@@ -101,26 +101,27 @@ export const PLACEHOLDER_COVER =
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
   );
 
-// Placeholder de la barra de búsqueda global (issue #46): al entrar
-// se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
-// defecto. El timer se limpia al cerrar sesión. El placeholder por
+// Placeholder de la barra de búsqueda global (issues #46 y #328):
+// al entrar se muestra "Mi Registro" y a los 3.5 s pasa al placeholder
+// por defecto. El timer se limpia al cerrar sesión. El placeholder por
 // defecto ya no menciona a los amigos: la búsqueda se acota a la
 // sección (issue #206) y solo se restaura en la pantalla de acceso.
-export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros y videojuegos...";
+// Issue #328: en Ocio se puede buscar también por actores.
+export const DEFAULT_SEARCH_PLACEHOLDER = "Buscar películas, series, libros, videojuegos y actores...";
 const SEARCH_BRAND_PLACEHOLDER = "Mi Registro";
 const SEARCH_PLACEHOLDER_SWITCH_MS = 3500;
 let searchPlaceholderTimer = null;
 
-// Placeholder y aria-label según la sección activa (issue #206): la
-// búsqueda superior se acota a la sección (Ocio / Perfil / Recetas).
+// Placeholder y aria-label según la sección activa (issues #206 y #328):
+// la búsqueda superior se acota a la sección (Ocio / Perfil / Recetas).
 const SEARCH_PLACEHOLDER_BY_SECTION = {
-  ocio: "Buscar películas, series, libros y videojuegos...",
+  ocio: "Buscar películas, series, libros, videojuegos y actores...",
   perfil: "Buscar amigos...",
   recetas: "Buscar recetas...",
   gimnasio: "Buscar en tu gimnasio...",
 };
 const SEARCH_ARIA_BY_SECTION = {
-  ocio: "Buscar en tu registro de ocio",
+  ocio: "Buscar en tu registro de ocio (título, autor o actor)",
   perfil: "Buscar en tus amigos",
   recetas: "Buscar en tus recetas",
   gimnasio: "Buscar en tu registro de gimnasio",

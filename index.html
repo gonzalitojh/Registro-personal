@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20261015" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20261015" />
+  <link rel="stylesheet" href="css/styles.css?v=20261021" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20261021" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -118,17 +118,19 @@
       </button>
 
       <!-- Búsqueda global: input en la cabecera + dropdown de resultados
-           anclado bajo la barra (js/global-search.js). Busca SOLO dentro
+           anclado bajo la barra (js/global-search.js). Busca dentro
            de la sección activa (issue #206): Ocio (colecciones y
-           catálogo), Perfil (amigos) o Recetas (recetas). -->
+           catálogo — en Ocio busca en TODAS las colecciones a la vez,
+           issue #328 —, incluyendo por actores), Perfil (amigos) o
+           Recetas (recetas). -->
       <div class="search-bar-wrap">
         <input
           id="global-search-input"
           type="search"
           class="global-search__input"
-          placeholder="Buscar películas, series, libros, videojuegos o amigos..."
+          placeholder="Buscar películas, series, libros, videojuegos y actores..."
           autocomplete="off"
-          aria-label="Buscar en tu registro de ocio"
+          aria-label="Buscar en tu registro de ocio (título, autor o actor)"
         />
         <button type="button" class="global-search__clear" id="global-search-clear"
                 aria-label="Limpiar y cerrar la búsqueda" hidden>✕</button>
@@ -937,7 +939,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20261015"></script>
+  <script type="module" src="js/app.js?v=20261021"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();
