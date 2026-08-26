@@ -87,13 +87,15 @@ document.getElementById("rating-modal-backdrop").addEventListener("click", () =>
  * @param {number|null} opts.communityRating - Nota de la comunidad (o null → "Sin puntuaciones")
  * @param {string} opts.communityLabel  - "TMDB" o "TMDB · episodio"
  * @param {number|null} opts.initialRating - Valoración previa del usuario (1-5, con medias)
- * @param {Function} opts.onSave        - async (rating) => {}, persiste la valoración
+ * @param {string} [opts.initialNotes]     - Notas previas del usuario (solo si el ítem tiene
+ *                                           notas; sin este parámetro no se muestra el campo)
+ * @param {Function} opts.onSave        - async (rating, notes) => {}, persiste la valoración
  * @param {Function} [opts.onUndo]      - async () => {}, anula el marcado recién hecho
  * @param {string} [opts.undoLabel]     - Texto del botón «Deshacer» (por defecto "Deshacer")
  * @returns {Promise<number|string|null>} Rating 1-5 guardado (pasos de 0.5), RATING_MODAL_UNDONE si se
  *          deshizo el marcado, o null si se descartó.
  */
-export function openRatingModal({ type, title, coverUrl, episodeLabel, communityRating, communityLabel, initialRating, onSave, onUndo, undoLabel = "Deshacer" }) {
+export function openRatingModal({ type, title, coverUrl, episodeLabel, communityRating, communityLabel, initialRating, initialNotes, onSave, onUndo, undoLabel = "Deshacer" }) {
   return new Promise((resolve) => {
     const modal = document.getElementById("rating-modal");
     const content = document.getElementById("rating-modal-content");
@@ -121,6 +123,17 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
       <div class="rating-modal__stars">
         ${ratingPickerHtml(initialRating || 0, "rm-rating")}
       </div>
+      ${
+        // Notas del ítem (issue #300): el campo vive en la ventana de
+        // valoración porque la ficha ya no tiene sección de notas. Sin
+        // initialNotes (p. ej. valoración de episodio) no se muestra.
+        initialNotes !== undefined && initialNotes !== null
+          ? `<div class="field-group rating-modal__notes">
+              <label for="rm-notes">Notas</label>
+              <textarea id="rm-notes" placeholder="Impresiones...">${escapeHtml(initialNotes)}</textarea>
+            </div>`
+          : ""
+      }
       <div class="rating-modal__actions">
         ${onUndo ? `<button type="button" class="btn btn--outline" id="rm-undo">${escapeHtml(undoLabel)}</button>` : ""}
         <button type="button" class="btn btn--outline" id="rm-save-later">Ahora no</button>
@@ -171,7 +184,11 @@ export function openRatingModal({ type, title, coverUrl, episodeLabel, community
       const saveBtn = content.querySelector("#rm-save");
       saveBtn.disabled = true;
       try {
-        await onSave(rating);
+        // Notas (issue #300): solo viajan si el campo existe (undefined
+        // si no: el caller no persiste nada de notas).
+        const notesEl = content.querySelector("#rm-notes");
+        const notes = notesEl ? notesEl.value.trim() : undefined;
+        await onSave(rating, notes);
         close(rating);
       } catch (err) {
         // Robustez frente a errores que no son instancia de Error

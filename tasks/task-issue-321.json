@@ -1,0 +1,45 @@
+{
+  "title": "Ventanas de actores y otras personas (issue #321)",
+  "description": "Las personas que se muestran en los carruseles de Producción y Reparto de la ficha de películas/series deben poderse pulsar para obtener más información. Al pulsarlas se abre una ventana nueva (con nuevo endpoint) de características similares a las de películas y series (ADR-100): se mantiene la barra de navegación superior con botón atrás para volver a la ventana anterior, la barra de búsqueda y el perfil. En la ventana nueva se incluye la foto de la persona, su nombre y una biografía, además de las películas/series en las que ha trabajado o trabajará, sus premios nominados y obtenidos, y cualquier otra información relevante.",
+  "status": "review",
+  "acceptance criteria": [
+    "Cada persona (tarjeta .cast-card) de los carruseles de Producción y Reparto de la ficha de películas y series es pulsable y abre la página de la persona.",
+    "La página de la persona es una ventana nueva con URL propia (#/ocio/personas/<id>), con la barra de navegación superior visible (búsqueda y perfil) y botón atrás que vuelve a la pantalla anterior.",
+    "La página muestra la foto de la persona, su nombre y su biografía.",
+    "La página muestra las películas/series en las que ha trabajado o trabajará (créditos combinados de TMDB), separando actuación de equipo técnico, con su año y personaje/puesto.",
+    "La página muestra los premios obtenidos y nominaciones de la persona (Wikidata P166/P1411), con la misma presentación que los premios de las fichas de títulos.",
+    "Otra información relevante: fecha de nacimiento/fallecimiento, lugar de nacimiento y área conocida (known_for_department).",
+    "Las tarjetas de la ventana «Ver en más detalle» (cast-modal) también son pulsables y abren la página de la persona.",
+    "Nuevo endpoint: TMDB /person/{id} con append_to_response=combined_credits,external_ids, con caché en memoria de 24 h como el resto de detalles.",
+    "Responsividad (regla 2 de AGENTS.md): sin scroll horizontal a nivel de página en 360/768/1280 px; ningún texto se sale de su contenedor.",
+    "Los cuatro modos de tema (regla 4 de AGENTS.md): contraste AA en oscuro, negro puro, claro y blanco puro.",
+    "El manual de usuario se actualiza describiendo la nueva ventana de personas (regla 3 de AGENTS.md).",
+    "Versión PWA bumpada y js/person-page.js añadido a STATIC_ASSETS del service worker."
+  ],
+  "definition of done": [
+    "Planificación realizada (plan detallado).",
+    "Implementación completa (micro-commits incrementales).",
+    "Validación QA contra criterios de aceptación y definition of done (PASS).",
+    "Escaneo de seguridad sin hallazgos HIGH (PASS).",
+    "ADR documentado con 'Related issue: #321'.",
+    "Manual de usuario actualizado.",
+    "PR creada contra la rama feat/issue-201 (base indicada en la issue) SIN keyword de cierre; la issue se cierra al fusionar en la rama.",
+    "Task file actualizado (status review + bloque pr) y subido al repositorio.",
+    "Issue #321 label actualizada a su estado final (status: needs-review tras la PR)."
+  ],
+  "issue": {
+    "number": 321,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/321",
+    "title": "Ventanas de actores y otras personas"
+  },
+  "pr": {
+    "number": 323,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/323",
+    "base": "feat/issue-201",
+    "head": "feature/issue-321-ventanas-actores-personas"
+  },
+  "validation": {
+    "qa": "PASS (12/12 AC, revalidado 2026-08-24 con fixes D1,M-01,M-02,L-01,D2)",
+    "security": "PASS (0 HIGH, MEDIUM corregidos)"
+  }
+}

@@ -34,9 +34,9 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/styles.css?v=20261001',
-  './css/ocio.css?v=20261001',
-  './js/app.js?v=20261001',
+  './css/styles.css?v=20261015',
+  './css/ocio.css?v=20261015',
+  './js/app.js?v=20261015',
   './js/router.js',
   './js/ui.js',
   './js/db.js',
@@ -70,12 +70,17 @@ const STATIC_ASSETS = [
   './js/export-backup.js',
   './js/export-ics.js',
   './js/episode-actions-modal.js',
+  './js/cast-modal.js',
   './js/focus-utils.js',
   './js/global-search.js',
   './js/settings.js',
   './js/sidebar.js',
   './js/auto-hide-nav.js',
   './js/push.js',
+  // Página de detalle de ítem (issue #285)
+  './js/item-page.js',
+  // Página de detalle de persona (issue #321)
+  './js/person-page.js',
   // Sección de recetas (issue #64)
   './js/recipes-data.js',
   './js/recipes.js',
@@ -84,10 +89,10 @@ const STATIC_ASSETS = [
   // Sección de gimnasio (issue #62)
   './js/gym.js',
   './resources/icon.png',
-  './ocio/series.html?v=20261001',
-  './ocio/peliculas.html?v=20261001',
-  './ocio/libros.html?v=20261001',
-  './ocio/videojuegos.html?v=20261001',
+  './ocio/series.html?v=20261015',
+  './ocio/peliculas.html?v=20261015',
+  './ocio/libros.html?v=20261015',
+  './ocio/videojuegos.html?v=20261015',
 ];
 
 // -------------------------------------------------------------

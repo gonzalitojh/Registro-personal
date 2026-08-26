@@ -245,14 +245,19 @@ pierde nada.
    resultados para buscar en el catálogo.
 3. En los resultados, pulsa **«Añadir»** en la serie que quieras.
 4. Si quieres ver antes más información, pulsa sobre la fila del
-   resultado: se abrirá una vista previa con los detalles.
+   resultado: se abrirá la **página de la serie** con sus detalles y el
+   botón **«Añadir»** (el botón **←** de arriba te devuelve a la
+   búsqueda). En libros y videojuegos se abre la vista previa en su
+   ventana, como siempre.
 
 ¿No encuentras la serie? Al final de los resultados de catálogo
 aparece **«Añadir manualmente»** (más en [sección 10.3](#103-añadir-manualmente)).
 
 ### 4.3 Ver y marcar episodios
 
-Pulsa sobre la serie de tu lista para abrir su ficha. Verás las
+Pulsa sobre la serie de tu lista para abrir su ficha: se abre en una
+**página nueva**; usa el botón **←** de arriba para volver a la lista.
+Verás las
 **temporadas**; pulsa en una para desplegar sus **episodios**.
 
 Para cada episodio puedes:
@@ -263,25 +268,66 @@ Para cada episodio puedes:
   **«Deshacer»** y el episodio vuelve a estar sin marcar.
 - **Volver a ver un episodio**: si el episodio ya está marcado como visto
   y pulsas su casilla, la web te preguntará si **lo has visto de nuevo** o
-  si quieres **desmarcarlo**. Si eliges «Lo he visto de nuevo», la fecha de
-  última visualización pasa a hoy y el contador del episodio suma uno.
+  si quieres **quitarle la última visualización**. Si eliges «Lo he visto
+  de nuevo», la web guarda el nuevo visionado (la fecha de hoy, y el
+  contador del episodio suma uno) y te abre la ventana de valoración con
+  **la valoración que le diste la vez anterior ya puesta**: puedes
+  dejarla igual o cambiarla. Si pulsas **«Deshacer»**, el visionado recién
+  añadido se quita y el episodio queda como estaba.
   Cuando un episodio se ha visto más de una vez, su casilla muestra el
   **número de veces** en lugar de la marca ✓.
-- **Cambiar la fecha** en la que lo viste (por defecto se pone el día de hoy).
-- **Valorarlo** con estrellas, una vez visto (más en [sección 13](#13-valoraciones-con-estrellas)).
+  La opción de descontar se llama **«Quitar última visualización»** cuando
+  el episodio se ha visto varias veces (quita solo la visión más reciente:
+  el episodio sigue marcado y el contador baja una vez) y **«Desmarcar»**
+  cuando solo se ha visto una vez (el episodio queda sin marcar).
+- **Ver las fechas de tus visionados**: bajo cada episodio con
+  visualizaciones hay un botón **«Visionados anteriores (nº de veces)»**,
+  con la misma flecha que los apartados desplegables de la serie; al
+  pulsarlo se despliegan las fechas de todas las veces que lo has visto
+  (ocultas por defecto, tanto si es una como si son varias). Si alguna
+  visualización antigua no tiene fecha registrada, aparece una línea que
+  indica cuántas visiones quedan sin fecha, para que el número concuerde
+  con el contador del episodio.
+- **Valorarlo** con estrellas, una vez visto (más en
+  [sección 13](#13-valoraciones-con-estrellas)). Si ya lo habías valorado
+  en un visionado anterior, la valoración aparece puesta aunque el
+  episodio no esté marcado (por ejemplo, durante un rewatch).
 - Ver la **puntuación de la comunidad** (TMDB) de ese episodio, si tiene.
 
 También hay dos botones por temporada: **«Marcar todo»** y
-**«Desmarcar todo»**. Si hay episodios aún sin estrenar, la web te pedirá
-confirmación antes de marcarlos todos.
+**«Desmarcar todo»**, que actúan sobre cada episodio como si lo pulsaras
+individualmente. «Marcar todo» **añade una visualización a cada
+episodio**: los que ya habías visto suman una vez más a su contador (con
+la fecha de hoy) y los que aún no estaban vistos quedan marcados por
+primera vez. «Desmarcar todo» **quita la última visualización de cada
+episodio**: los vistos una sola vez se desmarcan, pero los vistos varias
+veces siguen marcados, con el contador reducido en una; si todos los
+episodios de la temporada tienen más de una visualización, tendrás que
+pulsar «Desmarcar todo» varias veces para desmarcarlos del todo. Si hay
+episodios aún sin estrenar, la web te pedirá confirmación antes de
+marcarlos todos.
+
+«Marcar todo» es ahora una **casilla con un círculo**, igual que las de
+los episodios: está marcada cuando la temporada está completa y, si la
+temporada se ha completado más de una vez, el círculo muestra el
+**número de veces** en lugar de la ✓ (igual que los episodios). Encima
+de cada temporada verás también cuántos episodios llevas vistos
+(`1/10`, etc.).
 
 La serie se considera **«Vista»** cuando marcas el último episodio que
 falta. En tu lista verás siempre qué toca ver ahora (por ejemplo,
-«Siguiente: T2E5»).
+«Siguiente: T2E5»). Si estás **volviendo a verla** (sección 4.5), el
+contador «Siguiente» y los de cada temporada muestran el **progreso del
+visionado actual**, no el de las veces anteriores: al empezar a volver
+a verla verás `0/10` (o `1/10` recién visto el primero), aunque la
+serie entera esté marcada de antes; el estado de la serie es
+**«viendo»** mientras dura el ciclo.
 
 ### 4.4 Pausar, abandonar y retomar
 
-Dentro de la ficha de la serie tienes tres botones según el momento:
+Estas acciones viven en el **botón flotante** de la ficha de la serie
+(más en la [sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)),
+dependiendo del momento:
 
 - **«En pausa»**: detienes el seguimiento sin perder lo visto.
 - **«Abandonar»**: dejas la serie (la web te pregunta antes; no se pierde
@@ -291,19 +337,74 @@ Dentro de la ficha de la serie tienes tres botones según el momento:
 ### 4.5 Volver a ver una serie desde el principio
 
 Si una serie está completa, la ficha ofrece **«Volver a verla desde el
-principio»**. La web guarda el visionado anterior en tu historial y
-reinicia la serie para que empieces de nuevo. Verás el aviso
-«Has terminado esta serie (visionado nº X)» cuando la vuelvas a completar.
+principio»**. Al pulsarlo la serie **se reinicia**: el siguiente episodio
+vuelve a ser el **T1E1** y la serie pasa a **«viendo»**, avanzando a
+medida que marcas episodios como si no la hubieras visto antes. **No se
+pierden los números de visualizaciones ni las valoraciones**: los
+episodios siguen mostrando cuántas veces los has visto en total (por
+ejemplo, si la habías visto completa 3 veces, cada episodio parte de 3
+visualizaciones y hasta que no tenga la 4.ª no se considera visto en esta
+revisualización). Los contadores de cada temporada también se ponen a
+cero (`0/10`) e irán subiendo hasta que todos sus episodios tengan la
+visualización nueva (`10/10`), momento en el que la temporada se marca
+como vista esa vez más.
+
+Cuando vuelves a ver un episodio (con su casilla, eligiendo «Lo he visto
+de nuevo»), suma una vez más a su contador, añade la fecha al listado de
+**«Visionados anteriores»** del episodio y abre la ventana de valoración
+con **la valoración anterior ya puesta** (puedes dejarla o cambiarla). La
+visualización se da por terminada cuando has vuelto a ver
+**todos los episodios** de la serie: las visualizaciones antiguas (las
+de antes de empezar a volver a verla) no cuentan para terminarla. Verás
+el aviso «Has terminado esta serie (visionado nº X)» cuando la completes
+y ese visionado quedará archivado en «Visionados anteriores» con sus
+fechas de inicio y fin (en la [sección 4.6](#46-historial-de-visionados)
+se explica cómo verlas). Aunque terminaras la serie y la reinicies el
+mismo día, los contadores vuelven a cero y la serie **no se da por
+terminada al marcar el primer episodio**: solo se completará cuando
+todos los episodios tengan su visualización nueva de este ciclo.
+
+Durante el rewatch, **los contadores son del visionado actual**: el
+progreso de la barra, el «Siguiente», el número de episodios de cada
+temporada y qué episodios aparecen marcados en cada temporada reflejan
+solo este ciclo (un episodio que viste en la vez anterior pero aún no
+en esta aparece sin marcar; al marcarlo cuenta como «Lo he visto de
+nuevo» y suma a su contador total). Aunque un episodio no esté marcado,
+si tiene valoración o visualizaciones previas estas **siguen
+mostrándose** (las estrellas con la valoración que le diste y el botón
+«Visionados anteriores» con su contador); solo se ocultan cuando el
+episodio no se ha visto nunca. El nº de veces de cada episodio y
+los **«Visionados anteriores»** (con el botón «N visiones completas más
+sin fecha registrada» cuando el contador es de antes de guardar fechas)
+siguen mostrando el total histórico. En tu lista, la serie en rewatch
+muestra el contador «Completa · ×N» con el número de veces REAL según
+los episodios (por ejemplo «Completa · ×2» si todos los episodios se
+han visto dos veces).
 
 ### 4.6 Historial de visionados
 
 En la ficha de una serie terminada puedes desplegar **«Visionados
-anteriores»** y ver las fechas de inicio y fin de cada vez que la has visto.
+anteriores»** (oculto por defecto) y ver las fechas de inicio y fin de
+cada vez que la has visto. Cada visionado se archiva **cuando la serie
+se termina** (no al pulsar «Volver a verla desde el principio»): si la
+terminas 3 veces, verás 3 entradas con sus fechas (y así sucesivamente
+en cada revisualización completada). El número de visionados del
+desplegable es el **mismo que el de los episodios**: si la serie se ha
+visto completa más veces de las que tienen fecha registrada (datos
+antiguos), se indica la diferencia con una línea «N visiones completas
+más sin fecha registrada». La ficha de una serie con episodios se
+considera completa según los episodios: el contador «Completa · ×N» de
+la lista muestra el número real de veces según los episodios, aunque se
+marcara la serie completa varias veces por error en el pasado.
 
-### 4.7 Editar y eliminar
+### 4.7 Eliminar una serie
 
-En la ficha: **«✎ Editar información»** te permite corregir datos (título,
-año, portada...), y **«Eliminar»** borra la serie. El borrado no es
+El botón flotante de la ficha ofrece **«Quitar de añadidos»** (o
+**«Quitar última visualización»** si la serie ya está completada, que
+desmarca su último episodio visto; si ese episodio se había visto
+varias veces, solo le quita la visión más reciente y sigue marcado).
+«Quitar de añadidos» borra la serie.
+El borrado no es
 inmediato: tienes unos segundos para pulsar **«Deshacer»** si te
 arrepientes (más en [sección 14.3](#143-deshacer-un-borrado)).
 
@@ -344,8 +445,11 @@ Si ya la habías visto y vuelves a marcarla, el botón se convierte en
 
 ### 5.4 Historial de visionados (revisionados)
 
-En la ficha de la película ves la lista de todas las veces que la has
-visto, con sus fechas. Puedes **editar la fecha** de cada visionado o
+La ficha de la película se abre en una **página nueva**; usa el botón
+**←** de arriba para volver a tu lista. Los visionados están **ocultos
+por defecto**: despliega **«Visionados (N)»** y verás la lista de todas
+las veces que la has visto, con sus fechas. Puedes
+**editar la fecha** de cada visionado o
 **«Quitar»** uno del historial. En tu lista, si la has visto más de una vez,
 aparece «Vista el FECHA · ×2» (o el número que corresponda).
 
@@ -909,7 +1013,23 @@ igual). Para cada resultado:
   aún no está estrenada, o la serie tiene temporadas sin estrenar, la
   web te lo pregunta antes de continuar.
 - Pulsa sobre la fila (no sobre el botón) para ver la **vista previa**
-  con sus detalles antes de añadirlo.
+  con sus detalles antes de añadirlo. En **películas y series** esa
+  vista previa se abre en una **página nueva** (el botón **←** de arriba
+  te devuelve a la búsqueda) y es **igual a la ficha**: distintivo de no
+  estrenado si aplica, puntuación de la comunidad, tráiler, dónde verla,
+  premios,
+  producción y reparto, saga (películas) y recomendaciones; en las
+  series, además, el banner de progreso (a 0 %) y las temporadas
+  desplegables en **solo lectura** con la nota de la comunidad de cada
+  episodio (más en la [sección 12](#12-la-ficha-de-cada-película-serie-libro-o-videojuego)).
+  El aviso **«Este título aún no está en tu registro»** está al
+  **final** de la página y, para añadirlo, se usa el **botón flotante**
+  (opción **«Añadir película» / «Añadir serie»**; ver
+  [sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)) —
+  ya no hay botón «Añadir» en la página. En libros y videojuegos
+  la vista previa se sigue abriendo en su ventana. Cuando añadas el
+  título, la página pasa a la ficha con tus acciones personales
+  (visionados, valoración, notas...).
 - Si ya lo tienes en tu registro, el botón aparece como **«Añadido»** y
   no se puede pulsar.
 - Al final de cada sección de catálogo aparece
@@ -950,7 +1070,10 @@ desplegable** bajo ella con los resultados. Los resultados se agrupan
 con iconos: los mismos de las pestañas, cada uno en su color (series en
 verde, películas en rojo, libros en ocre, videojuegos en violeta) y el
 icono 🍽️ para recetas. Pulsa un resultado para abrir su ficha (o la
-receta, según la sección).
+receta, según la sección). Si pulsas una **película o serie**, su ficha
+se abre en una **página nueva** — usa el botón **←** de arriba para
+volver —; los **libros y videojuegos** siguen abriendo su ventana de
+siempre.
 
 El panel se cierra con la tecla **Esc**, pulsando fuera de la barra o con la
 **✕** que aparece dentro de la barra (que además borra lo escrito). También
@@ -1011,64 +1134,291 @@ en rojo con el texto tachado.
 
 ## 12. La ficha de cada película, serie, libro o videojuego
 
-Pulsa cualquier título de tu lista para abrir su ficha. Según el tipo,
-verás:
+Pulsa cualquier título de tu lista para abrir su ficha. En **películas
+y series**, la ficha se abre en una **página nueva** (la web navega a
+la ficha, no abre una ventana): arriba verás un botón **«atrás» (←)**
+en lugar del ☰ para volver a tu lista (la búsqueda y la campana siguen
+en su sitio). También puedes cerrar la ficha con la tecla **Esc** o con
+el botón atrás de tu navegador. En **libros y videojuegos**, en cambio,
+la ficha se sigue abriendo en su ventana (modal), como siempre. Según el
+tipo, verás:
 
-- **Portada, título y año** (en la vista previa de búsqueda se indica el
-  tipo: «Película · año», «Serie · año» o «Videojuego · año»).
+- **En películas y series, la ficha va directamente sobre el fondo de la
+  página** (sin recuadro ni panel): a la izquierda, la **portada en
+  grande**; a la derecha, el **título en grande**; debajo del título,
+  una **línea de texto normal** con la fecha de estreno (o el año) y la
+  duración — en las series, en lugar de la duración se indica el
+  **número de temporadas y episodios** —; debajo, **pequeñas etiquetas**
+  con los géneros; debajo, la **valoración de la comunidad**, **tu
+  valoración** (solo si ya se la has puesto), la **media de tus
+  valoraciones de episodios** (solo en series, con un estilo de chip
+  distinto; más en la [sección 13](#13-valoraciones-con-estrellas)) y el
+  botón **Tráiler ▶**;
+  y debajo de todo, la **sinopsis**.
+- **Portada, título y año**: la cabecera clásica se mantiene en libros y
+  videojuegos (en la vista previa de búsqueda de estos se indica el tipo
+  y el año, p. ej. «Videojuego · año»).
 - **Puntuación de la comunidad**: de TMDB para películas y series (sobre
-  10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones».
+  10) y de IGDB para videojuegos (sobre 10), o «Sin puntuaciones». En
+  películas y series aparece en la cabecera, bajo el título.
 - **Tráiler ▶**: se abre el tráiler en YouTube en una pestaña nueva (si lo
-  tiene; en los videojuegos, solo cuando IGDB dispone de uno).
+  tiene; en los videojuegos, solo cuando IGDB dispone de uno). En
+  películas y series, el botón está en la cabecera, junto a la
+  valoración.
+- **Información ampliada**: en películas y series, dos carruseles
+  deslizables en horizontal: **«Producción»** (director, guionista,
+  compositor...) y **«Reparto»** (los actores y actrices, en el orden
+  del cartel; en las series, TODOS los actores de todas las
+  temporadas y episodios, no solo los principales; si una persona
+  interpreta varios personajes, se muestran juntos, p. ej. «Gregor
+  Clegane, Dongo»). Cada persona tiene su tarjeta con **foto**,
+  **nombre** y su **personaje** (actores) o su **puesto** (producción;
+  en las series, si una persona tiene varios puestos también se
+  muestran juntos, p. ej. «Director, Guionista»). Estos
+  carruseles: **arrastra con el dedo** (móvil o tablet) y el carrusel se
+  desliza con inercia nativa; con el **trackpad** se desliza con un
+  frenado suave y progresivo; con la **rueda del ratón en PC**, cada toque
+  de rueda avanza **una tarjeta (o menos)** y se detiene, para no
+  saltarse medio listado (sin encajarse en las tarjetas). Cada
+  carrusel tiene el botón **«Ver en más detalle»**, que abre una
+  ventana con la **lista completa** de ese carrusel: el reparto con
+  foto, nombre y personaje; la producción **agrupada por áreas de
+  trabajo** (Dirección, Guion, Producción, Sonido, Cámara, Montaje,
+  Arte, Vestuario y maquillaje, Iluminación, Efectos visuales, Efectos
+  especiales, Equipo técnico e Interpretación; en las series, también
+  Creadores), con el puesto de cada persona (si una persona tiene
+  varios puestos en un área, se muestran juntos, p. ej. «Director,
+  Guionista»). En la parte superior de la ventana hay una **lupa**:
+  escribe en el buscador para filtrar por el **nombre** de la persona
+  o por su **personaje** (en el reparto) o su **función** (en la
+producción); con la tecla **Esc** se limpia la búsqueda. La ventana
+   se cierra con la **✕**, con la tecla **Esc**
+   o pulsando fuera de ella. **Cada persona de los carruseles y de la
+   ventana «Ver en más detalle» se puede pulsar** y abre su **página
+   de persona** (una ventana nueva con el mismo patrón que la ficha
+   de una película o serie: se mantiene la barra de navegación
+   superior con la búsqueda y el perfil, y el botón **←** vuelve a la
+   pantalla anterior; también funciona la tecla **Esc** y el botón
+   atrás del navegador). La página de persona va **directa sobre el
+   fondo** (sin recuadro, como las fichas de película/serie). En ella
+   se ve su **foto**, su **nombre**, su **edad** calculada a partir de
+   la fecha de nacimiento (entre paréntesis tras la fecha; si falleció
+   se muestra la edad que tenía al fallecer), su **fecha de nacimiento (y de fallecimiento, si lo hay)**, su **lugar de nacimiento** y su **área conocida** (p. ej. Interpretación, Dirección). Su **biografía** (en español si está disponible) se muestra **recortada a unas pocas líneas**; si es larga, verás un botón **«Leer más»** que abre una ventana con la biografía completa. Debajo aparecen las **películas y series en las que ha trabajado o trabajará**, separadas en **«Actuación»** (con su personaje) y **«Equipo»** (con su puesto), ordenadas de más reciente a más antigua y **en modo carrusel** (deslizable en horizontal, igual que las personas en las fichas de película/serie); cada título se puede pulsar y abre su ficha, y el botón atrás vuelve a la página de la persona. Cada sección tiene un botón **«Ver todo»** que abre una ventana con la lista completa y un **buscador** (filtra al instante por **título, personaje o puesto**; la **Esc** limpia la búsqueda y el botón **✕** o el fondo la cierran). También se incluyen sus **premios y nominaciones**, con el mismo aspecto que los de las fichas de títulos (agrupados por tipo y minimizados; los datos se extraen de Wikidata, así que si no hay premios registrados esa parte no aparece). La fecha de estreno, la duración (o
+  temporadas y episodios en series), los géneros y la sinopsis ya se
+  muestran arriba, en la cabecera. Cada sección de la ficha va
+  separada por una **línea horizontal**. En los videojuegos:
+  desarrolladores, editores y clasificación por edades (ESRB).
 - **Dónde verla**: plataformas de streaming disponibles (agrupadas en
   **Streaming / Alquiler / Compra**, con sus logos) según tu país, o el
   aviso «Sin info. de streaming para este país». Si hay plataformas, se
-  incluye también el enlace «Ver opciones en TMDB».
-- **Información ampliada**: duración, género, director (películas),
-  creadores (series), reparto y sinopsis. En los videojuegos:
-  desarrolladores, editores y clasificación por edades (ESRB).
+  incluye también el enlace «Ver opciones en TMDB». En la ficha aparece
+  justo después de la sinopsis y antes de los premios, la producción y
+  el reparto.
+- **Premios**: bajo el «Dónde verla» aparece la sección **Premios**, en
+  **solo lectura**, con los premios **y las nominaciones** de los que
+  dispone el título. Están **agrupados por tipo** (Óscar, Globos de Oro,
+  Emmy…). **La sección entera aparece minimizada** y también **cada
+  grupo**: se **despliegan o minimizan** pulsando su cabecera («Premios
+  (3 premios, 2 nominaciones)» para toda la sección, el nombre de la
+  familia con su contador para cada grupo: el número de **premios** y de
+  **nominaciones** se muestra **por separado**). Las cabeceras están
+  **alineadas a la izquierda**: el nombre de la sección o de cada familia
+  queda siempre en la misma posición, con el contador a la derecha. Cada
+  premio muestra el **nombre** (p. ej. «Óscar al mejor actor de
+  reparto»), el **año** de la ceremonia, una **etiqueta** que lo
+  distingue (**«Premio»** o **«Nominación»**), los **implicados** (solo
+  sus **nombres**, p. ej. el actor premiado o los nominados, sin rótulos
+  añadidos) y, en su caso, el **trabajo** por el que se concedió (p. ej.
+  el episodio premiado de una serie). Los datos se extraen
+  automáticamente de **Wikidata** (la API de TMDB no expone premios), así
+  que no hay que anotar nada; si el título no tiene premios registrados,
+  la sección no aparece. Válido para películas y series. La lista
+  muestra los premios **registrados en Wikidata**; los títulos cuyos
+  premios solo existen como artículo-lista de Wikipedia (sin
+  declaraciones propias en Wikidata, habitual en algunas series
+  modernas) pueden mostrar pocos premios o ninguno hasta que Wikidata
+  los registre (nunca se muestra la lista como si fuera un premio).
+  El contador de la sección cuenta **las entradas que Wikidata tiene
+  declaradas** para el título, que pueden **no coincidir con los de la
+  web de TMDB**: TMDB muestra su propia base de datos editorial (más
+  amplia y a otra granularidad, p. ej. cuenta cada nominación por
+  persona y por entrega), y su API pública no expone premios. Ejemplo
+  verificado: **Juego de Tronos** — la web de TMDB muestra 81
+  nominaciones y 28 victorias, mientras que Wikidata solo tiene 13
+  premios declarados en el ítem de la serie (y ninguna nominación),
+  así que la sección muestra «13 premios»; los Globos de Oro de la
+  serie figuran en los ítems de los actores premiados, no en el de la
+  serie, y por eso no aparecen. La app muestra siempre **todo lo que
+  Wikidata tiene**; si falta algún premio, es que Wikidata aún no lo
+  ha registrado (es un proyecto abierto: cualquiera puede añadirlo y
+  la app lo mostrará automáticamente).
 - **Plataformas** (videojuegos): las plataformas jugables se muestran
   como etiquetas bajo el tráiler.
-- **Sagas** (películas): si la película forma parte de una saga, aparece
-  el aviso **«Saga: ...»** con el botón **«Añadir resto de la saga»**. Pulsa
-  el botón, marca las películas que quieras en la lista y pulsa
-  **«Añadir seleccionadas»**. Justo debajo del aviso se muestran también
-  **«Otras películas de la saga»** como tarjetas deslizables (portada,
-  título y año), igual que las recomendaciones: cada película que aún no
-  tengas en tu registro tiene un botón **«Añadir»** para añadirla
-  directamente; las que ya están en tu registro aparecen como
-  **«Añadida»** (botón deshabilitado).
+- **Sagas** (películas): si la película forma parte de una saga, se
+  muestran **«Otras películas de la saga»** como tarjetas deslizables
+  (portada, título y año), igual que las recomendaciones: cada
+  película que aún no tengas en tu registro tiene un botón **«Añadir»**
+  para añadirla directamente; las que ya están en tu registro aparecen
+  como **«Añadida»** (botón deshabilitado).
 
   También puedes **pulsar sobre la tarjeta** de cualquiera de esas
-  películas para ver su información (portada, duración, género, director,
-  reparto, sinopsis, puntuación de la comunidad y tráiler si lo tiene)
-  antes de añadirla: se abre una ventana con los botones **«Añadir»** y
-  **«Cerrar»**, y al añadirla o cerrarla (con «Cerrar», la ✕, pulsando
-  fuera de la ventana o la tecla **Esc**) vuelves a la ficha de la
-  película que estabas viendo. Las películas que ya tienes en tu registro
-  se muestran con **«Ya añadido»** (botón deshabilitado).
+  películas para ver su información (portada, duración, género,
+  producción y reparto del título, sinopsis, puntuación de la
+  comunidad, dónde verla y tráiler si lo tiene) antes de añadirla: se
+  abre la **página de esa película**
+  (navega, no es una ventana) — si aún no está en tu registro, verás su
+  **ficha completa** (igual que la de un título añadido), sin botón
+  «Añadir» en la página: se añade con el **botón flotante** (lo mismo
+  que en la vista previa del catálogo; ver sección 12); usa el botón
+  **←** de
+  arriba para volver a la ficha en la que estabas. Las películas que ya
+  tienes en tu registro se muestran con **«Ya añadido»** (botón
+  deshabilitado).
 - **Recomendaciones**: al final, «Si te gustó esto, quizá te guste...»
-  con títulos similares que puedes añadir directamente. También puedes
+  con títulos similares que puedes añadir directamente. Las
+  recomendaciones son las mismas que verías en la web de TMDB para esa
+  película o serie, y excluyen automáticamente los títulos que **ya
+  tienes en tu registro** (aunque no los hayas visto): así solo
+  descubres contenido nuevo. También puedes
   **pulsar sobre la tarjeta** de una recomendación para ver su
   información ampliada (igual que las tarjetas de saga: portada,
-  duración, género, reparto, sinopsis, puntuación de la comunidad y
-  tráiler si lo tiene; en las series, además, sus temporadas) antes de
-  añadirla: se abre una ventana con los botones **«Añadir»** y
-  **«Cerrar»**, y al añadirla o cerrarla vuelves a la ficha que estabas
-  viendo. Los títulos que ya tienes en tu registro se muestran con
-  **«Ya añadido»** (botón deshabilitado).
-- **Tu valoración** (1 a 5 estrellas, con medias) y **tus notas** (por ejemplo,
-  «Impresiones...»). Pulsa **«Guardar»** para guardar los cambios y
-  **«Eliminar»** para borrar el título.
+  duración, género, producción y reparto, sinopsis, puntuación de la
+  comunidad, dónde verla y tráiler si lo tiene; en las series, además,
+  sus temporadas) antes de añadirla: se abre la **página de esa película o
+  serie** (navega, no es una ventana) — si aún no está en tu registro,
+  verás su **ficha completa** (igual que la de un título añadido), sin
+  botón **«Añadir»** en la página: se añade con el **botón flotante**
+  (lo mismo que
+  en la vista previa del catálogo; ver sección 12); usa el botón **←**
+  de arriba para volver a la ficha en la que estabas.
+- **Tu valoración y tus notas** se gestionan desde el **botón flotante**
+  (opción **«Valorar»**; la ventana que se despliega incluye las
+  estrellas y un campo de **notas**). Con la opción **«Quitar de
+  añadidos»** (o **«Quitar última visualización»** si ya la has visto)
+  puedes borrar el título: el borrado no es inmediato, tienes unos
+  segundos para pulsar **«Deshacer»** (ver [sección 14.3](#143-deshacer-un-borrado)).
+  En las películas, la lista de **visionados** aparece **oculta
+  por defecto**: despliega **«Visionados (N)»** para verla y poder
+  editar la fecha de cada visionado o quitarlo del historial.
+
+Si el título **aún no está en tu registro** (por ejemplo, lo abriste
+desde la búsqueda del catálogo, desde una tarjeta de saga o de
+recomendación, o desde una dirección compartida), la página es **igual
+a la ficha**: la misma cabecera con la portada, el título, la
+valoración de la comunidad y el tráiler; el distintivo de no estrenado
+si aplica; «Dónde verla»; «Premios»; la producción y el reparto; la
+saga (en películas) y las recomendaciones con sus botones **«Añadir»**.
+En las **series**, además, se muestran el **banner de progreso**
+(«Siguiente: T1E1», barra al 0 % y `0/N episodios`, como una serie
+recién añadida) y las **temporadas desplegables en solo lectura**:
+pulsa una temporada para ver sus episodios con su **fecha de estreno**
+(los que aún no se han estrenado lo indican) y la **nota de la
+comunidad de cada episodio** (formato «TMDB 8.5»); no hay casillas de
+marcado ni valoraciones propias porque el título aún no está en tu
+registro.
+
+El aviso **«Este título aún no está en tu registro»** está al **final**
+de la página, después de todas las secciones de información. Ya no hay
+botón **«Añadir»** en la página: para añadirlo usa el **botón
+flotante** (opción **«Añadir película» / «Añadir serie»**, ver
+[sección 12.1](#121-el-botón-flotante-de-acciones-películas-y-series)).
+Ese botón está disponible siempre en la página, incluso en la vista
+previa de un título no añadido. El botón **«Volver»** que antes había al
+final ya no existe: para volver usa el botón **←** de arriba o la tecla
+**Esc**. Tu valoración, tus notas, tu progreso y las opciones del
+**botón flotante** (incluida «Quitar de añadidos») solo aparecen
+cuando el título ya está en tu registro: al añadirlo, la página pasa a
+la ficha completa al momento.
 
 En la ficha de **un episodio cualquiera** también se ve la nota de la
 comunidad del episodio (formato «TMDB 8.5»).
 
-En las series, junto a tu valoración general verás también la **media de
+En las series, junto a las temporadas verás también la **media de
 tus notas de episodios** (ver sección 13).
 
 En los videojuegos, la ficha incluye además el **historial de sesiones de
 juego** (más en [sección 7.4](#74-historial-de-sesiones)).
+
+### 12.1 El botón flotante de acciones (películas y series)
+
+En la página de una película o de una serie hay un **botón flotante**
+abajo a la derecha con las acciones rápidas. Al pulsarlo, las acciones
+**se despliegan alrededor del botón en abanico**, saliendo una a una
+con una pequeña animación, y se muestran las que puedas hacer en ese
+momento:
+
+- **«Añadir película» / «Añadir serie»**: solo aparece cuando el título
+  **aún no está en tu registro** (es decir, en la vista previa de un
+  título del catálogo, de una saga o de una recomendación). Al pulsarlo
+  el título se añade y la página pasa a la ficha completa al momento.
+- **«Marcar como vista»**: registra el visionado con la fecha de hoy y
+  abre la ventana de valoración (con **«Deshacer»** si te arrepientes).
+  En una **serie**, marcar como vista **completa la serie entera**:
+  deja vistos todos los episodios de todas las temporadas (si alguna
+  aún no está estrenada, la web te pregunta antes). En una película ya
+  vista, la opción cambia a **«Añadir otro visionado»**. Cuando el
+  título aún no está en tu registro (vista previa), **marcar como vista
+  lo añade a la vez**, en un solo paso, y después abre la valoración.
+- **«Valorar»**: abre la ventana de valoración **sin marcar nada**,
+  para poner o cambiar tus estrellas cuando quieras. La ventana incluye
+  además un campo de **notas** (tus impresiones sobre el título), que
+  se guarda junto a la valoración. En la vista previa
+  de un título aún no añadido, **«Valorar» lo añade al registro primero**
+  y abre la valoración después (así puedes dejarle las estrellas y las
+  notas desde el primer momento).
+- **«En pausa»**, **«Abandonar»** y **«Retomar»**: solo aparecen en la
+  ficha de una **serie** (no completada). «En pausa» detiene el
+  seguimiento sin perder lo visto; «Abandonar» deja la serie (la web te
+  pregunta antes; no se pierde el progreso); «Retomar» vuelve a una
+  serie que tenías en pausa o abandonada. Antes estos botones estaban
+  al final de la ficha de la serie; ahora viven aquí, en el botón
+  flotante (sección [4.4](#44-pausar-abandonar-y-retomar)).
+
+El botón flotante **se ve diferente** según el estado, para que sepas
+de un vistazo en qué situación está el título:
+
+- **Icono + con fondo gris**: el título **aún no está en tu registro**
+  (vista previa del catálogo, de una saga o de una recomendación). El
+  gris se adapta al tema: gris claro en los modos claros y gris oscuro
+  en los oscuros.
+- **Icono + con fondo verde**: el título **ya está añadido pero no lo
+  has visto** (ficha).
+- **Icono ✓ con fondo dorado**: el título **ya está visto** (película
+  con al menos un visionado, o serie completada). Si una **película se
+  ha visto más de una vez**, en lugar del ✓ aparece el **número de
+  veces** que la has visto (2, 3, 4…).
+
+En las **series**, además de los estados anteriores, el botón flotante
+tiene dos estados y un icono propios:
+
+- **Icono de reproducir ▶ con fondo verde**: la serie se está
+  **viendo** (tiene episodios vistos pero aún no está completa).
+- **Icono de pausa ⏸ con fondo gris**: la serie está **en pausa**
+  (standby). El gris es el mismo color del estado de la serie en tu
+  lista.
+- **Icono tachado 🚫 con fondo rojo**: la serie está **abandonada**. El
+  rojo es el mismo color del estado de la serie en tu lista.
+- **Icono de reproducir ▶ con fondo dorado**: la serie **se está
+  volviendo a ver** (estás en pleno rewatch, sección 4.5): el estado
+  de hecho es «viendo», pero con el color dorado de visto, para que
+  sepas de un vistazo que ya la habías visto.
+
+En la ficha, el abanico incluye la **opción inversa** según el estado:
+**«Quitar de añadidos»** si el título aún no está visto (lo borra de tu
+registro, con **«Deshacer»** para cancelar) y **«Quitar última
+visualización»** si ya lo está (en películas, elimina la última vez que
+la viste; en series, desmarca el último episodio visto, o le quita solo
+su visión más reciente si ese episodio se había visto varias veces).
+
+En series ya completadas (o en pausa/abandonadas), la opción «Marcar
+como vista» no aparece, porque no tiene sentido; en su lugar, en una
+serie en pausa o abandonada aparece **«Retomar»** en el botón flotante,
+y la ficha ofrece «Volver a verla desde el principio» para un nuevo
+visionado en las completadas. Las
+opciones que se despliegan del botón **salen con un sombreado** para
+que se distingan del fondo y del contenido de la página. El abanico se
+despliega **sin que las opciones se tapen unas a otras**, y se cierra
+pulsando fuera, con **Esc** o volviendo a pulsar el botón.
 
 ## 13. Valoraciones con estrellas
 
@@ -1080,13 +1430,21 @@ Puedes valorar de **1 a 5 estrellas**, incluidas las **medias estrellas**
 - **Videojuegos**: al terminar una partida se abre la misma ventana.
 - **Series**: en cada episodio visto, bajo el episodio, aparecen 5
   estrellas para valorarlo (además de la valoración general de la serie,
-  que se guarda desde su ficha).
+  que se guarda desde su ficha con el **botón flotante**, opción
+  «Valorar»).
 
-En la ficha de una **serie**, debajo de la valoración general, se muestra
-la **media de tus valoraciones de episodios** (por ejemplo
-«Media episodios: 4.2»). Solo cuentan los episodios que has valorado: los
-vistos sin valorar no se tienen en cuenta (la valoración mínima de un
-episodio es media estrella, 0.5). Si todavía no has valorado ningún
+Desde la **ficha de una película o serie**, la ventana de valoración se
+abre con el **botón flotante** (opción **«Valorar»**) e incluye también
+el campo de **notas**: puedes escribir (o cambiar) tus impresiones y
+guardarlas junto a las estrellas con **«Guardar valoración»**.
+
+En la ficha de una **serie**, en la parte superior (junto a la
+valoración de la comunidad y la tuya) se muestra la **media de tus
+valoraciones de episodios**, como un chip con borde (por ejemplo
+«Media episodios: 4,2»), a propósito con un estilo ligeramente distinto
+al resto de valoraciones. Solo cuentan los episodios que has valorado:
+los vistos sin valorar no se tienen en cuenta (la valoración mínima de
+un episodio es media estrella, 0.5). Si todavía no has valorado ningún
 episodio, la media no aparece. Se actualiza sola en cuanto valoras un
 episodio, quitas una valoración o desmarcas episodios.
 
@@ -1132,8 +1490,9 @@ abras para retomarla.
 
 ### 14.3 Deshacer un borrado
 
-Cuando pulsas **«Eliminar»** en cualquier ficha, la web no borra al
-instante: aparece el aviso ««Título» se eliminará…» con un botón
+Cuando pulsas **«Eliminar»** en cualquier ficha (o **«Quitar de
+añadidos»** en el botón flotante de una película o serie), la web no
+borra al instante: aparece el aviso ««Título» se eliminará…» con un botón
 **«Deshacer»**. Tienes unos segundos para pulsarlo y cancelar. Si no
 haces nada, el título se elimina de verdad. (Si recargas la página antes
 de que pase el tiempo, el borrado se cancela.)
@@ -1428,8 +1787,9 @@ conexión a internet y **recarga la página**.
 **He marcado algo por error**
 Tranquilo: si acabas de marcarlo, pulsa **«Deshacer»** en la ventana de
 valoración que se abre al marcar y todo vuelve a estar como antes.
-También puedes desmarcar episodios, quitar visionados del historial y
-«Deshacer» cualquier borrado en los segundos posteriores.
+También puedes desmarcar episodios (o quitarles la última
+visualización si se habían visto varias veces), quitar visionados del
+historial y «Deshacer» cualquier borrado en los segundos posteriores.
 
 **No veo a un amigo nuevo**
 La lista de amigos es la de todos los usuarios registrados. Si la persona

@@ -67,6 +67,11 @@ const AUTO_STANDBY_DAYS = 365;
 // - Comparaciones de strings "YYYY-MM-DD" (formato canónico del proyecto).
 export function shouldAutoStandby(show, today) {
   if (!show || show.status !== "en_curso") return false;
+  // Rewatch (feedback #310, iteración 4): una serie en un ciclo de
+  // rewatch («viendo de nuevo») no se pausa por inactividad — su
+  // siguiente episodio es T1E1 (fecha de emisión antigua por diseño) y
+  // el ritmo lo marca el usuario, no la heurística de estrenos.
+  if (show.rewatching) return false;
   if (isNextEpisodeUnreleased(show)) return false;
   const info = getNextEpisodeAirInfo(show);
   const lastAirDate = info && info.airDate ? info.airDate : null;

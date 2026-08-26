@@ -1,0 +1,44 @@
+{
+  "title": "Afinamiento de recomendaciones (issue #319)",
+  "description": "La sección «Si te gustó esto, quizá te guste...» de las fichas de películas y series hace recomendaciones que no se parecen a las que muestra la web de TMDB. Se pide explicar cómo funciona el sistema actual y ajustarlo para que las recomendaciones sean mejores (usar el endpoint /recommendations de TMDB, que es el que alimenta la web de TMDB, en lugar de /similar), y preferiblemente no recomendar contenido ya visto (ya filtrado por existingIds, reforzarlo). La base de trabajo es la rama feat/issue-201 y la PR debe ir también a esa rama (no a dev).",
+  "status": "review",
+  "acceptance criteria": [
+    "Se explica cómo funciona el sistema de recomendaciones actual (endpoint /similar de TMDB) en la documentación/PR.",
+    "Las recomendaciones de películas usan el endpoint /movie/{id}/recommendations de TMDB (el que alimenta la sección de recomendaciones de la web de TMDB) en lugar de /similar.",
+    "Las recomendaciones de series usan el endpoint /tv/{id}/recommendations de TMDB en lugar de /similar.",
+    "Se mantiene el filtrado de ítems ya registrados (existingIds) para no recomendar cosas ya vistas/añadidas, y se verifica que sigue funcionando.",
+    "El resto de la sección (tarjetas, botón Añadir, vista previa, añadir de saga) sigue funcionando igual que antes.",
+    "Si TMDB devuelve lista vacía o hay error, la sección no se muestra (degradación elegante), igual que antes.",
+    "La sección se ve correctamente en móvil, tablet y escritorio (sin scroll horizontal a nivel de página) y en los cuatro modos de tema.",
+    "El manual de usuario refleja cualquier cambio visible (si aplica).",
+    "Se documenta en un ADR con 'Related issue: #319'."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect) y reflejada en la implementación.",
+    "Implementación con micro-commits incrementales en rama de trabajo derivada de feat/issue-201.",
+    "Validación QA contra los criterios de aceptación (incluidos 3 anchos y 4 temas si aplica a UI).",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado con 'Related issue: #319'.",
+    "Manual de usuario actualizado si hay cambio visible.",
+    "PR contra feat/issue-201 (NO dev, según instrucción explícita de la issue) SIN keyword de cierre; issue #319 con label 'status: needs-review' tras crear la PR.",
+    "Task file actualizado en cada transición (status: planned/implemented/validated/security-cleared/documented/review)."
+  ],
+  "issue": {
+    "number": 319,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/319",
+    "title": "Afinamiento de recomendaciones"
+  },
+  "validation": {
+    "qa": "PASS (qa-reviewer: criterios de aceptación verificados, ui.js intacto, filtrado correcto)",
+    "security": "PASS (security-champion: 0 hallazgos HIGH/MEDIUM/LOW)"
+  },
+  "pr": {
+    "number": 320,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/320",
+    "base": "feat/issue-201",
+    "title": "Afinamiento de recomendaciones: /recommendations de TMDB y exclusión de ya registradas (issue #319)",
+    "branch": "refactor/issue-319-afinamiento-recomendaciones",
+    "commit": "8b9afea",
+    "closes": "#319"
+  }
+}

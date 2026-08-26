@@ -3,12 +3,12 @@
 // episodio o avanzar lectura sin abrir el modal. Extraído de app.js.
 // =============================================================
 
-import { addWatch, statusFromWatchLog } from "./watch-log.js";
+import { addWatch, removeWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, statusFromPlayLog } from "./game-log.js";
-import { setEpisodeDate, setEpisodeRating, computeProgress, normalizeEntry } from "./tv-progress.js";
+import { setEpisodeDate, setEpisodeRating, computeProgress, progressWithRewatch, normalizeEntry, markAllSeasonsWatched, markEpisodeSeenAgain, removeLastEpisodeViewing, completedViewingChanges } from "./tv-progress.js";
 import { todayISO } from "./dates.js";
-import { unreleasedConfirmMessage, episodeUnreleasedMessage } from "./release.js";
+import { unreleasedConfirmMessage, episodeUnreleasedMessage, isUnreleasedDate } from "./release.js";
 import { getNextEpisodeAirInfo } from "./sorting.js";
 import { openRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 
@@ -35,9 +35,15 @@ async function maybeQuickItemRating(item, ctx, type, opts = {}) {
       communityRating: item.communityRating ?? null,
       communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
-      onSave: async (rating) => {
-        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
+      // Notas del ítem (issue #300): el campo de notas vive en la
+      // ventana de valoración; sin notas previas se muestra vacío.
+      initialNotes: item.notes ?? "",
+      onSave: async (rating, notes) => {
+        const payload = { rating };
+        if (notes !== undefined) payload.notes = notes;
+        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, payload);
         item.rating = rating;
+        if (notes !== undefined) item.notes = notes;
       },
       onUndo: opts.onUndo,
       undoLabel: opts.undoLabel,
@@ -49,7 +55,9 @@ async function maybeQuickItemRating(item, ctx, type, opts = {}) {
   return false;
 }
 
-async function quickMarkMovie(item, ctx) {
+// Exportado (issue #298): el botón flotante de la ficha en página lo
+// usa para «Marcar como vista» (mismo flujo que la acción rápida).
+export async function quickMarkMovie(item, ctx) {
   const confirmMsg = unreleasedConfirmMessage(item);
   if (confirmMsg && !window.confirm(confirmMsg)) return;
   const prevLog = item.watchLog;
@@ -61,6 +69,12 @@ async function quickMarkMovie(item, ctx) {
   // que en el modal de detalle): un ítem ya visto no puede seguir
   // "sin estrenar".
   await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, { watchLog: newLog, status, awaitingRelease: false });
+  // Mutación en memoria (issue #298): el botón flotante de la ficha
+  // repinta con el MISMO objeto tras la acción; sin esto, la ficha y
+  // el propio botón quedarían con el estado visual anterior al
+  // marcado (mismo patrón de mutación que persist() en el modal).
+  item.watchLog = newLog;
+  item.status = status;
   item.awaitingRelease = false;
   // Deshacer (issue #136): restaura el watchLog/status/awaitingRelease
   // previos sin forzar awaitingRelease:false. El status se restaura
@@ -78,6 +92,87 @@ async function quickMarkMovie(item, ctx) {
     },
   });
   ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);
+}
+
+// Exportado (issue #298): «Quitar última visualización» del botón
+// flotante en ficha. Quita la última entrada del watchLog (la de
+// fecha más reciente); si era el único visionado la película vuelve
+// a «pendiente» (y el FAB repinta al estado añadido/verde).
+// Mismo patrón de persistencia/mutación que quickMarkMovie (sin
+// ventana de valoración: la acción inversa no la abre, issue #136
+// aplica a marcas nuevas).
+export async function quickUnwatchMovie(item, ctx) {
+  const log = item.watchLog || [];
+  if (!log.length) return;
+  const newLog = removeWatch(log, log.length - 1);
+  const status = statusFromWatchLog(newLog);
+  await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
+    watchLog: newLog,
+    status,
+    awaitingRelease: false,
+  });
+  item.watchLog = newLog;
+  item.status = status;
+  item.awaitingRelease = false;
+  ctx.showToast(`«${item.title}»: última visualización quitada.`);
+}
+
+// Exportado (issue #298): «Quitar última visualización» del botón
+// flotante en ficha de SERIE. La última visualización de una serie
+// es la del episodio con la fecha de marcado MÁS RECIENTE; si varios
+// episodios comparten fecha (marcados en bloque tras «Ver siguiente»
+// o al marcar la serie completa), se desmarca el de mayor
+// temporada/episodio. Si era el episodio que completaba la serie,
+// vuelve a «en curso» (el FAB repinta a añadido/verde).
+export async function quickUnwatchTv(item, ctx) {
+  const watched = item.watched || {};
+  // Clave del último episodio visto: season|episode con la fecha
+  // máxima; desempate por temporada/episodio más altos. La entrada
+  // guardada puede ser string legacy o {date, rating, times}, así que
+  // se normaliza antes de comparar (issue #133 / #298).
+  let lastKey = null;
+  let lastDate = "";
+  for (const [s, eps] of Object.entries(watched)) {
+    for (const [e, d] of Object.entries(eps)) {
+      const entry = normalizeEntry(d);
+      const date = entry ? entry.date : "";
+      if (date > lastDate || (date === lastDate && (Number(s) > Number(lastKey.split("|")[0]) || (Number(s) === Number(lastKey.split("|")[0]) && Number(e) > Number(lastKey.split("|")[1]))))) {
+        lastDate = date;
+        lastKey = `${s}|${e}`;
+      }
+    }
+  }
+  if (!lastKey) return;
+  const [season, episode] = lastKey.split("|").map(Number);
+  // Feedback issue #310: «quitar última visualización» elimina solo la
+  // ÚLTIMA visión del episodio más reciente (decrementa times y quita
+  // la fecha más reciente); si solo se había visto una vez, lo desmarca.
+  const newWatched = removeLastEpisodeViewing(watched, season, episode);
+  const seasonsMeta = await getSeasonsMetaFor(item, ctx);
+  // Rewatch (issue #310): el progreso se computa con el flag para que
+  // el desmarcado no escriba estados contradictorios con un rewatch en
+  // curso (ni deje el flag huérfano).
+  const progress = progressWithRewatch(seasonsMeta, item, newWatched);
+  const payload = {
+    watched: newWatched,
+    status: progress.status,
+    nextEpisode: progress.nextEpisode,
+    firstWatchedAt: progress.firstWatchedAt,
+    lastWatchedAt: progress.lastWatchedAt,
+    awaitingRelease: false,
+  };
+  if (item.rewatching) {
+    payload.rewatching = progress.rewatching;
+    item.rewatching = progress.rewatching;
+  }
+  await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
+  item.watched = newWatched;
+  item.status = payload.status;
+  item.nextEpisode = payload.nextEpisode;
+  item.firstWatchedAt = payload.firstWatchedAt;
+  item.lastWatchedAt = payload.lastWatchedAt;
+  item.awaitingRelease = false;
+  ctx.showToast(`«${item.title}»: última visualización quitada.`);
 }
 
 async function quickMarkBook(item, ctx) {
@@ -144,7 +239,9 @@ async function quickMarkGame(item, ctx) {
 // pasa, se guarda junto al progreso para avisar de "no estrenado"
 // sin repetir llamadas a la API.
 function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) {
-  const newProgress = computeProgress(seasonsMeta, newWatched);
+  // Rewatch (issue #310): progressWithRewatch decide estado, siguiente
+  // episodio y flag de rewatch en curso (igual que en el modal).
+  const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
   const payload = {
     watched: newWatched,
     status: newProgress.status,
@@ -155,6 +252,21 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
     // (idempotente, igual que en el modal de detalle).
     awaitingRelease: false,
   };
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted — no al pulsar «Volver a verla desde el principio»,
+  // que solo reinicia el ciclo. Se computa ANTES de mutar el flag: el
+  // helper necesita el estado previo (rewatching true → startedAt =
+  // rewatchStartedAt).
+  const completed = completedViewingChanges(item, newWatched, newProgress);
+  if (item.rewatching) {
+    payload.rewatching = newProgress.rewatching;
+    item.rewatching = newProgress.rewatching;
+  }
+  if (completed) {
+    payload.history = completed.history;
+    payload.timesCompleted = completed.timesCompleted;
+  }
   if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
     payload.nextEpisodeAirDate = nextEpisodeAirDate;
   }
@@ -167,6 +279,10 @@ function saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate) 
       item.firstWatchedAt = newProgress.firstWatchedAt;
       item.lastWatchedAt = newProgress.lastWatchedAt;
       item.awaitingRelease = false;
+      if (completed) {
+        item.history = completed.history;
+        item.timesCompleted = completed.timesCompleted;
+      }
       if (nextEpisodeAirDate !== null && nextEpisodeAirDate !== undefined) {
         item.nextEpisodeAirDate = nextEpisodeAirDate;
       }
@@ -251,7 +367,16 @@ async function quickMarkTv(item, ctx) {
         .catch((err) => console.error("No se pudo guardar las fechas de temporada:", err));
     }
   }
-  const newWatched = setEpisodeDate(item.watched, season, episode, todayISO());
+  // Rewatch (issue #310): durante un rewatch el «siguiente episodio»
+  // (T1E1) ya está marcado — marcarlo de nuevo es un revisionado:
+  // suma +1 al contador y registra la nueva fecha, como en el modal.
+  const existingEntry = normalizeEntry(
+    (item.watched || {})[String(season)]?.[String(episode)]
+  );
+  const newWatched =
+    item.rewatching && existingEntry && existingEntry.date
+      ? markEpisodeSeenAgain(item.watched, season, episode, todayISO())
+      : setEpisodeDate(item.watched, season, episode, todayISO());
 
   // Si el siguiente episodio (tras marcar este) sigue en la misma
   // temporada y ya tenemos sus datos, guardamos su fecha de emisión
@@ -259,7 +384,9 @@ async function quickMarkTv(item, ctx) {
   // sin más llamadas.
   let nextEpisodeAirDate = null;
   if (episodes) {
-    const newProgress = computeProgress(seasonsMeta, newWatched);
+    // Rewatch (issue #310): durante un rewatch el «siguiente» es
+    // siempre T1E1; progressWithRewatch lo fuerza.
+    const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
     if (newProgress.nextEpisode && newProgress.nextEpisode.season === season) {
       const nextEp = episodes.find((e) => e.episodeNumber === newProgress.nextEpisode.episode);
       nextEpisodeAirDate = {
@@ -272,7 +399,11 @@ async function quickMarkTv(item, ctx) {
   const prevWatched = item.watched;
   const prevAwaitingRelease = item.awaitingRelease;
   const prevStatus = item.status;
+  const prevRewatching = item.rewatching;
+  const prevNextEpisode = item.nextEpisode;
   const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
+  const prevHistory = item.history;
+  const prevTimesCompleted = item.timesCompleted;
   await saveTvProgress(item, ctx, seasonsMeta, newWatched, nextEpisodeAirDate);
   // Valoración del episodio: con datos TMDB se muestra la nota de
   // comunidad del episodio; en series manuales meta es null, así que
@@ -296,16 +427,34 @@ async function quickMarkTv(item, ctx) {
   // lo sobreescribe con el previo por si era un estado manual).
   const undone = await maybeQuickEpisodeRating(item, ctx, seasonsMeta, season, episode, meta, {
     onUndo: async () => {
-      const prevProgress = computeProgress(seasonsMeta, prevWatched);
+      // Rewatch (issue #310): el progreso previo se restaura con el
+      // MISMO criterio con que se calculó el nuevo (flag previo
+      // incluido; si saveTvProgress completó el rewatch y limpió el
+      // flag, sin reconstruirlo el undo devolvería nextEpisode null y
+      // perdería el ciclo en curso — issue #310, QA H1).
+      const prevProgress = progressWithRewatch(
+        seasonsMeta,
+        { ...item, rewatching: prevRewatching },
+        prevWatched || {}
+      );
       const payload = {
         watched: prevWatched,
         status: prevStatus,
-        nextEpisode: prevProgress.nextEpisode,
+        nextEpisode: prevNextEpisode ?? prevProgress.nextEpisode,
         firstWatchedAt: prevProgress.firstWatchedAt,
         lastWatchedAt: prevProgress.lastWatchedAt,
         awaitingRelease: prevAwaitingRelease,
         nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+        // Feedback #310 (iteración 4): si el marcado hubiera COMPLETADO
+        // la serie, se restauran también el historial de visionados y el
+        // contador de completados archivados en la persistencia.
+        history: prevHistory,
+        timesCompleted: prevTimesCompleted,
       };
+      if (prevRewatching) {
+        payload.rewatching = prevProgress.rewatching;
+        item.rewatching = prevProgress.rewatching;
+      }
       await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
       item.watched = prevWatched;
       item.status = payload.status;
@@ -314,9 +463,141 @@ async function quickMarkTv(item, ctx) {
       item.lastWatchedAt = payload.lastWatchedAt;
       item.awaitingRelease = prevAwaitingRelease;
       item.nextEpisodeAirDate = payload.nextEpisodeAirDate;
+      item.history = payload.history;
+      item.timesCompleted = payload.timesCompleted;
     },
   });
   ctx.showToast(undone ? "Desmarcado." : `T${season}E${episode} marcado como visto.`);
+}
+
+// Marca TODA una serie como vista: todos los episodios de todas las
+// temporadas quedan marcados con la fecha de hoy (issue #298, botón
+// flotante de la ficha en página). Mismo patrón que quickMarkTv:
+// confirmación cuando hay temporadas aún no estrenadas, persistencia
+// del progreso recomputado y ventana de valoración con deshacer
+// (issue #136) — la valoración es de la serie en su conjunto (sin
+// episodeLabel, igual que el alta como vista del catálogo).
+export async function quickMarkTvComplete(item, ctx) {
+  if (item.status === "standby" || item.status === "abandonado") {
+    ctx.showToast("Está en pausa/abandonada. Ábrela para retomarla.");
+    return;
+  }
+  if (!item.nextEpisode) {
+    ctx.showToast("Esta serie ya está completa.");
+    return;
+  }
+  const seasonsMeta = await getSeasonsMetaFor(item, ctx);
+  if (!seasonsMeta.length) {
+    ctx.showToast("No se pudieron obtener las temporadas de esta serie.");
+    return;
+  }
+  // Confirmación si hay temporadas aún no estrenadas (mismo criterio
+  // que la alta directa como vista del catálogo, search.js). Las
+  // series manuales no tienen fechas reales de TMDB: se excluyen.
+  if (!item.manual) {
+    const unreleasedSeasons = seasonsMeta.filter((s) => isUnreleasedDate(s.airDate));
+    if (unreleasedSeasons.length) {
+      const msg = `«${item.title}» · ${unreleasedSeasons.length} de ${seasonsMeta.length} temporadas aún no están estrenadas. ¿Marcarlas todas igualmente como vistas?`;
+      if (!window.confirm(msg)) return;
+    }
+  }
+  const prevWatched = item.watched;
+  const prevStatus = item.status;
+  const prevAwaitingRelease = item.awaitingRelease;
+  const prevNextEpisode = item.nextEpisode;
+  const prevFirstWatchedAt = item.firstWatchedAt;
+  const prevLastWatchedAt = item.lastWatchedAt;
+  const prevNextEpisodeAirDate = item.nextEpisodeAirDate;
+  const prevRewatching = item.rewatching;
+  const prevHistory = item.history;
+  const prevTimesCompleted = item.timesCompleted;
+  // Todos los episodios de todas las temporadas, marcados hoy.
+  const newWatched = markAllSeasonsWatched(item.watched, seasonsMeta, todayISO());
+  // Rewatch (issue #310): markAllSeasonsWatched suma +1 a los ya vistos;
+  // progressWithRewatch decide si con ello el rewatch se completa.
+  const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
+  const payload = {
+    watched: newWatched,
+    status: newProgress.status,
+    nextEpisode: newProgress.nextEpisode,
+    firstWatchedAt: newProgress.firstWatchedAt,
+    lastWatchedAt: newProgress.lastWatchedAt,
+    // Una serie con episodios vistos no puede seguir "sin estrenar".
+    awaitingRelease: false,
+  };
+  // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva el
+  // visionado en history («visualizaciones anteriores») y se incrementa
+  // timesCompleted. Se computa ANTES de mutar el flag: el helper
+  // necesita el estado previo (rewatching true → startedAt =
+  // rewatchStartedAt).
+  const completed = completedViewingChanges(item, newWatched, newProgress);
+  if (item.rewatching) {
+    payload.rewatching = newProgress.rewatching;
+    item.rewatching = newProgress.rewatching;
+  }
+  if (completed) {
+    payload.history = completed.history;
+    payload.timesCompleted = completed.timesCompleted;
+  }
+  await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, payload);
+  item.watched = newWatched;
+  item.status = payload.status;
+  item.nextEpisode = payload.nextEpisode;
+  item.firstWatchedAt = payload.firstWatchedAt;
+  item.lastWatchedAt = payload.lastWatchedAt;
+  item.awaitingRelease = false;
+  if (completed) {
+    item.history = completed.history;
+    item.timesCompleted = completed.timesCompleted;
+  }
+  // Valoración de la serie en su conjunto. Deshacer (issue #136):
+  // restaura el progreso previo (watched, status literal del
+  // capturado, nextEpisode, fechas y awaitingRelease) para que la UI
+  // repinte el estado anterior.
+  const undone = await maybeQuickItemRating(item, ctx, "tv", {
+    onUndo: async () => {
+      // Rewatch (issue #310): el undo restaura también el flag previo
+      // (progressWithRewatch con el flag original del item).
+      const prevProgress = progressWithRewatch(seasonsMeta, { ...item, rewatching: prevRewatching }, prevWatched || {});
+      const undoPayload = {
+        watched: prevWatched || {},
+        status: prevStatus,
+        nextEpisode: prevNextEpisode ?? prevProgress.nextEpisode,
+        firstWatchedAt: prevFirstWatchedAt ?? prevProgress.firstWatchedAt,
+        lastWatchedAt: prevLastWatchedAt ?? prevProgress.lastWatchedAt,
+        awaitingRelease: prevAwaitingRelease,
+        nextEpisodeAirDate: prevNextEpisodeAirDate === undefined ? null : prevNextEpisodeAirDate,
+        // Feedback #310 (iteración 4): si el marcado completo hubiera
+        // archivado el visionado, el undo restaura el historial y el
+        // contador de completados previos.
+        history: prevHistory,
+        timesCompleted: prevTimesCompleted,
+      };
+      if (prevRewatching) {
+        undoPayload.rewatching = prevProgress.rewatching;
+        item.rewatching = prevProgress.rewatching;
+      }
+      await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, undoPayload);
+      item.watched = undoPayload.watched;
+      item.status = undoPayload.status;
+      item.nextEpisode = undoPayload.nextEpisode;
+      item.firstWatchedAt = undoPayload.firstWatchedAt;
+      item.lastWatchedAt = undoPayload.lastWatchedAt;
+      item.awaitingRelease = undoPayload.awaitingRelease;
+      item.nextEpisodeAirDate = undoPayload.nextEpisodeAirDate;
+      item.history = undoPayload.history;
+      item.timesCompleted = undoPayload.timesCompleted;
+    },
+  });
+  ctx.showToast(undone ? "Marcado deshecho." : `«${item.title}» marcada como vista.`);
+}
+
+// Abre la ventana de valoración del ítem (película o serie) SIN marcar
+// nada (issue #298, botón flotante de la ficha en página). Reutiliza
+// el flujo de maybeQuickItemRating: nunca lanza; si el usuario guarda,
+// onSave persiste la valoración del ítem.
+export async function promptItemRating(item, ctx) {
+  await maybeQuickItemRating(item, ctx, item.type === "tv" ? "tv" : "movie");
 }
 
 export async function quickAction(item, btn, ctx) {

@@ -99,6 +99,35 @@ const PROFILE_DEFAULT_KEY = "estadisticas";
 // segmento de amigo en la URL (#/perfil/amigos/<uid>).
 const FIREBASE_UID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 
+// Ruta de detalle de un ítem de Ocio (issue #285): segmento conocido
+// de Ocio (series|peliculas) + id del ítem → página de ficha en vez
+// de modal. El mapa relaciona el token de URL público (castellano,
+// consistente con las claves de Ocio) con el tipo interno de ítem.
+// LIBROS y VIDEOJUEGOS no tienen ruta de ítem: siguen abriendo su
+// modal (la issue #285 solo cubre series y películas).
+const ITEM_KEY_TO_KIND = {
+  series: "tv",
+  peliculas: "movie",
+};
+
+// Los externalId admitidos son los de TMDB (numéricos) y los
+// sintéticos de alta manual ("manual-…"): el mismo alfabeto que los
+// uid de Firebase, con un tope de longitud cómodo.
+const ITEM_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
+
+// Ruta de detalle de una PERSONA (issue #321): el token público
+// "personas" (plural, consistente con "series"/"peliculas") + el id
+// de TMDB de la persona → página de la persona (foto, biografía,
+// créditos y premios), con el mismo patrón de página nueva que el
+// ítem (ADR-100). No es una pestaña de Ocio: no tiene entrada en la
+// barra lateral ni actualiza las memorias del router.
+const PERSON_KEY = "personas";
+
+// Id de persona en la URL: mismos ids de TMDB (numéricos) — el mismo
+// alfabeto de ITEM_ID_RE; la persona nunca es "manual-…" (los datos
+// vienen siempre de TMDB).
+const PERSON_ID_RE = ITEM_ID_RE;
+
 // Devuelve la clave de ruta de Ocio para un id de panel, o null si
 // no existe ninguna (data-human desconocido).
 export function keyForPanel(panelId) {
@@ -144,8 +173,24 @@ export function profileHashKey(profileSection, uid) {
   return `#${PROFILE_PREFIX}/${token}`;
 }
 
+// Hash canónico de la página de detalle de un ítem de Ocio (issue
+// #285): #/ocio/series/<externalId> o #/ocio/peliculas/<externalId>.
+// kind: "tv" | "movie"; un kind desconocido cae a películas.
+export function itemHashFor(kind, externalId) {
+  const token = Object.entries(ITEM_KEY_TO_KIND).find(([, k]) => k === kind)?.[0] || "peliculas";
+  return `#${ROUTE_PREFIX}/${token}/${encodeURIComponent(externalId)}`;
+}
+
+// Hash canónico de la página de una persona (issue #321):
+// #/ocio/personas/<personId> (id de TMDB de la persona).
+export function personHashFor(personId) {
+  return `#${ROUTE_PREFIX}/${PERSON_KEY}/${encodeURIComponent(personId)}`;
+}
+
 // Interpreta un fragmento (location.hash por defecto). Contrato:
 // - Ocio    → { section:"ocio", key, panelId } (+ default/invalid).
+// - Ítem    → { section:"item", kind:"tv"|"movie", externalId }.
+// - Persona → { section:"person", personId } (issue #321).
 // - Perfil  → { section:"perfil", profileSection, uid? } (+default/invalid).
 // - Recetas → { section:"recetas", tab, panelId } (+ default/invalid).
 // - Gimnasio→ { section:"gimnasio", tab, panelId } (+ default/invalid).
@@ -239,6 +284,39 @@ export function parseHash(hash = location.hash) {
   if (segments.length === 1) {
     return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true };
   }
+  // #/ocio/<clave>/<id>: página de detalle de un ítem (issue #285)
+  // o de una persona (issue #321). El id se valida (alfabeto acotado)
+  // tras decodeURIComponent, como el uid de amigo.
+  if (segments.length === 3) {
+    // Persona: #/ocio/personas/<personId> (issue #321).
+    if (segments[1] === PERSON_KEY) {
+      let personId = segments[2];
+      try {
+        personId = decodeURIComponent(personId);
+      } catch {
+        personId = "";
+      }
+      if (PERSON_ID_RE.test(personId)) {
+        return { section: "person", personId };
+      }
+      // Id inválido → saneado a la pestaña por defecto (URL canónica).
+      return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
+    }
+    // Ítem: solo series y películas tienen ruta de ítem.
+    if (Object.prototype.hasOwnProperty.call(ITEM_KEY_TO_KIND, segments[1])) {
+      let externalId = segments[2];
+      try {
+        externalId = decodeURIComponent(externalId);
+      } catch {
+        externalId = "";
+      }
+      if (ITEM_ID_RE.test(externalId)) {
+        return { section: "item", kind: ITEM_KEY_TO_KIND[segments[1]], externalId };
+      }
+      // Id inválido → saneado a la pestaña por defecto (URL canónica).
+      return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
+    }
+  }
   // #/ocio/<clave>: solo valen las cuatro claves conocidas.
   if (segments.length === 2 && KEY_TO_PANEL[segments[1]]) {
     return { section: "ocio", key: segments[1], panelId: KEY_TO_PANEL[segments[1]] };
@@ -247,8 +325,9 @@ export function parseHash(hash = location.hash) {
   return { section: "ocio", key: DEFAULT_KEY, panelId: KEY_TO_PANEL[DEFAULT_KEY], default: true, invalid: true };
 }
 
-// Hash canónico para una ruta (ocio, perfil, recetas o gimnasio)
-// según su forma. Usada por navigate() para normalizar.
+// Hash canónico para una ruta (ocio, perfil, recetas, gimnasio,
+// detalle de ítem o detalle de persona) según su forma. Usada por
+// navigate() para normalizar.
 function canonicalHashFor(route) {
   if (route?.section === "perfil") {
     return profileHashKey(route.profileSection, route.uid);
@@ -258,6 +337,12 @@ function canonicalHashFor(route) {
   }
   if (route?.section === "gimnasio") {
     return gymHashFor(route.tab);
+  }
+  if (route?.section === "item") {
+    return itemHashFor(route.kind, route.externalId);
+  }
+  if (route?.section === "person") {
+    return personHashFor(route.personId);
   }
   return hashForKey(route?.key || DEFAULT_KEY);
 }

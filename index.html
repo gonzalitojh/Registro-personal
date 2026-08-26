@@ -19,8 +19,8 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="css/styles.css?v=20261001" />
-  <link rel="stylesheet" href="ocio/ocio.css?v=20261001" />
+  <link rel="stylesheet" href="css/styles.css?v=20261015" />
+  <link rel="stylesheet" href="ocio/ocio.css?v=20261015" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -72,6 +72,35 @@
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      <!-- Botón atrás de la página de ítem (issue #285): en la ficha
+           en página nueva de una película o serie, la cabecera
+           superior se respeta pero se coloca en el LUGAR del botón de
+           hamburguesa de la barra lateral (☰, y también del ⚙ de
+           ajustes) para volver a la pantalla previa. El swap se hace
+           por CSS con la clase body.is-item-page (regla única de
+           verdad, sobrevive a re-renders de la barra lateral): por
+           defecto está oculto con CSS (display:none, NUNCA con la
+           clase .hidden, cuyo display:none !important ganaría a la
+           regla de swap), y solo body.is-item-page lo muestra. -->
+      <button type="button" class="icon-btn" id="btn-item-back" aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      <!-- Botón atrás de la página de persona (issue #321): mismo
+           patrón que #btn-item-back — oculto por CSS base
+           (display:none, NUNCA clase .hidden) y mostrado solo con
+           body.is-person-page via CSS. Al pulsar una persona de los
+           carruseles de producción/reparto se navega a su página. -->
+      <button type="button" class="icon-btn" id="btn-person-back" aria-label="Volver a la pantalla anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
 
@@ -240,6 +269,30 @@
     <footer class="app-footer">
       Esta aplicación usa la API de TMDB pero no está respaldada ni certificada por TMDB · Datos de libros vía Open Library / Google Books · Datos de videojuegos vía IGDB (igdb.com)
     </footer>
+  </div>
+
+  <!-- Página de detalle de un ítem de Ocio (issue #285): al pulsar
+       una película o serie (colección o barra de búsqueda) se abre
+       esta vista de primer nivel (hermana de profile-view, fuera de
+       #app) con la ficha en página. La cabecera global superior se
+       respeta (con el botón atrás en lugar del ☰) y el contenido lo
+       renderiza js/item-page.js dentro de #item-view-content. -->
+  <div id="item-view" class="item-view hidden" role="main" aria-label="Ficha de película o serie">
+    <div id="item-view-content"></div>
+  </div>
+
+  <!-- Página de detalle de una persona (issue #321): al pulsar una
+       persona de los carruseles de producción/reparto (o de la ventana
+       «Ver en más detalle») se abre esta vista de primer nivel
+       (hermana de #item-view, fuera de #app) con su foto, biografía,
+       películas/series en las que ha trabajado y sus premios. La
+       cabecera global superior se respeta (con el botón atrás en
+       lugar del ☰ vía body.is-person-page) y el contenido lo
+       renderiza js/person-page.js dentro de #person-view-content.
+       Reutiliza la clase .item-view para el layout (max-width,
+       padding bajo la cabecera, overrides de tema). -->
+  <div id="person-view" class="item-view hidden" role="main" aria-label="Ficha de persona">
+    <div id="person-view-content"></div>
   </div>
 
   <!-- Vista de perfil / estadísticas / amigos (issue #206, iteración
@@ -840,6 +893,38 @@
     </div>
   </div>
 
+  <!-- Ventana de biografía completa de una persona (issue #324): al
+        pulsar "Leer más" en la ficha truncada se abre esta ventana
+        sobre la página de persona con la biografía íntegra. -->
+  <div id="person-bio-modal" class="modal hidden">
+    <div class="modal__backdrop" id="person-bio-modal-backdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Biografía">
+      <button id="person-bio-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="person-bio-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Ventana expandida de la filmografía de una persona (issue #324):
+        carrusel expandido con búsqueda por título/personaje/puesto. -->
+  <div id="person-credits-modal" class="modal modal--top hidden">
+    <div class="modal__backdrop" id="person-credits-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Filmografía">
+      <button id="person-credits-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="person-credits-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Ventana "ver en más detalle" del elenco (issue #294): lista
+        completa de producción (por áreas) o de reparto de la
+        película/serie, sobre la ficha (modal o página de ítem). -->
+  <div id="cast-modal" class="modal modal--top hidden">
+    <div class="modal__backdrop" id="cast-modal-backdrop"></div>
+    <div class="modal__card modal__card--wide" role="dialog" aria-modal="true" aria-label="Reparto y producción">
+      <button id="cast-modal-close" class="modal__close" aria-label="Cerrar">✕</button>
+      <div id="cast-modal-content"></div>
+    </div>
+  </div>
+
   <!-- Buscador global: el input vive en la cabecera (search-bar-wrap) y
        los resultados se muestran en el dropdown #global-search-results
        anclado bajo la barra (js/global-search.js). -->
@@ -852,7 +937,7 @@
        js/auto-hide-nav.js. -->
   <button type="button" id="btn-back-to-top" class="back-to-top" aria-label="Volver arriba">↑ <span>Volver arriba</span></button>
 
-  <script type="module" src="js/app.js?v=20261001"></script>
+  <script type="module" src="js/app.js?v=20261015"></script>
   <script type="module">
     import { registerSW } from './js/sw-register.js';
     if ('serviceWorker' in navigator) registerSW();

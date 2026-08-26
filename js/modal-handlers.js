@@ -4,22 +4,27 @@
 // lógica de presentación de la lógica de estado general.
 // =============================================================
 
-import { addWatch, removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
+import { removeWatch, updateWatch, statusFromWatchLog } from "./watch-log.js";
 import { startReading, finishReading, removeReadEntry, updateReadEntry, statusFromReadLog } from "./reading-log.js";
 import { startPlay, finishPlay, removePlayEntry, updatePlayEntry, statusFromPlayLog } from "./game-log.js";
-import { computeProgress, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain } from "./tv-progress.js";
+import { computeProgress, progressWithRewatch, setEpisodeDate, setEpisodeRating, setSeasonWatched, startRewatch, normalizeEntry, markEpisodeSeenAgain, removeLastEpisodeViewing, completedViewingChanges } from "./tv-progress.js";
 import { getSeasonsMetaFor } from "./quick-actions.js";
 import { todayISO, formatDateEs } from "./dates.js";
 import { isUnreleasedDate } from "./release.js";
 import * as ui from "./ui.js";
 import { scheduleDeletion } from "./undo-delete.js";
-import { getCollectionDetails, getMovieDetails, getSimilarMovies, getSimilarTv, getTvExtraDetails, getTvSeasonsMeta, getWatchProviders } from "./api-movies.js";
+import { getCollectionDetails, getMovieDetails, getRecommendedMovies, getRecommendedTv, getTvExtraDetails, getWatchProviders, getUserCountry, getItemAwards } from "./api-movies.js";
 import { getGameDetails } from "./api-games.js";
 import { minimalStoredFields } from "./search.js";
 import { openRatingModal, closeRatingModal, RATING_MODAL_UNDONE } from "./rating-modal.js";
 import { closeEpisodeActionsModal } from "./episode-actions-modal.js";
+import { closeCastModal } from "./cast-modal.js";
 import { addItem } from "./db.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+// navigate (issue #285, iteración): las tarjetas de saga y de
+// recomendación navegan a la PÁGINA de detalle del ítem. Import seguro
+// sin dependencia circular: router.js no importa nada de la app.
+import { navigate } from "./router.js";
 
 // Detalles de ficha bajo demanda (issue #200, almacenamiento mínimo):
 // si el documento no trae la ficha (solo tarjeta + avisos), el modal
@@ -65,9 +70,15 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
       communityRating: item.communityRating ?? null,
       communityLabel: opts.communityLabel || "TMDB",
       initialRating: item.rating ?? null,
-      onSave: async (rating) => {
-        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, { rating });
+      // Notas del ítem (issue #300): el campo de notas vive en la
+      // ventana de valoración; sin notas previas se muestra vacío.
+      initialNotes: item.notes ?? "",
+      onSave: async (rating, notes) => {
+        const payload = { rating };
+        if (notes !== undefined) payload.notes = notes;
+        await ctx.updateItem(ctx.getCurrentUser().uid, type, item.id, payload);
         item.rating = rating;
+        if (notes !== undefined) item.notes = notes;
       },
       onUndo: opts.onUndo,
       undoLabel: opts.undoLabel,
@@ -79,26 +90,34 @@ async function maybeOpenItemRatingWindow(item, ctx, type, opts = {}) {
   return false;
 }
 
-function confirmDelete(item, kind, ctx) {
+function confirmDelete(item, kind, ctx, onDone) {
   return () => {
     scheduleDeletion(item, ctx.getCurrentUser().uid, kind, ctx);
     ui.closeModal();
+    // En modo página (issue #285) «Eliminar» cierra el modal abierto
+    // (si lo hubiera) y vuelve a la pantalla previa: el item se borra
+    // con deshacer (undo-toast) y la lista de origen se repinta sola
+    // vía snapshot al volver.
+    if (onDone) onDone();
   };
 }
 
-function saveMeta(item, kind, ctx) {
+function saveMeta(item, kind, ctx, onDone) {
   return async (changes) => {
     try {
       await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
       ui.showToast("Guardado.");
-      ui.closeModal();
+      // En modo página (issue #285) se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (onDone) onDone();
+      else ui.closeModal();
     } catch (err) {
       ui.showToast("No se pudo guardar: " + err.message);
     }
   };
 }
 
-function editHandlerFor(item, kind, reopen, ctx) {
+function editHandlerFor(item, kind, reopen, ctx, target = null) {
   return () => {
     ui.openEditModal(item, {
       onSave: async (changes) => {
@@ -106,32 +125,46 @@ function editHandlerFor(item, kind, reopen, ctx) {
           await ctx.updateItem(ctx.getCurrentUser().uid, kind, item.id, changes);
           Object.assign(item, changes);
           ui.showToast("Información actualizada.");
+          // En modo página (issue #285) el modal de edición se abre
+          // SIEMPRE (es un form con foco atrapado): al guardar o
+          // cancelar hay que cerrarlo — el re-render va en la página,
+          // no dentro del modal. En el modal clásico el re-render
+          // ocurre dentro y no debe cerrarse aquí.
+          if (target) ui.closeModal();
           reopen();
         } catch (err) {
           ui.showToast("No se pudo guardar: " + err.message);
         }
       },
-      onCancel: reopen,
+      onCancel: () => {
+        if (target) ui.closeModal();
+        reopen();
+      },
     });
   };
 }
 
 function progressWithStatus(seasonsMeta, item) {
-  const base = computeProgress(seasonsMeta, item.watched);
   if (item.status === "standby" || item.status === "abandonado") {
-    return { ...base, status: item.status };
+    return { ...computeProgress(seasonsMeta, item.watched), status: item.status };
   }
-  return base;
+  // Rewatch (issue #310): progressWithRewatch devuelve el progreso del
+  // ciclo ACTUAL — contadores de episodios vistos en el ciclo (1/73,
+  // iteración 3 feedback #310), siguiente episodio del ciclo sin ver y
+  // estado de hecho "en_curso" («viendo») en lugar de "completado".
+  return progressWithRewatch(seasonsMeta, item);
 }
 
-function getUserCountry() {
-  return localStorage.getItem("watch-provider-country")
-    || (navigator.language && navigator.language.split("-")[1]?.toUpperCase())
-    || "ES";
-}
+// País del usuario para los watch providers (definido y exportado
+// desde api-movies.js, issue #290: fuente de verdad compartida con la
+// página de ítem).
 
-async function openMovieItem(item, ctx, isRerender = false) {
-  const reopen = () => openMovieItem(item, ctx, true);
+// Abre la ficha de una película. Con target (contenedor de la página
+// de ítem, issue #285) renderiza la ficha en la página en lugar de
+// abrir el modal; sin target, comportamiento clásico en #item-modal.
+// isRerender evita re-pedir detalles/API en los re-renders.
+export async function openMovieItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openMovieItem(item, ctx, true, target);
   async function persist(newLog) {
     const status = statusFromWatchLog(newLog);
     // awaitingRelease se limpia siempre al marcar como vista: un ítem
@@ -140,6 +173,18 @@ async function openMovieItem(item, ctx, isRerender = false) {
     item.watchLog = newLog;
     item.status = status;
     item.awaitingRelease = false;
+  }
+
+  // Premios (issue #302, iteración): se muestran los premios del
+  // título extraídos de la API (Wikidata; TMDB no los expone). No es
+  // crítico: si falla la consulta, item.awards queda null y la
+  // sección no se pinta (misma degradación que los watch providers).
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("movie", item.externalId);
+    } catch {
+      item.awards = null;
+    }
   }
 
   // Obtener watch providers (no crítico, si falla se muestra sin providers)
@@ -151,22 +196,33 @@ async function openMovieItem(item, ctx, isRerender = false) {
     }
   }
 
-  // --- Cargar recomendaciones (similares) ---
+  // --- Cargar recomendaciones (issue #319) ---
+  // Endpoint /recommendations de TMDB (el que alimenta la web de
+  // TMDB), filtrando los títulos ya registrados (existingIds) y el
+  // propio ítem abierto ANTES del slice(0,10): así no se recomienda
+  // contenido ya visto/añadido y los huecos se rellenan con los
+  // siguientes de la página 1.
   let recommendations = [];
   let existingIds = new Set();
   if (item.externalId) {
     try {
-      recommendations = await getSimilarMovies(item.externalId);
-      recommendations = recommendations.slice(0, 10);
+      recommendations = await getRecommendedMovies(item.externalId);
+      existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
+      recommendations = recommendations
+        .filter(
+          (r) =>
+            !existingIds.has(String(r.externalId)) &&
+            String(r.externalId) !== String(item.externalId)
+        )
+        .slice(0, 10);
     } catch {
       recommendations = [];
     }
-    existingIds = new Set((await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId));
   }
 
   // --- Cargar películas de la saga (issue #280) ---
-  // Si falla la consulta no bloqueamos la ficha: la sección se oculta
-  // (degradación elegante) y el banner de saga sigue visible.
+  // Si falla la consulta no bloqueamos la ficha: el carrusel «Otras
+  // películas de la saga» simplemente no se renderiza (degradación elegante).
   let sagaParts = null;
   if (item.collectionId) {
     try {
@@ -178,34 +234,8 @@ async function openMovieItem(item, ctx, isRerender = false) {
   }
 
   ui.openMovieModal(item, {
-    onAddWatch: async (date) => {
-      const prevLog = item.watchLog;
-      const prevAwaitingRelease = item.awaitingRelease;
-      const prevStatus = item.status;
-      await persist(addWatch(item.watchLog, date));
-      // Deshacer (issue #136): restaura el watchLog y el status previos
-      // sin pasar por persist(), que fuerza awaitingRelease:false. El
-      // status se restaura LITERAL al capturado (no al recomputado del
-      // log) por si el usuario lo tenía en un estado manual.
-      await maybeOpenItemRatingWindow(item, ctx, "movie", {
-        onUndo: async () => {
-          await ctx.updateItem(ctx.getCurrentUser().uid, "movie", item.id, {
-            watchLog: prevLog,
-            status: prevStatus,
-            awaitingRelease: prevAwaitingRelease,
-          });
-          item.watchLog = prevLog;
-          item.status = prevStatus;
-          item.awaitingRelease = prevAwaitingRelease;
-        },
-      });
-    },
     onUpdateWatch: (index, date) => persist(updateWatch(item.watchLog, index, date)),
     onRemoveWatch: (index) => persist(removeWatch(item.watchLog, index)),
-    onSaveMeta: saveMeta(item, "movie", ctx),
-    onDelete: confirmDelete(item, "movie", ctx),
-    onEdit: editHandlerFor(item, "movie", reopen, ctx),
-    onAddSaga: item.collectionId ? () => openSagaSelector(item, ctx) : undefined,
     // Al añadir una recomendación se actualiza existingIds (Set
     // compartido con el render): tras un re-render la tarjeta sigue
     // mostrando "Añadido" y no se puede crear un duplicado (issue #280).
@@ -234,21 +264,19 @@ async function openMovieItem(item, ctx, isRerender = false) {
           }
         }
       : undefined,
-    // Vista previa de una película de la saga al pulsar su tarjeta
-    // (issue #280, iteración): abre la preview (patrón issue #22) y al
-    // cerrar o añadir restaura la ficha con reopen; el Set existingIds
-    // compartido hace que la tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una película de la saga (issue #285,
+    // iteración): ya no abre la vista previa en ventana — navega a la
+    // PÁGINA de detalle de esa película (#/ocio/peliculas/<id>), igual
+    // que cualquier otra película pulsable. Si no está en el registro,
+    // la página muestra la vista previa con «Añadir».
     onOpenSagaMovie: item.collectionId
-      ? (movie) => openSagaMoviePreview(movie, ctx, reopen, existingIds)
+      ? (movie) => navigate({ section: "item", kind: "movie", externalId: movie.externalId })
       : undefined,
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que las tarjetas de saga — abre
-    // la preview (issue #22) y al cerrar o añadir restaura la ficha
-    // con reopen; el Set existingIds compartido hace que la tarjeta
-    // vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // misma navegación a la página de detalle de la película/serie.
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds, sagaParts);
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+  }, recommendations, existingIds, sagaParts, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -260,7 +288,9 @@ async function openMovieItem(item, ctx, isRerender = false) {
 
 /* ---------- Lógica de colecciones/sagas ---------- */
 
-async function addSagaMovie(movie, ctx) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para el botón "Añadir" de las tarjetas de saga en la vista previa.
+export async function addSagaMovie(movie, ctx) {
   const details = await getMovieDetails(movie.externalId);
   const draft = {
     externalId: movie.externalId,
@@ -282,124 +312,17 @@ async function addSagaMovie(movie, ctx) {
   await addItem(ctx.getCurrentUser().uid, "movie", draft);
 }
 
-/**
- * Vista previa compartida de un ítem externo desde la ficha (issue
- * #280): lo usan las tarjetas de «Otras películas de la saga» y las de
- * recomendaciones (películas y series), con el mismo patrón que la
- * vista previa de búsqueda (issue #22). Al cerrar la vista previa o
- * tras añadir el ítem, se restaura la ficha que se estaba viendo
- * (restoreModal). El Set existingIds compartido con el render hace
- * que, al restaurar la ficha, la tarjeta vuelva como «Añadida».
- * @param {Object}   previewItem  - {externalId, type, title, year, coverUrl, overview}
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- * @param {Function} performAdd   - async (item) => alta del ítem (lanza si falla)
- */
-async function openExternalPreview(previewItem, ctx, restoreModal, existingIds, performAdd) {
-  ui.closeModal(); // limpia trap/foco del modal de ficha antes de abrir la preview
-  ui.openSearchPreviewModal(previewItem, {
-    added: existingIds.has(String(previewItem.externalId)),
-    onClose: () => {
-      ui.closeModal(); // limpia trap/foco de la preview...
-      restoreModal();  // ...y restaura la ficha
-    },
-    onAdd: async (item, btn) => {
-      btn.disabled = true;
-      btn.textContent = "Añadiendo…";
-      try {
-        await performAdd(item);
-        existingIds.add(String(item.externalId));
-        ui.showToast(`«${item.title}» añadida a tu registro.`);
-        ui.closeModal();
-        restoreModal(); // la ficha restaurada muestra la tarjeta como «Añadida»
-        return true;
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = "Añadir";
-        ui.showToast("No se pudo añadir: " + err.message);
-        return false;
-      }
-    },
-    onEnrich: (item) => enrichExternalPreview(item),
-  });
-}
-
-/**
- * Enriquecimiento de la vista previa externa (issue #280): películas
- * con getMovieDetails; series con getTvExtraDetails + temporadas
- * (getTvSeasonsMeta, no bloqueante). Nunca lanza: devuelve {} si falla.
- */
-async function enrichExternalPreview(item) {
-  if (item.type === "tv") {
-    try {
-      const details = await getTvExtraDetails(item.externalId);
-      try {
-        details.seasonsMeta = await getTvSeasonsMeta(item.externalId);
-      } catch (err) {
-        // no bloqueamos la preview si fallan las temporadas
-      }
-      return details;
-    } catch (err) {
-      return {};
-    }
-  }
-  try {
-    return await getMovieDetails(item.externalId);
-  } catch (err) {
-    return {};
-  }
-}
-
-/**
- * Vista previa de una película de la saga (issue #280, iteración):
- * al pulsar una tarjeta de «Otras películas de la saga» se muestra su
- * información antes de añadirla.
- * @param {Object}   movie        - Parte de la saga ({externalId, title, year, posterUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha de la película original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openSagaMoviePreview(movie, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(movie.externalId),
-    type: "movie",
-    title: movie.title,
-    year: movie.year || "",
-    coverUrl: movie.posterUrl || null,
-    posterUrl: movie.posterUrl || null, // addSagaMovie espera posterUrl
-    overview: movie.overview || "",
-  };
-  // addSagaMovie lanza si la alta falla; openExternalPreview lo
-  // captura y restaura el botón sin cerrar la preview (issue #280).
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addSagaMovie(item, ctx)
-  );
-}
-
-/**
- * Vista previa de una recomendación (issue #280, iteración): al pulsar
- * una tarjeta de «Si te gustó esto…» (película o serie) se muestra su
- * información ampliada antes de añadirla, igual que en las tarjetas de
- * saga y en la vista previa de búsqueda (issue #22).
- * @param {Object}   recItem      - Recomendación ({externalId, type, title, year, coverUrl, overview})
- * @param {Object}   ctx          - Contexto de datos del usuario
- * @param {Function} restoreModal - Reabre la ficha del ítem original
- * @param {Set}      existingIds  - Set de externalId ya añadidos (compartido con el render)
- */
-function openRecommendationPreview(recItem, ctx, restoreModal, existingIds) {
-  const previewItem = {
-    externalId: String(recItem.externalId),
-    type: recItem.type === "tv" ? "tv" : "movie",
-    title: recItem.title,
-    year: recItem.year || "",
-    coverUrl: recItem.coverUrl || null,
-    overview: recItem.overview || "",
-  };
-  return openExternalPreview(previewItem, ctx, restoreModal, existingIds, (item) =>
-    addRecommendationItem(item, ctx)
-  );
-}
+// NOTA (issue #285, iteración): los helpers de vista previa en ventana
+// de saga/recomendaciones (openExternalPreview, enrichExternalPreview,
+// openSagaMoviePreview, openRecommendationPreview) se han ELIMINADO:
+// pulsar la tarjeta de una saga o de una recomendación ahora navega a
+// la página de detalle del ítem (callbacks onOpenSagaMovie/
+// onOpenRecommendation → navigate()), igual que cualquier otra
+// película o serie pulsable. La página muestra la ficha o la vista
+// previa con «Añadir» según el ítem esté o no en el registro (ver
+// js/item-page.js), por lo que la preview en ventana ya no hace falta
+// en esta vía. La preview de búsqueda (issue #22) sigue viva para
+// libros y videojuegos en search.js.
 
 /**
  * Añade un ítem recomendado (película o serie) al registro del usuario.
@@ -461,7 +384,9 @@ async function addRecommendationItem(item, ctx) {
  * addRecommendationItem.
  * @returns {Promise<boolean>} true si se añadió correctamente.
  */
-async function addFromRecommendation(item, btn, ctx) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para el botón "Añadir" de las tarjetas de recomendación.
+export async function addFromRecommendation(item, btn, ctx) {
   btn.disabled = true;
   btn.textContent = "Añadiendo…";
   try {
@@ -475,60 +400,6 @@ async function addFromRecommendation(item, btn, ctx) {
     btn.textContent = "Añadir";
     ui.showToast("No se pudo añadir: " + err.message);
     return false;
-  }
-}
-
-async function openSagaSelector(item, ctx) {
-  if (!item.collectionId) return;
-  try {
-    const collection = await getCollectionDetails(item.collectionId);
-    if (!collection || !collection.parts.length) {
-      ui.showToast("No se pudo obtener la información de la saga.");
-      return;
-    }
-
-    const existingIds = new Set(
-      (await ctx.getGroupItemsResolved("movies")).map((m) => m.externalId)
-    );
-
-    const missingMovies = collection.parts.filter(
-      (p) => !existingIds.has(p.externalId)
-    );
-
-    if (!missingMovies.length) {
-      ui.showToast("Ya tienes todas las películas de esta saga.");
-      return;
-    }
-
-    ui.closeModal();
-
-    ui.openSagaSelectionModal(collection.name, missingMovies, {
-      onConfirm: async (selectedMovies) => {
-        ui.closeModal();
-        let added = 0;
-        let failed = 0;
-
-        for (const movie of selectedMovies) {
-          try {
-            await addSagaMovie(movie, ctx);
-            added++;
-          } catch (err) {
-            console.error("Error al añadir", movie.title, err);
-            failed++;
-          }
-        }
-
-        if (added > 0) {
-          ui.showToast(`${added} película${added !== 1 ? "s" : ""} añadida${added !== 1 ? "s" : ""} de ${collection.name}.`);
-        }
-        if (failed > 0) {
-          ui.showToast(`${failed} película${failed !== 1 ? "s" : ""} no pudieron añadirse.`);
-        }
-      },
-      onCancel: () => ui.closeModal(),
-    });
-  } catch (err) {
-    ui.showToast("Error al consultar la saga: " + err.message);
   }
 }
 
@@ -624,8 +495,11 @@ async function openGameItem(item, ctx, isRerender = false) {
   }
 }
 
-async function openTvItem(item, ctx, isRerender = false) {
-  const reopen = () => openTvItem(item, ctx, true);
+// Abre la ficha de una serie. Con target (contenedor de la página de
+// ítem, issue #285) renderiza la ficha en la página en lugar de abrir
+// el modal; sin target, comportamiento clásico en #item-modal.
+export async function openTvItem(item, ctx, isRerender = false, target = null) {
+  const reopen = () => openTvItem(item, ctx, true, target);
   let seasonsMeta;
   try {
     seasonsMeta = await getSeasonsMetaFor(item, ctx);
@@ -656,6 +530,16 @@ async function openTvItem(item, ctx, isRerender = false) {
 
   const progress = progressWithStatus(seasonsMeta, item);
 
+  // Premios (issue #302, iteración): misma consulta de API que en
+  // películas (ver openMovieItem); no crítico.
+  if (item.externalId) {
+    try {
+      item.awards = await getItemAwards("tv", item.externalId);
+    } catch {
+      item.awards = null;
+    }
+  }
+
   // Obtener watch providers
   if (item.externalId) {
     try {
@@ -666,24 +550,41 @@ async function openTvItem(item, ctx, isRerender = false) {
   }
 
   async function persistWatched(newWatched) {
-    const newProgress = computeProgress(seasonsMeta, newWatched);
-    // awaitingRelease se limpia siempre al marcar un episodio: una
-    // serie con episodios vistos no puede seguir "sin estrenar"
-    // (idempotente).
-    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+    const newProgress = progressWithRewatch(seasonsMeta, item, newWatched);
+    const changes = {
       watched: newWatched,
       status: newProgress.status,
       nextEpisode: newProgress.nextEpisode,
       firstWatchedAt: newProgress.firstWatchedAt,
       lastWatchedAt: newProgress.lastWatchedAt,
       awaitingRelease: false,
-    });
+    };
+    // Al COMPLETARSE la serie (feedback #310, iteración 4) se archiva
+    // el visionado en history («visualizaciones anteriores») y se
+    // incrementa timesCompleted — no al pulsar «Volver a verla desde
+    // el principio», que solo reinicia el ciclo (startRewatch). Se
+    // computa ANTES de mutar el flag: el helper necesita el estado
+    // previo (rewatching true → startedAt = rewatchStartedAt).
+    const completed = completedViewingChanges(item, newWatched, newProgress);
+    if (item.rewatching) {
+      changes.rewatching = newProgress.rewatching;
+      item.rewatching = newProgress.rewatching;
+    }
+    if (completed) {
+      changes.history = completed.history;
+      changes.timesCompleted = completed.timesCompleted;
+    }
+    await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
     item.watched = newWatched;
     item.status = newProgress.status;
     item.nextEpisode = newProgress.nextEpisode;
     item.firstWatchedAt = newProgress.firstWatchedAt;
     item.lastWatchedAt = newProgress.lastWatchedAt;
     item.awaitingRelease = false;
+    if (completed) {
+      item.history = completed.history;
+      item.timesCompleted = completed.timesCompleted;
+    }
     return newProgress;
   }
 
@@ -723,17 +624,28 @@ async function openTvItem(item, ctx, isRerender = false) {
     return false;
   }
 
-  // --- Cargar recomendaciones (similares) ---
+  // --- Cargar recomendaciones (issue #319) ---
+  // Endpoint /recommendations de TMDB (el que alimenta la web de
+  // TMDB), filtrando los títulos ya registrados (existingIds) y el
+  // propio ítem abierto ANTES del slice(0,10): así no se recomienda
+  // contenido ya visto/añadido y los huecos se rellenan con los
+  // siguientes de la página 1.
   let recommendations = [];
   let existingIds = new Set();
   if (item.externalId) {
     try {
-      recommendations = await getSimilarTv(item.externalId);
-      recommendations = recommendations.slice(0, 10);
+      recommendations = await getRecommendedTv(item.externalId);
+      existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
+      recommendations = recommendations
+        .filter(
+          (r) =>
+            !existingIds.has(String(r.externalId)) &&
+            String(r.externalId) !== String(item.externalId)
+        )
+        .slice(0, 10);
     } catch {
       recommendations = [];
     }
-    existingIds = new Set((await ctx.getGroupItemsResolved("tv")).map((t) => t.externalId));
   }
 
   ui.openTvModal(item, seasonsMeta, progress, {
@@ -755,6 +667,9 @@ async function openTvItem(item, ctx, isRerender = false) {
       const wasWatched = Boolean(prevEntry && prevEntry.date);
       const prevAwaitingRelease = item.awaitingRelease;
       const prevStatus = item.status;
+      const prevRewatching = item.rewatching;
+      const prevHistory = item.history;
+      const prevTimesCompleted = item.timesCompleted;
       const newProgress = await persistWatched(
         setEpisodeDate(item.watched, seasonNumber, episodeNumber, dateOrNull)
       );
@@ -764,17 +679,31 @@ async function openTvItem(item, ctx, isRerender = false) {
         // la casilla/estrellas/fecha correctamente (item ya mutado).
         const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
           onUndo: async () => {
+            // Rewatch (issue #310, QA H1): el marcado pudo COMPLETAR el
+            // rewatch y limpiar el flag (persistWatched lo mutó a false);
+            // el undo lo restaura ANTES de recomputar, para que el
+            // progreso vuelva a ser el del rewatch en curso (T1E1) y no
+            // un "completado" sin ciclo retomable.
+            if (prevRewatching) item.rewatching = true;
             await persistWatched(setEpisodeDate(item.watched, seasonNumber, episodeNumber, null));
             // persistWatched fuerza awaitingRelease:false y el status
             // recomputado; el segundo update restaura el flag/estado
-            // previo. Ventana transitoria en DB auto-reparable
-            // (idempotente, issue #136).
+            // previo (y, feedback #310 iteración 4, el history y el
+            // contador de completados que el marcado pudo incrementar al
+            // completar la serie). Ventana transitoria en DB
+            // auto-reparable (idempotente, issue #136).
             if (prevAwaitingRelease) {
               await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awaitingRelease: true });
               item.awaitingRelease = true;
             }
-            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { status: prevStatus });
+            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+              status: prevStatus,
+              history: prevHistory,
+              timesCompleted: prevTimesCompleted,
+            });
             item.status = prevStatus;
+            item.history = prevHistory;
+            item.timesCompleted = prevTimesCompleted;
           },
         });
         if (undone) return computeProgress(seasonsMeta, item.watched); // progreso REVERTIDO
@@ -785,10 +714,57 @@ async function openTvItem(item, ctx, isRerender = false) {
     onSetEpisodeRating: (seasonNumber, episodeNumber, rating) =>
       persistWatched(setEpisodeRating(item.watched, seasonNumber, episodeNumber, rating)),
 
-    // Episodio YA visto visto de nuevo (issue #133): suma 1 al contador
-    // de visualizaciones y pone la fecha en hoy, conservando la valoración.
-    onSetEpisodeSeenAgain: (seasonNumber, episodeNumber) =>
-      persistWatched(markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())),
+    // Episodio YA visto visto de nuevo (issue #133) + ventana de
+    // valoración con la valoración previa por defecto (feedback #310,
+    // iteración 2): persiste el +1 al contador con la fecha de hoy
+    // (markEpisodeSeenAgain, conservando la valoración) y abre la
+    // ventana de valoración MOSTRANDO la valoración que se le dio la
+    // vez anterior («debe ser siempre la misma a menos que se
+    // cambie»). «Deshacer» revierte el +1 y la fecha recién
+    // registrada (removeLastEpisodeViewing) y, si el marcado hubiera
+    // completado el rewatch, restaura el flag previo y el estado.
+    onEpisodeSeenAgain: async (seasonNumber, episodeNumber) => {
+      const prevAwaitingRelease = item.awaitingRelease;
+      const prevStatus = item.status;
+      const prevRewatching = item.rewatching;
+      const prevHistory = item.history;
+      const prevTimesCompleted = item.timesCompleted;
+      const newProgress = await persistWatched(
+        markEpisodeSeenAgain(item.watched, seasonNumber, episodeNumber, todayISO())
+      );
+      const undone = await maybeOpenEpisodeRatingWindow(item, ctx, seasonNumber, episodeNumber, {
+        onUndo: async () => {
+          if (prevRewatching) item.rewatching = true;
+          await persistWatched(removeLastEpisodeViewing(item.watched, seasonNumber, episodeNumber));
+          if (prevAwaitingRelease) {
+            await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { awaitingRelease: true });
+            item.awaitingRelease = true;
+          }
+          // Feedback #310 (iteración 4): si el «verlo de nuevo» hubiera
+          // COMPLETADO la serie, el marcado archivó el visionado en
+          // history y elevó timesCompleted; el undo los restaura.
+          await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, {
+            status: prevStatus,
+            history: prevHistory,
+            timesCompleted: prevTimesCompleted,
+          });
+          item.status = prevStatus;
+          item.history = prevHistory;
+          item.timesCompleted = prevTimesCompleted;
+        },
+      });
+      // Progreso REVERTIDO (issue #136): progressWithRewatch con el
+      // flag restaurado devuelve el del rewatch en curso (T1E1) para
+      // que el banner no pinte un «completado» fantasma.
+      if (undone) return progressWithRewatch(seasonsMeta, item, item.watched);
+      return newProgress;
+    },
+
+    // Desmarcar con varias visualizaciones (feedback issue #310):
+    // elimina solo la ÚLTIMA visión (decrementa times y quita la fecha
+    // más reciente); con una sola visión, desmarca por completo.
+    onRemoveLastViewing: (seasonNumber, episodeNumber) =>
+      persistWatched(removeLastEpisodeViewing(item.watched, seasonNumber, episodeNumber)),
 
     onToggleSeason: (seasonNumber, allWatched) => {
       const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
@@ -812,33 +788,26 @@ async function openTvItem(item, ctx, isRerender = false) {
       const changes = startRewatch(item);
       await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, changes);
       Object.assign(item, changes);
-      ui.closeModal();
+      // Modo página (issue #285): se re-renderiza la ficha en la
+      // página; en el modal clásico se cierra la ventana.
+      if (target) reopen();
+      else ui.closeModal();
       ui.showToast("Nuevo visionado empezado. ¡A por ello!");
     },
 
-    onSetStatus: async (newStatusOrNull) => {
-      const status = newStatusOrNull || computeProgress(seasonsMeta, item.watched).status;
-      await ctx.updateItem(ctx.getCurrentUser().uid, "tv", item.id, { status });
-      item.status = status;
-      return progressWithStatus(seasonsMeta, item);
-    },
-
-    onSaveMeta: saveMeta(item, "tv", ctx),
-    onDelete: confirmDelete(item, "tv", ctx),
-    onEdit: editHandlerFor(item, "tv", reopen, ctx),
     onAddRecommendation: async (recItem, btn) => {
       if (await addFromRecommendation(recItem, btn, ctx)) {
         existingIds.add(String(recItem.externalId));
       }
     },
-    // Vista previa de una recomendación al pulsar su tarjeta (issue
-    // #280, iteración): mismo patrón que en la ficha de película —
-    // abre la preview (issue #22) y al cerrar o añadir restaura la
-    // ficha con reopen; el Set existingIds compartido hace que la
-    // tarjeta vuelva como «Añadida».
+    // Pulsar la tarjeta de una recomendación (issue #285, iteración):
+    // navega a la PÁGINA de detalle de la serie/película (#/ocio/
+    // series/<id> o #/ocio/peliculas/<id>) en lugar de la preview en
+    // ventana; si no está en el registro, la página muestra la vista
+    // previa con «Añadir».
     onOpenRecommendation: (recItem) =>
-      openRecommendationPreview(recItem, ctx, reopen, existingIds),
-  }, recommendations, existingIds);
+      navigate({ section: "item", kind: recItem.type === "tv" ? "tv" : "movie", externalId: recItem.externalId }),
+  }, recommendations, existingIds, { target });
 
   // Ficha bajo demanda: cargar detalles ampliados en segundo plano
   // (solo la primera apertura; los re-render no vuelven a pedirlos).
@@ -857,9 +826,10 @@ export function openItem(item, ctx) {
 
 export function setupModalCloseListeners() {
   // Cierra el modal activo respetando un cierre personalizado registrado
-  // (modal._onClose, lo usa la vista previa de saga —issue #280— para
-  // restaurar la ficha; se consume antes de invocarlo). Si no hay
-  // personalizado, cierre normal.
+  // (modal._onClose, lo registra ui.openSearchPreviewModal para las
+  // vistas previas de búsqueda —issue #22/#280— cuando quieren
+  // restaurar algo al cerrar; se consume antes de invocarlo). Si no
+  // hay personalizado, cierre normal.
   const closeActiveModal = () => {
     const modal = document.getElementById("item-modal");
     if (modal._onClose) {
@@ -879,15 +849,23 @@ export function setupModalCloseListeners() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const castModal = document.getElementById("cast-modal");
       const episodeActionsModal = document.getElementById("episode-actions-modal");
       const ratingModal = document.getElementById("rating-modal");
       const modal = document.getElementById("item-modal");
       const notifDropdown = document.getElementById("notif-dropdown");
 
-      // Prioridad: episodio-ya-visto > ventana de valoración > modal
-      // activo > notificaciones. (La búsqueda global ya no es un modal
-      // desde la issue #46: su dropdown de resultados gestiona su propio
-      // Escape con stopPropagation, así que nunca llega hasta aquí.)
+      // Prioridad: elenco > episodio-ya-visto > ventana de valoración >
+      // modal activo > notificaciones. (La búsqueda global ya no es un
+      // modal desde la issue #46: su dropdown de resultados gestiona su
+      // propio Escape con stopPropagation, así que nunca llega hasta
+      // aquí.) La ventana del elenco (issue #294) es la capa superior
+      // cuando está abierta: el Escape la cierra a ella, no a la ficha.
+      if (castModal && !castModal.classList.contains("hidden")) {
+        e.preventDefault();
+        closeCastModal();
+        return;
+      }
       if (episodeActionsModal && !episodeActionsModal.classList.contains("hidden")) {
         e.preventDefault();
         closeEpisodeActionsModal();

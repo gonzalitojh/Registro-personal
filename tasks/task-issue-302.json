@@ -1,0 +1,46 @@
+{
+  "title": "Premios",
+  "description": "Issue #302: La base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev). ITERACIÓN 1 (comentario 2026-08-19): 1) las plataformas disponibles deben volver a su sitio (encima de la producción, bajo la sinopsis; la primera iteración las dejó bajo el reparto); 2) la sección de premios va bajo las plataformas y debe EXTRAER los premios de la API (no ser un formulario para que el usuario los introduzca). ITERACIÓN 2 (comentario 2026-08-19T08:35:07Z): 1) los premios deben estar agrupados por tipo (Óscar, Golden Globe, etc) pudiendo minimizar la vista de cada uno; 2) también deben aparecer las nominaciones, con una etiqueta que diferencie premios y nominaciones; 3) deben mostrarse los implicados en el premio (p. ej. el actor de un premio al mejor actor de reparto). ITERACIÓN 3 (comentario 2026-08-19T09:27:31Z): 1) cuando hay varios ganadores de un premio pone «Ganadors» en lugar de «Ganadores»; 2) por defecto, cada premio debe estar minimizado y la sección entera de Premios también. ITERACIÓN 4 (comentario 2026-08-19T10:04:18Z): 1) en la cabecera de la sección de premios y de cada premio aparece el número de premios/nominaciones — debe separar premios de nominaciones (no un total combinado); 2) en los premios, eliminar «ganador/es» y «nominado/s» y dejar simplemente el nombre de las personas. ITERACIÓN 5 (comentario 2026-08-19T10:27:39Z): la palabra «Premios» de la sección o el nombre de cada premio debe ir alineado a la izquierda, para que estén siempre en la misma posición — ahora, en función del texto de la derecha (premios ganados y nominados) se muestra diferente para cada premio.",
+  "status": "review",
+  "acceptance criteria": [
+    "ITERACIÓN 1: Las plataformas disponibles («Dónde verla») vuelven a estar encima de la producción y bajo la sinopsis.",
+    "ITERACIÓN 1: Nueva sección «Premios» bajo las plataformas, en solo lectura, con los premios del ítem extraídos de la API (Wikidata, P166).",
+    "ITERACIÓN 1: La sección de premios NO tiene formulario ni botones para que el usuario introduzca premios.",
+    "ITERACIÓN 1: La sección no aparece cuando el ítem no tiene premios (degradación elegante).",
+    "ITERACIÓN 1: Mismo orden de secciones en ficha (página y modal), preview de la página de ítem y ficha de solo lectura del amigo.",
+    "ITERACIÓN 2: Los premios se muestran agrupados por familia o tipo (Óscar, Globos de Oro, Emmy…), resuelta en SPARQL (P805→P179/P361 de la ceremonia, P361/P179 del premio, fallback al nombre del premio).",
+    "ITERACIÓN 2: Cada grupo es minimizable (detalles <details>/<summary> nativos, abiertos por defecto, sin JS).",
+    "ITERACIÓN 2: Aparecen también las nominaciones (P1411) junto a los premios (P166), diferenciadas con una etiqueta «Premio»/«Nominación».",
+    "ITERACIÓN 2: Se muestran los implicados: ganador (P1346) en premios y nominados (P2453) en nominaciones, con prefijo «Ganador:»/«Nominado(s):». — SUPERSEDIDO por la ITERACIÓN 4: los prefijos se eliminan y quedan solo los nombres (la etiqueta Premio/Nominación distingue el tipo).",
+    "ITERACIÓN 2: La sección sigue siendo solo lectura, con degradación elegante y datos de Wikidata escapados (escapeHtml).",
+    "ITERACIÓN 2: Sin scroll horizontal a 360/768/1280 px y visualización correcta en los cuatro temas (Oscuro, Negro puro, Claro, Blanco puro) con contraste AA, siguiendo AGENTS.md.",
+    "ITERACIÓN 3: El plural de implicados es correcto: «Ganador»/«Ganadores» y «Nominado»/«Nominados» (nunca «Ganadors»). — SUPERSEDIDO por la ITERACIÓN 4: al eliminar los prefijos («Ganador:»/«Nominado:») el plural deja de pintarse; el requisito de no mostrar «Ganadors» queda cubierto al no existir rótulo.",
+    "ITERACIÓN 3: Cada grupo de premios está minimizado por defecto (details sin open) y la sección entera «Premios» también (details con summary cabecera, minimizable), con chevron propio en los cuatro temas.",
+    "El trabajo parte de la rama feat/issue-201 y la PR se hace contra feat/issue-201 (no contra dev).",
+    "ITERACIÓN 4: La cabecera de la sección «Premios» y la de cada familia muestran por separado el número de premios y de nominaciones («(3 premios, 2 nominaciones)»), nunca un total único combinado; con singular/plural correctos («1 premio», «2 premios», «1 nominación», «3 nominaciones») y sin ceros inútiles (no se pinta «0 nominaciones»).",
+    "ITERACIÓN 4: En las filas de premios y nominaciones desaparecen los prefijos «Ganador/Ganadores:» y «Nominado/Nominados:»: se muestra solo el nombre de las personas (la etiqueta «Premio»/«Nominación» sigue distinguiendo el tipo).",
+    "ITERACIÓN 4: Sin scroll horizontal a 360/768/1280 px en los cuatro temas con los contadores separados y contenido realista largo (nombres de familia, premios y varios implicados), verificado con Chromium headless; todos los datos siguen escapados (escapeHtml).",
+    "ITERACIÓN 5: Las cabeceras de la sección «Premios» y de cada familia (grupo) tienen el título/nombre SIEMPRE anclado a la izquierda, en la misma posición fija, con independencia de la longitud del contador de la derecha («(3 premios, 2 nominaciones)»). El contador va empujado al borde derecho.",
+    "ITERACIÓN 5: Sin scroll horizontal a 360/768/1280 px en los cuatro temas con contadores de distinta longitud (cortos y largos), y contenido realista largo; verificado con Chromium headless midiendo la posición izquierda del título/nombre (constante entre grupos)."
+  ],
+  "definition of done": [
+    "Planificación completada",
+    "Implementación realizada sobre rama creada desde feat/issue-201 (iteración 2 del comentario de la issue: agrupación por tipo, nominaciones e implicados; iteración 3: plural correcto y minimizado por defecto; iteración 4: contadores separados premios/nominaciones y sin rótulos de ganador/nominado; iteración 5: cabeceras alineadas a la izquierda con posición fija)",
+    "Validación contra criterios de aceptación (QA) — verificada con datos reales de Wikidata y Chromium headless (3 anchos, 4 temas)",
+    "Escaneo de seguridad sin hallazgos HIGH",
+    "ADR documentado (ADR-108 actualizado con la iteración 4 y la iteración 5)",
+    "Manual de usuario actualizado (§Premios: contadores separados, nombres sin rótulos y cabeceras alineadas a la izquierda)",
+    "PR contra feat/issue-201 sin keyword de cierre (PR #303 actualizada, sin duplicar)",
+    "Issue #302 label actualizada a su estado final"
+  ],
+  "issue": {
+    "number": 302,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/302",
+    "title": "Premios"
+  },
+  "pr": {
+    "number": 303,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/303",
+    "branch": "content/issue-302-premios"
+  }
+}

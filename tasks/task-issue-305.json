@@ -1,0 +1,33 @@
+{
+  "title": "Scroll de producción y reparto en PC",
+  "description": "Issue #305: El scroll horizontal de las secciones de producción y reparto funciona perfectamente en móvil, pero en PC, al mover ligeramente la rueda del ratón desplaza media lista de un golpe.\n\nLa base de la que iniciar el trabajo es la rama feat/issue-201. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a dev).",
+  "status": "review",
+  "acceptance criteria": [
+    "C1: En PC, mover la rueda del ratón sobre los carruseles de producción/reparto avanza de forma proporcionada: un toque de rueda desplaza aproximadamente una tarjeta (o menos), nunca «media lista» de un golpe.",
+    "C2: El desplazamiento táctil (móvil/tablet) sigue funcionando con la inercia nativa del navegador, sin cambios de comportamiento.",
+    "C3: El desplazamiento con trackpad conserva la inercia suave (glide con fricción) que ya existía.",
+    "C4: Si el carrusel está en un borde y no puede avanzar en la dirección del gesto, el gesto NO se consume y la página hace su scroll vertical natural.",
+    "C5: No hay regresión visual: los carruseles se ven igual en los cuatro modos de tema y en los tres anchos (360/768/1280 px), sin scroll horizontal a nivel de página.",
+    "C6: El manual de usuario refleja el comportamiento del scroll con rueda del ratón en PC."
+  ],
+  "definition of done": [
+    "Planificación completada (plan detallado).",
+    "Implementación en rama derivada de feat/issue-201 (PR contra feat/issue-201, NO dev).",
+    "Validación QA contra criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentando el cambio (con 'Related issue: #305').",
+    "Manual de usuario actualizado.",
+    "Bump de versión PWA por el cambio de comportamiento.",
+    "PR contra feat/issue-201 SIN keyword de cierre; task file subido con status review + bloque pr; issue #305 a status: needs-review."
+  ],
+  "issue": {
+    "number": 305,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/305",
+    "title": "Scroll de producción y reparto en PC"
+  },
+  "pr": {
+    "number": 307,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/307",
+    "base": "feat/issue-201"
+  }
+}

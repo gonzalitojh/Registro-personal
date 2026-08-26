@@ -7,11 +7,14 @@
 import { todayISO, formatDateEs } from "./dates.js";
 import { STATUS_LABELS } from "./constants.js";
 import { getNextEpisodeAirInfo, isItemUnreleased } from "./sorting.js";
-import { normalizeEntry, computeEpisodeAverageRating } from "./tv-progress.js";
+import { normalizeEntry, computeEpisodeAverageRating, seriesCompleteTimes, seasonCompleteTimes, entrySeenInCycle, entrySeenSince, episodeBaseline } from "./tv-progress.js";
 import { trapFocus } from "./focus-utils.js";
-import { unreleasedConfirmMessage, isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
+import { isUnreleasedDate, episodeUnreleasedMessage } from "./release.js";
 import { openEpisodeActionsModal } from "./episode-actions-modal.js";
+import { openCastModal, safePhotoUrl } from "./cast-modal.js";
 import { needsDetailFetch, loadItemDetails } from "./item-details.js";
+import { getItemAwards } from "./api-movies.js";
+import { navigate } from "./router.js";
 
 function scopeFor(type) {
   return type === "book" ? "book" : type === "game" ? "game" : "media";
@@ -28,7 +31,8 @@ function escapeHtml(str) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 // HTML para un distintivo de puntuación de la comunidad (TMDB, IGDB
@@ -55,7 +59,9 @@ function communityRatingHtml(item) {
 
 // Para modales: siempre muestra una línea, ya sea la nota real o
 // un indicador de "Sin puntuaciones" cuando no hay datos de TMDB/IGDB.
-function communityRatingDisplay(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar la misma información del título que la ficha.
+export function communityRatingDisplay(item) {
   const label = item.type === "game" ? "IGDB" : "TMDB";
   if (item.communityRating != null) {
     const val = Number(item.communityRating).toFixed(1);
@@ -73,7 +79,8 @@ function communityRatingDisplay(item) {
 
 // HTML para el botón de tráiler de YouTube.
 // Devuelve cadena vacía si no hay URL de tráiler disponible.
-function trailerButtonHtml(item) {
+// Exportado (issue #290): lo reutiliza la preview de la página de ítem.
+export function trailerButtonHtml(item) {
   if (!item.trailerUrl) return "";
   return `<a href="${escapeHtml(item.trailerUrl)}" target="_blank" rel="noopener noreferrer" class="trailer-btn" aria-label="Ver tráiler en YouTube">
     <span class="trailer-btn__icon" aria-hidden="true">▶</span>
@@ -93,8 +100,6 @@ export const PLACEHOLDER_COVER =
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='300'><rect width='100%' height='100%' fill='#e3dac4'/><text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#948a76' text-anchor='middle'>Sin imagen</text></svg>`
   );
-
-/* ---------- Pantallas ---------- */
 
 // Placeholder de la barra de búsqueda global (issue #46): al entrar
 // se muestra "Mi Registro" y a los 3.5 s pasa al placeholder por
@@ -253,6 +258,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
   modal.classList.remove("hidden");
   modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
 
+  // Carruseles de elenco (issue #294): si el resultado de búsqueda ya
+  // trae cast/crew (p. ej. reapertura con caché), cablear los botones.
+  wireCastCrewClicks(content, item);
+
   if (onEnrich) {
     const previewDetailsEl = content.querySelector("#preview-details");
     const loadingHint = content.querySelector("#preview-loading");
@@ -277,6 +286,10 @@ export function openSearchPreviewModal(item, { added = false, onAdd = null, onEn
 
       // Solo se re-renderiza el bloque de detalles, no la estructura
       previewDetailsEl.innerHTML = gamePlatformsHtml(item) + extraInfoHtml(item) + previewPagesHtml(item) + previewSeasonsHtml(item);
+      // Los carruseles de elenco recién llegados (issue #294) se
+      // cablean tras el re-render (los botones del render inicial no
+      // existen ya: #preview-details se sustituyó entero).
+      wireCastCrewClicks(content, item);
 
       // Si llegaron rating de comunidad o tráiler nuevos, refrescar
       // esos bloques (pueden no existir: p. ej. libros)
@@ -313,7 +326,11 @@ function progressLine(item) {
     if (item.status === "standby") return "En pausa";
     if (item.status === "abandonado") return "Abandonada";
     if (item.status === "completado") {
-      const times = (item.timesCompleted || 0) + 1;
+      // Contador coherente con los episodios (feedback #310, it. 3):
+      // mínimo de veces de los episodios — el contador inflado por
+      // timesCompleted (marcados completos erróneos) ya no se muestra;
+      // fallback a timesCompleted+1 solo sin datos de episodios.
+      const times = seriesCompleteTimes(item.watched) || (item.timesCompleted || 0) + 1;
       return `Completa${times > 1 ? ` · ×${times}` : ""} · ${formatDateEs(item.lastWatchedAt)}`;
     }
     if (item.nextEpisode) {
@@ -371,7 +388,9 @@ function quickActionLabel(item) {
   return "Empezar ✓";
 }
 
-function upcomingBadge(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar el distintivo de "sin estrenar" igual que la ficha.
+export function upcomingBadge(item) {
   if (!isItemUnreleased(item)) return "";
   const cls = "item-card__upcoming item-card__upcoming--unreleased";
   if (item.type === "movie") {
@@ -616,15 +635,23 @@ export function ratingPickerHtml(rating, idPrefix = "field-rating", extraHtml = 
     </div>`;
 }
 
-// Media de valoración de los episodios valorados de la serie (issue #80).
-// Sin media: span oculto (placeholder que updateEpisodeAverage actualiza).
-function episodeAverageHtml(watched, idPrefix) {
+// Media de valoración de los episodios valorados de la serie (issue
+// #80): desde la issue #310 vive en la parte superior de la ficha,
+// junto a la valoración de TMDB y la propia, como un chip con borde
+// (estilo ligeramente diferente para distinguirla, como pide la
+// issue). Sin media: span oculto (placeholder que updateEpisodeAverage
+// activa). El id es fijo (#item-episode-average): el hero (modo
+// página) y la fila de valoraciones (modal clásico) lo usan, pero
+// nunca se renderizan ambos a la vez.
+function episodeAverageBadgeHtml(watched) {
   const avg = computeEpisodeAverageRating(watched);
   if (!avg) {
-    return `<span class="episode-average" id="${idPrefix}-episode-average" hidden></span>`;
+    return `<span class="item-episode-average" id="item-episode-average" hidden></span>`;
   }
   const ratedLabel = avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
-  return `<span class="episode-average" id="${idPrefix}-episode-average" title="Media de ${ratedLabel}">Media episodios: <strong>${avg.average.toFixed(1)}</strong></span>`;
+  return `<span class="item-episode-average" id="item-episode-average" title="Media de ${ratedLabel}"><span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+    .toFixed(1)
+    .replace(".", ",")}</strong></span>`;
 }
 
 function notesFieldHtml(notes) {
@@ -717,29 +744,34 @@ function wireStatusActions(content, handleStatusChange) {
   }
 }
 
-// Información ampliada de TMDB (duración, género, director/creadores,
-// reparto, sinopsis) o de la fuente de libros (sinopsis). No todos
-// los campos están siempre disponibles, así que cada línea es opcional.
-function extraInfoHtml(item) {
+// Información ampliada de TMDB (duración, género, sinopsis) o de la
+// fuente de libros (sinopsis). No todos los campos están siempre
+// disponibles, así que cada línea es opcional.
+// Exportado (issue #290): lo reutiliza la preview de la página de ítem.
+// Opciones (issue #292): con skipMetaBits/skipOverview la página de
+// ítem (ficha y preview) mueve duración+géneros y sinopsis al bloque
+// hero (itemHeroHtml); con skipStatusFallback (solo junto a los
+// anteriores) no se duplica la línea de carga/error que ya pinta el
+// hero. Los llamadores clásicos (modales) no pasan opciones: sin
+// cambios.
+// Issue #294: en películas/series las líneas de director/creadores/
+// reparto se SUSTITUYEN por los carruseles de elenco (castCrewHtml);
+// si hay carruseles se devuelven junto al resto de líneas, y el
+// fallback de carga/error solo aplica cuando no hay ni líneas ni
+// carruseles.
+export function extraInfoHtml(item, { skipMetaBits = false, skipOverview = false, skipStatusFallback = false, skipCarousels = false } = {}) {
   const lines = [];
   const metaBits = [];
-  if (item.runtime) metaBits.push(`${item.runtime} min`);
-  if (item.episodeRuntime) metaBits.push(`~${item.episodeRuntime} min/episodio`);
-  if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
-  if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
-  if (item.director) {
-    lines.push(`<p class="extra-info__line"><strong>Director:</strong> ${escapeHtml(item.director)}</p>`);
+  if (!skipMetaBits) {
+    if (item.runtime) metaBits.push(`${item.runtime} min`);
+    if (item.episodeRuntime) metaBits.push(`~${item.episodeRuntime} min/episodio`);
+    if (item.genres && item.genres.length) metaBits.push(item.genres.join(", "));
+    if (metaBits.length) lines.push(`<p class="extra-info__line">${escapeHtml(metaBits.join(" · "))}</p>`);
   }
-  if (item.creators && item.creators.length) {
-    lines.push(
-      `<p class="extra-info__line"><strong>Creador${item.creators.length > 1 ? "es" : ""}:</strong> ${escapeHtml(
-        item.creators.join(", ")
-      )}</p>`
-    );
-  }
-  if (item.cast && item.cast.length) {
-    lines.push(`<p class="extra-info__line"><strong>Reparto:</strong> ${escapeHtml(item.cast.join(", "))}</p>`);
-  }
+  // Elenco (issue #294): películas y series muestran los carruseles de
+  // producción y reparto en lugar de las líneas de texto de
+  // director/creadores/reparto (ver castCrewHtml).
+  const carousels = castCrewHtml(item);
   if (item.type === "game") {
     if (item.developers && item.developers.length) {
       lines.push(
@@ -759,9 +791,235 @@ function extraInfoHtml(item) {
     }
   }
   const overview = item.overview || item.description;
-  if (overview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
-  if (!lines.length) return detailStatusHtml(item);
-  return `<div class="extra-info">${lines.join("")}</div>`;
+  if (overview && !skipOverview) lines.push(`<p class="extra-info__overview">${escapeHtml(overview)}</p>`);
+  if (!lines.length) {
+    // skipCarousels (issue #302, iteración): los carruseles de
+    // producción/reparto se renderizan APARTE (tras las plataformas y
+    // los premios), así que aquí no se devuelven.
+    if (!skipCarousels && carousels) return carousels;
+    return skipStatusFallback ? "" : detailStatusHtml(item);
+  }
+  const info = `<div class="extra-info">${lines.join("")}</div>`;
+  return skipCarousels ? info : `${info}${carousels}`;
+}
+
+// Normaliza el reparto por si llega en la forma vieja (array de
+// strings, datos en memoria previos a la issue #294): sin foto ni
+// personaje. El crew siempre es nuevo (array de objetos).
+function normalizeCastPeople(cast) {
+  if (!Array.isArray(cast)) return [];
+  return cast
+    .map((c) => (typeof c === "string" ? { name: c } : c))
+    .filter((c) => c && c.name);
+}
+
+// Devuelve el HTML de los DOS CARRUSELES de elenco (issue #294):
+// «Producción» (crew: director, guionista, compositor…) y «Reparto»
+// (actores/actrices), cada tarjeta con foto, nombre y personaje/puesto,
+// y cada carrusel con su botón «Ver en más detalle» (data-cast-role)
+// que abre la ventana con TODAS las personas (js/cast-modal.js).
+// Solo aplica a películas/series; libros, videojuegos e ítems sin
+// elenco devuelven cadena vacía. Los botones se cablean con
+// wireCastCrewClicks tras el render.
+export function castCrewHtml(item) {
+  if (item.type !== "movie" && item.type !== "tv") return "";
+  const crew = Array.isArray(item.crew) ? item.crew.filter((c) => c && c.name) : [];
+  const cast = normalizeCastPeople(item.cast);
+  const sections = [];
+
+  if (crew.length) {
+    // La producción se ordena por área (mismo criterio que la ventana
+    // de detalle) y por order dentro de cada área.
+    const DEPT_PRIORITY = [
+      "Creadores", "Dirección", "Guion", "Producción", "Sonido",
+      "Cámara", "Montaje", "Arte", "Vestuario y maquillaje",
+      "Iluminación", "Efectos visuales", "Efectos especiales",
+      "Equipo técnico", "Interpretación",
+    ];
+    const deptRank = (d) => {
+      const idx = DEPT_PRIORITY.indexOf(d);
+      return idx === -1 ? DEPT_PRIORITY.length : idx;
+    };
+    const sortedCrew = [...crew].sort((a, b) => {
+      const ka = deptRank(a.department);
+      const kb = deptRank(b.department);
+      if (ka !== kb) return ka - kb;
+      return (a.order ?? 999) - (b.order ?? 999);
+    });
+    sections.push(castCrewSectionHtml("Producción", sortedCrew, "crew", (p) => p.job || p.department || ""));
+  }
+
+  if (cast.length) {
+    const sortedCast = [...cast].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    sections.push(castCrewSectionHtml("Reparto", sortedCast, "cast", (p) => p.character || ""));
+  }
+
+  return sections.join("");
+}
+
+function castCrewSectionHtml(label, people, role, roleTextOf) {
+  const cards = people
+    .map((p) => {
+      // Tarjeta pulsable (issue #321): con id de TMDB la persona abre
+      // su página (#/ocio/personas/<id>) — un <button> real (teclado y
+      // lector de pantalla gratis). Sin id (cast legacy de documentos
+      // pre-issue #294, array de strings) se degrada al <div> actual:
+      // no hay página que abrir.
+      const inner = `
+        <img class="cast-card__photo" src="${escapeHtml(safePhotoUrl(p.profileUrl))}" alt="" loading="lazy" />
+        <span class="cast-card__name">${escapeHtml(p.name)}</span>
+        ${roleTextOf(p) ? `<span class="cast-card__role">${escapeHtml(roleTextOf(p))}</span>` : ""}
+      `;
+      if (p.id) {
+        return `<button type="button" class="cast-card" data-person-id="${escapeHtml(String(p.id))}" aria-label="Ver la página de ${escapeHtml(p.name)}">${inner}</button>`;
+      }
+      return `<div class="cast-card">${inner}</div>`;
+    })
+    .join("");
+  return `
+    <section class="cast-crew" aria-labelledby="cast-crew-title-${role}">
+      <div class="cast-crew__head">
+        <h4 class="cast-crew__title" id="cast-crew-title-${role}">${escapeHtml(label)} <span class="cast-crew__count">(${people.length})</span></h4>
+        <button type="button" class="btn btn--small btn--outline cast-crew__more" data-cast-role="${role}"
+                aria-label="${escapeHtml(label)} en más detalle (${people.length})">
+          Ver en más detalle
+        </button>
+      </div>
+      <div class="cast-crew__scroll">
+        ${cards}
+      </div>
+    </section>`;
+}
+
+// Desplazamiento de los carruseles de elenco. Sin snap CSS (issue #294,
+// iteración 2): en táctil el impulso nativo del navegador desliza y frena
+// solo. Para la rueda del ratón y el trackpad hay DOS regímenes (issue
+// #305): la amplificación fija ×1.7 + el bucle de inercia hacían que en
+// PC una muesca de rueda desplazara «media lista» de un golpe.
+//  - MUESCA de ratón (delta grande o en líneas/páginas): avance
+//    proporcionado SIN amplificar y SIN inercia: cada toque de rueda
+//    mueve ~1 tarjeta y se detiene; en modo página, una pasada completa.
+//  - TRACKPAD (deltas pequeños y continuos): amplificación ×1.7 e
+//    inercia propia: el bucle rAF continúa el deslizamiento con fricción
+//    al soltar, frenando poco a poco.
+// Si el carrusel ya está en un borde y no puede avanzar en esa
+// dirección, el gesto NO se consume y el scroll pasa a la página
+// (comportamiento natural).
+export function wireCastCrewInertialScroll(scrollEl) {
+  const GAIN = 1.7; // amplificación del delta SOLO en el régimen trackpad
+  const NOTCH_MIN = 40; // px: delta igual o mayor = muesca discreta de ratón
+  const NOTCH_MAX = 120; // px por muesca (~1 tarjeta de 96px + gap 0.6rem)
+  const FRICTION = 0.93; // deceleración por frame (~60 fps)
+  const MIN_STOP = 0.05; // px/frame bajo el que la inercia se detiene
+  const MIX = 0.45; // peso del impulso anterior al mezclar velocidades
+
+  let velocity = 0;
+  let rafId = null;
+
+  const stop = () => {
+    velocity = 0;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  };
+
+  const step = () => {
+    rafId = null;
+    velocity *= FRICTION;
+    if (Math.abs(velocity) < MIN_STOP) {
+      stop();
+      return;
+    }
+    const prev = scrollEl.scrollLeft;
+    scrollEl.scrollLeft += velocity;
+    if (scrollEl.scrollLeft === prev) {
+      // Borde alcanzado: la inercia se corta en seco (sin rebote)
+      stop();
+      return;
+    }
+    rafId = requestAnimationFrame(step);
+  };
+
+  scrollEl.addEventListener(
+    "wheel",
+    (e) => {
+      // Dirección efectiva del gesto y normalización a píxeles
+      // (deltaMode: 0 = px, 1 = líneas, 2 = páginas)
+      const toPx = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scrollEl.clientWidth : 1;
+      const raw = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * toPx;
+      if (Math.abs(raw) < 0.5) return;
+      const max = scrollEl.scrollWidth - scrollEl.clientWidth;
+      if (max <= 0) return;
+      // ¿Queda recorrido en la dirección del gesto? Si no, se deja
+      // pasar el evento para que la página haga su scroll natural.
+      const canScroll = raw > 0 ? scrollEl.scrollLeft < max : scrollEl.scrollLeft > 0;
+      if (!canScroll) return;
+      e.preventDefault();
+
+      const magnitude = Math.abs(raw);
+      const notch = e.deltaMode !== 0 || magnitude >= NOTCH_MIN;
+      if (notch) {
+        // MUESCA de ratón (issue #305): avance proporcionado, sin
+        // amplificar y sin inercia. Un toque de rueda mueve ~1 tarjeta y
+        // se detiene; en modo página (deltaMode 2), una pasada completa
+        // del carrusel. stop() primero: si venía una inercia de trackpad,
+        // la corta y la muesca aterriza en una posición limpia y estable.
+        stop();
+        const delta =
+          e.deltaMode === 2
+            ? Math.sign(raw) * scrollEl.clientWidth
+            : Math.sign(raw) * Math.min(magnitude, NOTCH_MAX);
+        scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + delta));
+        return;
+      }
+
+      // TRACKPAD (deltas pequeños y continuos): impulso inmediato
+      // amplificado (avance rápido) + velocidad para la inercia
+      // posterior, mezclada con la previa para suavizar las ráfagas
+      // rápidas del trackpad.
+      const delta = raw * GAIN;
+      scrollEl.scrollLeft = Math.max(0, Math.min(max, scrollEl.scrollLeft + delta));
+      velocity = velocity * MIX + delta * (1 - MIX);
+      if (rafId === null) rafId = requestAnimationFrame(step);
+    },
+    { passive: false }
+  );
+}
+
+// Cablea los botones «Ver en más detalle» de los carruseles de elenco
+// (issue #294) con los datos del ítem en mano, y el desplazamiento
+// inercial de los propios carruseles (iteración issue #294). Invocar
+// tras cada render que incluya castCrewHtml (modal clásico, página de
+// ítem, previews y ficha de amigo). Un botón sin cablear no hace nada
+// (degradación silenciosa si un futuro llamador olvida el wiring). Cada
+// render crea nodos nuevos, así que los listeners nunca se duplican.
+// Issue #321: las tarjetas de persona [data-person-id] navegan a la
+// página de la persona (#/ocio/personas/<id>) con el router de hash.
+export function wireCastCrewClicks(root, item) {
+  if (!root) return;
+  root.querySelectorAll(".cast-crew__scroll").forEach(wireCastCrewInertialScroll);
+  root.querySelectorAll("[data-cast-role]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const isCrew = btn.dataset.castRole === "crew";
+      openCastModal({
+        title: item.title || "",
+        subtitle: isCrew ? "Producción" : "Reparto",
+        // Normalizados como en castCrewHtml: el cast puede venir en el
+        // formato viejo (array de strings, docs pre-issue #294) y el
+        // crew debe filtrar entradas sin nombre (QA issue #294).
+        people: isCrew
+          ? (item.crew || []).filter((c) => c && c.name)
+          : normalizeCastPeople(item.cast),
+      });
+    });
+  });
+  // Tarjetas de persona (issue #321): abren la página de la persona.
+  root.querySelectorAll("[data-person-id]").forEach((card) => {
+    card.addEventListener("click", () => {
+      navigate({ section: "person", personId: card.dataset.personId });
+    });
+  });
 }
 
 // Estado de los detalles de ficha bajo demanda (issue #200): si el
@@ -770,7 +1028,9 @@ function extraInfoHtml(item) {
 // en lugar de un bloque vacío (degradación elegante a «solo tarjeta»).
 // Los libros conservan la sinopsis en el documento y los ítems
 // manuales no tienen API que consultar: nunca aplican.
-function detailStatusHtml(item) {
+// Exportado (issue #292): el bloque hero de la página de ítem lo
+// reutiliza para el hueco de sinopsis mientras cargan los detalles.
+export function detailStatusHtml(item) {
   if (item._detailsFailed) {
     return `<p class="extra-info__loading">No se pudieron cargar los detalles (revisa tu conexión).</p>`;
   }
@@ -785,10 +1045,115 @@ function detailStatusHtml(item) {
   return "";
 }
 
+// Bloque «hero» de la página de ítem (issue #292): portada grande a
+// la izquierda y a la derecha el título en grande; debajo, una línea
+// de meta en TEXTO NORMAL con la fecha de estreno y la duración (en
+// las series, el nº de temporadas y episodios en lugar de la
+// duración; iteración issue #292); debajo, pequeñas etiquetas solo
+// con los géneros; debajo, la valoración de la comunidad y la propia
+// del usuario (solo en la ficha: showUserRating) y el botón de
+// tráiler; bajo todo ello, la sinopsis. Cada sub-bloque es opcional:
+// si faltan datos (p. ej. render optimista de búsqueda sin detalles)
+// la línea de meta o las etiquetas se omiten enteras y el hero queda
+// con lo que haya. Exportado (issue #292): lo usan la ficha
+// (openMovieModal/openTvModal en modo página) y la preview
+// (paintPreview) para mostrar la misma cabecera.
+export function itemHeroHtml(item, { showUserRating = true, seasonsMeta = null } = {}) {
+  // Línea de meta como texto normal (iteración issue #292): la fecha
+  // de estreno (o el año) y la duración ya NO son etiquetas. En las
+  // series se muestra el nº de temporadas y episodios en lugar de la
+  // duración; seasonsMeta llega como parámetro en la ficha (issue
+  // #290: se consulta aparte) o en item.seasonsMeta en la preview.
+  const metaBits = [];
+  const releaseDate =
+    item.type === "tv" ? item.firstAirDate || null : item.releaseDate || null;
+  if (releaseDate) {
+    metaBits.push(formatDateEs(releaseDate));
+  } else if (item.year) {
+    metaBits.push(String(item.year));
+  }
+  if (item.type === "tv") {
+    const seasons = seasonsMeta || item.seasonsMeta || [];
+    if (seasons.length) {
+      const totalEpisodes = seasons.reduce((sum, s) => sum + (s.episodeCount || 0), 0);
+      metaBits.push(
+        `${seasons.length} temporada${seasons.length === 1 ? "" : "s"}${
+          totalEpisodes ? ` · ${totalEpisodes} episodio${totalEpisodes === 1 ? "" : "s"}` : ""
+        }`
+      );
+    } else if (item.episodeRuntime) {
+      // Degradación elegante: sin temporadas (render optimista sin
+      // detalles) se conserva la duración por episodio, como texto.
+      metaBits.push(`~${String(item.episodeRuntime)} min/episodio`);
+    }
+  } else if (item.runtime) {
+    metaBits.push(`${String(item.runtime)} min`);
+  }
+  const metaHtml = metaBits.length
+    ? `<p class="item-hero__meta">${escapeHtml(metaBits.join(" · "))}</p>`
+    : "";
+
+  // Etiquetas: solo los géneros (fecha y duración son texto normal).
+  const tags = [];
+  if (item.genres && item.genres.length) {
+    item.genres.forEach((g) => {
+      tags.push(`<li class="item-hero__tag">${escapeHtml(g)}</li>`);
+    });
+  }
+  const tagsHtml = tags.length
+    ? `<ul class="item-hero__tags">${tags.join("")}</ul>`
+    : "";
+
+  let ownRatingHtml = "";
+  if (showUserRating && item.rating) {
+    const rated = normalizeRating(item.rating);
+    if (rated) {
+      const v = rated.toFixed(1).replace(".", ",");
+      ownRatingHtml = `<span class="item-hero__own-rating" role="img" aria-label="Tu valoración: ${v} de 5" title="Tu valoración: ${v} de 5">${ratingStarsHtml(rated)}</span>`;
+    }
+  }
+
+  const overview = item.overview || item.description;
+  let synopsis = "";
+  if (overview) {
+    synopsis = `<p class="item-hero__synopsis">${escapeHtml(overview)}</p>`;
+  } else {
+    // Sin sinopsis aún (almacenamiento mínimo, issue #200): el mismo
+    // aviso de carga/error que la ficha, con la tipografía del bloque.
+    // detailStatusHtml devuelve un <p> propio; se extrae el texto para
+    // no anidar párrafos.
+    const statusLine = detailStatusHtml(item);
+    if (statusLine) {
+      const text = statusLine.replace(/<[^>]+>/g, "");
+      synopsis = `<p class="item-hero__synopsis">${text}</p>`;
+    }
+  }
+
+  return `
+    <section class="item-hero" aria-label="Información del título">
+      <img class="item-hero__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
+      <div class="item-hero__body">
+        <h3 class="item-hero__title">${escapeHtml(item.title)}</h3>
+        ${metaHtml}
+        ${tagsHtml}
+        <div class="item-hero__ratings">
+          ${communityRatingDisplay(item)}
+          ${ownRatingHtml}
+          ${item.type === "tv" && showUserRating ? episodeAverageBadgeHtml(item.watched) : ""}
+          ${trailerButtonHtml(item)}
+        </div>
+      </div>
+    </section>
+    ${synopsis}
+  `;
+}
+
 // Bloque de temporadas para la vista previa de una serie: lista de
 // solo lectura (nº de episodios y fecha de emisión por temporada)
 // más el total. Vacío si no hay datos (sin seasonsMeta o vacío).
-function previewSeasonsHtml(item) {
+// Exportado (issue #290): la preview de la página de ítem lo reutiliza
+// para mostrar la misma información de temporadas que la ficha.
+export function previewSeasonsHtml(item) {
   const seasons = item.seasonsMeta;
   if (!seasons || !seasons.length) return "";
   const rows = seasons.map((s) => {
@@ -985,7 +1350,11 @@ function providersGroupHtml(providers, label) {
     </div>`;
 }
 
-function watchProvidersHtml(item) {
+// Plataformas de streaming (dónde ver el título). Devuelve cadena
+// vacía si no hay datos. Exportado (issue #290): la preview de la
+// página de ítem lo reutiliza para mostrar la misma información que
+// la ficha.
+export function watchProvidersHtml(item) {
   const wp = item.watchProviders;
   if (!wp) return "";
   const hasAny = (wp.flatrate && wp.flatrate.length) ||
@@ -1004,6 +1373,117 @@ function watchProvidersHtml(item) {
       ${providersGroupHtml(wp.buy, "Compra")}
       ${wp.link ? `<a class="watch-providers__link" href="${escapeHtml(wp.link)}" target="_blank" rel="noopener">Ver opciones en TMDB</a>` : ""}
     </div>`;
+}
+
+/* ---------- Premios de películas/series (issue #302) ---------- */
+
+// Sección «Premios» de la ficha de películas y series (issue #302,
+// iteración): lista de SOLO LECTURA con los premios y nominaciones
+// del título, extraídos automáticamente de Wikidata (getItemAwards,
+// api-movies.js — TMDB no expone premios en su API pública). Cada
+// grupo ({ group, entries }) es una familia de premios (Óscar,
+// Globos de Oro, Emmy…) y sus entradas son { kind, name, year?,
+// detail?, people }:
+//   - kind: "award" (premio ganado, P166) o "nom" (nominación,
+//     P1411), diferenciados con una etiqueta.
+//   - name: nombre del premio (p. ej. «Óscar al mejor actor de
+//     reparto»), year: año de la ceremonia, detail: en su caso el
+//     trabajo por el que se concedió (p. ej. el episodio premiado
+//     de una serie) y people: los implicados (ganador P1346 o
+//     nominados P2453, p. ej. el actor de un premio de reparto).
+// Cada familia se pinta como un <details> minimizable que arranca
+// CERRADO (sin atributo open), y la sección entera es también un
+// <details> cuya cabecera «Premios (N)» permite minimizarla toda de
+// una vez (issue #302, iteración 3: «Por defecto, cada premio debe
+// estar minimizado y la sección entera de Premios también»). Mismo
+// patrón nativo sin JS que .watch-log-details/.rewatch-history.
+//
+// La sección solo se pinta cuando el ítem tiene premios (la ausencia
+// de datos no ocupa espacio en la ficha, mismo criterio que el bloque
+// «Dónde verla»). No hay formulario ni botones: es información de la
+// API, no un dato del usuario. Devuelve cadena vacía para los otros
+// tipos (libros/videojuegos).
+export function awardsHtml(item) {
+  if (item.type !== "movie" && item.type !== "tv") return "";
+  const groups = Array.isArray(item.awards) ? item.awards : [];
+  if (!groups.length) return "";
+  return awardsSectionHtml(groups);
+}
+
+// Sección «Premios» completa para una lista de grupos de premios
+// (issue #321): extraída de awardsHtml para que la página de persona
+// la reutilice con los premios de la persona (misma presentación que
+// las fichas de títulos: badges «Premio»/«Nominación», grupos por
+// familia minimizados, contador separado). Devuelve "" sin grupos.
+export function awardsSectionHtml(groups) {
+  if (!groups || !groups.length) return "";
+  const allEntries = groups.flatMap((g) => g.entries);
+
+  const groupsHtml = groups
+    .map(
+      (g) => `
+      <details class="awards__group">
+        <summary class="awards__group-head">
+          <span class="awards__group-name">${escapeHtml(g.group || "")}</span>
+          <span class="awards__group-count">${awardsCountText(g.entries)}</span>
+        </summary>
+        <ul class="awards__list">
+          ${g.entries.map(awardRowHtml).join("")}
+        </ul>
+      </details>`
+    )
+    .join("");
+
+  return `
+    <details class="awards">
+      <summary class="awards__head">
+        <span class="awards__title">Premios</span>
+        <span class="awards__count">${awardsCountText(allEntries)}</span>
+      </summary>
+      <div class="awards__groups">${groupsHtml}</div>
+    </details>`;
+}
+
+// Contador de una lista de entradas separando premios (P166) de
+// nominaciones (P1411), en lugar del total único combinado (issue
+// #302, iteración 4: «Debería separar premios de nominaciones»).
+// Se omite el cero inútil («0 nominaciones») y se usa el singular o
+// plural correcto: «1 premio», «2 premios», «1 nominación», «3
+// nominaciones». Devuelve "" solo si la lista no trae entradas (no
+// llegaría a pintarse: la sección no se muestra sin premios).
+function awardsCountText(entries) {
+  const awards = entries.filter((e) => e.kind === "award").length;
+  const noms = entries.length - awards;
+  const parts = [];
+  if (awards) parts.push(`${awards} ${awards === 1 ? "premio" : "premios"}`);
+  if (noms) parts.push(`${noms} ${noms === 1 ? "nominación" : "nominaciones"}`);
+  return parts.length ? `(${parts.join(", ")})` : "";
+}
+
+// Fila de un premio o nominación: etiqueta distintiva («Premio» /
+// «Nominación»), nombre, año, trabajo (detalle) e implicados. La
+// etiqueta ya distingue premios de nominaciones, por eso los
+// implicados se muestran SOLO con sus nombres, sin el prefijo
+// «Ganador:»/«Nominado(s):» (issue #302, iteración 4: «eliminar
+// ganador/es y nominado/s y dejar simplemente el nombre de las
+// personas»). Todo el contenido se escapa con escapeHtml.
+function awardRowHtml(e) {
+  const badge =
+    e.kind === "award"
+      ? `<span class="awards__badge awards__badge--award">Premio</span>`
+      : `<span class="awards__badge awards__badge--nom">Nominación</span>`;
+  const people =
+    e.people && e.people.length
+      ? `<span class="awards__people">${e.people.map(escapeHtml).join(", ")}</span>`
+      : "";
+  return `
+      <li class="awards__row">
+        ${badge}
+        <span class="awards__name">${escapeHtml(e.name || "")}</span>
+        ${e.year ? `<span class="awards__year">${escapeHtml(e.year)}</span>` : ""}
+        ${e.detail ? `<span class="awards__detail">Por: ${escapeHtml(e.detail)}</span>` : ""}
+        ${people}
+      </li>`;
 }
 
 // Chips con las plataformas jugables de un videojuego (IGDB), para
@@ -1037,7 +1517,7 @@ function gamePlatformsHtml(item) {
  *                               (issue #280, iteración)
  * @returns {string} HTML del bloque de recomendaciones, o cadena vacía
  */
-function renderRecommendations(items, existingIds, group, interactive, onOpen) {
+export function renderRecommendations(items, existingIds, group, interactive, onOpen) {
   if (!items || !items.length) return "";
   const accentClass = "btn--accent-media";
   const cardsHtml = items
@@ -1103,11 +1583,11 @@ function renderRecommendations(items, existingIds, group, interactive, onOpen) {
  * @param {boolean} interactive - true si se muestran botones "Añadir"
  * @param {Function} [onOpen]  - si es función, cada tarjeta pasa a ser
  *                               un botón pulsable que llama onOpen(movie)
- *                               para abrir la vista previa de esa
- *                               película antes de añadirla (issue #280)
+ *                               para abrir la página de detalle de esa
+ *                               película (issue #285)
  * @returns {string} HTML de la sección, o cadena vacía
  */
-function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
+export function renderSagaMovies(sagaParts, existingIds, interactive, onOpen) {
   if (!sagaParts || !sagaParts.length) return "";
   const cardsHtml = sagaParts
     .map((m, index) => {
@@ -1176,72 +1656,82 @@ function renderWatchLogRows(watchLog) {
   </div>`;
 }
 
-export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null) {
-  const { onAddWatch, onUpdateWatch, onRemoveWatch, onSaveMeta, onDelete, onEdit, onAddSaga, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
+export function openMovieModal(item, callbacks, recommendations = [], existingIds = new Set(), sagaParts = null, { target = null } = {}) {
+  const { onUpdateWatch, onRemoveWatch, onAddRecommendation, onAddSagaMovie, onOpenSagaMovie, onOpenRecommendation } = callbacks;
   const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
+  // Modo página (issue #285): con target (contenedor de #item-view) la
+  // ficha se renderiza en la página y no se abre el modal ni su focus
+  // trap; sin target, comportamiento clásico sobre #modal-content.
+  const content = target || document.getElementById("modal-content");
   const metaLine = [typeLabel(item.type), item.year].filter(Boolean).join(" · ");
 
-  content.innerHTML = `
+  // Cabecera (issue #292): en modo página la ficha usa el bloque hero
+  // (portada grande + título, etiquetas, valoraciones, tráiler y
+  // sinopsis) directamente sobre el fondo; en el modal clásico se
+  // conserva la cabecera de siempre.
+  const headerHtml = target
+    ? itemHeroHtml(item)
+    : `
     <div class="modal-detail__header">
       <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
       <div>
         <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
         <div class="modal-detail__meta">${escapeHtml(metaLine)}</div>
       </div>
-    </div>
-    ${editButtonHtml()}
+    </div>`;
+  // En modo página la valoración de la comunidad y el tráiler ya viven
+  // en el hero; en el modal clásico se muestran como bloques propios.
+  const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${trailerButtonHtml(item)}`;
+  // En modo página la duración, géneros y sinopsis ya viven en el hero
+  // (y su línea de carga/error, que no debe duplicarse aquí).
+  const infoHtml = target
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
+
+  // Orden de secciones (issue #302, iteración): las plataformas
+  // vuelven a estar bajo la sinopsis y encima de la producción (su
+  // posición original), y la sección de premios queda justo debajo de
+  // las plataformas. Los carruseles de producción/reparto (issue
+  // #294) van después, como cierre del bloque de información.
+  content.innerHTML = `
+    ${headerHtml}
 
     ${upcomingBadge(item)}
-    ${communityRatingDisplay(item)}
-    ${trailerButtonHtml(item)}
+    ${ratingsHtml}
+    ${infoHtml}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
-    ${item.collectionId ? `
-    <div class="saga-banner">
-      <span class="saga-banner__label"><strong>Saga:</strong> ${escapeHtml(item.collectionName)}</span>
-      <button type="button" class="btn btn--small btn--accent-media" id="btn-add-saga">Añadir resto de la saga</button>
-    </div>
-    ${renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie)}` : ""}
+    ${item.collectionId ? renderSagaMovies(sagaParts, existingIds, !!onAddSagaMovie, onOpenSagaMovie) : ""}
 
     ${renderRecommendations(recommendations, existingIds, "movie", !!onAddRecommendation, onOpenRecommendation)}
 
-    <div class="field-group">
-      <label>Visionados</label>
-      ${renderWatchLogRows(item.watchLog)}
-      <div class="log-add-row">
-        <input type="date" id="field-new-watch-date" value="${todayISO()}" />
-        <button type="button" class="btn btn--small btn--accent-media" id="btn-add-watch">
-          ${item.watchLog && item.watchLog.length ? "Añadir otro visionado" : "Marcar como vista"}
-        </button>
-      </div>
-    </div>
-
-    ${ratingPickerHtml(item.rating)}
-    ${notesFieldHtml(item.notes)}
-
-    <div class="modal-actions">
-      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
-    </div>
+    ${
+      // Visionados (issue #300): ocultos por defecto y sin botón de
+      // añadir — «Marcar como vista»/«Añadir otro visionado» viven en
+      // el botón flotante (issue #298). Solo se muestran cuando hay
+      // historial (con un ítem sin ver el FAB ya comunica el estado).
+      item.watchLog && item.watchLog.length
+        ? `<details class="watch-log-details">
+            <summary>Visionados (${item.watchLog.length})</summary>
+            ${renderWatchLogRows(item.watchLog)}
+          </details>`
+        : ""
+    }
   `;
 
-  const getRating = wireRatingAndGetValue(content, item.rating);
   // Propaga todos los argumentos en el re-render (issue #280): tras
   // marcar como vista, la sección de saga (y las recomendaciones)
   // permanece, y el botón "Añadida" se mantiene gracias al Set
-  // existingIds compartido.
-  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts);
+  // existingIds compartido. El target se propaga para que la ficha
+  // vuelva a pintarse en la página en modo página (issue #285).
+  const rerender = () => openMovieModal(item, callbacks, recommendations, existingIds, sagaParts, { target });
 
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
-
-  const addSagaBtn = content.querySelector("#btn-add-saga");
-  if (addSagaBtn) {
-    addSagaBtn.addEventListener("click", () => {
-      if (onAddSaga) onAddSaga();
-    });
-  }
+  // Carruseles de elenco (issue #294): cablear los botones «Ver en más
+  // detalle» de producción/reparto con los datos de este ítem.
+  wireCastCrewClicks(content, item);
 
   // Wire recommendation "Añadir" buttons
   if (onAddRecommendation) {
@@ -1291,15 +1781,6 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     });
   }
 
-  content.querySelector("#btn-add-watch").addEventListener("click", async () => {
-    const dateVal = content.querySelector("#field-new-watch-date").value;
-    if (!dateVal) return;
-    const confirmMsg = unreleasedConfirmMessage(item);
-    if (confirmMsg && !window.confirm(confirmMsg)) return;
-    await onAddWatch(dateVal);
-    rerender();
-  });
-
   content.querySelectorAll(".watch-date").forEach((input) => {
     input.addEventListener("change", async () => {
       if (!input.value) return;
@@ -1316,81 +1797,18 @@ export function openMovieModal(item, callbacks, recommendations = [], existingId
     });
   });
 
-  content.querySelector("#btn-save-item").addEventListener("click", () => {
-    onSaveMeta({
-      rating: getRating() || null,
-      notes: content.querySelector("#field-notes").value.trim(),
-    });
-  });
-
-  content.querySelector("#btn-delete-item").addEventListener("click", () => {
-    onDelete();
-  });
-
-  // Record previous focus and trap
-  modal._previousActiveElement = document.activeElement;
-  modal.classList.remove("hidden");
-  modal._focusTrapCleanup = trapFocus(modal.querySelector(".modal__card"));
-}
-
-/* ---------- Modal selector de sagas ---------- */
-
-// Muestra un modal con checklist de películas de una saga para que
-// el usuario seleccione cuáles quiere añadir a su registro.
-export function openSagaSelectionModal(collectionName, movies, callbacks) {
-  const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
-
-  function renderList() {
-    return movies.map((m, i) => `
-      <label class="saga-row" data-index="${i}">
-        <input type="checkbox" class="saga-checkbox" data-index="${i}" checked />
-        <img class="saga-row__cover" src="${m.posterUrl || PLACEHOLDER_COVER}" alt="" loading="lazy" />
-        <span class="saga-row__title">${escapeHtml(m.title)}</span>
-        <span class="saga-row__year">${escapeHtml(m.year || "")}</span>
-      </label>
-    `).join("");
-  }
-
-  content.innerHTML = `
-    <h3 class="modal-detail__title" style="margin-bottom:0.3rem">${escapeHtml(collectionName)}</h3>
-    <p class="saga-subtitle">Selecciona las películas que quieras añadir:</p>
-    <div class="saga-list" id="saga-list">
-      ${renderList()}
-    </div>
-    <p class="saga-count" id="saga-count">Seleccionadas: ${movies.length}/${movies.length}</p>
-    <div class="modal-actions">
-      <button type="button" class="btn btn--outline" id="btn-saga-cancel">Cancelar</button>
-      <button type="button" class="btn btn--accent-media" id="btn-saga-confirm">Añadir seleccionadas</button>
-    </div>
-  `;
-
-  function allSelected() {
-    return content.querySelectorAll(".saga-checkbox:checked").length;
-  }
-
-  content.querySelectorAll(".saga-checkbox").forEach((cb) => {
-    cb.addEventListener("change", () => {
-      content.querySelector("#saga-count").textContent =
-        `Seleccionadas: ${allSelected()}/${movies.length}`;
-    });
-  });
-
-  content.querySelector("#btn-saga-cancel").addEventListener("click", () => {
-    callbacks.onCancel();
-  });
-
-  content.querySelector("#btn-saga-confirm").addEventListener("click", () => {
-    const selectedIndices = [];
-    content.querySelectorAll(".saga-checkbox:checked").forEach((cb) => {
-      selectedIndices.push(Number(cb.dataset.index));
-    });
-    if (!selectedIndices.length) {
-      showToast("Selecciona al menos una película.");
-      return;
+  // En modo página no se abre el modal ni se atrapa el foco: el
+  // contenido ya vive en el documento (#item-view-content). Se enfoca
+  // el título de la ficha (patrón de foco de las rutas de Ocio); el
+  // re-render posterior a una acción recupera el foco al título.
+  if (target) {
+    const title = target.querySelector(".item-hero__title");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true });
     }
-    callbacks.onConfirm(selectedIndices.map((i) => movies[i]));
-  });
+    return;
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;
@@ -1706,25 +2124,57 @@ export function openGameModal(item, callbacks) {
 
 // Sincroniza el estado VISUAL de una fila de episodio con su entrada
 // real (normalizada o null) en item.watched: checkbox, clase is-watched,
-// fecha, fila 2 (meta), contador y estrellas (issue #133/#136).
-function applyEpisodeRowState(row, entry) {
-  const checked = Boolean(entry && entry.date);
-  const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+// botón de visionados anteriores (con sus fechas), fila 2 (meta),
+// contador y estrellas (issue #133/#136/#310). El desplegable de
+// fechas se REPLIEGA en cada repintado derivado de dato (patrón
+// #136): el estado visual siempre deriva de item.watched.
+// baselineMap/startedAt (feedback #310, iteración 5): con rewatch en
+// curso, el estado «visto» de la fila refleja el CICLO ACTUAL por
+// CONTADOR — el episodio está visto en el ciclo si su `times` supera
+// el baseline que tenía al iniciarlo (entrySeenInCycle/episodeBaseline);
+// ciclos en vuelo sin baseline conservan el criterio por fechas
+// (entrySeenSince); sin rewatch, cualquier episodio marcado cuenta.
+function applyEpisodeRowState(row, entry, baselineMap = null, startedAtForFallback = null) {
+  const seasonNumber = Number(row.closest(".season-block")?.dataset.season);
+  const episodeNumber = Number(row.dataset.episode);
+  const baseline = episodeBaseline(baselineMap, seasonNumber, episodeNumber);
+  const checked = baselineMap
+    ? Boolean(entrySeenInCycle(entry, baseline))
+    : Boolean(entrySeenSince(entry, startedAtForFallback));
+  // Datos REALES del episodio (feedback #310, iteración 7): aunque el
+  // episodio no esté marcado en el ciclo actual (p. ej. un episodio con
+  // visionados históricos durante un rewatch), si tiene valoración o
+  // visualizaciones previas, estas deben mostrarse — no solo cuando se
+  // marca el episodio. `times` refleja el contador real de la entrada
+  // (nunca 0 por no estar marcado en el ciclo).
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  const hasData = Boolean(entry && (times > 0 || entry.rating != null));
   const checkbox = row.querySelector(".episode-checkbox");
   const visual = row.querySelector(".episode-checkbox-visual");
-  const dateInput = row.querySelector(".episode-date");
   const meta = row.querySelector(".episode-row__meta");
   const ratingWrap = row.querySelector(".episode-rating");
+  const rewatchBtn = row.querySelector(".episode-rewatches");
+  const datesBlock = row.querySelector(".episode-rewatches__dates");
   checkbox.checked = checked;
   row.classList.toggle("is-watched", checked);
-  dateInput.disabled = !checked;
-  dateInput.value = checked ? entry.date : "";
-  meta.classList.toggle("hidden", !checked);
+  meta.classList.toggle("hidden", !hasData);
+  if (rewatchBtn) {
+    rewatchBtn.hidden = !hasData;
+    rewatchBtn.setAttribute("aria-expanded", "false");
+    // El contador del botón se sincroniza con `times`, igual que el
+    // summary «Visionados anteriores (N)» de la serie (feedback #310).
+    const label = rewatchBtn.querySelector(".episode-rewatches__label");
+    if (label) label.textContent = `Visionados anteriores (${times})`;
+  }
+  if (datesBlock) {
+    datesBlock.innerHTML = hasData ? rewatchesListHtml(entry) : "";
+    datesBlock.hidden = true;
+  }
   if (times > 1) visual.setAttribute("data-count", String(times));
   else visual.removeAttribute("data-count");
   ratingWrap.querySelectorAll(".episode-rating__star").forEach((s) => {
     const n = Number(s.dataset.value);
-    const value = normalizeRating(checked ? entry.rating : 0);
+    const value = normalizeRating(hasData ? entry.rating : 0);
     const full = value >= n;
     const half = value === n - 0.5;
     s.classList.toggle("is-active", full && !half);
@@ -1737,10 +2187,35 @@ function applyEpisodeRowState(row, entry) {
   });
 }
 
-function renderSeasonBlock(s, watched) {
+// Conteo de episodios de una temporada visto en el CICLO ACTUAL
+// (feedback #310, iteración 3): con un rewatch en curso se cuentan
+// solo los episodios del ciclo; sin rewatch, cualquier episodio
+// marcado (comportamiento previo). Desde la iteración 5 la pertenencia
+// al ciclo se decide por CONTADOR contra el baseline por episodio
+// (entrySeenInCycle/episodeBaseline), no por fechas: un ciclo iniciado
+// el mismo día en que se completó el anterior ya no cuenta las marcas
+// del ciclo previo (1/10 al empezar, no 10/10). Ciclos en vuelo sin
+// baseline (iniciados por versiones anteriores) conservan el criterio
+// por fechas (startedAt).
+function seasonCycleCount(seasonWatched, episodeCount, baselineMap = null, startedAt = null, seasonNumber = 1) {
+  let count = 0;
+  for (let ep = 1; ep <= episodeCount; ep++) {
+    const entry = normalizeEntry(seasonWatched && seasonWatched[String(ep)]);
+    const baseline = episodeBaseline(baselineMap, seasonNumber, ep);
+    const seen = baselineMap ? entrySeenInCycle(entry, baseline) : entrySeenSince(entry, startedAt);
+    if (seen) count++;
+  }
+  return count;
+}
+
+function renderSeasonBlock(s, watched, baselineMap = null, startedAt = null) {
   const seasonWatched = (watched && watched[String(s.seasonNumber)]) || {};
-  const watchedCount = Object.keys(seasonWatched).length;
-  const allWatched = watchedCount >= s.episodeCount && s.episodeCount > 0;
+  // El contador del encabezado refleja el progreso del ciclo ACTUAL
+  // (feedback #310, iteración 3); el check circular de «Marcar todo»,
+  // el de la temporada completa histórica (tick si 1, número si > 1).
+  const watchedCount = seasonCycleCount(seasonWatched, s.episodeCount, baselineMap, startedAt, s.seasonNumber);
+  const completeTimes = seasonCompleteTimes(seasonWatched, s.episodeCount);
+  const allWatched = completeTimes > 0;
   return `
     <div class="season-block" data-season="${s.seasonNumber}" data-episode-count="${s.episodeCount}">
       <div class="season-header">
@@ -1749,25 +2224,68 @@ function renderSeasonBlock(s, watched) {
           <span class="season-name">${escapeHtml(s.name)}</span>
           <span class="season-count">${watchedCount}/${s.episodeCount}</span>
         </button>
-        <button class="btn btn--small season-mark-all" data-season="${s.seasonNumber}"
-                data-all-watched="${allWatched ? "0" : "1"}">
-          ${allWatched ? "Desmarcar todo" : "Marcar todo"}
-        </button>
+        <label class="episode-checkbox-wrap season-mark-all" data-season="${s.seasonNumber}"
+               data-episode-count="${s.episodeCount}"
+               title="Marcar o desmarcar todos los episodios de la temporada">
+          <input type="checkbox" class="episode-checkbox" ${allWatched ? "checked" : ""}
+                 aria-label="${
+                   allWatched
+                     ? "Quitar la última visualización de todos los episodios de la temporada"
+                     : "Marcar todos los episodios de la temporada como vistos"
+                 }" />
+          <span class="episode-checkbox-visual" aria-hidden="true"
+                ${completeTimes > 1 ? `data-count="${completeTimes}"` : ""}></span>
+        </label>
       </div>
       <div class="season-episodes hidden" data-season-episodes="${s.seasonNumber}"></div>
     </div>`;
 }
 
+// Lista de fechas de visionado de un episodio (issue #310): una línea
+// por visión ("Visto el DD/MM/AAAA"), tanto si es 1 como si son más.
+// Vacía si la entrada no existe (episodio sin ver).
+// Legacy (feedback #310): los datos previos a #310 solo guardaban la
+// última fecha + el contador; si `times` es mayor que las fechas
+// conocidas, se muestra una línea indicando las visiones restantes sin
+// fecha registrada para que el desplegable sea coherente con el
+// contador de la casilla (p. ej. serie vista dos veces completa).
+function rewatchesListHtml(entry) {
+  const dates = entry ? entry.dates || [entry.date] : [];
+  const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+  if (!times) return "";
+  const known = dates
+    .map((d) => `<li class="episode-rewatches__date">${escapeHtml(formatDateEs(d))}</li>`)
+    .join("");
+  const missing = Math.max(0, times - dates.length);
+  const missingLine = missing
+    ? `<li class="episode-rewatches__unknown">${missing} ${missing === 1 ? "visión más" : "visiones más"} sin fecha registrada</li>`
+    : "";
+  return `<ul class="episode-rewatches__list">${known}${missingLine}</ul>`;
+}
+
 // manual=true (series manuales): no se marcan episodios como "sin
 // estrenar" porque no tienen fechas reales de TMDB.
-function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
+// baselineMap/seasonNumber (feedback #310, iteración 5): con rewatch
+// en curso, el estado marcado de cada episodio refleja el CICLO ACTUAL
+// por CONTADOR — solo los episodios con times > su baseline del ciclo
+// cuentan como vistos en el ciclo (0/10 al empezar, no los 73
+// históricos, aunque el ciclo anterior se terminara el mismo día).
+function renderEpisodeRows(episodes, seasonWatched, { manual = false, baselineMap = null, startedAtForFallback = null, seasonNumber = 1 } = {}) {
   return episodes
     .map((e) => {
       const entry = normalizeEntry(seasonWatched[String(e.episodeNumber)]);
       const date = entry ? entry.date : "";
       const rating = entry ? entry.rating : null;
-      const checked = Boolean(date);
-      const times = checked ? Math.max(1, Number(entry.times) || 1) : 0;
+      const baseline = episodeBaseline(baselineMap, seasonNumber, e.episodeNumber);
+      const checked = baselineMap
+        ? Boolean(entrySeenInCycle(entry, baseline))
+        : Boolean(entrySeenSince(entry, startedAtForFallback));
+      // Datos REALES del episodio (feedback #310, iteración 7): aunque
+      // no esté marcado en el ciclo actual (rewatch), si tiene
+      // valoración o visionados previos, estos deben mostrarse. `times`
+      // refleja el contador real de la entrada, nunca 0 por no marcado.
+      const times = entry ? Math.max(1, Number(entry.times) || 1) : 0;
+      const hasData = Boolean(entry && (times > 0 || entry.rating != null));
       const future = !manual && isUnreleasedDate(e.airDate);
       // Badge de nota TMDB: solo en series automáticas y cuando el episodio
       // tiene votos (episodeRating != null). Las series manuales no lo traen.
@@ -1783,8 +2301,10 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
             <input type="checkbox" class="episode-checkbox" ${checked ? "checked" : ""}
                    aria-label="${
                      checked
-                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o desmarcarlo`
-                       : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
+                       ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo o quitar la última visualización`
+                       : hasData
+                         ? `E${e.episodeNumber} — ${escapeHtml(e.name)}: visto ${times} ${times === 1 ? "vez" : "veces"}. Pulsa para verlo de nuevo`
+                         : `Marcar E${e.episodeNumber} — ${escapeHtml(e.name)} como visto`
                    }" />
             <span class="episode-checkbox-visual" aria-hidden="true"
                   ${times > 1 ? `data-count="${times}"` : ""}></span>
@@ -1799,7 +2319,7 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
       }</span>
           ${communityBadge}
         </div>
-        <div class="episode-row__meta ${checked ? "" : "hidden"}">
+        <div class="episode-row__meta ${hasData ? "" : "hidden"}">
           <div class="episode-rating">
             ${[1, 2, 3, 4, 5]
               .map((n) => {
@@ -1814,32 +2334,89 @@ function renderEpisodeRows(episodes, seasonWatched, { manual = false } = {}) {
               })
               .join("")}
           </div>
-          <input type="date" class="episode-date" value="${date}" ${checked ? "" : "disabled"} />
+          <button type="button" class="episode-rewatches" ${hasData ? "" : "hidden"}
+                  aria-expanded="false"><span class="episode-rewatches__chevron" aria-hidden="true">▸</span> <span class="episode-rewatches__label">Visionados anteriores (${times})</span></button>
+        </div>
+        <div class="episode-rewatches__dates" hidden>
+          ${rewatchesListHtml(entry)}
         </div>
       </div>`;
     })
     .join("");
 }
 
-export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set()) {
+// Temporada de SOLO LECTURA para la vista previa de la página de ítem
+// (issue #317): misma estructura que renderSeasonBlock (encabezado con
+// chevron, nombre y contador) pero SIN la casilla circular de «Marcar
+// todo», porque el título aún no está en el registro. El contador se
+// pinta 0/N — el equivalente vacío de una serie recién añadida — y los
+// episodios se cargan bajo demanda desde TMDB al desplegar (sin
+// controles de marcado/valoración). Si falta episodeCount se muestra
+// 0/0 (temporada sin episodios conocidos aún).
+export function renderSeasonBlockReadOnly(s) {
+  const count = s.episodeCount || 0;
+  return `
+    <div class="season-block" data-season="${s.seasonNumber}" data-episode-count="${count}">
+      <div class="season-header">
+        <button type="button" class="season-toggle" data-season="${s.seasonNumber}" aria-expanded="false">
+          <span class="season-chevron">▸</span>
+          <span class="season-name">${escapeHtml(s.name)}</span>
+          <span class="season-count">0/${count}</span>
+        </button>
+      </div>
+      <div class="season-episodes hidden" data-season-episodes="${s.seasonNumber}"></div>
+    </div>`;
+}
+
+// Filas de episodio de SOLO LECTURA para la vista previa de la página
+// de ítem (issue #317): mismo aspecto que renderEpisodeRows (número
+// E#, nombre con el aviso «sin estrenar» y la nota de la comunidad
+// TMDB del episodio cuando la tiene) pero SIN casilla de marcado,
+// valoración personal ni desplegable de visionados: el título aún no
+// está en el registro y no hay nada que marcar. Los episodios llegan
+// de TMDB (getSeasonEpisodes), nunca de una serie manual.
+export function renderEpisodeRowsReadOnly(episodes) {
+  return episodes
+    .map((e) => {
+      const future = isUnreleasedDate(e.airDate);
+      const communityBadge =
+        e.episodeRating != null ? communityRatingValueHtml(e.episodeRating) : "";
+      return `
+      <div class="episode-row" data-episode="${e.episodeNumber}"
+           data-air-date="${e.airDate || ""}" data-episode-name="${escapeHtml(e.name)}">
+        <div class="episode-row__main">
+          <span class="episode-row__num" aria-hidden="true">E${e.episodeNumber}</span>
+          <span class="episode-row__name">${escapeHtml(e.name)}${
+        future
+          ? ` <em class="episode-row__future">${
+              e.airDate ? `(sin estrenar · ${formatDateEs(e.airDate)})` : "(sin estrenar)"
+            }</em>`
+          : ""
+      }</span>
+          ${communityBadge}
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+export function openTvModal(item, seasonsMeta, progress, callbacks, recommendations = [], existingIds = new Set(), { target = null } = {}) {
   const {
     onExpandSeason,
     onSetEpisodeDate,
-    onSetEpisodeSeenAgain,
+    onEpisodeSeenAgain,
+    onRemoveLastViewing,
     onSetEpisodeRating,
     onToggleSeason,
     onRewatch,
-    onSetStatus,
-    onSaveMeta,
-    onDelete,
-    onEdit,
     onAddRecommendation,
     onUpdateNextEpisodeAirDate,
     onOpenRecommendation,
   } = callbacks;
 
   const modal = document.getElementById("item-modal");
-  const content = document.getElementById("modal-content");
+  // Modo página (issue #285): ver openMovieModal.
+  const content = target || document.getElementById("modal-content");
 
   const nextLine = progress.nextEpisode
     ? `Siguiente: T${progress.nextEpisode.season}E${progress.nextEpisode.episode}`
@@ -1847,23 +2424,61 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
   const pct = progress.totalEpisodes
     ? Math.round((progress.totalWatched / progress.totalEpisodes) * 100)
     : 0;
-  const times = (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
+  // Baseline del ciclo de rewatch en curso (si lo hay): los contadores
+  // de temporada y las casillas reflejan el progreso del CICLO ACTUAL
+  // por contador (feedback #310, iteración 5): un episodio cuenta como
+  // visto en el ciclo si su `times` supera el que tenía al iniciarlo.
+  const cycleBaseline = item.rewatching ? item.rewatchBaseline || null : null;
+  // Fecha de inicio del ciclo (fallback para ciclos en vuelo iniciados
+  // por versiones anteriores, sin rewatchBaseline): criterio por fechas.
+  const cycleStartedAt = item.rewatching ? item.rewatchStartedAt || null : null;
+  // Contador del banner de serie terminada (feedback #310, iteración 3):
+  // coherente con los episodios (mínimo de sus veces) en lugar del
+  // timesCompleted inflado por marcados completos erróneos.
+  const times =
+    seriesCompleteTimes(item.watched) ||
+    (item.timesCompleted || 0) + (item.status === "completado" ? 1 : 0);
 
-  content.innerHTML = `
+  // Cabecera (issue #292): en modo página la ficha usa el bloque hero
+  // (portada grande + título, meta y etiquetas, valoraciones, tráiler
+  // y sinopsis) directamente sobre el fondo; en el modal clásico se
+  // conserva la cabecera de siempre. seasonsMeta (issue #292,
+  // iteración): las series muestran el nº de temporadas y episodios
+  // en lugar de la duración, y llega consultado aparte (issue #290).
+  const headerHtml = target
+    ? itemHeroHtml(item, { showUserRating: true, seasonsMeta })
+    : `
     <div class="modal-detail__header">
       <img class="modal-detail__cover" src="${item.coverUrl || PLACEHOLDER_COVER}" alt="" />
       <div>
         <h3 class="modal-detail__title">${escapeHtml(item.title)}</h3>
         <div class="modal-detail__meta">${escapeHtml(item.year || "")}</div>
       </div>
-    </div>
-    ${editButtonHtml()}
+    </div>`;
+  // En modo página la valoración de la comunidad y el tráiler ya viven
+  // en el hero; en el modal clásico se muestran como bloques propios,
+  // con la media de episodios (issue #310) junto a la de TMDB.
+  const ratingsHtml = target ? "" : `${communityRatingDisplay(item)}
+    ${episodeAverageBadgeHtml(item.watched)}
+    ${trailerButtonHtml(item)}`;
+  // En modo página la duración, géneros y sinopsis ya viven en el hero
+  // (y su línea de carga/error, que no debe duplicarse aquí).
+  const infoHtml = target
+    ? extraInfoHtml(item, { skipMetaBits: true, skipOverview: true, skipStatusFallback: true, skipCarousels: true })
+    : extraInfoHtml(item, { skipCarousels: true });
+
+  // Orden de secciones (issue #302, iteración): mismo criterio que la
+  // ficha de película — plataformas bajo la sinopsis y encima de la
+  // producción, y la sección de premios justo debajo de las plataformas.
+  content.innerHTML = `
+    ${headerHtml}
 
     ${upcomingBadge(item)}
-    ${communityRatingDisplay(item)}
-    ${trailerButtonHtml(item)}
+    ${ratingsHtml}
+    ${infoHtml}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     ${renderRecommendations(recommendations, existingIds, "tv", !!onAddRecommendation, onOpenRecommendation)}
 
@@ -1876,7 +2491,6 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     </div>
 
     ${renderStandbyBanner(item.status, `${progress.totalWatched}/${progress.totalEpisodes} episodios vistos`)}
-    ${renderStatusActions(item.status)}
 
     ${
       item.status === "completado"
@@ -1893,31 +2507,42 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     }
 
     ${
-      item.history && item.history.length
-        ? `<details class="rewatch-history">
-            <summary>Visionados anteriores (${item.history.length})</summary>
-            <ul>
-              ${item.history
-                .map(
-                  (h) =>
-                    `<li>${formatDateEs(h.startedAt)} → ${formatDateEs(h.finishedAt)}</li>`
-                )
-                .join("")}
-            </ul>
-          </details>`
-        : ""
+      (() => {
+        // «Visionados anteriores» de la serie (feedback #310, it. 3):
+        // el contador debe ser COHERENTE con el de los episodios. La
+        // fuente de verdad son los episodios (seriesCompleteTimes = nº
+        // de veces que TODOS se han visto); `history` registra los
+        // visionados COMPLETADOS (feedback #310, iteración 4: se
+        // archivan al terminar la serie, no al pulsar «Volver a verla
+        // desde el principio»). Si los episodios indican más visiones
+        // completas que las fechadas, se muestra la diferencia con el
+        // mismo patrón «sin fecha registrada» del desplegable de
+        // episodios.
+        const historyEntries = item.history || [];
+        const episodeViewings = seriesCompleteTimes(item.watched);
+        const viewings = Math.max(episodeViewings, historyEntries.length);
+        if (!(historyEntries.length > 0 || episodeViewings > 1)) return "";
+        const unknownDiff = episodeViewings > 0 ? episodeViewings - historyEntries.length : 0;
+        return `<details class="rewatch-history">
+          <summary>Visionados anteriores (${viewings})</summary>
+          <ul>
+            ${historyEntries
+              .map(
+                (h) => `<li>${escapeHtml(formatDateEs(h.startedAt))} → ${escapeHtml(formatDateEs(h.finishedAt))}</li>`
+              )
+              .join("")}
+            ${
+              unknownDiff > 0
+                ? `<li class="episode-rewatches__unknown">${unknownDiff} ${unknownDiff === 1 ? "visión completa más" : "visiones completas más"} sin fecha registrada</li>`
+                : ""
+            }
+          </ul>
+        </details>`;
+      })()
     }
 
     <div class="seasons-list">
-      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched)).join("")}
-    </div>
-
-    ${ratingPickerHtml(item.rating, "field-rating", episodeAverageHtml(item.watched, "field-rating"))}
-    ${notesFieldHtml(item.notes)}
-
-    <div class="modal-actions">
-      <button class="btn btn--danger" id="btn-delete-item">Eliminar</button>
-      <button class="btn btn--primary" id="btn-save-item">Guardar</button>
+      ${seasonsMeta.map((s) => renderSeasonBlock(s, item.watched, cycleBaseline, cycleStartedAt)).join("")}
     </div>
   `;
 
@@ -1934,25 +2559,59 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
       `${newProgress.totalWatched}/${newProgress.totalEpisodes} episodios`;
   }
 
-  function updateSeasonCount(seasonNumber, watchedCount, episodeCount) {
+  // Estado del check circular de «Marcar todo» (feedback #310, it. 3):
+  // derivado SIEMPRE de item.watched (patrón issue #136): checked si la
+  // temporada está completa, con el nº de veces completo de la
+  // temporada (tick si 1) en lugar del texto del antiguo botón.
+  function applySeasonMarkAllState(seasonNumber) {
     const block = content.querySelector(`.season-block[data-season="${seasonNumber}"]`);
+    if (!block) return;
+    const markWrap = block.querySelector(".season-mark-all");
+    const checkbox = markWrap && markWrap.querySelector(".episode-checkbox");
+    const visual = markWrap && markWrap.querySelector(".episode-checkbox-visual");
+    if (!markWrap || !checkbox || !visual) return;
+    const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
+    const episodeCount = seasonMeta ? seasonMeta.episodeCount : Number(markWrap.dataset.episodeCount);
+    const completeTimes = seasonCompleteTimes(
+      (item.watched || {})[String(seasonNumber)] || {},
+      episodeCount
+    );
+    const allWatched = completeTimes > 0;
+    checkbox.checked = allWatched;
+    if (completeTimes > 1) visual.setAttribute("data-count", String(completeTimes));
+    else visual.removeAttribute("data-count");
+    const label = allWatched
+      ? "Quitar la última visualización de todos los episodios de la temporada"
+      : "Marcar todos los episodios de la temporada como vistos";
+    checkbox.setAttribute("aria-label", label);
+  }
+
+  function updateSeasonCount(seasonNumber, episodeCount) {
+    const block = content.querySelector(`.season-block[data-season="${seasonNumber}"]`);
+    const seasonMeta = seasonsMeta.find((s) => s.seasonNumber === seasonNumber);
+    const watchedCount = seasonCycleCount(
+      (item.watched || {})[String(seasonNumber)] || {},
+      episodeCount,
+      cycleBaseline,
+      cycleStartedAt,
+      seasonNumber
+    );
     block.querySelector(".season-count").textContent = `${watchedCount}/${episodeCount}`;
-    const markBtn = block.querySelector(".season-mark-all");
-    const allWatched = watchedCount >= episodeCount && episodeCount > 0;
-    markBtn.textContent = allWatched ? "Desmarcar todo" : "Marcar todo";
-    markBtn.dataset.allWatched = allWatched ? "0" : "1";
+    if (seasonMeta) applySeasonMarkAllState(seasonNumber);
   }
 
   function updateEpisodeAverage() {
     const avg = computeEpisodeAverageRating(item.watched);
-    const el = content.querySelector("#field-rating-episode-average");
+    const el = content.querySelector("#item-episode-average");
     if (!el) return;
     el.hidden = !avg;
     if (avg) {
       const ratedLabel =
         avg.count === 1 ? "1 episodio valorado" : `${avg.count} episodios valorados`;
       el.title = `Media de ${ratedLabel}`;
-      el.innerHTML = `Media episodios: <strong>${avg.average.toFixed(1)}</strong>`;
+      el.innerHTML = `<span class="item-episode-average__label">Media episodios</span><strong>${avg.average
+        .toFixed(1)
+        .replace(".", ",")}</strong>`;
     } else {
       // Sin episodios valorados: ocultar y vaciar (evita texto obsoleto
       // si el CSS por cualquier motivo dejara de respetar el [hidden]).
@@ -1965,16 +2624,27 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     block.querySelectorAll(".episode-row").forEach((row) => {
       const episodeNumber = Number(row.dataset.episode);
       const checkbox = row.querySelector(".episode-checkbox");
-      const dateInput = row.querySelector(".episode-date");
       const ratingWrap = row.querySelector(".episode-rating");
       const airDate = row.dataset.airDate;
 
       checkbox.addEventListener("change", async () => {
-        // Estado REAL antes del clic (el navegador ya conmutó el checkbox)
+        // Estado REAL antes del clic (el navegador ya conmutó el checkbox).
+        // Con rewatch en curso (feedback #310, iteración 5) se compara con
+        // el CICLO actual por CONTADOR: un episodio con visiones
+        // históricas pero aún no visto en el ciclo (su times no supera el
+        // baseline) se comporta como sin marcar (coherente con la casilla
+        // desmarcada que ve el usuario).
         const currentEntry = normalizeEntry(
           (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
         );
-        const wasWatched = Boolean(currentEntry && currentEntry.date);
+        const wasWatched = cycleBaseline
+          ? Boolean(
+              entrySeenInCycle(
+                currentEntry,
+                episodeBaseline(cycleBaseline, seasonNumber, episodeNumber)
+              )
+            )
+          : Boolean(entrySeenSince(currentEntry, cycleStartedAt));
 
         // Episodio ya visto: preguntar qué hacer (verlo de nuevo o
         // desmarcarlo) en lugar de desmarcar a secas (issue #133).
@@ -1994,9 +2664,16 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             });
             let newProgress = null;
             if (choice === "seen_again") {
-              newProgress = await onSetEpisodeSeenAgain(seasonNumber, episodeNumber);
+              // Feedback #310 (iteración 2): «volver a ver» persiste el
+              // +1 y abre la ventana de valoración con la valoración
+              // previa por defecto (bloquea hasta cerrar, igual que el
+              // marcado de un episodio nuevo; «Deshacer» revierte el +1).
+              newProgress = await onEpisodeSeenAgain(seasonNumber, episodeNumber);
             } else if (choice === "unmarked") {
-              newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, null);
+              // Feedback issue #310: desmarcar con más de una
+              // visualización elimina solo la ÚLTIMA (decrementa times y
+              // quita la fecha más reciente); con una sola, desmarca.
+              newProgress = await onRemoveLastViewing(seasonNumber, episodeNumber);
             }
             // Repintado SIEMPRE derivado de item.watched (patrón issue #136):
             // en el caso «cancelar» la fila vuelve a su estado real (inofensivo)
@@ -2004,10 +2681,13 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry2 = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
             );
-            applyEpisodeRowState(row, entry2);
-            const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
-            updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
+            applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
+            updateSeasonCount(seasonNumber, episodeCount);
             if (newProgress) updateBanner(newProgress);
+            // La media de episodios (issue #310) vive en el hero: al
+            // desmarcar un episodio valorado (diálogo #133) el chip
+            // queda obsoleto si no se refresca (QA H2).
+            updateEpisodeAverage();
           } catch (err) {
             showToast("No se pudo actualizar: " + String(err && err.message ? err.message : err));
           } finally {
@@ -2029,16 +2709,24 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         checkbox.disabled = true;
         const newDate = checkbox.checked ? todayISO() : null;
         try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
+          // Con rewatch en curso (feedback #310, iteración 3), marcar un
+          // episodio que NO está visto en el ciclo pero sí tenía visiones
+          // históricas = «verlo de nuevo» (+1 al contador con fecha de
+          // hoy y la valoración previa como predeterminada), igual que
+          // el diálogo #133: setEpisodeDate no incrementaría el contador.
+          const historicalViewings = Boolean(currentEntry && currentEntry.date);
+          const newProgress =
+            checkbox.checked && cycleStartedAt && historicalViewings
+              ? await onEpisodeSeenAgain(seasonNumber, episodeNumber)
+              : await onSetEpisodeDate(seasonNumber, episodeNumber, newDate);
           // Pintado DERIVADO de item.watched (no del checkbox pulsado):
           // refleja también un posible «Deshacer» desde la ventana de
           // valoración emergente (issue #136).
           const entry2 = normalizeEntry(
             (item.watched || {})[String(seasonNumber)]?.[String(episodeNumber)]
           );
-          applyEpisodeRowState(row, entry2);
-          const watchedSeasonCount = block.querySelectorAll(".episode-row.is-watched").length;
-          updateSeasonCount(seasonNumber, watchedSeasonCount, episodeCount);
+          applyEpisodeRowState(row, entry2, cycleBaseline, cycleStartedAt);
+          updateSeasonCount(seasonNumber, episodeCount);
           updateBanner(newProgress);
           updateEpisodeAverage();
         } catch (err) {
@@ -2048,16 +2736,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         }
       });
 
-      dateInput.addEventListener("change", async () => {
-        if (!dateInput.value) return;
-        dateInput.disabled = true;
-        try {
-          const newProgress = await onSetEpisodeDate(seasonNumber, episodeNumber, dateInput.value);
-          updateBanner(newProgress);
-        } finally {
-          dateInput.disabled = false;
-        }
-      });
+      // Desplegable «Visionados anteriores» (issue #310): muestra las
+      // fechas de todos los visionados del episodio, oculto por
+      // defecto. Simple toggle local (sin repintado derivado).
+      const rewatchBtn = row.querySelector(".episode-rewatches");
+      if (rewatchBtn) {
+        rewatchBtn.addEventListener("click", () => {
+          const datesBlock = row.querySelector(".episode-rewatches__dates");
+          if (!datesBlock) return;
+          datesBlock.hidden = !datesBlock.hidden;
+          rewatchBtn.setAttribute("aria-expanded", String(!datesBlock.hidden));
+        });
+      }
 
       const starButtons = ratingWrap.querySelectorAll(".episode-rating__star");
       starButtons.forEach((btn) => {
@@ -2143,7 +2833,11 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
           }
         }
         const seasonWatched = (item.watched && item.watched[String(seasonNumber)]) || {};
-        block.innerHTML = renderEpisodeRows(episodes, seasonWatched, { manual: item.manual });
+        block.innerHTML = renderEpisodeRows(episodes, seasonWatched, {
+          manual: item.manual,
+          baselineMap: cycleBaseline,
+          startedAtForFallback: cycleStartedAt,
+        });
         block.dataset.loaded = "1";
         const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
         wireEpisodeRows(block, seasonNumber, episodeCount);
@@ -2153,11 +2847,15 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     });
   });
 
-  content.querySelectorAll(".season-mark-all").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const seasonNumber = Number(btn.dataset.season);
-      const episodeCount = Number(btn.closest(".season-block").dataset.episodeCount);
-      const shouldMarkAll = btn.dataset.allWatched === "1";
+  content.querySelectorAll(".season-mark-all").forEach((wrap) => {
+    const checkbox = wrap.querySelector(".episode-checkbox");
+    checkbox.addEventListener("change", async () => {
+      const seasonNumber = Number(wrap.dataset.season);
+      const episodeCount = Number(wrap.closest(".season-block").dataset.episodeCount);
+      // Intención del usuario: marcar todo (checkbox → checked) o
+      // desmarcar todo (checkbox → unchecked). El repintado final se
+      // deriva SIEMPRE de item.watched (patrón issue #136).
+      const shouldMarkAll = checkbox.checked;
 
       // Al marcar toda una temporada, contar los episodios sin estrenar
       // (sin fecha oficial o con fecha futura) y pedir confirmación.
@@ -2189,13 +2887,21 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         const ok = window.confirm(
           `«${item.title}» · Temporada ${seasonNumber}: ${unreleasedCount} episodio(s) sin estrenar (sin fecha oficial o con fecha futura). ¿Marcarlos todos igualmente como vistos?`
         );
-        if (!ok) return;
+        if (!ok) {
+          checkbox.checked = !checkbox.checked;
+          return;
+        }
       }
 
-      btn.disabled = true;
+      checkbox.disabled = true;
       try {
         const newProgress = await onToggleSeason(seasonNumber, shouldMarkAll);
-        updateSeasonCount(seasonNumber, shouldMarkAll ? episodeCount : 0, episodeCount);
+        // Repintado derivado de item.watched (feedback #310, iteración 2):
+        // «Desmarcar todo» quita solo la última visualización de cada
+        // episodio, así que los episodios con varias visiones siguen
+        // marcados y el contador/check deben reflejar el estado real
+        // (no 0 ni episodeCount a ciegas).
+        updateSeasonCount(seasonNumber, episodeCount);
         updateBanner(newProgress);
 
         const episodesBlock = content.querySelector(
@@ -2206,12 +2912,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
             const entry = normalizeEntry(
               (item.watched || {})[String(seasonNumber)]?.[String(row.dataset.episode)]
             );
-            applyEpisodeRowState(row, entry);
+            applyEpisodeRowState(row, entry, cycleBaseline, cycleStartedAt);
           });
         }
         updateEpisodeAverage();
+      } catch (err) {
+        // Patrón issue #136 también en el camino de error: restaurar el
+        // check desde item.watched y avisar (mismo patrón que las filas).
+        applySeasonMarkAllState(seasonNumber);
+        updateSeasonCount(seasonNumber, episodeCount);
+        showToast("No se pudo actualizar la temporada: " + String(err && err.message ? err.message : err));
       } finally {
-        btn.disabled = false;
+        checkbox.disabled = false;
       }
     });
   });
@@ -2221,7 +2933,7 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     rewatchBtn.addEventListener("click", async () => {
       if (
         !window.confirm(
-          `¿Volver a ver «${item.title}» desde el principio? Se guardará el visionado anterior en el historial.`
+          `¿Volver a ver «${item.title}» desde el principio? Empezará un nuevo visionado desde T1E1 y la serie pasará a «viendo»; se conservan las visualizaciones y valoraciones anteriores.`
         )
       ) {
         return;
@@ -2230,25 +2942,8 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
     });
   }
 
-  content.querySelector("#btn-edit-item").addEventListener("click", () => onEdit());
-
-  wireStatusActions(content, async (newStatusOrNull) => {
-    const newProgress = await onSetStatus(newStatusOrNull);
-    openTvModal(item, seasonsMeta, newProgress, callbacks);
-  });
-
-  const getRating = wireRatingAndGetValue(content, item.rating);
-
-  content.querySelector("#btn-save-item").addEventListener("click", () => {
-    onSaveMeta({
-      rating: getRating() || null,
-      notes: content.querySelector("#field-notes").value.trim(),
-    });
-  });
-
-  content.querySelector("#btn-delete-item").addEventListener("click", () => {
-    onDelete();
-  });
+  // Carruseles de elenco (issue #294): ver openMovieModal.
+  wireCastCrewClicks(content, item);
 
   // Wire recommendation "Añadir" buttons
   if (onAddRecommendation) {
@@ -2272,6 +2967,18 @@ export function openTvModal(item, seasonsMeta, progress, callbacks, recommendati
         if (recItem) onOpenRecommendation(recItem);
       });
     });
+  }
+
+  // En modo página no se abre el modal ni se atrapa el foco: el
+  // contenido ya vive en el documento (#item-view-content). Se enfoca
+  // el título de la ficha (ver openMovieModal).
+  if (target) {
+    const title = target.querySelector(".item-hero__title");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true });
+    }
+    return;
   }
 
   // Record previous focus and trap
@@ -2453,8 +3160,10 @@ export function openReadOnlyModal(item, ownerName) {
     ${communityRatingDisplay(item)}
     ${trailerButtonHtml(item)}
     ${gamePlatformsHtml(item)}
+    ${extraInfoHtml(item, { skipCarousels: true })}
     ${watchProvidersHtml(item)}
-    ${extraInfoHtml(item)}
+    ${awardsHtml(item)}
+    ${castCrewHtml(item)}
 
     <div class="field-group">
       <span class="item-card__stamp item-card__stamp--${item.status}" style="position:static;transform:none;display:inline-block;">
@@ -2465,6 +3174,25 @@ export function openReadOnlyModal(item, ownerName) {
     ${progress ? `<p class="extra-info__line">${escapeHtml(progress)}</p>` : ""}
     ${stars ? `<p class="item-card__rating" style="font-size:1rem;">${stars}</p>` : ""}
   `;
+
+  // Carruseles de elenco (issue #294): los botones «Ver en más detalle»
+  // también funcionan en la ficha de solo lectura del amigo.
+  wireCastCrewClicks(content, item);
+
+  // Premios (issue #302, iteración): la ficha del amigo también
+  // muestra los premios del título extraídos de la API (Wikidata),
+  // consultados con la clave del LECTOR (como los detalles; nunca se
+  // escribe en Firestore). Mismo patrón que loadItemDetails: se
+  // re-renderiza si la ficha sigue abierta cuando llegan.
+  if ((item.type === "movie" || item.type === "tv") && item.externalId && !item._awardsFetched) {
+    item._awardsFetched = true;
+    getItemAwards(item.type, item.externalId).then((awards) => {
+      item.awards = awards;
+      if (!document.getElementById("item-modal")?.classList.contains("hidden")) {
+        openReadOnlyModal(item, ownerName);
+      }
+    });
+  }
 
   // Record previous focus and trap
   modal._previousActiveElement = document.activeElement;

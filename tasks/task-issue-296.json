@@ -1,0 +1,37 @@
+{
+  "title": "Eliminar elementos en películas y series (issue #296)",
+  "description": "En la ficha de películas y series se debe eliminar el botón de editar información (✎ Editar información) y la sección/botón de añadir resto de la saga, manteniendo el carrusel de otras películas de la saga.\n\nInstrucción de base (issue #296): la rama base de trabajo es feat/issue-201; crear la rama de trabajo a partir de ahí y hacer la PR también a esa rama (no a dev).\n\nIteración (2026-08-18, comentario de gonzalitojh): añadida barra horizontal de separación encima de las secciones «Producción», «Reparto» y «Otras películas de la saga» (mismo patrón que .recommendations), en películas y series; manual y ADR-105 actualizados.",
+  "status": "review",
+  "acceptance criteria": [
+    "El botón «✎ Editar información» desaparece de la ficha de películas y de la ficha de series (tanto en el modal clásico como en la página de detalle).",
+    "Libros y videojuegos CONSERVAN el botón «✎ Editar información».",
+    "El banner «Saga: …» con el botón «Añadir resto de la saga» desaparece de la ficha de película y de la vista previa de la página de ítem.",
+    "El carrusel «Otras películas de la saga» se mantiene y sigue funcionando (botones «Añadir»/«Añadida» por tarjeta y apertura de la página de la película).",
+    "Se elimina el código y CSS muertos asociados (openSagaSelector, openSagaSelectionModal, .saga-banner, selector de saga).",
+    "El manual de usuario se actualiza: sin «Editar información» en series/películas y sin «Añadir resto de la saga» (sí el carrusel).",
+    "Se documenta un ADR con la decisión (Related issue: #296)."
+  ],
+  "definition of done": [
+    "Tarea planificada (planning)",
+    "Implementación completada (implementation)",
+    "Validación QA superada (validation)",
+    "Escaneo de seguridad sin hallazgos HIGH (security)",
+    "Documentación: ADR creado con \"Related issue: #296\" y manual actualizado (documentation)",
+    "PR publicada contra la rama feat/issue-201 sin keyword de cierre (publishing)",
+    "Task file en status review con bloque pr subido al repositorio",
+    "Issue #296 actualizada a su estado final (status: needs-review tras crear la PR)"
+  ],
+  "issue": {
+    "number": 296,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/296",
+    "title": "Eliminar elementos en películas y series."
+  },
+  "pr": {
+    "number": 297,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/297",
+    "title": "feat: eliminar edición de información y aviso de saga en películas y series (issue #296)",
+    "branch": "feat/issue-296-eliminar-elementos",
+    "commit": "8ff71da",
+    "closes": "#296"
+  }
+}

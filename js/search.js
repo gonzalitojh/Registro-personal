@@ -296,8 +296,13 @@ async function openSeenRating(uid, type, ref, opts) {
       communityRating: opts.communityRating ?? null,
       communityLabel: opts.communityLabel || "TMDB",
       initialRating: null,
-      onSave: async (rating) => {
-        await updateItem(uid, type, ref.id, { rating });
+      // Notas (issue #300): el campo vive en la ventana de valoración
+      // (el ítem recién añadido no tiene notas previas).
+      initialNotes: "",
+      onSave: async (rating, notes) => {
+        const payload = { rating };
+        if (notes !== undefined) payload.notes = notes;
+        await updateItem(uid, type, ref.id, payload);
       },
       onUndo: async () => {
         await deleteItem(uid, type, ref.id);

@@ -1,0 +1,38 @@
+{
+  "title": "Botón flotante para series",
+  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nEn el caso de las series, cuando una serie se está viendo, el botón flotante debe mostrar un icono diferente (ni el + de añadido, ni el tick de visto), por ejemplo el símbolo de reproducir.\n\nCuando una serie se ha pausado o abandonado, el botón flotante debe aparecer con el color empleado para dichos estados (gris y rojo) y con un símbolo también coherente (símbolo de pausa y una señal tachada).\n\nAdemás, los botones para pausar y abandonar una serie, deben aparecer en el botón flotante y ser eliminados de la propia página de la serie.",
+  "status": "review",
+  "acceptance_criteria": [
+    "En series viéndose, el botón flotante muestra un icono diferente al + de añadido y al tick de visto (p. ej. reproducir).",
+    "En series pausadas, el botón flotante aparece con el color del estado pausado (gris) y un símbolo de pausa.",
+    "En series abandonadas, el botón flotante aparece con el color del estado abandonado (rojo) y una señal tachada.",
+    "Los botones de pausar y abandonar una serie se incluyen en el botón flotante (o su menú) y se eliminan de la página de la serie.",
+    "Sin regresiones en la funcionalidad existente del botón flotante para otros tipos de ítem.",
+    "Responsividad: sin scroll horizontal ni textos desbordados en ningún ancho (360, 768, 1280 px).",
+    "Visualización correcta en los cuatro modos de tema (oscuro, negro puro, claro, blanco puro).",
+    "Manual de usuario actualizado si cambia algo visible para el usuario."
+  ],
+  "definition_of_done": [
+    "Planificación realizada.",
+    "Implementación completada con micro-commits incrementales.",
+    "Validación (QA) superada contra los criterios de aceptación.",
+    "Escaneo de seguridad sin hallazgos HIGH.",
+    "ADR documentado incluyendo 'Related issue: #304'.",
+    "PR creada contra la rama `feat/issue-201` (según instrucción de la issue, no contra dev) SIN keyword de cierre.",
+    "Task file actualizado a status 'review' con bloque pr subido al repositorio.",
+    "Issue #304 label actualizada a su estado final (status: needs-review tras crear la PR)."
+  ],
+  "issue": {
+    "number": 304,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/304",
+    "title": "Botón flotante para series"
+  },
+  "pr": {
+    "number": 306,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/306",
+    "title": "feat: botón flotante para series (issue #304)",
+    "branch": "feat/issue-304-boton-flotante-series",
+    "commit": "e2b4720",
+    "closes": "#304"
+  }
+}

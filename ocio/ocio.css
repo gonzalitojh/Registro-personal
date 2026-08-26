@@ -408,20 +408,32 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: var(--ink);
 }
 
-/* Media de valoración de episodios junto al picker de la serie (issue #80) */
-.episode-average {
-  display: block;
-  margin-top: 0.4rem;
+/* Media de valoración de episodios (issue #80): desde la issue #310
+   vive en la parte superior de la ficha de la serie, junto a la
+   valoración de TMDB y la propia, como un chip con borde (estilo
+   deliberadamente distinto del resto de valoraciones para
+   diferenciarlo). */
+.item-episode-average {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--ink-soft);
+  border: 1px solid var(--paper-line);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
 }
-/* Sin episodios valorados la media no se muestra: display:block del
-   elemento vencería al [hidden] del navegador, así que se fuerza. */
-.episode-average[hidden] {
+/* Sin episodios valorados la media no se muestra: display block/inline
+   del elemento vencería al [hidden] del navegador, así que se fuerza. */
+.item-episode-average[hidden] {
   display: none;
 }
-.episode-average strong { color: var(--ink); }
+.item-episode-average__label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.item-episode-average strong { color: var(--ink); }
 
 .modal-actions {
   display: flex;
@@ -744,26 +756,115 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-family: var(--font-mono);
 }
 
+/* Visionados de película ocultos por defecto (issue #300): el
+   historial se despliega desde el summary y ya no hay botón de
+   añadir (marcar/añadir visionado viven en el botón flotante,
+   issue #298). Mismo patrón que .rewatch-history de las series. */
+.watch-log-details {
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.watch-log-details summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+
 
 /* =========================================================
-   Fecha por episodio
+   Visionados anteriores por episodio (issue #310)
    ========================================================= */
 
-.episode-row input.episode-date {
+/* Botón que sustituye al antiguo input de fecha: mismo lugar (segunda
+   fila del episodio, junto a las estrellas). Desde el feedback de la
+   issue #310 tiene la MISMA estética que el summary «Visionados
+   anteriores (N)» de la serie y que el cabecero de temporada: tinta
+   normal (no mono), con chevron ▸ que rota 90° al desplegarse. Área
+   táctil mínima de 32px y [hidden] explícito (es un botón, sin estilo
+   nativo que vencer al atributo). */
+.episode-rewatches {
   margin-left: auto;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  background: var(--white);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  padding: 0.15rem 0.3rem;
-  width: min(150px, 100%);
-}
-.episode-row input.episode-date:disabled {
-  opacity: 0.35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   background: transparent;
-  border-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--ink);
+  padding: 0.25rem 0.4rem;
+  min-height: 32px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  text-align: left;
+}
+/* Sin subrayado en hover ni al pulsar (feedback #310, iteración 2: el
+   usuario pidió que el botón «Visionados anteriores» no se subraye al
+   pulsarse — en táctil el tap aplica hover y el subrayado se quedaba
+   pegado, como texto seleccionado). El foco de teclado se indica con
+   el outline (anillo), igual que el summary de la serie y el cabecero
+   de temporada, que tampoco subrayan. */
+.episode-rewatches:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 2px;
+}
+.episode-rewatches[hidden] {
+  display: none;
+}
+
+/* Chevron del botón: rota 90° cuando el desplegable está abierto
+   (aria-expanded), igual que la flecha del summary de la serie. */
+.episode-rewatches__chevron {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.episode-rewatches[aria-expanded="true"] .episode-rewatches__chevron {
+  transform: rotate(90deg);
+}
+
+/* Lista de fechas, oculta por defecto y alineada con la meta del
+   episodio (mismo sangrado que .episode-row__meta) */
+.episode-rewatches__dates {
+  margin: 0.15rem 0 0.25rem 30px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.episode-rewatches__dates[hidden] {
+  display: none;
+}
+.episode-rewatches__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+/* Visiones legacy sin fecha registrada (feedback #310): línea
+   informativa que mantiene la coherencia con el contador de la
+   casilla cuando los datos previos a #310 no guardaban las fechas. */
+.episode-rewatches__unknown {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Botón y lista de fechas sobre las superficies de PAPEL de la familia
+   oscura (dark): el botón usa --ink (correcto sobre papel claro);
+   --ink-soft base (#948a76) va pensado para superficies oscuras, así
+   que la lista de fechas usa la tinta suave de la familia clara
+   (#6b6355, ≈4.9:1 AA sobre --paper). En negro puro las superficies
+   son oscuras y el bloque de tema de abajo completa el ajuste. */
+[data-theme="dark"] .episode-rewatches__dates {
+  color: #6b6355;
+}
+/* Igual para el label del chip de media de episodios cuando vive en el
+   modal clásico (superficie papel); en el hero (modo página) el fondo
+   es oscuro y el --ink-soft base cumple AA. */
+[data-theme="dark"] .modal__card .item-episode-average {
+  color: #6b6355;
 }
 
 
@@ -807,29 +908,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 
 /* =========================================================
-   Saga/collection banner (modal de película)
-   ========================================================= */
-
-.saga-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  background: var(--paper-dim);
-  border-radius: var(--radius);
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 1.1rem;
-  font-size: 0.85rem;
-}
-
-.saga-banner__label {
-  font-size: 0.85rem;
-  color: var(--ink);
-}
-
-
-/* =========================================================
    Formulario de alta manual
    ========================================================= */
 
@@ -846,10 +924,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-size: 1rem;
 }
 
-
-/* =========================================================
-   Modal selector de saga (checklist de películas)
-   ========================================================= */
 
 .view-toggle {
   display: flex;
@@ -1150,8 +1224,13 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* Contador de visualizaciones (issue #133): con times > 1 el
-   círculo muestra el nº de veces en lugar del tick */
-.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+   círculo muestra el nº de veces en lugar del tick. Desde el feedback
+   #310 (iteración 7) el contador se muestra TAMBIÉN en episodios NO
+   marcados en el ciclo actual de rewatch: los datos reales (visionados
+   previos) deben verse aunque el episodio no esté marcado. Sobre la
+   casilla sin marcar (superficie --white) el número usa tinta;
+   sobre la marcada (teal) papel; negro puro lo invierte abajo. */
+.episode-checkbox-visual[data-count]::after {
   content: attr(data-count);
   opacity: 1;
   border: none;
@@ -1169,6 +1248,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1;
+  color: var(--ink);
+}
+.episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
   color: var(--paper);
 }
 
@@ -1191,9 +1273,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   gap: 0.5rem;
   flex-wrap: wrap;
   padding-left: 30px;
-}
-.episode-row__meta .episode-date {
-  flex-shrink: 0;
 }
 
 .episode-rating {
@@ -1416,6 +1495,18 @@ button, a, input, select, textarea { touch-action: manipulation; }
   margin-bottom: 0.95rem;
 }
 
+/* Notas del ítem en la ventana de valoración (issue #300): el campo
+   vive aquí porque la ficha de película/serie ya no tiene sección de
+   notas. Reutiliza .field-group (borde, fondo y 4 temas incluidos);
+   el margen inferior lo pone .rating-modal__actions. */
+.rating-modal__notes {
+  margin-bottom: 0;
+}
+
+.rating-modal__notes textarea {
+  min-height: 56px;
+}
+
 /* Picker compacto para la ventana pequeña */
 .rating-picker--small button {
   width: 30px;
@@ -1499,82 +1590,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 }
 
 /* =========================================================
-   Modal selector de saga (checklist de películas)
-   ========================================================= */
-
-.saga-subtitle {
-  font-size: 0.82rem;
-  color: var(--ink-soft);
-  margin: 0 0 0.8rem;
-}
-
-.saga-list {
-  max-height: 340px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius);
-  padding: 0.4rem;
-  background: #fff;
-}
-
-.saga-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.35rem 0.4rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.1s ease;
-}
-.saga-row:hover {
-  background: var(--paper-dim);
-}
-
-.saga-row input[type="checkbox"] {
-  accent-color: var(--teal-reel);
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-}
-
-.saga-row__cover {
-  width: 36px;
-  height: 54px;
-  object-fit: cover;
-  border-radius: 2px;
-  flex-shrink: 0;
-  background: var(--paper-dim);
-}
-
-.saga-row__title {
-  flex: 1;
-  font-size: 0.82rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.saga-row__year {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--ink-soft);
-  flex-shrink: 0;
-}
-
-
-.saga-count {
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  text-align: right;
-  margin: 0 0 0.2rem;
-}
-
-/* =========================================================
    Móvil: evitar que iOS haga zoom automático al enfocar los
    campos propios de ocio (Safari hace zoom si el font-size es
    menor de 16px)
@@ -1587,7 +1602,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .manual-form input,
   .log-row input[type="date"],
   .log-add-row input[type="date"],
-  .episode-row input.episode-date,
   .sort-select {
     font-size: 16px;
   }
@@ -1830,7 +1844,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
    ========================================================= */
 
 .saga-movies {
-  margin: 0.4rem 0 1.2rem;
+  margin: 1.2rem 0 1.2rem;
+  /* Barra horizontal de separación igual que la de recomendaciones
+     (issue #296, iteración): misma línea de separación con --paper-line
+     y mismo aire superior (0.8rem) antes del título. */
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
 }
 
 .saga-movies__title {
@@ -1909,12 +1928,19 @@ button, a, input, select, textarea { touch-action: manipulation; }
   outline-offset: -1px;
 }
 
-.chip:focus-visible {
+/* «Marcar todo» de temporada (feedback #310, iteración 3): check
+   circular con contador que reemplaza al antiguo botón de texto.
+   Reutiliza el patrón .episode-checkbox-wrap de las filas. */
+.season-mark-all {
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+.season-mark-all:has(input:focus-visible) .episode-checkbox-visual {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
 
-.season-mark-all:focus-visible {
+.chip:focus-visible {
   outline: 2px solid var(--teal-reel);
   outline-offset: 2px;
 }
@@ -1932,12 +1958,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .desc-picker__item:focus-visible {
   outline: 2px solid var(--ochre-spine);
   outline-offset: 2px;
-}
-
-.saga-row:focus-within {
-  outline: 2px solid var(--teal-reel);
-  outline-offset: 2px;
-  border-radius: var(--radius);
 }
 
 .sort-select:focus-visible {
@@ -1995,7 +2015,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .season-episodes,
 [data-theme="black"] .view-toggle__btn.is-active,
 [data-theme="black"] .list-row__content,
-[data-theme="black"] .saga-list,
 [data-theme="black"] .watch-provider,
 [data-theme="black"] .game-platform {
   background: var(--ink-raised);
@@ -2053,9 +2072,12 @@ button, a, input, select, textarea { touch-action: manipulation; }
 /* Texto que usaba tinta sobre superficies ahora oscuras */
 [data-theme="black"] .list-row__open,
 [data-theme="black"] .season-toggle,
-[data-theme="black"] .episode-average strong,
+[data-theme="black"] .episode-rewatches,
+[data-theme="black"] .episode-rewatches:hover,
+[data-theme="black"] .episode-rewatches:focus-visible,
+[data-theme="black"] .item-episode-average strong,
 [data-theme="black"] .rewatch-history summary,
-[data-theme="black"] .saga-banner__label,
+[data-theme="black"] .watch-log-details summary,
 [data-theme="black"] .desc-picker__text,
 [data-theme="black"] .extra-info__line,
 [data-theme="black"] .extra-info__loading,
@@ -2074,7 +2096,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
 [data-theme="black"] .log-add-row input[type="text"],
 [data-theme="black"] .log-row input[type="date"],
 [data-theme="black"] .log-row input[type="number"],
-[data-theme="black"] .episode-row input.episode-date,
 [data-theme="black"] .manual-form .field-group input {
   color: var(--paper);
 }
@@ -2124,9 +2145,680 @@ button, a, input, select, textarea { touch-action: manipulation; }
   border-color: var(--teal-reel-dark);
 }
 
+/* Contador de visionados de la casilla en negro puro (feedback #310,
+   iteración 7): la casilla SIN marcar es una superficie oscura
+   (--white ≈ #0f0f0f), así que el número se lee en papel claro; la
+   marcada usa teal claro (--teal-reel-dark ≈ #4f9c8e) y el número en
+   tinta, mismo patrón que los hovers de acento de la familia oscura
+   (fondo claro + tinta oscura, ≈6.5:1 AA). */
+[data-theme="black"] .episode-checkbox-visual[data-count]::after {
+  color: var(--paper);
+}
+[data-theme="black"] .episode-checkbox:checked ~ .episode-checkbox-visual[data-count]::after {
+  color: var(--ink);
+}
+
 /* Sellos de tarjeta: se mantienen sobre papel claro; conservan los
    hex originales del modo oscuro para el contraste oscuro-sobre-claro */
 [data-theme="black"] .item-card__stamp--pendiente { color: #7e2c22; }
 [data-theme="black"] .item-card__stamp--en_curso { color: #1c4a41; }
 [data-theme="black"] .item-card__stamp--completado { color: #8f6522; }
 [data-theme="black"] .item-card__stamp--abandonado { color: #7e2c22; }
+
+/* =========================================================
+   Carruseles de elenco (issue #294): producción y reparto en
+   la ficha de películas/series. Mismo patrón que las
+   recomendaciones (.recommendations__scroll + .rec-card):
+   scroll horizontal SOLO dentro de su contenedor (permitido
+   por AGENTS.md), tarjetas con foto, nombre y puesto/personaje.
+   ========================================================= */
+
+.cast-crew {
+  margin: 1.2rem 0 0.4rem;
+  /* Barra horizontal de separación igual que la de recomendaciones
+     (issue #296, iteración): misma línea de separación con --paper-line
+     y mismo aire superior (0.8rem) antes del título del carrusel. */
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
+}
+
+.cast-crew__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0 0 0.6rem;
+}
+
+.cast-crew__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Contraste AA en el modal clásico con la familia oscura por defecto
+   (QA #294): --ink-soft (#948a76) sobre --paper (#f1ead9) = 2.84:1,
+   insuficiente; #5f5849 ≈ 5.9:1. En la página de ítem el fondo es
+   --ink (#171512) y --ink-soft sí cumple (≈5.5:1), por eso la
+   restauración se limita a la superficie clara del modal; el resto de
+   temas cumple con --ink-soft (5.2-5.9:1) y no necesita override. */
+[data-theme="dark"] .modal__card .cast-crew__title {
+  color: #5f5849;
+}
+
+.cast-crew__count {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.cast-crew__more {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.55rem;
+  min-height: 28px;
+}
+
+.cast-crew__scroll {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  /* Sin scroll-snap (iteración 2, issue #294: encajaba las tarjetas al
+     terminar el gesto y el avance se sentía «atascado»). El manejo de la
+     rueda/trackpad vive en js/ui.js wireCastCrewInertialScroll (issue
+     #305): la muesca de ratón avanza ~1 tarjeta sin inercia; el trackpad
+     amplifica el delta y frena con fricción vía rAF; en táctil, el
+     impulso nativo del navegador desliza y frena solo. */
+  -webkit-overflow-scrolling: touch;
+  /* El rebote del gesto no debe arrastrar la página entera: el scroll
+     horizontal se queda dentro del contenedor del carrusel. */
+  overscroll-behavior-x: contain;
+}
+
+.cast-crew__scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.cast-crew__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cast-crew__scroll::-webkit-scrollbar-thumb {
+  background: var(--paper-line);
+  border-radius: 4px;
+}
+
+.cast-card {
+  flex: 0 0 96px;
+  background: var(--paper-dim);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+}
+
+/* Tarjeta pulsable (issue #321): .cast-card se renderiza como
+   <button> cuando la persona tiene id de TMDB (abre su página).
+   Reset del estilo de botón del navegador: la tarjeta mantiene el
+   aspecto de siempre (los estilos de .cast-card se aplican igual al
+   botón). El hover/focus sutil usa la misma tinta alfa que el resto
+   de superficies pulsables de la web. */
+button.cast-card {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.cast-card:hover {
+  background: var(--ink-alpha-10);
+}
+button.cast-card:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+.cast-card__photo {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background: var(--paper-dim);
+}
+
+.cast-card__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0.35rem 0.4rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.cast-card__role {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  /* Contraste AA en la familia oscura por defecto (regla 4 AGENTS.md):
+     --ink-soft (#948a76) sobre --paper-dim (#e3dac4) = 2.45:1,
+     insuficiente; #5f5849 ≈ 5.0:1. Negro puro y familia clara sí
+     cumplen con --ink-soft (≈5.5/5.2/5.9:1), por eso se restaura ahí
+     (mismo patrón que .rec-card__hint). */
+  color: #5f5849;
+  line-height: 1.3;
+  padding: 0.15rem 0.4rem 0.45rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+[data-theme="black"] .cast-card__role,
+[data-theme="light"] .cast-card__role,
+[data-theme="white"] .cast-card__role {
+  color: var(--ink-soft);
+}
+
+/* =========================================================
+   Premios (issue #302, iteración): sección de SOLO LECTURA de
+   la ficha de películas/series, bajo las plataformas y encima
+   de la producción. Mismo patrón de sección que .cast-crew:
+   línea de separación superior con --paper-line. Lista de
+   premios y nominaciones del título extraídos de Wikidata
+   (TMDB no expone premios en su API pública), agrupados por
+   familia (Óscar, Globos de Oro…) en <details> minimizables;
+   la sección entera y cada grupo arrancan minimizados
+   (iteración 3) y se despliegan pulsando su cabecera. Sin
+   formulario ni botones.
+   ========================================================= */
+
+.awards {
+  margin: 1.2rem 0 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--paper-line);
+}
+
+/* La sección entera es un <details> que arranca minimizado (issue
+   #302, iteración 3): la cabecera actúa de <summary>. Marcador
+   nativo oculto y chevron propio, mismo patrón que .awards__group-head.
+   SIN justify-content: space-between (issue #302, iteración 5): con
+   tres ítems (chevron, título y contador) el espacio libre se
+   repartía entre el título y el contador y el título quedaba
+   centrado en el hueco, desplazándose según la longitud del texto
+   de la derecha. El título va siempre anclado a la izquierda y el
+   contador se empuja al borde derecho con margin-left: auto. */
+.awards__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  cursor: pointer;
+  list-style: none;
+}
+.awards__head::-webkit-details-marker {
+  display: none;
+}
+.awards__head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards[open] .awards__head::before {
+  transform: rotate(90deg);
+}
+.awards[open] .awards__head {
+  margin: 0 0 0.6rem;
+}
+
+.awards__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Contraste AA en el modal clásico con la familia oscura por defecto
+   (mismo caso documentado que .cast-crew__title, QA #294): --ink-soft
+   (#948a76) sobre --paper (#f1ead9) = 2.84:1, insuficiente; #5f5849
+   ≈ 5.9:1. En la página de ítem el fondo es --ink y --ink-soft sí
+   cumple (≈5.5:1), por eso el override se limita a la superficie
+   clara del modal; los demás temas cumplen con --ink-soft. */
+[data-theme="dark"] .modal__card .awards__title,
+[data-theme="dark"] .modal__card .awards__year,
+[data-theme="dark"] .modal__card .awards__detail,
+[data-theme="dark"] .modal__card .awards__people,
+[data-theme="dark"] .modal__card .awards__badge--nom {
+  color: #5f5849;
+}
+
+/* Contador separado de premios y nominaciones (issue #302, iteración
+   4: «(3 premios, 2 nominaciones)»). Puede crecer, así que se permite
+   que se encoja y ajuste (min-width: 0 + overflow-wrap) junto al
+   título, sin generar scroll horizontal en móvil (regla 2 de
+   AGENTS.md). margin-left: auto lo empuja al borde derecho (issue
+   #302, iteración 5) para que el título «Premios» quede siempre en
+   la misma posición izquierda, sin depender de la longitud del
+   contador. */
+.awards__count {
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.awards__groups {
+  margin: 0;
+}
+
+/* Estado cerrado explícito de los <details> de premios: la UA ya oculta
+   los hijos no-<summary> de un <details> sin [open], pero se explicita
+   por robustez (hay entornos donde la regla UA no se aplica) y deja el
+   contrato «minimizado por defecto» (issue #302, iteración 3) en nuestro
+   propio CSS, sin depender de la UA. Cuando falta [open], el contenido
+   no existe visualmente (ni ocupa espacio); con [open], display normal. */
+.awards:not([open]) > .awards__groups,
+.awards__group:not([open]) > .awards__list {
+  display: none;
+}
+
+/* Cada familia de premios es un <details> que arranca MINIMIZADO
+   (sin `open`, issue #302 iteración 3) y el usuario puede desplegar.
+   Borde y radio como los chips de la ficha (mismo patrón que
+   .watch-provider/.game-platform). */
+.awards__group {
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius);
+  margin: 0 0 0.55rem;
+  padding: 0 0.6rem;
+  min-width: 0;
+}
+
+.awards__group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  /* Hereda el color del contenedor: mismo caso que .awards__name
+     (la página de ítem y el modal clásico tienen superficies y
+     textos opuestos según la familia). */
+  color: inherit;
+  min-width: 0;
+  /* Quitar el marcador nativo del <summary> (Firefox) y sustituirlo
+     por un chevron propio que rota al abrir (WebKit). */
+  list-style: none;
+}
+.awards__group-head::-webkit-details-marker {
+  display: none;
+}
+.awards__group-head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.2rem solid transparent;
+  border-bottom: 0.2rem solid transparent;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 0.1rem;
+}
+.awards__group[open] .awards__group-head::before {
+  transform: rotate(90deg);
+}
+
+.awards__group-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__group-count {
+  font-weight: 400;
+  opacity: 0.75;
+  /* margin-left: auto empuja el contador al borde derecho (issue
+     #302, iteración 5): el nombre de la familia queda anclado a la
+     izquierda, siempre en la misma posición, sin depender de la
+     longitud del contador. Sin flex-shrink: 0 desde la iteración 4:
+     el contador separado de premios y nominaciones puede crecer y
+     debe poder encogerse/ajustarse junto al nombre de la familia sin
+     desbordar en móvil. */
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.awards__list {
+  list-style: none;
+  margin: 0 0 0.55rem;
+  padding: 0;
+}
+
+.awards__row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--paper-line);
+  min-width: 0;
+}
+
+.awards__row:last-child {
+  border-bottom: none;
+}
+
+.awards__name {
+  font-weight: 600;
+  /* Hereda el color del contenedor: en la página de ítem el fondo es
+     --ink y el texto --paper (familia oscura) o --ink (familia clara);
+     en el modal clásico el fondo es --paper y el texto --ink (o la
+     superficie oscura del negro puro con texto --paper). No hay color
+     único que cumpla AA en ambos contextos, por eso inherit. */
+  color: inherit;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.awards__year {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.awards__detail {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Etiqueta que diferencia premios (P166) de nominaciones (P1411).
+   «Premio»: píldora ocre rellena (mismo dúo que .recipe-card__badge,
+   patrón aprobado en los cuatro temas); «Nominación»: píldora con
+   borde y texto suaves, con el override del modal clásico arriba. */
+.awards__badge {
+  align-self: center;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
+.awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--white);
+}
+[data-theme="black"] .awards__badge--award {
+  background: var(--ochre-spine);
+  color: var(--ink);
+}
+
+.awards__badge--nom {
+  color: var(--ink-soft);
+  border: 1px solid currentColor;
+}
+
+/* Implicados en el premio/nominación (ganador P1346 o nominados
+   P2453), p. ej. el actor de un premio de interpretación. */
+.awards__people {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Ventana de detalle del elenco (issue #294): #cast-modal.
+   Lista completa del reparto o de la producción; la producción
+   se agrupa por áreas (departamentos). Reutiliza el armazón
+   .modal__card--wide y las variables de tema del modal.
+   ========================================================= */
+
+.cast-modal__header {
+  border-bottom: 1px solid var(--paper-line);
+  padding-bottom: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.cast-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin: 0 0 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__subtitle {
+  font-size: 0.8rem;
+  /* Contraste AA en la familia oscura por defecto (regla 4 AGENTS.md):
+     --ink-soft (#948a76) sobre --paper (#f1ead9) = 2.84:1, insuficiente;
+     #5f5849 ≈ 5.9:1. Negro puro y familia clara sí cumplen con
+     --ink-soft, por eso se restaura ahí (patrón .rec-card__hint). */
+  color: #5f5849;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__section {
+  margin-bottom: 0.9rem;
+}
+
+.cast-modal__area {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  /* Contraste AA en la familia oscura por defecto, igual que
+     .cast-modal__subtitle (ver comentario allí). */
+  color: #5f5849;
+  margin: 0 0 0.35rem;
+}
+
+.cast-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cast-modal__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--paper-alpha-14);
+  min-width: 0;
+}
+
+/* El :last-child del ul es el li: en las filas legacy (li directo,
+   QA #321) el selector de abajo retira el borde; en las pulsables
+   (li.cast-modal__row-wrap > button) NO debe casar li.cast-modal__row
+   con el button (es hijo único y :last-child siempre casa; QA #321:
+   perdía el separador de TODAS las filas pulsables). */
+li.cast-modal__row:last-child {
+  border-bottom: none;
+}
+
+/* Fila pulsable (issue #321): .cast-modal__row se renderiza como
+   <button> (dentro de un <li> contenedor) cuando la persona tiene id
+   de TMDB (abre su página). Reset del estilo de botón del navegador;
+   la fila conserva el aspecto de siempre. La delegación de clicks
+   está en js/cast-modal.js (las filas se re-renderizan al buscar). */
+.cast-modal__row-wrap {
+  display: flex;
+  min-width: 0;
+}
+.cast-modal__row-wrap .cast-modal__row {
+  flex: 1 1 auto;
+}
+button.cast-modal__row {
+  appearance: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 0;
+  border-bottom: 1px solid var(--paper-alpha-14);
+}
+button.cast-modal__row:hover {
+  background: var(--ink-alpha-10);
+}
+button.cast-modal__row:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+/* En la variante con <li> contenedor, el :last-child del ul es el
+   wrap: el borde inferior se retira igual que en la fila directa. */
+.cast-modal__row-wrap:last-child .cast-modal__row {
+  border-bottom: none;
+}
+
+.cast-modal__photo {
+  width: 44px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-dim);
+  flex-shrink: 0;
+}
+
+.cast-modal__person {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cast-modal__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__role {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  /* Contraste AA en la familia oscura por defecto, igual que
+     .cast-modal__subtitle (ver comentario allí). */
+  color: #5f5849;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cast-modal__empty {
+  font-size: 0.85rem;
+  /* Contraste AA en la familia oscura por defecto, igual que
+     .cast-modal__subtitle (ver comentario allí). */
+  color: #5f5849;
+  margin: 0.4rem 0;
+}
+
+/* Buscador de la ventana de detalle del elenco (iteración issue #294):
+   lupa a la izquierda + input que filtra por nombre de la persona y
+   por su personaje (reparto) o función (producción). El input usa las
+   mismas variables que .global-search__input (--ink-raised fondo /
+   --paper texto): en la familia clara --ink-raised y --paper son
+   ambos blancos, así que —igual que hace css/styles.css para
+   .global-search__input— la familia clara restaura la tinta con
+   --ink (selectores agrupados, una sola fuente de verdad por regla). */
+.cast-modal__search {
+  position: relative;
+  margin-bottom: 0.8rem;
+}
+
+.cast-modal__search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.cast-modal__search-input {
+  width: 100%;
+  border: 1px solid var(--paper-alpha-20);
+  background: var(--ink-raised);
+  color: var(--paper);
+  border-radius: 999px;
+  padding: 0.45rem 1rem 0.45rem 2.1rem;
+  font-size: 1rem; /* 16px evita el zoom automático de iOS al enfocar */
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.cast-modal__search-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.cast-modal__search-input:focus-visible {
+  outline: 2px solid var(--teal-reel);
+  outline-offset: 1px;
+}
+
+/* Familia clara (Claro/Blanco puro): --ink-raised y --paper son ambos
+   blancos, el texto del input sería invisible (1:1). Mismo override
+   que [data-theme="light"] .global-search__input de css/styles.css. */
+[data-theme="light"] .cast-modal__search-input,
+[data-theme="white"] .cast-modal__search-input {
+  color: var(--ink);
+}
+
+/* Restauración de --ink-soft en negro puro y familia clara (ver
+   comentarios de contraste arriba). Selectores agrupados: una sola
+   fuente de verdad por regla. */
+[data-theme="black"] .cast-modal__subtitle,
+[data-theme="light"] .cast-modal__subtitle,
+[data-theme="white"] .cast-modal__subtitle,
+[data-theme="black"] .cast-modal__area,
+[data-theme="light"] .cast-modal__area,
+[data-theme="white"] .cast-modal__area,
+[data-theme="black"] .cast-modal__role,
+[data-theme="light"] .cast-modal__role,
+[data-theme="white"] .cast-modal__role,
+[data-theme="black"] .cast-modal__empty,
+[data-theme="light"] .cast-modal__empty,
+[data-theme="white"] .cast-modal__empty {
+  color: var(--ink-soft);
+}
+
+/* Tarjetas de elenco algo más compactas en móvil estrecho */
+@media (max-width: 400px) {
+  .cast-card {
+    flex-basis: 84px;
+  }
+}

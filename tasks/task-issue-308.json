@@ -1,0 +1,62 @@
+{
+  "title": "Lista completa de reparto y producción",
+  "description": "La base de la que iniciar el trabajo es la rama `feat/issue-201`. Se debe crear una nueva rama a partir de ahí y luego, hacer la PR también a esa rama (no a `dev`).\n\nNo se está mostrando la lista completa de reparto y producción, al menos en las series, se muestra una versión reducida.",
+  "status": "review",
+  "acceptance criteria": [
+    "Se muestra la lista completa de reparto y producción en las fichas/series (no una versión reducida).",
+    "El cambio se realiza sobre una rama nueva creada desde `feat/issue-201`.",
+    "La PR se crea contra la rama `feat/issue-201` (no contra `dev`)."
+  ],
+  "definition of done": [
+    "Planificación realizada (task-architect).",
+    "Implementación completada según el plan.",
+    "Validación QA aprobada contra criterios de aceptación y definición de done.",
+    "Escaneo de seguridad sin hallazgos HIGH (security-champion).",
+    "ADR documentado con 'Related issue: #308'.",
+    "PR creada contra `feat/issue-201` sin keyword de cierre.",
+    "Issue #308 label actualizada a su estado final.",
+    "Task file actualizado y subido al repositorio."
+  ],
+  "issue": {
+    "number": 308,
+    "url": "https://github.com/gonzalitojh/Registro-personal/issues/308",
+    "title": "Lista completa de reparto y producción"
+  },
+  "implemented_files": [
+    "js/api-movies.js",
+    "js/config.js",
+    "index.html",
+    "service-worker.js",
+    "docs/manual-de-usuario.md",
+    "docs/adr-110-elenco-completo-series.md"
+  ],
+  "validation": {
+    "qa": "APROBADO (qa-reviewer): diff solo 7 archivos, contrato {id,name,character|job,department,profileUrl,order} intacto para ui.js/cast-modal.js, edge cases cubiertos (sin name, sin order, roles/jobs vacíos, legacy strings), responsividad OK (overflow-wrap en tarjetas, scroll solo .cast-crew__scroll), PWA 11 refs 20261002 sin colisión, manual coherente, ADR-110 formato OK, escapeHtml sobre datos TMDB",
+    "qa_hallazgos": [
+      "BAJA (corregido): manual §12 matiz «en las series» para puestos múltiples en el carrusel (en películas la misma persona con varios puestos sale en tarjetas separadas)",
+      "Inform.: etiquetas issue (status in-progress → needs-review al publicar; PR contra feat/issue-201 sin keyword)",
+      "Inform.: redacción opcional ADR-110 (cita TMDB parentética)"
+    ],
+    "live_tmdb": "GoT(1399) cast=587 crew=348; Mandalorian(82856) cast=159 crew=169; multi-personaje «Khal Drogo, Karl Drogo»; crew sin order → 999; created_by intacto; Matrix(603) cast=37 sin regresión",
+    "preliminary": "node --check OK (api-movies, ui, cast-modal, item-page, modal-handlers)"
+  },
+  "security": {
+    "scan": "CLEAN (security-champion)",
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "documentation": {
+    "adr": "docs/adr-110-elenco-completo-series.md",
+    "related_issue": "#308",
+    "manual_usuario": "§12 bullet «Información ampliada»: elenco completo en series (todas las temporadas), personajes múltiples y puestos múltiples unidos"
+  },
+  "pr": {
+    "number": 309,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/309",
+    "title": "Lista completa de reparto y producción en series (aggregate_credits de TMDB, issue #308)",
+    "branch": "feat/issue-308-lista-completa-reparto",
+    "commit": "7f0c1b1",
+    "closes": "#308"
+  }
+}
