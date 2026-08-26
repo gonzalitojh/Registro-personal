@@ -3695,6 +3695,28 @@ body.is-item-page #btn-person-back {
   color: var(--ink-soft);
 }
 
+/* Estado final de error de un panel (issue #286): sustituye al
+   marcador de carga cuando una suscripción agota los reintentos o
+   el fetch del partial falla. Mismo patrón de .panel-loading, solo
+   con variables de tema (--ink-soft: legible en los cuatro modos,
+   ver nota de .panel-loading); el botón «Reintentar» reutiliza
+   .btn--small. No se usan colores hardcodeados. */
+.panel-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.2rem 1rem;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.panel-error__message {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
 .spinner {
   width: 1.8rem;
   height: 1.8rem;

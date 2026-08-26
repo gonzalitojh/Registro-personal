@@ -144,7 +144,10 @@ Al abrir una pestaña que no habías visitado, verás un breve indicador
 de **«Cargando…»** (con una animación) mientras llegan sus datos; a
 partir de ese momento, cada vez que vuelvas a esa pestaña aparece todo
 al instante. Así la web no tiene que pedir los cuatro registros a la
-vez cada vez que entras.
+vez cada vez que entras. Si los datos no llegan en unos segundos, la
+web ya lo ha intentado varias veces y muestra un aviso con el botón
+**«Reintentar»** para que lo vuelvas a intentar sin recargar la página
+(más en [sección 21](#21-problemas-frecuentes)).
 
 Al entrar por primera vez aterrizas en **Series**, con el filtro **«Viendo»**
 activo y en vista de lista — el uso más habitual.
@@ -1704,9 +1707,15 @@ Se llega desde **«Ajustes» en la parte de abajo de la barra lateral**
   (máx. una vez cada 30 minutos).
 - Si al entrar hay un **fallo de conexión puntual** (un momento sin red
   o un error pasajero del servidor), la web **reintenta sola durante
-  unos segundos** antes de avisarte. Puede aparecer el aviso «Hay
-  problemas de conexión. Reintentando…» mientras lo hace; normalmente
-  no tienes que hacer nada.
+  unos segundos** antes de avisarte. También lo hace si la conexión se
+  queda **«colgada»** (ni falla ni llegan los datos, algo que puede
+  pasar con conexiones lentas o inestables): pasados unos segundos sin
+  recibir nada, lo considera un fallo y lo intenta de nuevo. Puede
+  aparecer el aviso «Hay problemas de conexión. Reintentando…» mientras
+  lo hace; normalmente no tienes que hacer nada. Si aun así una pestaña
+  no llega a cargar, verás un mensaje con el botón **«Reintentar»**:
+  púlsalo para volver a intentarlo en ese momento, sin recargar la
+  página (más en [sección 21](#21-problemas-frecuentes)).
 
 ## 19. Privacidad
 
@@ -1767,9 +1776,12 @@ navegador).
 
 **Al entrar no cargan mis datos**
 La web lo **reintenta automáticamente** durante unos segundos: puede
-aparecer el aviso «Hay problemas de conexión. Reintentando…». Si pasados
-unos segundos sigue sin cargar y aparece el aviso de error («No se
-pudieron cargar tus películas/series/libros/videojuegos»), comprueba tu
+aparecer el aviso «Hay problemas de conexión. Reintentando…» (la web
+también lo hace si la conexión se queda «colgada», sin llegar a
+fallar). Si pasados unos segundos sigue sin cargar, aparece el aviso de
+error («No se pudieron cargar tus películas/series/libros/videojuegos»)
+con el botón **«Reintentar»**: púlsalo para volver a intentarlo en ese
+momento, sin recargar la página. Si sigue sin cargar, comprueba tu
 conexión a internet y **recarga la página**.
 
 **He marcado algo por error**

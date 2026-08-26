@@ -246,7 +246,11 @@ de restricción por dominio explicado más abajo en «Solución de problemas».
     ejecuciones** del workflow (p. ej. N issues abiertas seguidas): las
     runs esperan en cola y se procesan en orden, una sesión a la vez, sin
     cancelar las encoladas (antes solo cabían 1 en ejecución + 1 en cola
-    y las demás se cancelaban).
+    y las demás se cancelaban). También se detecta el **falso éxito**: si
+    la sesión termina con la issue aún en `status: in-progress` (el modelo
+    emitió su respuesta final antes de completar el flujo), se trata como
+    un fallo más y el workflow guarda el progreso WIP y relanza
+    automáticamente.
 
 ## 7. Autorizar tu dominio en Firebase
 
