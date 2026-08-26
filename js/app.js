@@ -961,6 +961,17 @@ async function init() {
     const panelId = activePanelId && panels[activePanelId] ? activePanelId : (getFirstVisibleTabPanel("ocio") || "panel-tv");
     loadOcioPartial(panels[panelId]);
     ensureGroupSubscribed(PANEL_TO_GROUP[panelId] || "tv");
+    // Issue #328 (iteración 2026-08-26): la búsqueda en Ocio debe ser
+    // global en todo momento, también sobre pestañas aún no visitadas
+    // (lazy, #178). Para que filterItems vea las 4 colecciones desde el
+    // primer momento, se suscriben en segundo plano los grupos restantes
+    // (best-effort, sin bloquear la UI). La lectura puntual de
+    // getGroupItemsResolved en global-search.js cubre la ventana hasta
+    // que llegan los snapshots, pero la suscripción garantiza la
+    // reactividad posterior.
+    for (const g of ["movies", "tv", "books", "games"]) {
+      if (g !== (PANEL_TO_GROUP[panelId] || "tv")) ensureGroupSubscribed(g);
+    }
 
     // Comprobación diaria: una vez por sesión. Ya no espera a que
     // lleguen las suscripciones de los cuatro grupos (daily-check

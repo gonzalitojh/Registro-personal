@@ -139,10 +139,22 @@ function currentSection() {
   }
 }
 
+// Helper para extraer nombres del reparto: `item.cast` se persiste como
+// array de objetos { name } (api-movies.js, issue #294) tras el fix de
+// #328, pero fichas antiguas pueden tener strings; se soportan ambos.
+function castNamesText(cast) {
+  if (!Array.isArray(cast) || !cast.length) return "";
+  return cast
+    .map((c) => (typeof c === "string" ? c : (c && c.name) || ""))
+    .filter(Boolean)
+    .join(" ");
+}
+
 function getSearchableText(item) {
   // Issue #328: además de título/autor, buscar por reparto/director/creadores
   const parts = [item.title || "", item.author || ""];
-  if (Array.isArray(item.cast) && item.cast.length) parts.push(item.cast.join(" "));
+  const cn = castNamesText(item.cast);
+  if (cn) parts.push(cn);
   if (item.director) parts.push(item.director);
   if (Array.isArray(item.creators) && item.creators.length) parts.push(item.creators.join(" "));
   return parts.join(" ").toLowerCase();
@@ -153,7 +165,7 @@ function relevanceScore(item, query) {
   const author = (item.author || "").toLowerCase();
   const q = query.toLowerCase();
   // Reparto/director/creadores para la búsqueda por actores (issue #328)
-  const castText = Array.isArray(item.cast) ? item.cast.join(" ").toLowerCase() : "";
+  const castText = castNamesText(item.cast).toLowerCase();
   const directorText = (item.director || "").toLowerCase();
   const creatorsText = Array.isArray(item.creators) ? item.creators.join(" ").toLowerCase() : "";
 
@@ -201,9 +213,64 @@ function filterFriends(profiles, query) {
 // - gimnasio → sin resultados aún (issue #62, v1: sin scope de
 //             búsqueda propia; devolver vacío evita caer a la rama
 //             de Ocio y mezclar colecciones ajenas).
-// Síncrono: lo usan performSearch, runExternalSearch y
-// refreshExternalResults.
-function collectionResults(trimmed) {
+// Síncrono para amigos/recetas/gimnasio; para Ocio es asíncrono porque
+// resuelve los grupos lazy (issue #328 + #178) vía getGroupItemsResolved
+// — si el grupo aún no tiene snapshot (pestaña no visitada), se lee
+// puntualmente de Firestore para que la búsqueda sea global desde el
+// primer momento. Lo usan performSearch, runExternalSearch y
+// refreshExternalResults (todos con await).
+async function collectionResults(trimmed) {
+  if (!searchCtx) {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  const section = currentSection();
+  if (section === "perfil") {
+    return { friends: (cachedProfiles ? filterFriends(cachedProfiles, trimmed) : []).slice(0, 6) };
+  }
+  if (section === "recetas") {
+    return { recipes: searchRecipes(trimmed).slice(0, 6) };
+  }
+  if (section === "gimnasio") {
+    return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
+  }
+  // Ocio: resolver las 4 colecciones con getGroupItemsResolved si existe
+  // (fallback a getAllItems si no, o si la lectura puntual falla).
+  let movies = [], tv = [], books = [], games = [];
+  if (searchCtx.getGroupItemsResolved) {
+    try {
+      [movies, tv, books, games] = await Promise.all([
+        searchCtx.getGroupItemsResolved("movies"),
+        searchCtx.getGroupItemsResolved("tv"),
+        searchCtx.getGroupItemsResolved("books"),
+        searchCtx.getGroupItemsResolved("games"),
+      ]);
+    } catch {
+      const all = searchCtx.getAllItems();
+      movies = all.movies || [];
+      tv = all.tv || [];
+      books = all.books || [];
+      games = all.games || [];
+    }
+  } else {
+    const all = searchCtx.getAllItems();
+    movies = all.movies || [];
+    tv = all.tv || [];
+    books = all.books || [];
+    games = all.games || [];
+  }
+  return {
+    movies: filterItems(movies, trimmed).slice(0, 5),
+    tv: filterItems(tv, trimmed).slice(0, 5),
+    books: filterItems(books, trimmed).slice(0, 5),
+    games: filterItems(games, trimmed).slice(0, 5),
+  };
+}
+
+// Compat: algunos llamadores síncronos internos (refreshExternalResults
+// antes del fix) usaban la versión síncrona; se mantiene como fallback
+// rápido usando getAllItems (sin resolver lazy) para no romper si se
+// llama sin await durante la hidratación inicial.
+function collectionResultsSync(trimmed) {
   if (!searchCtx) {
     return { movies: [], tv: [], books: [], games: [], friends: [], recipes: [] };
   }
@@ -590,7 +657,7 @@ function externalSectionLoadingHtml(g) {
 
 // ---- Botones de tipo (búsqueda en el catálogo) ----
 
-function handleTypeClick(group) {
+async function handleTypeClick(group) {
   activeGroup = group;
   const query = input.value.trim();
   if (query.length < 2) {
@@ -607,7 +674,7 @@ function handleTypeClick(group) {
   // contrario se busca.
   const cache = externalCache[group];
   if (cache && cache.query === query && !inFlight[group]) {
-    renderResults(collectionResults(query), query);
+    renderResults(await collectionResults(query), query);
     return;
   }
   runExternalSearch(group, query);
@@ -622,7 +689,7 @@ async function runExternalSearch(group, query) {
   externalQuery[group] = query;
   externalError[group] = null;
 
-  renderResults(collectionResults(query), query);
+  renderResults(await collectionResults(query), query);
 
   let result;
   try {
@@ -634,7 +701,7 @@ async function runExternalSearch(group, query) {
     }
     inFlight[group] = false;
     externalError[group] = { query, message: err.message };
-    renderResults(collectionResults(input.value.trim()), input.value.trim());
+    renderResults(await collectionResults(input.value.trim()), input.value.trim());
     return;
   }
 
@@ -648,18 +715,20 @@ async function runExternalSearch(group, query) {
     items: (result.items || []).slice(0, 5),
     source: result.source || null,
   };
-  renderResults(collectionResults(input.value.trim()), input.value.trim());
+  renderResults(await collectionResults(input.value.trim()), input.value.trim());
 }
 
 // Re-renderiza las secciones externas desde la caché con el estado
 // actual de la colección (lo llama app.js tras cada snapshot de
 // Firestore para actualizar los botones «Añadir»/«Añadido»).
-export function refreshExternalResults(ctx) {
+// Es async por el fix #328 (collectionResults resuelve lazy), pero se
+// mantiene compatible: los llamadores no necesitan await (fire-and-forget).
+export async function refreshExternalResults(ctx) {
   if (!isOpen) return;
   const query = input.value.trim();
   if (query.length < 2) return;
   if (ctx) searchCtx = ctx;
-  renderResults(collectionResults(query), query);
+  renderResults(await collectionResults(query), query);
 }
 
 // ---- Navegación ----
@@ -1080,5 +1149,5 @@ async function performSearch(ctx) {
     }
   }
 
-  renderResults(collectionResults(trimmed), trimmed);
+  renderResults(await collectionResults(trimmed), trimmed);
 }

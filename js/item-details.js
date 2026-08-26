@@ -15,9 +15,22 @@ import { getGameDetails } from "./api-games.js";
 // conservan la sinopsis en el documento (excepción del estudio,
 // sección 8.1), así que nunca aplican. Los ítems manuales tampoco:
 // su externalId es sintético y no existe en las APIs.
+// Issue #328 (iteración 2026-08-26): para la búsqueda por actores, los
+// documentos antiguos pueden tener `overview` pero no `cast` (el reparto
+// pasó a persistirse con #328). Si falta el reparto, también hay que
+// revalidar la ficha aunque la sinopsis ya esté en memoria.
 export function needsDetailFetch(item) {
   if (!item || item.manual || !item.externalId) return false;
-  if (item.type === "movie" || item.type === "tv") return !item.overview;
+  if (item.type === "movie" || item.type === "tv") {
+    if (!item.overview) return true;
+    // Backfill de reparto para búsqueda por actores (issue #328): fichas
+    // antiguas sin `cast` deben revalidarse al abrirse, aunque tengan
+    // sinopsis. Se considera falta si cast no es array (nunca se guardó)
+    // — los arrays vacíos (API sin reparto) no re-disparan la carga.
+    if (!Array.isArray(item.cast)) return true;
+    if (item.type === "tv" && !Array.isArray(item.creators)) return true;
+    return false;
+  }
   if (item.type === "game") return !item.description;
   return false;
 }
