@@ -1,7 +1,13 @@
 {
   "title": "Búsqueda de actores y mejoría",
   "description": "Issue #328: En la barra de búsqueda, poder buscar en todo momento en todas las colecciones (no solo en la que me encuentro — si estoy en series y busco \"El señor de los anillos\" deben salir series, películas, libros y juegos coincidentes) y poder buscar por actores en la barra de búsqueda.",
-  "status": "planned",
+  "status": "documented",
+  "progress": {
+    "plan": "Búsqueda global en Ocio (blindar que collectionResults es siempre global) + búsqueda por actores via cast/director/creators persistidos en minimalStoredFields y buscables en global-search.js",
+    "implementation": "js/global-search.js getSearchableText+relevanceScore+sectionHintText, js/constants.js ON_DEMAND sin cast/director/creators, js/search.js minimalStoredFields con cast/director/creators, js/modal-handlers.js loadDetailsForModal persiste cast, js/ui.js + index.html placeholder/aria, docs/manual-de-usuario.md §§3/10.2, docs/adr-117 y bump 20261018",
+    "validation": "QA PASS 6/6 criterios, syntax node --check OK, funcional manual con filterItems (señor, Hathaway, Nolan, Cranston)",
+    "security": "PASS 0 HIGH (claves TMDB en config.js son públicas por diseño)"
+  },
   "acceptance criteria": [
     "La barra de búsqueda de Ocio muestra resultados de TODAS las colecciones (películas, series, libros y videojuegos) independientemente de la pestaña activa (series/películas/libros/videojuegos). Si estoy en series y busco 'El señor de los anillos' aparecen coincidencias de las cuatro colecciones.",
     "Buscar por nombre de actor/director/reparto encuentra los títulos de la colección cuyo reparto contenga ese nombre (p. ej. buscar 'Tom Hanks' encuentra películas donde aparece). La búsqueda por actor es insensible a mayúsculas y funciona con coincidencias parciales.",
