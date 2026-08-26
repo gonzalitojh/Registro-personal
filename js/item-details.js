@@ -19,6 +19,11 @@ import { getGameDetails } from "./api-games.js";
 // documentos antiguos pueden tener `overview` pero no `cast` (el reparto
 // pasó a persistirse con #328). Si falta el reparto, también hay que
 // revalidar la ficha aunque la sinopsis ya esté en memoria.
+// Iteración 3 (2026-08-26): se añade el backfill de `director` para
+// películas (búsqueda por director) y se mantiene el de `creators` en
+// series; los arrays vacíos (API sin dato) no re-disparan la carga y
+// `director` null (sin director en TMDB) tampoco — solo undefined
+// (campo nunca guardado tras la poda de #200) dispara el fetch.
 export function needsDetailFetch(item) {
   if (!item || item.manual || !item.externalId) return false;
   if (item.type === "movie" || item.type === "tv") {
@@ -28,6 +33,7 @@ export function needsDetailFetch(item) {
     // sinopsis. Se considera falta si cast no es array (nunca se guardó)
     // — los arrays vacíos (API sin reparto) no re-disparan la carga.
     if (!Array.isArray(item.cast)) return true;
+    if (item.type === "movie" && typeof item.director === "undefined") return true;
     if (item.type === "tv" && !Array.isArray(item.creators)) return true;
     return false;
   }

@@ -72,6 +72,7 @@ import { setupRecipes, subscribeRecipesData, resetRecipesData } from "./recipes.
 import { setupMenu, subscribeMenuData, cleanupDeletedRecipe, resetMenuData } from "./menu.js";
 import { setupShoppingList, resetShoppingListState } from "./shopping-list.js";
 import { setupGym, subscribeGymData, resetGymData } from "./gym.js";
+import { runActorBackfill } from "./actor-backfill.js";
 
 // ---------- Estado ----------
 
@@ -977,6 +978,15 @@ async function init() {
     // lleguen las suscripciones de los cuatro grupos (daily-check
     // lee de Firestore bajo demanda con getItemsOnce).
     maybeTriggerDailyCheck();
+
+    // Backfill de reparto para búsqueda por actores (issue #328,
+    // iteración 3): las colecciones antiguas perdieron `cast` con la
+    // poda #200 y solo lo recuperaban al abrir la ficha; este backfill
+    // en segundo plano lo hace sin interacción, best-effort. Fire-and-
+    // forget con catch defensivo: un fallo no debe romper el flujo.
+    runActorBackfill(createCtx()).catch((err) => {
+      console.error("No se pudo completar el backfill de actores:", err);
+    });
 
     // Notificaciones: mismo reintento, pero en silencio (como su onError
     // actual, que no molestaba). El badge se rellena cuando el reintento

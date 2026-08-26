@@ -150,6 +150,15 @@ function castNamesText(cast) {
     .join(" ");
 }
 
+// Normaliza para búsqueda insensible a mayúsculas y acentos (issue
+// #328 iteración 3: "García" ↔ "garcia"): NFD + strip diacríticos.
+function normalizeForSearch(str) {
+  return String(str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function getSearchableText(item) {
   // Issue #328: además de título/autor, buscar por reparto/director/creadores
   const parts = [item.title || "", item.author || ""];
@@ -157,17 +166,17 @@ function getSearchableText(item) {
   if (cn) parts.push(cn);
   if (item.director) parts.push(item.director);
   if (Array.isArray(item.creators) && item.creators.length) parts.push(item.creators.join(" "));
-  return parts.join(" ").toLowerCase();
+  return normalizeForSearch(parts.join(" "));
 }
 
 function relevanceScore(item, query) {
-  const title = (item.title || "").toLowerCase();
-  const author = (item.author || "").toLowerCase();
-  const q = query.toLowerCase();
+  const title = normalizeForSearch(item.title || "");
+  const author = normalizeForSearch(item.author || "");
+  const q = normalizeForSearch(query);
   // Reparto/director/creadores para la búsqueda por actores (issue #328)
-  const castText = castNamesText(item.cast).toLowerCase();
-  const directorText = (item.director || "").toLowerCase();
-  const creatorsText = Array.isArray(item.creators) ? item.creators.join(" ").toLowerCase() : "";
+  const castText = normalizeForSearch(castNamesText(item.cast));
+  const directorText = normalizeForSearch(item.director || "");
+  const creatorsText = Array.isArray(item.creators) ? normalizeForSearch(item.creators.join(" ")) : "";
 
   if (title === q) return 100;
   if (title.startsWith(q)) return 50;
@@ -180,7 +189,7 @@ function relevanceScore(item, query) {
 }
 
 function filterItems(items, query) {
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query.trim());
   return items
     .filter((item) => {
       const text = getSearchableText(item);
@@ -192,10 +201,10 @@ function filterItems(items, query) {
 }
 
 function filterFriends(profiles, query) {
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query.trim());
   return profiles.filter((p) => {
-    const name = (p.displayName || p.name || "").toLowerCase();
-    const email = (p.email || "").toLowerCase();
+    const name = normalizeForSearch(p.displayName || p.name || "");
+    const email = normalizeForSearch(p.email || "");
     return name.includes(q) || email.includes(q);
   });
 }
