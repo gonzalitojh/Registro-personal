@@ -1,7 +1,7 @@
 {
   "title": "Búsqueda de actores y mejoría",
   "description": "Issue #328: En la barra de búsqueda, poder buscar en todo momento en todas las colecciones (no solo en la que me encuentro — si estoy en series y busco \"El señor de los anillos\" deben salir series, películas, libros y juegos coincidentes) y poder buscar por actores en la barra de búsqueda.",
-  "status": "documented",
+  "status": "review",
   "progress": {
     "plan": "Búsqueda global en Ocio (blindar que collectionResults es siempre global) + búsqueda por actores via cast/director/creators persistidos en minimalStoredFields y buscables en global-search.js",
     "implementation": "js/global-search.js getSearchableText+relevanceScore+sectionHintText, js/constants.js ON_DEMAND sin cast/director/creators, js/search.js minimalStoredFields con cast/director/creators, js/modal-handlers.js loadDetailsForModal persiste cast, js/ui.js + index.html placeholder/aria, docs/manual-de-usuario.md §§3/10.2, docs/adr-117 y bump 20261018",
@@ -28,5 +28,12 @@
     "number": 328,
     "url": "https://github.com/gonzalitojh/Registro-personal/issues/328",
     "title": "Búsqueda de actores y mejoría"
+  },
+  "pr": {
+    "number": 329,
+    "url": "https://github.com/gonzalitojh/Registro-personal/pull/329",
+    "title": "feat: búsqueda global en Ocio y por actores (issue #328)",
+    "branch": "feat/issue-328-busqueda-actores",
+    "base": "dev"
   }
 }
